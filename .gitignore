@@ -22,9 +22,9 @@ build/
 bld/
 # [Bb]in/
 [Oo]bj/
-x64/*
-!x64/*.exe
-!x64/*.dll
+x64/release/*
+!x64/release/*.exe
+!x64/release/*.dll
 
 # Visual Studio 2015 cache/options directory
 .vs/
