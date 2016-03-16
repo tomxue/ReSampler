@@ -1,0 +1,81 @@
+﻿cl : Command line warning D9002: ignoring unknown option '/arch:SSE2'
+  ReSampler.cpp
+ReSampler.cpp(119): warning C4307: '-': integral constant overflow
+  ReSampler.cpp(69): note: see reference to function template instantiation 'bool Convert<float>(const std::string &,const std::string &,unsigned int,bool)' being compiled
+ReSampler.cpp(149): warning C4244: '=': conversion from 'int' to 'float', possible loss of data
+ReSampler.cpp(158): warning C4244: 'initializing': conversion from 'double' to 'int', possible loss of data
+ReSampler.cpp(165): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+ReSampler.cpp(169): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+ReSampler.cpp(187): warning C4244: 'initializing': conversion from 'int' to 'float', possible loss of data
+ReSampler.cpp(188): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+ReSampler.cpp(221): warning C4018: '<': signed/unsigned mismatch
+ReSampler.cpp(222): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+ReSampler.cpp(225): warning C4018: '<': signed/unsigned mismatch
+ReSampler.cpp(227): warning C4244: '=': conversion from 'float' to 'int', possible loss of data
+ReSampler.cpp(247): warning C4018: '<': signed/unsigned mismatch
+ReSampler.cpp(249): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+ReSampler.cpp(254): warning C4244: '=': conversion from 'float' to 'int', possible loss of data
+ReSampler.cpp(273): warning C4018: '<': signed/unsigned mismatch
+ReSampler.cpp(274): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+ReSampler.cpp(278): warning C4018: '<': signed/unsigned mismatch
+ReSampler.cpp(284): warning C4018: '<': signed/unsigned mismatch
+ReSampler.cpp(286): warning C4244: '=': conversion from 'float' to 'int', possible loss of data
+ReSampler.cpp(205): warning C4101: 'b': unreferenced local variable
+ReSampler.cpp(333): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+  ReSampler.cpp(165): note: see reference to function template instantiation 'bool makeBigAssLPF<FloatType>(FloatType *,int,FloatType,FloatType)' being compiled
+          with
+          [
+              FloatType=float
+          ]
+  ReSampler.cpp(69): note: see reference to function template instantiation 'bool Convert<float>(const std::string &,const std::string &,unsigned int,bool)' being compiled
+ReSampler.cpp(339): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+ReSampler.cpp(343): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+ReSampler.cpp(344): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+  Generating code
+  
+  --- Analyzing function: bool __cdecl Convert<float>(class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> > const & __ptr64,class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> > const & __ptr64,unsigned int,bool)
+  e:\cpp_projects\resampler\resampler\resampler.cpp(139) : info C5002: loop not vectorized due to reason '500'
+  e:\cpp_projects\resampler\resampler\resampler.cpp(139) : info C5012: loop not parallelized due to reason '500'
+  e:\cpp_projects\resampler\resampler\resampler.cpp(177) : info C5002: loop not vectorized due to reason '500'
+  e:\cpp_projects\resampler\resampler\resampler.cpp(177) : info C5012: loop not parallelized due to reason '500'
+  e:\cpp_projects\resampler\resampler\resampler.cpp(219) : info C5002: loop not vectorized due to reason '502'
+  e:\cpp_projects\resampler\resampler\resampler.cpp(219) : info C5012: loop not parallelized due to reason '502'
+  e:\cpp_projects\resampler\resampler\resampler.cpp(245) : info C5002: loop not vectorized due to reason '502'
+  e:\cpp_projects\resampler\resampler\resampler.cpp(245) : info C5012: loop not parallelized due to reason '502'
+  e:\cpp_projects\resampler\resampler\resampler.cpp(269) : info C5002: loop not vectorized due to reason '502'
+  e:\cpp_projects\resampler\resampler\resampler.cpp(269) : info C5012: loop not parallelized due to reason '502'
+  e:\cpp_projects\resampler\resampler\resampler.cpp(305) : info C5002: loop not vectorized due to reason '502'
+  e:\cpp_projects\resampler\resampler\resampler.cpp(305) : info C5012: loop not parallelized due to reason '502'
+  e:\cpp_projects\resampler\resampler\resampler.cpp(323) : info C5002: loop not vectorized due to reason '500'
+  e:\cpp_projects\resampler\resampler\resampler.cpp(323) : info C5012: loop not parallelized due to reason '500'
+  e:\cpp_projects\resampler\resampler\resampler.cpp(145) : info C5001: loop vectorized
+  e:\cpp_projects\resampler\resampler\firfilter.h(15) : info C5002: loop not vectorized due to reason '1200'
+  e:\cpp_projects\resampler\resampler\resampler.cpp(221) : info C5002: loop not vectorized due to reason '1200'
+  e:\cpp_projects\resampler\resampler\firfilter.h(77) : info C5002: loop not vectorized due to reason '1301'
+  e:\cpp_projects\resampler\resampler\resampler.cpp(225) : info C5002: loop not vectorized due to reason '1106'
+  e:\cpp_projects\resampler\resampler\firfilter.h(77) : info C5002: loop not vectorized due to reason '1301'
+  e:\cpp_projects\resampler\resampler\resampler.cpp(247) : info C5002: loop not vectorized due to reason '1106'
+  e:\cpp_projects\resampler\resampler\resampler.cpp(246) : info C5002: loop not vectorized due to reason '1106'
+  e:\cpp_projects\resampler\resampler\resampler.cpp(273) : info C5002: loop not vectorized due to reason '1200'
+  e:\cpp_projects\resampler\resampler\resampler.cpp(278) : info C5002: loop not vectorized due to reason '1200'
+  e:\cpp_projects\resampler\resampler\firfilter.h(77) : info C5002: loop not vectorized due to reason '1301'
+  e:\cpp_projects\resampler\resampler\resampler.cpp(284) : info C5002: loop not vectorized due to reason '1106'
+  e:\cpp_projects\resampler\resampler\resampler.cpp(270) : info C5002: loop not vectorized due to reason '1106'
+  e:\cpp_projects\resampler\resampler\resampler.cpp(145) : info C5012: loop not parallelized due to reason '1004'
+  e:\cpp_projects\resampler\resampler\firfilter.h(15) : info C5012: loop not parallelized due to reason '1007'
+  e:\cpp_projects\resampler\resampler\resampler.cpp(221) : info C5012: loop not parallelized due to reason '1007'
+  e:\cpp_projects\resampler\resampler\firfilter.h(77) : info C5012: loop not parallelized due to reason '1000'
+  e:\cpp_projects\resampler\resampler\resampler.cpp(225) : info C5012: loop not parallelized due to reason '1007'
+  e:\cpp_projects\resampler\resampler\firfilter.h(77) : info C5012: loop not parallelized due to reason '1000'
+  e:\cpp_projects\resampler\resampler\resampler.cpp(247) : info C5012: loop not parallelized due to reason '1007'
+  e:\cpp_projects\resampler\resampler\resampler.cpp(246) : info C5012: loop not parallelized due to reason '1000'
+  e:\cpp_projects\resampler\resampler\resampler.cpp(273) : info C5012: loop not parallelized due to reason '1007'
+  e:\cpp_projects\resampler\resampler\resampler.cpp(278) : info C5012: loop not parallelized due to reason '1007'
+  e:\cpp_projects\resampler\resampler\firfilter.h(77) : info C5012: loop not parallelized due to reason '1000'
+  e:\cpp_projects\resampler\resampler\resampler.cpp(284) : info C5012: loop not parallelized due to reason '1007'
+  e:\cpp_projects\resampler\resampler\resampler.cpp(270) : info C5012: loop not parallelized due to reason '1000'
+  1 of 268 functions ( 0.4%) were compiled, the rest were copied from previous compilation.
+    0 functions were new in current compilation
+    1 functions had inline decision re-evaluated but remain unchanged
+  Finished generating code
+  ReSampler.vcxproj -> E:\CPP_Projects\ReSampler\ReSampler\x64\Release\ReSampler.exe
