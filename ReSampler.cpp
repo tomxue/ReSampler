@@ -82,7 +82,7 @@ bool Convert(const std::string& InputFilename, const std::string& OutputFilename
 	// Calculate conversion parameters, and print a summary for user:
 	unsigned int nChannels = infile.channels();
 	unsigned int InputSampleRate = infile.samplerate();
-	unsigned __int64 InputSampleCount = 0; // ??? infile.getSampleCount();
+	sf_count_t InputSampleCount = 0; // ??? infile.getSampleCount();
 	int InputFileFormat = infile.format();
 	
 	int BitDepth = 16;
@@ -116,8 +116,9 @@ bool Convert(const std::string& InputFilename, const std::string& OutputFilename
 	// When converting between integer PCM formats of differing size (e.g. using sf_read_int() to read a 16 bit PCM encoded WAV file) libsndfile obeys one simple rule:
 	// Whenever integer data is moved from one sized container to another sized container, the most significant bit in the source container will become the most significant bit in the destination container.
 	
-	int limit = (1 << 31) - 1;
-
+	int limit = (1 << 31) - 1; // absolute numerical limit for sample values, normalized to signed 32-bit integer
+	size_t BufferSize = (BUFFERSIZE / nChannels) * nChannels; // round down to integer multiple of nChannels (file may have odd number of channels)
+	
 	std::cout << "source file channels: " << nChannels << std::endl;
 	std::cout << "input sample rate: " << InputSampleRate << "\noutput sample rate: " << OutputSampleRate << std::endl;
 	std::cout << "input bit depth: " << BitDepth;
@@ -134,13 +135,13 @@ bool Convert(const std::string& InputFilename, const std::string& OutputFilename
 
 	FloatType PeakInputSample = 0;
 	if (bNormalize) {
-		unsigned __int64 SamplesRead = 0i64;
+		sf_count_t SamplesRead = 0i64;
 		int peak = 0; // integer version
 		std::cout << "Scanning input file for peaks ...";
 		int inbuffer[BUFFERSIZE];
-		__int64 count;
+		sf_count_t count;
 		do {
-			count = infile.read(inbuffer, BUFFERSIZE);
+			count = infile.read(inbuffer, BufferSize);
 			SamplesRead += count;
 			for (unsigned int s = 0; s < count; ++s) { // read all samples, without caring which channel they belong to
 				peak = max(peak, abs(inbuffer[s]));
@@ -181,7 +182,7 @@ bool Convert(const std::string& InputFilename, const std::string& OutputFilename
 
 	int inbuffer[BUFFERSIZE];
 	int outbuffer[BUFFERSIZE];
-	__int64 count;
+	sf_count_t count;
 
 	START_TIMER();
 	FloatType Gain = F.numerator;
@@ -213,7 +214,7 @@ bool Convert(const std::string& InputFilename, const std::string& OutputFilename
 		PeakOutputSample = 0;
 
 		do { // buffer-filling loop : Read and process blocks of samples until the end of file is reached
-			count = infile.read(inbuffer, BUFFERSIZE);
+			count = infile.read(inbuffer, BufferSize);
 			
 			if (F.numerator == 1) { // Decimate Only
 				for (unsigned int s = 0; s < count; s += nChannels) {
@@ -229,9 +230,9 @@ bool Convert(const std::string& InputFilename, const std::string& OutputFilename
 						}
 
 						OutBufferIndex += nChannels;
-						if (OutBufferIndex == BUFFERSIZE) {
+						if (OutBufferIndex == BufferSize) {
 							OutBufferIndex = 0;
-							pOutFile->write(outbuffer, BUFFERSIZE);
+							pOutFile->write(outbuffer, BufferSize);
 						}
 					}
 
@@ -256,9 +257,9 @@ bool Convert(const std::string& InputFilename, const std::string& OutputFilename
 						}
 
 						OutBufferIndex += nChannels;
-						if (OutBufferIndex == BUFFERSIZE) {
+						if (OutBufferIndex == BufferSize) {
 							OutBufferIndex = 0;
-							pOutFile->write(outbuffer, BUFFERSIZE);
+							pOutFile->write(outbuffer, BufferSize);
 						}
 					} // ends loop over ii
 				} // ends loop over s
@@ -288,9 +289,9 @@ bool Convert(const std::string& InputFilename, const std::string& OutputFilename
 							}
 
 							OutBufferIndex += nChannels;
-							if (OutBufferIndex == BUFFERSIZE) {
+							if (OutBufferIndex == BufferSize) {
 								OutBufferIndex = 0;
-								pOutFile->write(outbuffer, BUFFERSIZE);
+								pOutFile->write(outbuffer, BufferSize);
 							}
 						}
 
