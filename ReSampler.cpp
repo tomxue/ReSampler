@@ -65,12 +65,13 @@ int main(int argc, char * argv[])
 	std::cout << "Output file: " << destFilename << std::endl;
 
 	bool bNormalize = true;
-		
-	return (Convert<float>(sourceFilename, destFilename, OutputSampleRate, bNormalize)) ? EXIT_SUCCESS : EXIT_FAILURE;
+	float Limit = 1.0;
+
+	return (Convert<float>(sourceFilename, destFilename, OutputSampleRate, Limit)) ? EXIT_SUCCESS : EXIT_FAILURE;
 }
 
 template<typename FloatType> 
-bool Convert(const std::string& InputFilename, const std::string& OutputFilename, unsigned int OutputSampleRate, bool bNormalize)
+bool Convert(const std::string& InputFilename, const std::string& OutputFilename, unsigned int OutputSampleRate, FloatType Limit)
 {
 	// Open input file:
 	SndfileHandle infile(InputFilename, SFM_READ);
@@ -111,14 +112,11 @@ bool Convert(const std::string& InputFilename, const std::string& OutputFilename
 		bDouble = true;
 		break;
 	}
-	
-	// From the linsndfile documentation:
-	// When converting between integer PCM formats of differing size (e.g. using sf_read_int() to read a 16 bit PCM encoded WAV file) libsndfile obeys one simple rule:
-	// Whenever integer data is moved from one sized container to another sized container, the most significant bit in the source container will become the most significant bit in the destination container.
-	
-	int limit = (1 << 31) - 1; // absolute numerical limit for sample values, normalized to signed 32-bit integer
+
 	size_t BufferSize = (BUFFERSIZE / nChannels) * nChannels; // round down to integer multiple of nChannels (file may have odd number of channels)
-	
+	FloatType inbuffer[BUFFERSIZE];
+	FloatType outbuffer[BUFFERSIZE];
+
 	std::cout << "source file channels: " << nChannels << std::endl;
 	std::cout << "input sample rate: " << InputSampleRate << "\noutput sample rate: " << OutputSampleRate << std::endl;
 	std::cout << "input bit depth: " << BitDepth;
@@ -134,24 +132,19 @@ bool Convert(const std::string& InputFilename, const std::string& OutputFilename
 		<< " (" << F.numerator << ":" << F.denominator << ") \n" << std::endl;
 
 	FloatType PeakInputSample = 0;
-	if (bNormalize) {
-		sf_count_t SamplesRead = 0i64;
-		int peak = 0; // integer version
-		std::cout << "Scanning input file for peaks ...";
-		int inbuffer[BUFFERSIZE];
-		sf_count_t count;
-		do {
-			count = infile.read(inbuffer, BufferSize);
-			SamplesRead += count;
-			for (unsigned int s = 0; s < count; ++s) { // read all samples, without caring which channel they belong to
-				peak = max(peak, abs(inbuffer[s]));
-			}
-		} while (count > 0);
-		PeakInputSample = peak;
-		std::cout << "Done\n";
-		std::cout << "Peak input sample: " << PeakInputSample << " (" << 20 * log10(PeakInputSample / limit) << " dBFS)" << std::endl;
-		infile.seek(0i64, SEEK_SET);
-	} // if(bNormalize)
+	sf_count_t SamplesRead = 0i64;
+	std::cout << "Scanning input file for peaks ...";
+	sf_count_t count;
+	do {
+		count = infile.read(inbuffer, BufferSize);
+		SamplesRead += count;
+		for (unsigned int s = 0; s < count; ++s) { // read all samples, without caring which channel they belong to
+			PeakInputSample = max(PeakInputSample, abs(inbuffer[s]));
+		}
+	} while (count > 0);
+	std::cout << "Done\n";
+	std::cout << "Peak input sample: " << std::fixed << PeakInputSample << " (" << 20 * log10(PeakInputSample / Limit) << " dBFS)" << std::endl;
+	infile.seek(0i64, SEEK_SET);
 
 	// Calculate filter parameters:
 	int OverSampFreq = InputSampleRate * F.numerator; // eg 160 * 44100
@@ -179,13 +172,9 @@ bool Convert(const std::string& InputFilename, const std::string& OutputFilename
 		HugeFilters.emplace_back(HugeFilterTaps);
 		MedFilters.emplace_back(MedFilterTaps);
 	}
-
-	int inbuffer[BUFFERSIZE];
-	int outbuffer[BUFFERSIZE];
-	sf_count_t count;
-
+	
 	START_TIMER();
-	FloatType Gain = F.numerator;
+	FloatType Gain = F.numerator * Limit;
 	FloatType ReciprocalGain = 1.0 / Gain;
 	FloatType PeakOutputSample;
 
@@ -225,7 +214,7 @@ bool Convert(const std::string& InputFilename, const std::string& OutputFilename
 					if (DecimationIndex == 0) { // Decimate
 						for (int Channel = 0; Channel < nChannels; Channel++) {
 							FloatType OutputSample = Gain * MedFilters[Channel].get();
-							outbuffer[OutBufferIndex + Channel] = std::round(OutputSample);
+							outbuffer[OutBufferIndex + Channel] = OutputSample;
 							PeakOutputSample = max(abs(PeakOutputSample), abs(OutputSample));
 						}
 
@@ -252,7 +241,7 @@ bool Convert(const std::string& InputFilename, const std::string& OutputFilename
 								MedFilters[Channel].putZero(); // inject a Zero
 
 							FloatType OutputSample = Gain * MedFilters[Channel].get();
-							outbuffer[OutBufferIndex + Channel] = std::round(OutputSample);
+							outbuffer[OutBufferIndex + Channel] = OutputSample;
 							PeakOutputSample = max(PeakOutputSample, abs(OutputSample));
 						}
 
@@ -284,7 +273,7 @@ bool Convert(const std::string& InputFilename, const std::string& OutputFilename
 						if (DecimationIndex == 0) { // decimate
 							for (int Channel = 0; Channel < nChannels; Channel++) {
 								FloatType OutputSample = Gain * HugeFilters[Channel].get();
-								outbuffer[OutBufferIndex + Channel] = std::round(OutputSample);
+								outbuffer[OutBufferIndex + Channel] = OutputSample;
 								PeakOutputSample = max(PeakOutputSample, abs(OutputSample));
 							}
 
@@ -310,18 +299,18 @@ bool Convert(const std::string& InputFilename, const std::string& OutputFilename
 		}
 
 		std::cout << "Done" << std::endl;
-		std::cout << "\nPeak output sample: " << PeakOutputSample << " (" << 20 * log10(PeakOutputSample / limit) << " dBFS)" << std::endl;
+		std::cout << "\nPeak output sample: " << PeakOutputSample << " (" << 20 * log10(PeakOutputSample / Limit) << " dBFS)" << std::endl;
 
 		// Test for clipping:
-		if (PeakOutputSample > limit) {
-			FloatType GainReduction = (limit - 1) / PeakOutputSample;
+		if (PeakOutputSample > Limit) {
+			FloatType GainReduction = Limit / PeakOutputSample;
 			Gain *= GainReduction;
 			std::cout << "\nClipping detected !" << std::endl;
 			std::cout << "Re-doing with " << 20 * log10(GainReduction) << " dB gain adjustment" << std::endl;
 			infile.seek(0i64,SEEK_SET); 
 		}
 		delete pOutFile; // Close output file (doesn't delete the actual file, of course :-) )
-	} while (PeakOutputSample > limit);
+	} while (PeakOutputSample > Limit);
 
 	STOP_TIMER();
 	return true;

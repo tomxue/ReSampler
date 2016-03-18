@@ -24,8 +24,10 @@ Fraction GetSimplifiedFraction(int InputSampleRate, int OutputSampleRate);
 void getCmdlineParam(char ** begin, char ** end, const std::string & OptionName, std::string & Parameter);
 void getCmdlineParam(char ** begin, char ** end, const std::string & OptionName, unsigned int & nParameter);
 bool findCmdlineOption(char ** begin, char ** end, const std::string & option);
+//template<typename FloatType>
+// bool Convert(const std::string & InputFilename, const std::string & OutputFilename, unsigned int OutputSampleRate, bool bNormalize);
 template<typename FloatType>
-bool Convert(const std::string & InputFilename, const std::string & OutputFilename, unsigned int OutputSampleRate, bool bNormalize);
+bool Convert(const std::string & InputFilename, const std::string & OutputFilename, unsigned int OutputSampleRate, FloatType Limit);
 template<typename FloatType> bool makeBigAssLPF(FloatType* filter, int windowLength, FloatType transFreq, FloatType sampFreq);
 
 // Timer macros:
