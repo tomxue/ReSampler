@@ -1,19 +1,19 @@
-#ifndef FIRFILTER_H_
+#ifndef FIRFilter_H_
 #define FIRFFILTER_H_
 
-// #define VECTORIZE_FIR_GET 1 13/03/2016; Still NQR !
+// #define USE_SIMD 1 // 13/03/2016; Still NQR !
 
 template <typename FloatType, unsigned int size>
-class FirFilter {
+class FIRFilter {
 public:
 
-	FloatType* m_pTaps;
-
-	FirFilter(FloatType* taps) :
-		m_CurrentIndex(0) {
-		m_pTaps = taps;
-		for (unsigned int i = 0; i < size; ++i)
+	FIRFilter(FloatType* taps) :
+		m_CurrentIndex(0) 
+	{
+		for (unsigned int i = 0; i < size; ++i) {
+			m_Taps[i] = taps[i];
 			m_Signal[i] = 0.0;
+		}
 	}
 
 	void put(FloatType value) {
@@ -32,69 +32,128 @@ public:
 
 		FloatType output = 0.0;
 
-#ifdef VECTORIZE_FIR_GET
+#ifdef USE_SIMD
 
-
-		int IndexA = (m_CurrentIndex);
-		int IndexB = (m_CurrentIndex - 1);
-		int IndexC = (m_CurrentIndex - 2);
-		int IndexD = (m_CurrentIndex - 3);
-
-
-		FloatType accA(0), accB(0), accC(0), accD(0); // accumlators
-
-		for (int i = 0; i < size >> 2; ++i) {
-
-			// 32766 size-1
-			// 32765 size-2													/
-			// 32764 size-3													// 0->size-5, -1->size-6, -2->size-7 -3->size-8 
-			// 32763 size-4													// 4->size-1, 3->size-2, 2->size-3, 1->Size-4 
-
-			IndexA = ((IndexA - 4) <= 0) ? size - 5 + IndexA : IndexA - 4;
-			IndexB = ((IndexB - 4) <= 0) ? size - 5 + IndexB : IndexB - 4;
-			IndexC = ((IndexC - 4) <= 0) ? size - 5 + IndexC : IndexC - 4;
-			IndexD = ((IndexD - 4) <= 0) ? size - 5 + IndexD : IndexD - 4;
-
-			accA += m_Signal[IndexA] * m_pTaps[i << 2 /* i*4 */];
-			accB += m_Signal[IndexB] * m_pTaps[1 + (i << 2) /* 1+i*4 */];
-			accC += m_Signal[IndexC] * m_pTaps[2 + (i << 2) /* 2+i*4 */];
-			accD += m_Signal[IndexD] * m_pTaps[3 + (i << 2) /* 3+i*4 */];
-
-		}
-		// finish tail
-		for (int j = (size >> 2) << 2; j < size; j++)
-		{
-			IndexD = (IndexD == 0) ? size - 1 : IndexD - 1;
-			accD += m_Signal[IndexD] * m_pTaps[j];
+		// Reverse and align signal:
+		int index = m_CurrentIndex;
+		for (int i = 0; i < size; ++i) {
+			m_ReversedSignal[i] = m_Signal[index];
+			index = (index == 0) ? size - 1 : index - 1;
 		}
 
-		output = accA + accB + accC + accD;
+		int MultOf4Size = (size >> 2) << 2; // nearest multiple-of-4 below size
+
+		alignas(16) __m128 signal;
+		alignas(16) __m128 kernel;
+		alignas(16) __m128 product;
+		alignas(16) __m128 accumulator = _mm_setzero_ps();
+
+		for (int i = 0; i < MultOf4Size; i += 4) {
+			signal = _mm_load_ps(&m_ReversedSignal[i]);
+			kernel = _mm_load_ps(&m_Taps[i]);
+			product = _mm_mul_ps(signal, kernel);
+			accumulator = _mm_add_ps(product, accumulator);
+		}
+
+		output = accumulator.m128_f32[0] +
+			accumulator.m128_f32[1] +
+			accumulator.m128_f32[2] +
+			accumulator.m128_f32[3];
+
+		// finish the tail:
+		for (int j = MultOf4Size; j < size; j++) {
+			output += m_ReversedSignal[j] * m_Taps[j];
+		}
 
 #else
+
+		// unroll 2 (fastest):	
+
 		int index = m_CurrentIndex;
 		int i;
-		// unroll 2:
+
 		for (i = 0; i < (size >> 1) << 1; i += 2) {
 
 			index = (index == 0) ? size - 1 : index - 1;
-			output += m_Signal[index] * m_pTaps[i];
+			output += m_Signal[index] * m_Taps[i];
 
 			index = (index == 0) ? size - 1 : index - 1;
-			output += m_Signal[index] * m_pTaps[i + 1];
+			output += m_Signal[index] * m_Taps[i + 1];
 		}
 
 		// Tail:
 		if (size & 1) { // Do one more if odd number:
 			index = (index == 0) ? size - 1 : index - 1;
-			output += m_Signal[index] * m_pTaps[i];
+			output += m_Signal[index] * m_Taps[i];
 		}
+
+		// unroll 4:
+
+		//int index = m_CurrentIndex;
+		//int i;
+		//
+		//int MultOf4Size = (size >> 2) << 2;
+		//for (i = 0; i < MultOf4Size; i += 4) {
+
+		//	index = (index == 0) ? size - 1 : index - 1;
+		//	output += m_Signal[index] * m_Taps[i];
+
+		//	index = (index == 0) ? size - 1 : index - 1;
+		//	output += m_Signal[index] * m_Taps[i + 1];
+
+		//	index = (index == 0) ? size - 1 : index - 1;
+		//	output += m_Signal[index] * m_Taps[i + 2];
+
+		//	index = (index == 0) ? size - 1 : index - 1;
+		//	output += m_Signal[index] * m_Taps[i + 3];
+
+		//}
+
+		//// Tail:
+		//for (int j = MultOf4Size; j < size; j++) {
+		//	index = (index == 0) ? size - 1 : index - 1;
+		//	output += m_Signal[index] * m_Taps[i];
+		//}
+
 #endif
 		return output;
 	}
 
+	FloatType getPartial(int startpos, int length) {
+		FloatType output = 0.0;
+		int index = m_CurrentIndex;
+		int i;
+
+		for (i = startpos; i < (startpos + length) << 1; i += 2) {
+
+			index = (index == 0) ? size - 1 : index - 1;
+			output += m_Signal[index] * m_Taps[i];
+
+			index = (index == 0) ? size - 1 : index - 1;
+			output += m_Signal[index] * m_Taps[i + 1];
+		}
+
+		// Tail:
+		if ((startpos + length) & 1) { // Do one more if odd number:
+			index = (index == 0) ? size - 1 : index - 1;
+			output += m_Signal[index] * m_Taps[i];
+		}
+
+		return output;
+	}
+
 private:
-	FloatType m_Signal[size];
+	alignas(16) FloatType m_Taps[size];
+	alignas(16) FloatType m_Signal[size];
+	int JobLength;
+	int JobTailLength;
 	int m_CurrentIndex;
+
+#ifdef USE_SIMD
+	alignas(16) FloatType m_ReversedSignal[size];
+#endif
+	
 };
+
 
 #endif

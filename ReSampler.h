@@ -9,26 +9,20 @@ const std::string strUsage("usage: resampler.exe -i <inputfile> [-o <outputfile>
 #define FILTERSIZE_HUGE 32767
 #define FILTERSIZE_MEDIUM 511
 
-#define MAX_8BIT 127
-#define MAX_16BIT 32767
-#define MAX_16BIT_MINUS_10TH_OF_DB 32392
-#define MAX_24BIT 8388607
-
 typedef struct fraction {
 	int numerator;
 	int denominator;
 } Fraction;
 
 int gcd(int a, int b);
+void getPrimeFactors(std::vector<long>& factors, long n);
 Fraction GetSimplifiedFraction(int InputSampleRate, int OutputSampleRate);
 void getCmdlineParam(char ** begin, char ** end, const std::string & OptionName, std::string & Parameter);
 void getCmdlineParam(char ** begin, char ** end, const std::string & OptionName, unsigned int & nParameter);
 bool findCmdlineOption(char ** begin, char ** end, const std::string & option);
-//template<typename FloatType>
-// bool Convert(const std::string & InputFilename, const std::string & OutputFilename, unsigned int OutputSampleRate, bool bNormalize);
 template<typename FloatType>
 bool Convert(const std::string & InputFilename, const std::string & OutputFilename, unsigned int OutputSampleRate, FloatType Limit);
-template<typename FloatType> bool makeBigAssLPF(FloatType* filter, int windowLength, FloatType transFreq, FloatType sampFreq);
+template<typename FloatType> bool makeLPF(FloatType* filter, int windowLength, FloatType transFreq, FloatType sampFreq);
 
 // Timer macros:
 #define START_TIMER() LARGE_INTEGER starttime,finishtime,elapsed,frequency,timetaken; \

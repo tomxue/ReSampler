@@ -26,7 +26,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
  
 int main(int argc, char * argv[])
-{
+{	
 	std::string sourceFilename("");
 	std::string destFilename("");
 	unsigned int OutputSampleRate = 48000;
@@ -156,27 +156,27 @@ bool Convert(const std::string& InputFilename, const std::string& OutputFilename
 
 	FloatType HugeFilterTaps[FILTERSIZE_HUGE];
 	int HugeFilterSize = FILTERSIZE_HUGE;
-	makeBigAssLPF<FloatType>(HugeFilterTaps, HugeFilterSize, ft, OverSampFreq);
+	makeLPF<FloatType>(HugeFilterTaps, HugeFilterSize, ft, OverSampFreq);
 
 	FloatType MedFilterTaps[FILTERSIZE_MEDIUM];
 	int MedFilterSize = FILTERSIZE_MEDIUM;
-	makeBigAssLPF<FloatType>(MedFilterTaps, MedFilterSize, ft, OverSampFreq);
-
+	makeLPF<FloatType>(MedFilterTaps, MedFilterSize, ft, OverSampFreq);
+	
 	// make a vector of huge filters (one filter for each channel):
-	std::vector<FirFilter<FloatType, FILTERSIZE_HUGE>> HugeFilters;
+	std::vector<FIRFilter<FloatType, FILTERSIZE_HUGE>> HugeFilters;
 
 	// make a vector of medium filters (one filter for each channel):
-	std::vector<FirFilter<FloatType, FILTERSIZE_MEDIUM >> MedFilters;
+	std::vector<FIRFilter<FloatType, FILTERSIZE_MEDIUM >> MedFilters;
 
 	for (unsigned int n = 0; n < nChannels; n++) {
 		HugeFilters.emplace_back(HugeFilterTaps);
 		MedFilters.emplace_back(MedFilterTaps);
 	}
-	
-	START_TIMER();
+
 	FloatType Gain = F.numerator * Limit;
 	FloatType ReciprocalGain = 1.0 / Gain;
 	FloatType PeakOutputSample;
+	START_TIMER();
 
 	do { // clipping detection loop (repeat if clipping detected) 
 		SndfileHandle* pOutFile;
@@ -273,6 +273,7 @@ bool Convert(const std::string& InputFilename, const std::string& OutputFilename
 						if (DecimationIndex == 0) { // decimate
 							for (int Channel = 0; Channel < nChannels; Channel++) {
 								FloatType OutputSample = Gain * HugeFilters[Channel].get();
+
 								outbuffer[OutBufferIndex + Channel] = OutputSample;
 								PeakOutputSample = max(PeakOutputSample, abs(OutputSample));
 							}
@@ -300,6 +301,12 @@ bool Convert(const std::string& InputFilename, const std::string& OutputFilename
 
 		std::cout << "Done" << std::endl;
 		std::cout << "\nPeak output sample: " << PeakOutputSample << " (" << 20 * log10(PeakOutputSample / Limit) << " dBFS)" << std::endl;
+		
+		delete pOutFile; // Close output file
+
+		// To-do: Confirm assumption upon which the following statement is built:
+		if (bDouble || bFloat)
+			break; // Clipping is not a concern with Floating-Point formats. 
 
 		// Test for clipping:
 		if (PeakOutputSample > Limit) {
@@ -309,14 +316,14 @@ bool Convert(const std::string& InputFilename, const std::string& OutputFilename
 			std::cout << "Re-doing with " << 20 * log10(GainReduction) << " dB gain adjustment" << std::endl;
 			infile.seek(0i64,SEEK_SET); 
 		}
-		delete pOutFile; // Close output file (doesn't delete the actual file, of course :-) )
+		
 	} while (PeakOutputSample > Limit);
 
 	STOP_TIMER();
 	return true;
 }
 
-template<typename FloatType> bool makeBigAssLPF(FloatType* filter, int windowLength, FloatType transFreq, FloatType sampFreq)
+template<typename FloatType> bool makeLPF(FloatType* filter, int windowLength, FloatType transFreq, FloatType sampFreq)
 {
 	FloatType ft = transFreq / sampFreq; // Calculate the normalised transition frequency
 	assert(ft < 0.5);
@@ -349,6 +356,22 @@ int gcd(int a, int b) {
 	}
 	return a;
 }
+
+void getPrimeFactors(std::vector<long>& factors, long n) {
+	long f = 2;
+	while (f * f <= n) {
+		if (n % f == 0) {
+			factors.push_back(f);
+			n /= f;
+		}
+		else
+			f++;
+	}
+	if (n > 1) {
+		factors.push_back(f);
+	}
+}
+
 
 Fraction GetSimplifiedFraction(int InputSampleRate, int OutputSampleRate)			// eg 44100, 48000
 {
