@@ -88,27 +88,20 @@ public:
 		}
 
 		// unroll 4:
-
 		//int index = m_CurrentIndex;
 		//int i;
 		//
 		//int MultOf4Size = (size >> 2) << 2;
 		//for (i = 0; i < MultOf4Size; i += 4) {
-
 		//	index = (index == 0) ? size - 1 : index - 1;
 		//	output += m_Signal[index] * m_Taps[i];
-
 		//	index = (index == 0) ? size - 1 : index - 1;
 		//	output += m_Signal[index] * m_Taps[i + 1];
-
 		//	index = (index == 0) ? size - 1 : index - 1;
 		//	output += m_Signal[index] * m_Taps[i + 2];
-
 		//	index = (index == 0) ? size - 1 : index - 1;
 		//	output += m_Signal[index] * m_Taps[i + 3];
-
 		//}
-
 		//// Tail:
 		//for (int j = MultOf4Size; j < size; j++) {
 		//	index = (index == 0) ? size - 1 : index - 1;
@@ -116,29 +109,6 @@ public:
 		//}
 
 #endif
-		return output;
-	}
-
-	FloatType getPartial(int startpos, int length) {
-		FloatType output = 0.0;
-		int index = m_CurrentIndex;
-		int i;
-
-		for (i = startpos; i < (startpos + length) << 1; i += 2) {
-
-			index = (index == 0) ? size - 1 : index - 1;
-			output += m_Signal[index] * m_Taps[i];
-
-			index = (index == 0) ? size - 1 : index - 1;
-			output += m_Signal[index] * m_Taps[i + 1];
-		}
-
-		// Tail:
-		if ((startpos + length) & 1) { // Do one more if odd number:
-			index = (index == 0) ? size - 1 : index - 1;
-			output += m_Signal[index] * m_Taps[i];
-		}
-
 		return output;
 	}
 

@@ -202,12 +202,12 @@ bool Convert(const std::string& InputFilename, const std::string& OutputFilename
 		unsigned int OutBufferIndex = 0;
 		PeakOutputSample = 0;
 
-		do { // buffer-filling loop : Read and process blocks of samples until the end of file is reached
-			count = infile.read(inbuffer, BufferSize);
-			
-			if (F.numerator == 1) { // Decimate Only
+		if (F.numerator == 1) { // Decimate Only
+			do { // Read and process blocks of samples until the end of file is reached
+				count = infile.read(inbuffer, BufferSize);
+
 				for (unsigned int s = 0; s < count; s += nChannels) {
-					
+
 					for (int Channel = 0; Channel < nChannels; Channel++)
 						MedFilters[Channel].put(inbuffer[s + Channel]); // inject a source sample
 
@@ -229,9 +229,13 @@ bool Convert(const std::string& InputFilename, const std::string& OutputFilename
 					if (DecimationIndex == F.denominator)
 						DecimationIndex = 0;
 				} // ends loop over s
-			}
 
-			else if (F.denominator == 1) { // Interpolate only
+			} while (count > 0);
+		} // ends Decimate Only
+
+		else if (F.denominator == 1) { // Interpolate only
+			do { // Read and process blocks of samples until the end of file is reached
+				count = infile.read(inbuffer, BufferSize);
 				for (unsigned int s = 0; s < count; s += nChannels) {
 					for (int ii = 0; ii < F.numerator; ++ii) {
 						for (int Channel = 0; Channel < nChannels; Channel++) {
@@ -252,10 +256,12 @@ bool Convert(const std::string& InputFilename, const std::string& OutputFilename
 						}
 					} // ends loop over ii
 				} // ends loop over s
-			}
+			} while (count > 0);
+		} // ends Interpolate Only
 
-			else { // Interpolate and Decimate
-
+		else { // Interpolate and Decimate
+			do { // Read and process blocks of samples until the end of file is reached
+				count = infile.read(inbuffer, BufferSize);
 				for (unsigned int s = 0; s < count; s += nChannels) {
 					for (int ii = 0; ii < F.numerator; ++ii) { // (ii stands for "interpolation index")
 						// Interpolate:
@@ -292,8 +298,8 @@ bool Convert(const std::string& InputFilename, const std::string& OutputFilename
 						// To-do: showProgress();
 					} // ends loop over ii
 				} // ends loop over s
-			} // ends else
-		} while (count > 0);
+			} while (count > 0);
+		} // ends Interpolate and Decimate
 
 		if (OutBufferIndex != 0) {
 			pOutFile->write(outbuffer, OutBufferIndex); // finish writing whatever remains in the buffer 
