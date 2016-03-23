@@ -1,7 +1,7 @@
 #ifndef FIRFilter_H_
 #define FIRFFILTER_H_
 
-// #define USE_SIMD 1 // 13/03/2016; Still NQR !
+//#define USE_SIMD 1 // 13/03/2016; Still NQR !
 
 template <typename FloatType, unsigned int size>
 class FIRFilter {
@@ -31,6 +31,8 @@ public:
 	FloatType get() {
 
 		FloatType output = 0.0;
+		FloatType outputA = 0.0;
+		FloatType outputB = 0.0;
 
 #ifdef USE_SIMD
 
@@ -66,7 +68,7 @@ public:
 		}
 
 #else
-
+		
 		// unroll 2 (fastest):	
 
 		int index = m_CurrentIndex;
@@ -75,11 +77,13 @@ public:
 		for (i = 0; i < (size >> 1) << 1; i += 2) {
 
 			index = (index == 0) ? size - 1 : index - 1;
-			output += m_Signal[index] * m_Taps[i];
+			outputA += m_Signal[index] * m_Taps[i];
 
 			index = (index == 0) ? size - 1 : index - 1;
-			output += m_Signal[index] * m_Taps[i + 1];
+			outputB += m_Signal[index] * m_Taps[i + 1];
 		}
+
+		output = outputA+outputB;
 
 		// Tail:
 		if (size & 1) { // Do one more if odd number:
