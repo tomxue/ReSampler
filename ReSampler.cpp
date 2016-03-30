@@ -38,7 +38,6 @@ int main(int argc, char * argv[])
 	bool bUseDoublePrecision = findCmdlineOption(argv, argv + argc, "--doubleprecision");
 
 	bool bBadParams = false;
-
 	if (destFilename.empty()) {
 		if (sourceFilename.empty()) {
 			std::cout << "Error: Input filename not specified" << std::endl;
