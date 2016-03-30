@@ -278,8 +278,8 @@ bool Convert(const std::string& InputFilename, const std::string& OutputFilename
 
 						if (DecimationIndex == 0) { // decimate
 							for (int Channel = 0; Channel < nChannels; Channel++) {
-								FloatType OutputSample = Gain * HugeFilters[Channel].get();
-
+								//FloatType OutputSample = Gain * HugeFilters[Channel].get();
+								FloatType OutputSample = Gain * HugeFilters[Channel].LazyGet(F.numerator);
 								outbuffer[OutBufferIndex + Channel] = OutputSample;
 								PeakOutputSample = max(PeakOutputSample, abs(OutputSample));
 							}

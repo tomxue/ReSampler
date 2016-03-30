@@ -5,8 +5,8 @@
 
 const std::string strUsage("usage: resampler.exe -i <inputfile> [-o <outputfile>] -r <samplerate>\n");
 
-#define BUFFERSIZE 4096
-#define FILTERSIZE_HUGE 16383
+#define BUFFERSIZE 8192
+#define FILTERSIZE_HUGE 32767
 #define FILTERSIZE_MEDIUM 511
 
 typedef struct fraction {
