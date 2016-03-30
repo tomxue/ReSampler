@@ -30,10 +30,12 @@ int main(int argc, char * argv[])
 	std::string sourceFilename("");
 	std::string destFilename("");
 	unsigned int OutputSampleRate = 48000;
+	
 
 	getCmdlineParam(argv, argv + argc, "-i", sourceFilename);
 	getCmdlineParam(argv, argv + argc, "-o", destFilename);
 	getCmdlineParam(argv, argv + argc, "-r", OutputSampleRate);
+	bool bUseDoublePrecision = findCmdlineOption(argv, argv + argc, "--doubleprecision");
 
 	bool bBadParams = false;
 
@@ -67,7 +69,12 @@ int main(int argc, char * argv[])
 	bool bNormalize = true;
 	float Limit = 1.0;
 
-	return (Convert<float>(sourceFilename, destFilename, OutputSampleRate, Limit)) ? EXIT_SUCCESS : EXIT_FAILURE;
+	if (bUseDoublePrecision) {
+		std::cout << "\nUsing double precision for calculations.\n" << std::endl;
+		return (Convert<double>(sourceFilename, destFilename, OutputSampleRate, Limit)) ? EXIT_SUCCESS : EXIT_FAILURE;
+	}
+	else
+		return (Convert<float>(sourceFilename, destFilename, OutputSampleRate, Limit)) ? EXIT_SUCCESS : EXIT_FAILURE;
 }
 
 template<typename FloatType> 
@@ -130,7 +137,7 @@ bool Convert(const std::string& InputFilename, const std::string& OutputFilename
 	FloatType ResamplingFactor = static_cast<FloatType>(OutputSampleRate) / InputSampleRate;
 	std::cout << "\nConversion ratio: " << ResamplingFactor
 		<< " (" << F.numerator << ":" << F.denominator << ") \n" << std::endl;
-
+	
 	FloatType PeakInputSample = 0;
 	sf_count_t SamplesRead = 0i64;
 	std::cout << "Scanning input file for peaks ...";
