@@ -22,6 +22,9 @@ build/
 bld/
 # [Bb]in/
 [Oo]bj/
+Release/*
+!Release/*.exe
+!release/*.dll
 x64/release/*
 !x64/release/*.exe
 !x64/release/*.dll
