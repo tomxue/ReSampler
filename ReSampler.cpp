@@ -250,8 +250,8 @@ bool Convert(const std::string& InputFilename, const std::string& OutputFilename
 								MedFilters[Channel].put(inbuffer[s + Channel]); // inject a source sample
 							else
 								MedFilters[Channel].putZero(); // inject a Zero
-
-							FloatType OutputSample = Gain * MedFilters[Channel].get();
+							//FloatType OutputSample = Gain * MedFilters[Channel].get();
+							FloatType OutputSample = Gain * MedFilters[Channel].LazyGet(F.numerator);
 							outbuffer[OutBufferIndex + Channel] = OutputSample;
 							PeakOutputSample = max(PeakOutputSample, abs(OutputSample));
 						}
