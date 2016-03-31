@@ -30,7 +30,6 @@ int main(int argc, char * argv[])
 	std::string sourceFilename("");
 	std::string destFilename("");
 	unsigned int OutputSampleRate = 48000;
-	
 
 	getCmdlineParam(argv, argv + argc, "-i", sourceFilename);
 	getCmdlineParam(argv, argv + argc, "-o", destFilename);
@@ -163,10 +162,14 @@ bool Convert(const std::string& InputFilename, const std::string& OutputFilename
 	FloatType HugeFilterTaps[FILTERSIZE_HUGE];
 	int HugeFilterSize = FILTERSIZE_HUGE;
 	makeLPF<FloatType>(HugeFilterTaps, HugeFilterSize, ft, OverSampFreq);
+	//applyBlackmanWindow<FloatType>(HugeFilterTaps, HugeFilterSize);
+	applyKaiserWindow<FloatType>(HugeFilterTaps, HugeFilterSize, 14.0);
 
 	FloatType MedFilterTaps[FILTERSIZE_MEDIUM];
 	int MedFilterSize = FILTERSIZE_MEDIUM;
 	makeLPF<FloatType>(MedFilterTaps, MedFilterSize, ft, OverSampFreq);
+	//applyBlackmanWindow<FloatType>(MedFilterTaps, MedFilterSize);
+	applyKaiserWindow<FloatType>(MedFilterTaps, MedFilterSize, 20.0);
 	
 	// make a vector of huge filters (one filter for each channel):
 	std::vector<FIRFilter<FloatType, FILTERSIZE_HUGE>> HugeFilters;
@@ -335,13 +338,13 @@ bool Convert(const std::string& InputFilename, const std::string& OutputFilename
 	return true;
 }
 
-template<typename FloatType> bool makeLPF(FloatType* filter, int windowLength, FloatType transFreq, FloatType sampFreq)
+template<typename FloatType> bool makeLPF(FloatType* filter, int Length, FloatType transFreq, FloatType sampFreq)
 {
-	FloatType ft = transFreq / sampFreq; // Calculate the normalised transition frequency
+	FloatType ft = transFreq / sampFreq; // normalised transition frequency
 	assert(ft < 0.5);
-	FloatType m_2 = 0.5 * (windowLength - 1);
-	int halfLength = windowLength / 2;
-	int m = windowLength - 1;
+	FloatType m_2 = 0.5 * (Length - 1);
+	int halfLength = Length / 2;
+	int m = Length - 1;
 
 	// To avoid divide-by-zero, Set centre tap if odd-length:
 	if (halfLength & 1)
@@ -350,12 +353,41 @@ template<typename FloatType> bool makeLPF(FloatType* filter, int windowLength, F
 	// Calculate taps:
 	for (int n = 0; n<halfLength; n++) {
 		FloatType sinc = sin(2.0 * M_PI * ft * (n - m_2)) / (M_PI * (n - m_2));					// sinc filter
-		FloatType window = 0.42 - 0.5 * cos(2.0 * M_PI * n / m) + 0.08 * cos(4.0 * M_PI * n / m);	// Blackman window
-		filter[n] = sinc*window;
-		filter[windowLength - n - 1] = sinc*window;	// exploit symmetry
+		filter[n] = sinc;
+		filter[Length - n - 1] = sinc;	// exploit symmetry
 	}
 
 	return true;
+}
+
+template<typename FloatType> bool applyBlackmanWindow(FloatType* filter, int Length)
+{
+	int M = (Length & 1) ? (Length + 1) / 2 : Length / 2; // (32767 + 1) /2 = 16384
+	for (int n = 0; n < M; ++n) {
+		FloatType Blackman = 0.42 - 0.5 * cos(2.0 * M_PI * n / (Length - 1)) + 0.08 * cos(4.0 * M_PI * n / (Length - 1));	// Blackman window
+		filter[n] *= Blackman;				// First half
+		filter[Length - n - 1] *= Blackman;	// second half
+	}
+	return true;
+}
+
+template<typename FloatType> bool applyKaiserWindow(FloatType* filter, int Length, FloatType Beta)
+{
+	for (int n = 0; n < Length; ++n) {
+		filter[n] *= I0((2.0 * Beta / Length) * sqrt(n*(Length - n))) / I0(Beta); // simplified Kaiser Window Equation
+	}
+	return true;
+}
+
+template<typename FloatType> FloatType I0(FloatType z)
+{
+	FloatType result = 0.0;
+	FloatType kfact = 1.0;
+	for (int k = 0; k < 16; ++k) {
+		if (k) kfact *= k;
+		result += pow((pow(z, 2.0) / 4.0), k) / pow(kfact, 2.0);
+	}
+	return result;
 }
 
 int gcd(int a, int b) {
@@ -368,22 +400,6 @@ int gcd(int a, int b) {
 	}
 	return a;
 }
-
-void getPrimeFactors(std::vector<long>& factors, long n) {
-	long f = 2;
-	while (f * f <= n) {
-		if (n % f == 0) {
-			factors.push_back(f);
-			n /= f;
-		}
-		else
-			f++;
-	}
-	if (n > 1) {
-		factors.push_back(f);
-	}
-}
-
 
 Fraction GetSimplifiedFraction(int InputSampleRate, int OutputSampleRate)			// eg 44100, 48000
 {

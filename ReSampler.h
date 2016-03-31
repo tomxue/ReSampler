@@ -15,14 +15,22 @@ typedef struct fraction {
 } Fraction;
 
 int gcd(int a, int b);
-void getPrimeFactors(std::vector<long>& factors, long n);
 Fraction GetSimplifiedFraction(int InputSampleRate, int OutputSampleRate);
 void getCmdlineParam(char ** begin, char ** end, const std::string & OptionName, std::string & Parameter);
 void getCmdlineParam(char ** begin, char ** end, const std::string & OptionName, unsigned int & nParameter);
 bool findCmdlineOption(char ** begin, char ** end, const std::string & option);
 template<typename FloatType>
 bool Convert(const std::string & InputFilename, const std::string & OutputFilename, unsigned int OutputSampleRate, FloatType Limit);
-template<typename FloatType> bool makeLPF(FloatType* filter, int windowLength, FloatType transFreq, FloatType sampFreq);
+template<typename FloatType> bool makeLPF(FloatType* filter, int Length, FloatType transFreq, FloatType sampFreq);
+
+template<typename FloatType>
+bool applyBlackmanWindow(FloatType * filter, int Length);
+
+template<typename FloatType>
+bool applyKaiserWindow(FloatType * filter, int Length, FloatType Beta);
+
+template<typename FloatType>
+FloatType I0(FloatType z); // 0th-order Modified Bessel function of the first kind
 
 // Timer macros:
 #define START_TIMER() LARGE_INTEGER starttime,finishtime,elapsed,frequency,timetaken; \
