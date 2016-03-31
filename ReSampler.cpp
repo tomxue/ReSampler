@@ -162,13 +162,11 @@ bool Convert(const std::string& InputFilename, const std::string& OutputFilename
 	FloatType HugeFilterTaps[FILTERSIZE_HUGE];
 	int HugeFilterSize = FILTERSIZE_HUGE;
 	makeLPF<FloatType>(HugeFilterTaps, HugeFilterSize, ft, OverSampFreq);
-	//applyBlackmanWindow<FloatType>(HugeFilterTaps, HugeFilterSize);
 	applyKaiserWindow<FloatType>(HugeFilterTaps, HugeFilterSize, 14.0);
 
 	FloatType MedFilterTaps[FILTERSIZE_MEDIUM];
 	int MedFilterSize = FILTERSIZE_MEDIUM;
 	makeLPF<FloatType>(MedFilterTaps, MedFilterSize, ft, OverSampFreq);
-	//applyBlackmanWindow<FloatType>(MedFilterTaps, MedFilterSize);
 	applyKaiserWindow<FloatType>(MedFilterTaps, MedFilterSize, 20.0);
 	
 	// make a vector of huge filters (one filter for each channel):
@@ -341,20 +339,18 @@ bool Convert(const std::string& InputFilename, const std::string& OutputFilename
 template<typename FloatType> bool makeLPF(FloatType* filter, int Length, FloatType transFreq, FloatType sampFreq)
 {
 	FloatType ft = transFreq / sampFreq; // normalised transition frequency
-	assert(ft < 0.5);
-	FloatType m_2 = 0.5 * (Length - 1);
+	assert(ft < 0.5);	
 	int halfLength = Length / 2;
-	int m = Length - 1;
-
+	FloatType halfM = 0.5 * (Length - 1);
+	
 	// To avoid divide-by-zero, Set centre tap if odd-length:
 	if (halfLength & 1)
 		filter[halfLength] = 2.0 * ft;
 
 	// Calculate taps:
-	for (int n = 0; n<halfLength; n++) {
-		FloatType sinc = sin(2.0 * M_PI * ft * (n - m_2)) / (M_PI * (n - m_2));					// sinc filter
-		filter[n] = sinc;
-		filter[Length - n - 1] = sinc;	// exploit symmetry
+	for (int n = 0; n<halfLength; ++n) {
+		FloatType sinc = sin(2.0 * M_PI * ft * (n - halfM)) / (M_PI * (n - halfM));	// sinc filter
+		filter[Length - n - 1] = filter[n] = sinc;	// exploit symmetry
 	}
 
 	return true;
@@ -364,7 +360,7 @@ template<typename FloatType> bool applyBlackmanWindow(FloatType* filter, int Len
 {
 	int M = (Length & 1) ? (Length + 1) / 2 : Length / 2; // (32767 + 1) /2 = 16384
 	for (int n = 0; n < M; ++n) {
-		FloatType Blackman = 0.42 - 0.5 * cos(2.0 * M_PI * n / (Length - 1)) + 0.08 * cos(4.0 * M_PI * n / (Length - 1));	// Blackman window
+		FloatType Blackman = 0.42 - 0.5 * cos(2.0 * M_PI * n / (Length - 1)) + 0.08 * cos(4.0 * M_PI * n / (Length - 1)); // Blackman window
 		filter[n] *= Blackman;				// First half
 		filter[Length - n - 1] *= Blackman;	// second half
 	}
@@ -379,8 +375,8 @@ template<typename FloatType> bool applyKaiserWindow(FloatType* filter, int Lengt
 	return true;
 }
 
-template<typename FloatType> FloatType I0(FloatType z)
-{
+template<typename FloatType> FloatType I0(FloatType z) 
+{	// 0th-order Modified Bessel function of the first kind
 	FloatType result = 0.0;
 	FloatType kfact = 1.0;
 	for (int k = 0; k < 16; ++k) {
