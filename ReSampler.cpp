@@ -30,11 +30,20 @@ int main(int argc, char * argv[])
 	std::string sourceFilename("");
 	std::string destFilename("");
 	unsigned int OutputSampleRate = 48000;
+	double NormalizeAmount = 1.0;
 
 	getCmdlineParam(argv, argv + argc, "-i", sourceFilename);
 	getCmdlineParam(argv, argv + argc, "-o", destFilename);
 	getCmdlineParam(argv, argv + argc, "-r", OutputSampleRate);
+	getCmdlineParam(argv, argv + argc, "-n", NormalizeAmount);
+
 	bool bUseDoublePrecision = findCmdlineOption(argv, argv + argc, "--doubleprecision");
+	bool bNormalize = findCmdlineOption(argv, argv + argc, "-n");
+	
+	if (NormalizeAmount <= 0.0)
+		NormalizeAmount = 1.0;
+	if (abs(NormalizeAmount) > 1.0)
+		std::cout << "\nWarning: Normalization factor greater than 1.0 - THIS WILL CAUSE CLIPPING !!\n" << std::endl;
 
 	bool bBadParams = false;
 	if (destFilename.empty()) {
@@ -92,21 +101,22 @@ int main(int argc, char * argv[])
 
 	std::cout << "Input file: " << sourceFilename << std::endl;
 	std::cout << "Output file: " << destFilename << std::endl;
-
-	bool bNormalize = true;
-	float Limit = 1.0;
+	
+	double Limit = bNormalize ? NormalizeAmount : 1.0;
 
 	if (bUseDoublePrecision) {
 		std::cout << "\nUsing double precision for calculations.\n" << std::endl;
-		return (Convert<double>(sourceFilename, destFilename, OutputSampleRate, Limit)) ? EXIT_SUCCESS : EXIT_FAILURE;
+		return (Convert<double>(sourceFilename, destFilename, OutputSampleRate, Limit, bNormalize)) ? EXIT_SUCCESS : EXIT_FAILURE;
 	}
 	else
-		return (Convert<float>(sourceFilename, destFilename, OutputSampleRate, Limit)) ? EXIT_SUCCESS : EXIT_FAILURE;
+		return (Convert<float>(sourceFilename, destFilename, OutputSampleRate, Limit, bNormalize)) ? EXIT_SUCCESS : EXIT_FAILURE;
 }
 
 template<typename FloatType> 
-bool Convert(const std::string& InputFilename, const std::string& OutputFilename, unsigned int OutputSampleRate, FloatType Limit)
+bool Convert(const std::string& InputFilename, const std::string& OutputFilename, unsigned int OutputSampleRate, FloatType Limit, bool Normalize)
 {
+	const FloatType OvershootCompensationFactor = 0.992; // Scaling factor to allow for filter overshoot
+
 	// Open input file:
 	SndfileHandle infile(InputFilename, SFM_READ);
 	if (int e=infile.error()) {
@@ -177,7 +187,7 @@ bool Convert(const std::string& InputFilename, const std::string& OutputFilename
 		}
 	} while (count > 0);
 	std::cout << "Done\n";
-	std::cout << "Peak input sample: " << std::fixed << PeakInputSample << " (" << 20 * log10(PeakInputSample / Limit) << " dBFS)" << std::endl;
+	std::cout << "Peak input sample: " << std::fixed << PeakInputSample << " (" << 20 * log10(PeakInputSample) << " dBFS)" << std::endl;
 	infile.seek(0i64, SEEK_SET);
 
 	// Calculate filter parameters:
@@ -209,12 +219,18 @@ bool Convert(const std::string& InputFilename, const std::string& OutputFilename
 		MedFilters.emplace_back(MedFilterTaps);
 	}
 
-	FloatType Gain = F.numerator * Limit;
+	FloatType Gain = F.numerator * (Limit/PeakInputSample);
+
+	// Conditionally guard against potential overshoot:
+	if ((PeakInputSample > OvershootCompensationFactor) && !Normalize)
+		Gain *= OvershootCompensationFactor;
+	
 	FloatType ReciprocalGain = 1.0 / Gain;
 	FloatType PeakOutputSample;
 	START_TIMER();
 
-	do { // clipping detection loop (repeat if clipping detected) 
+	do { // clipping detection loop (repeat if clipping detected)
+
 		SndfileHandle* pOutFile;
 
 		// To-do: set Output format if different bit depth etc
@@ -342,7 +358,7 @@ bool Convert(const std::string& InputFilename, const std::string& OutputFilename
 		}
 
 		std::cout << "Done" << std::endl;
-		std::cout << "\nPeak output sample: " << PeakOutputSample << " (" << 20 * log10(PeakOutputSample / Limit) << " dBFS)" << std::endl;
+		std::cout << "\nPeak output sample: " << PeakOutputSample << " (" << 20 * log10(PeakOutputSample) << " dBFS)" << std::endl;
 		
 		delete pOutFile; // Close output file
 
@@ -352,11 +368,11 @@ bool Convert(const std::string& InputFilename, const std::string& OutputFilename
 
 		// Test for clipping:
 		if (PeakOutputSample > Limit) {
-			FloatType GainReduction = Limit / PeakOutputSample;
-			Gain *= GainReduction;
+			FloatType GainAdjustment = Limit / PeakOutputSample;
+			Gain *= GainAdjustment;
 			std::cout << "\nClipping detected !" << std::endl;
-			std::cout << "Re-doing with " << 20 * log10(GainReduction) << " dB gain adjustment" << std::endl;
-			infile.seek(0i64,SEEK_SET); 
+			std::cout << "Re-doing with " << 20 * log10(GainAdjustment) << " dB gain adjustment" << std::endl;
+			infile.seek(0i64,SEEK_SET);
 		}
 		
 	} while (PeakOutputSample > Limit);
@@ -450,6 +466,15 @@ void getCmdlineParam(char** begin, char** end, const std::string& OptionName, un
 	if (it != end)	// found option
 		if (++it != end) // found parameter after option
 			nParameter = atoi(*it);
+}
+
+void getCmdlineParam(char** begin, char** end, const std::string& OptionName, double& Parameter)
+{
+	Parameter = 0.0;
+	char** it = std::find(begin, end, OptionName);
+	if (it != end)	// found option
+		if (++it != end) // found parameter after option
+			Parameter = atof(*it);
 }
 
 bool findCmdlineOption(char** begin, char** end, const std::string& option) {
