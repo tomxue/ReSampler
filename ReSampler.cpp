@@ -61,6 +61,35 @@ int main(int argc, char * argv[])
 		exit(EXIT_FAILURE);
 	}
 
+#ifdef _M_X64
+	std::cout << "64-bit version\n" << std::endl;
+#else
+	std::cout << "32-bit version";
+#if defined(USE_SSE2)
+	std::cout << ", SSE2 build ... ";
+
+	// Verify processor capabilities:
+
+#if defined (_MSC_VER) || defined (__INTEL_COMPILER)
+	bool bSSE2ok = false;
+	int CPUInfo[4] = { 0,0,0,0 };
+	__cpuid(CPUInfo, 0);
+	if (CPUInfo[0] != 0) {
+		__cpuid(CPUInfo, 1);
+		if (CPUInfo[3] & (1 << 26))
+			bSSE2ok = true;
+	}
+	if (bSSE2ok)
+		std::cout << "CPU supports SSE2 (ok)";
+	else {
+		std::cout << "Your CPU doesn't support SSE2 - please try a non-SSE2 build on this machine" << std::endl;
+		exit(EXIT_FAILURE);
+	}
+#endif // defined (_MSC_VER) || defined (__INTEL_COMPILER)
+#endif // defined(USE_SSE2)
+	std::cout << "\n" << std::endl;
+#endif 
+
 	std::cout << "Input file: " << sourceFilename << std::endl;
 	std::cout << "Output file: " << destFilename << std::endl;
 

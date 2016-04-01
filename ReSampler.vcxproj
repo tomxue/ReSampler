@@ -159,7 +159,7 @@
       <OmitFramePointers>true</OmitFramePointers>
       <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
       <FloatingPointModel>Precise</FloatingPointModel>
-      <AdditionalOptions>/Qvec-report:2 /favor:INTEL64 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/favor:INTEL64 %(AdditionalOptions)</AdditionalOptions>
       <StructMemberAlignment>Default</StructMemberAlignment>
       <CompileAs>CompileAsCpp</CompileAs>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
