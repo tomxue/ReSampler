@@ -71,6 +71,7 @@ public:
 		return output;
 #else
 		// SIMD implementation: This only works with floats !
+		// speed-up is around 3x on my system ...
 
 		FloatType output = 0.0;
 		FloatType* Kernel;
@@ -155,7 +156,6 @@ private:
 	alignas(16) FloatType Kernel2[size];
 	alignas(16) FloatType Kernel3[size];
 #endif
-
 	alignas(16) FloatType Signal[size*2];	// Double-length signal buffer, to facilitate fast emulation of a circular buffer
 	int CurrentIndex;
 	int LastPut;
@@ -163,7 +163,7 @@ private:
 
 #ifdef USE_SIMD
 
-// Specializations for Doubles:
+// super-annoying Specializations for doubles (To-do: work out how to perfectly-forward the non-type template parameter 'size' ? ):
 
 double FIRFilter<double, FILTERSIZE_MEDIUM>::get() {
 	double output = 0.0;
@@ -184,6 +184,111 @@ double FIRFilter<double, FILTERSIZE_HUGE>::get() {
 	}
 	return output;
 }
+
+// actual SIMD implementations for doubles (not worth the effort - no faster than than naive):
+
+//double FIRFilter<double, FILTERSIZE_MEDIUM>::get() {
+//
+//	// SIMD implementation: This only works with doubles !
+//	// Processes two doubles at a time.
+//
+//	double output = 0.0;
+//	double* Kernel;
+//	int Index = (CurrentIndex >> 1) << 1; // make multiple-of-two
+//	int Phase = CurrentIndex & 1;
+//
+//	// Part1 : Head
+//	// select proper Kernel phase and calculate first Block of 2:
+//	switch (Phase) {
+//	case 0:
+//		Kernel = Kernel0;
+//		// signal already aligned and ready to use
+//		output = Kernel[0] * Signal[Index] + Kernel[1] * Signal[Index + 1];
+//		break;
+//	case 1:
+//		Kernel = Kernel1;
+//		// signal starts at +1 : load first value from history (ie upper half of buffer)
+//		output = Kernel[0] * Signal[Index + FILTERSIZE_MEDIUM] + Kernel[1] * Signal[Index + 1];
+//		break;
+//	}
+//	Index += 2;
+//
+//	// Part 2: Body
+//	alignas(16) __m128d signal;	// SIMD Vector Registers for calculation
+//	alignas(16) __m128d kernel;
+//	alignas(16) __m128d product;
+//	alignas(16) __m128d accumulator = _mm_setzero_pd();
+//
+//	for (int i = 2; i < (FILTERSIZE_MEDIUM >> 1) << 1; i += 2) {
+//		signal = _mm_load_pd(Signal + Index);
+//		kernel = _mm_load_pd(Kernel + i);
+//		product = _mm_mul_pd(signal, kernel);
+//		accumulator = _mm_add_pd(product, accumulator);
+//		Index += 2;
+//	}
+//
+//	output += accumulator.m128d_f64[0] + accumulator.m128d_f64[1];
+//
+//	// Part 3: Tail
+//	for (int j = (FILTERSIZE_MEDIUM >> 1) << 1; j < FILTERSIZE_MEDIUM; ++j) {
+//		output += Signal[Index] * Kernel[j];
+//		++Index;
+//	}
+//
+//	return output;
+//}
+//
+//double FIRFilter<double, FILTERSIZE_HUGE>::get() {
+//
+//	// SIMD implementation: This only works with doubles !
+//	// Processes two doubles at a time.
+//
+//	double output = 0.0;
+//	double* Kernel;
+//	int Index = (CurrentIndex >> 1) << 1; // make multiple-of-two
+//	int Phase = CurrentIndex & 1;
+//
+//	// Part1 : Head
+//	// select proper Kernel phase and calculate first Block of 2:
+//	switch (Phase) {
+//	case 0:
+//		Kernel = Kernel0;
+//		// signal already aligned and ready to use
+//		output = Kernel[0] * Signal[Index] + Kernel[1] * Signal[Index + 1];
+//		break;
+//	case 1:
+//		Kernel = Kernel1;
+//		// signal starts at +1 : load first value from history (ie upper half of buffer)
+//		output = Kernel[0] * Signal[Index + FILTERSIZE_HUGE] + Kernel[1] * Signal[Index + 1];
+//		break;
+//	}
+//	Index += 2;
+//
+//	// Part 2: Body
+//	alignas(16) __m128d signal;	// SIMD Vector Registers for calculation
+//	alignas(16) __m128d kernel;
+//	alignas(16) __m128d product;
+//	alignas(16) __m128d accumulator = _mm_setzero_pd();
+//
+//	for (int i = 2; i < (FILTERSIZE_HUGE >> 1) << 1; i += 2) {
+//		signal = _mm_load_pd(Signal + Index);
+//		kernel = _mm_load_pd(Kernel + i);
+//		product = _mm_mul_pd(signal, kernel);
+//		accumulator = _mm_add_pd(product, accumulator);
+//		Index += 2;
+//	}
+//	
+//	output += accumulator.m128d_f64[0] + accumulator.m128d_f64[1];
+//
+//	// Part 3: Tail
+//	for (int j = (FILTERSIZE_HUGE >> 1) << 1; j < FILTERSIZE_HUGE; ++j) {
+//		output += Signal[Index] * Kernel[j];
+//		++Index;
+//	}
+//
+//	return output;
+//}
+
 #endif // USE_SIMD
 
 #endif // FIRFFILTER_H_
