@@ -27,6 +27,7 @@
  
 int main(int argc, char * argv[])
 {	
+
 	std::string sourceFilename("");
 	std::string destFilename("");
 	unsigned int OutputSampleRate = 48000;
@@ -42,7 +43,7 @@ int main(int argc, char * argv[])
 	
 	if (NormalizeAmount <= 0.0)
 		NormalizeAmount = 1.0;
-	if (abs(NormalizeAmount) > 1.0)
+	if (NormalizeAmount > 1.0)
 		std::cout << "\nWarning: Normalization factor greater than 1.0 - THIS WILL CAUSE CLIPPING !!\n" << std::endl;
 
 	bool bBadParams = false;
@@ -219,7 +220,7 @@ bool Convert(const std::string& InputFilename, const std::string& OutputFilename
 		MedFilters.emplace_back(MedFilterTaps);
 	}
 
-	FloatType Gain = F.numerator * (Limit/PeakInputSample);
+	FloatType Gain = Normalize ? F.numerator * (Limit/PeakInputSample) : F.numerator * Limit;
 
 	// Conditionally guard against potential overshoot:
 	if ((PeakInputSample > OvershootCompensationFactor) && !Normalize)

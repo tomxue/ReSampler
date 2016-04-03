@@ -22,8 +22,14 @@ Future versions of this project are anticipated to receive a dramatic speed impr
 
 ## Usage
 
-from the command line,
+from the command line, the main options are as follows:
 
-**resampler.exe -i inputfile [-o outputfile] -r samplerate**
+**resampler.exe -i inputfile [-o outputfile] -r samplerate [-n [normalization factor]]**
+ 
+**samplerate** is the target sample rate in Hz.
 
-where samplerate is the target sample rate in Hz
+**Normalization factor** is **> 0.0** and **<= 1.0**, with 1.0 producing the largest possible output level without clipping. Note: resampler will accept normalization values over 1.0, but this will certainly result in clipping, and is therefore only for experimental and testing purposes. Just using **-n** with no parameter is equivalent to **-n 1.0**
+
+Additional options:
+
+**[--doubleprecision]** will force resampler to use double-precision arithmetic for its *internal calculations* and doesn't have anything to do with the file formats, although if you are working with 64-bit double-precision files, it would make sense to use double precision for calculations used in processing.
