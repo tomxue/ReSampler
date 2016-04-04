@@ -27,24 +27,28 @@
  
 int main(int argc, char * argv[])
 {	
-
 	std::string sourceFilename("");
 	std::string destFilename("");
+	std::string outBitFormat;
+	int outFileFormat = 0;
 	unsigned int OutputSampleRate = 48000;
 	double NormalizeAmount = 1.0;
 
 	getCmdlineParam(argv, argv + argc, "-i", sourceFilename);
 	getCmdlineParam(argv, argv + argc, "-o", destFilename);
 	getCmdlineParam(argv, argv + argc, "-r", OutputSampleRate);
-	getCmdlineParam(argv, argv + argc, "-n", NormalizeAmount);
-
-	bool bUseDoublePrecision = findCmdlineOption(argv, argv + argc, "--doubleprecision");
-	bool bNormalize = findCmdlineOption(argv, argv + argc, "-n");
+	getCmdlineParam(argv, argv + argc, "-b", outBitFormat);
 	
-	if (NormalizeAmount <= 0.0)
-		NormalizeAmount = 1.0;
-	if (NormalizeAmount > 1.0)
-		std::cout << "\nWarning: Normalization factor greater than 1.0 - THIS WILL CAUSE CLIPPING !!\n" << std::endl;
+	bool bUseDoublePrecision = findCmdlineOption(argv, argv + argc, "--doubleprecision");
+	
+	bool bNormalize = findCmdlineOption(argv, argv + argc, "-n");
+	if (bNormalize) {
+		getCmdlineParam(argv, argv + argc, "-n", NormalizeAmount);
+		if (NormalizeAmount <= 0.0)
+			NormalizeAmount = 1.0;
+		if (NormalizeAmount > 1.0)
+			std::cout << "\nWarning: Normalization factor greater than 1.0 - THIS WILL CAUSE CLIPPING !!\n" << std::endl;
+	}
 
 	bool bBadParams = false;
 	if (destFilename.empty()) {
@@ -105,38 +109,144 @@ int main(int argc, char * argv[])
 	
 	double Limit = bNormalize ? NormalizeAmount : 1.0;
 
+	// Isolate the file extensions
+	std::string inFileExt("");
+	std::string outFileExt("");
+	
+	if (sourceFilename.find_last_of(".") != std::string::npos)
+		inFileExt = sourceFilename.substr(sourceFilename.find_last_of(".") + 1);
+	
+	if (destFilename.find_last_of(".") != std::string::npos)
+		outFileExt = destFilename.substr(destFilename.find_last_of(".") + 1);
+	
+	// If file extensions differ, or user specified output bit format, determine new output format: 
+	if ((outFileExt != inFileExt) || !outBitFormat.empty())
+	{
+		if (outBitFormat.empty()) {
+			// to-do: user changed file extension only. Attempt to preserve bit Format:
+			// (without this feature, actual saved file format will not change if the user doesn't specify bit format)
+		}
+		
+		if(outFileFormat = determineOutputFormat(outFileExt, outBitFormat))
+			std::cout << "Changing output file format." << std::endl;
+	}
+	
 	if (bUseDoublePrecision) {
 		std::cout << "\nUsing double precision for calculations.\n" << std::endl;
-		return (Convert<double>(sourceFilename, destFilename, OutputSampleRate, Limit, bNormalize)) ? EXIT_SUCCESS : EXIT_FAILURE;
+		return (Convert<double>(sourceFilename, destFilename, OutputSampleRate, Limit, bNormalize, outFileFormat)) ? EXIT_SUCCESS : EXIT_FAILURE;
 	}
 	else
-		return (Convert<float>(sourceFilename, destFilename, OutputSampleRate, Limit, bNormalize)) ? EXIT_SUCCESS : EXIT_FAILURE;
+		return (Convert<float>(sourceFilename, destFilename, OutputSampleRate, Limit, bNormalize, outFileFormat)) ? EXIT_SUCCESS : EXIT_FAILURE;
 }
 
+int determineOutputFormat(const std::string& outFileExt, const std::string& bitFormat)
+{
+	SF_FORMAT_INFO	info;
+	int format = 0;
+	int major_count;
+	memset(&info, 0, sizeof(info));
+	sf_command(NULL, SFC_GET_FORMAT_MAJOR_COUNT, &major_count, sizeof(int));
+	bool bFileExtFound = false;
+
+	// Loop through all major formats to find match for outFileExt:
+	for (int m = 0; m < major_count; ++m) { 
+		info.format = m;
+		sf_command(NULL, SFC_GET_FORMAT_MAJOR, &info, sizeof(info));
+		if (strcmpi(info.extension, outFileExt.c_str())==0) {	
+			bFileExtFound = true;
+			break;
+		}
+	}
+
+	if (bFileExtFound) {
+		// Check if subformat is recognized:
+		auto sf = subFormats.find(bitFormat);
+		if (sf != subFormats.end())
+			format = info.format | sf->second;
+		else
+			std::cout << "bit format " << bitFormat << " not recognised !" << std::endl;
+	}
+
+	// Special cases:
+	if (bitFormat == "8") {
+		// user specified 8-bit. Determine whether it must be unsigned or signed, based on major type:
+		// These formats always use unsigned 8-bit when they use 8-bit: mat rf64 voc w64 wav
+		
+		if ((outFileExt == "mat") || (outFileExt == "rf64") || (outFileExt == "voc") || (outFileExt == "w64") || (outFileExt == "wav"))
+			format = info.format | SF_FORMAT_PCM_U8;
+		else
+			format = info.format | SF_FORMAT_PCM_S8;
+	}
+
+	return format;
+}
+
+// Note: listFormats() taken straight from the list_formats.c file in the /examples folder of the libsndfile source distribution:
+void listFormats()
+{
+	SF_FORMAT_INFO	info;
+	SF_INFO 		sfinfo;
+	int format, major_count, subtype_count, m, s;
+
+	memset(&sfinfo, 0, sizeof(sfinfo));
+	printf("Version : %s\n\n", sf_version_string());
+
+	sf_command(NULL, SFC_GET_FORMAT_MAJOR_COUNT, &major_count, sizeof(int));
+	sf_command(NULL, SFC_GET_FORMAT_SUBTYPE_COUNT, &subtype_count, sizeof(int));
+
+	sfinfo.channels = 1;
+	for (m = 0; m < major_count; m++)
+	{
+		info.format = m;
+		sf_command(NULL, SFC_GET_FORMAT_MAJOR, &info, sizeof(info));
+		printf("%s  (extension \"%s\")\n", info.name, info.extension);
+
+		format = info.format;
+
+		for (s = 0; s < subtype_count; s++)
+		{
+			info.format = s;
+			sf_command(NULL, SFC_GET_FORMAT_SUBTYPE, &info, sizeof(info));
+
+			format = (format & SF_FORMAT_TYPEMASK) | info.format;
+
+			sfinfo.format = format;
+			if (sf_format_check(&sfinfo))
+				printf("   %s\n", info.name);
+		};
+		puts("");
+	};
+	puts("");
+} 
+
 template<typename FloatType> 
-bool Convert(const std::string& InputFilename, const std::string& OutputFilename, unsigned int OutputSampleRate, FloatType Limit, bool Normalize)
+bool Convert(const std::string& InputFilename, const std::string& OutputFilename, unsigned int OutputSampleRate, FloatType Limit, bool Normalize, int OutputFormat /* = 0 */)
 {
 	const FloatType OvershootCompensationFactor = 0.992; // Scaling factor to allow for filter overshoot
 
 	// Open input file:
 	SndfileHandle infile(InputFilename, SFM_READ);
+	
 	if (int e=infile.error()) {
-		std::cout << "Couldn't Open Input File (" << e << ")" << std::endl;
+		std::cout << "Couldn't Open Input File (" << sf_error_number(e) << ")" << std::endl;
 		return false;
 	}
 
 	// Calculate conversion parameters, and print a summary for user:
 	unsigned int nChannels = infile.channels();
 	unsigned int InputSampleRate = infile.samplerate();
-	sf_count_t InputSampleCount = 0; // ??? infile.getSampleCount();
+	
 	int InputFileFormat = infile.format();
 	
 	int BitDepth = 16;
 	bool bFloat = false;
 	bool bDouble = false;
 
-	switch (InputFileFormat & 7) {
+	switch (InputFileFormat & SF_FORMAT_SUBMASK) {
 	case SF_FORMAT_PCM_S8:
+		BitDepth = 8;
+		break;
+	case SF_FORMAT_PCM_U8:
 		BitDepth = 8;
 		break;
 	case SF_FORMAT_PCM_16:
@@ -226,21 +336,24 @@ bool Convert(const std::string& InputFilename, const std::string& OutputFilename
 	if ((PeakInputSample > OvershootCompensationFactor) && !Normalize)
 		Gain *= OvershootCompensationFactor;
 	
-	FloatType ReciprocalGain = 1.0 / Gain;
 	FloatType PeakOutputSample;
+	
 	START_TIMER();
 
 	do { // clipping detection loop (repeat if clipping detected)
 
 		SndfileHandle* pOutFile;
 
-		// To-do: set Output format if different bit depth etc
+		// if the OutputFormat is zero, it means "No change to file format"
+		// if output file format has changed, use OutputFormat. Otherwise, use same format as infile: 
+		int OutputFileFormat = OutputFormat ? OutputFormat : InputFileFormat; 
+
 		try { // Open output file:
-			pOutFile = new SndfileHandle(OutputFilename, SFM_WRITE, InputFileFormat, nChannels, OutputSampleRate); // needs to be dynamically allocated, 
+			pOutFile = new SndfileHandle(OutputFilename, SFM_WRITE, OutputFileFormat, nChannels, OutputSampleRate); // needs to be dynamically allocated, 
 			// because only way to close file is to go out of scope ... and we may need to overwrite file on 2nd pass
 
 			if (int e = pOutFile->error()) {
-				std::cout << "Couldn't Open Output File (" << e << ")" << std::endl;
+				std::cout << "Couldn't Open Output File (" << sf_error_number(e) << ")" << std::endl;
 				return false;
 			}
 		}

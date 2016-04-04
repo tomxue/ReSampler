@@ -2,17 +2,53 @@
 #define RESAMPLER_H 1
 
 #include <Windows.h>
+#include <sndfile.h>
 
-const std::string strUsage("usage: resampler.exe -i <inputfile> [-o <outputfile>] -r <samplerate> [-n [<normalization factor>]]\n");
+#include <map>
 
-#define BUFFERSIZE 8192
+const std::string strUsage("usage: resampler.exe -i <inputfile> [-o <outputfile>] -r <samplerate> [-b <bitformat>] [-n [<normalization factor>]]\n");
 
+#define BUFFERSIZE 8192 // buffer size for file reads
 
 typedef struct fraction {
 	int numerator;
 	int denominator;
 } Fraction;
 
+// map of commandline subformats to libsndfile subformats:
+const std::map<std::string,int> subFormats = { 
+	{ "s8",SF_FORMAT_PCM_S8 },
+	{ "u8",SF_FORMAT_PCM_U8 },
+	{ "8",SF_FORMAT_PCM_U8 },	// signed or unsigned depends on major format of output file
+	{ "16", SF_FORMAT_PCM_16 },
+	{ "24", SF_FORMAT_PCM_24 },
+	{ "32", SF_FORMAT_PCM_32 },
+	{ "32f",SF_FORMAT_FLOAT },
+	{ "64f",SF_FORMAT_DOUBLE },
+	{ "ulaw",SF_FORMAT_ULAW },
+	{ "alaw",SF_FORMAT_ALAW },
+	{ "ima-adpcm",SF_FORMAT_IMA_ADPCM },
+	{ "ms-adpcm",SF_FORMAT_MS_ADPCM },
+	{ "gsm610",SF_FORMAT_GSM610 },
+	{ "vox-adpcm",SF_FORMAT_VOX_ADPCM },
+	{ "g721-32",SF_FORMAT_G721_32 },
+	{ "g723-24",SF_FORMAT_G723_24 },
+	{ "g723-40",SF_FORMAT_G723_40 },
+	{ "dwvw12",SF_FORMAT_DWVW_12 },
+	{ "dwvw16",SF_FORMAT_DWVW_16 },
+	{ "dwvw24",SF_FORMAT_DWVW_24 },
+	{ "dwvwn",SF_FORMAT_DWVW_N },
+	{ "dpcm8",SF_FORMAT_DPCM_8 },
+	{ "dpcm16",SF_FORMAT_DPCM_16 },
+	{ "vorbis",SF_FORMAT_VORBIS },
+	{ "alac16",SF_FORMAT_ALAC_16 },
+	{ "alac20",SF_FORMAT_ALAC_20 },
+	{ "alac24",SF_FORMAT_ALAC_24 },
+	{ "alac32",SF_FORMAT_ALAC_32 }
+};
+
+int determineOutputFormat(const std::string & outFileExt, const std::string & bitFormat);
+void listFormats();
 int gcd(int a, int b);
 Fraction GetSimplifiedFraction(int InputSampleRate, int OutputSampleRate);
 void getCmdlineParam(char ** begin, char ** end, const std::string & OptionName, std::string & Parameter);
@@ -21,7 +57,7 @@ void getCmdlineParam(char ** begin, char ** end, const std::string & OptionName,
 bool findCmdlineOption(char ** begin, char ** end, const std::string & option);
 
 template<typename FloatType>
-bool Convert(const std::string & InputFilename, const std::string & OutputFilename, unsigned int OutputSampleRate, FloatType Limit, bool Normalize);
+bool Convert(const std::string & InputFilename, const std::string & OutputFilename, unsigned int OutputSampleRate, FloatType Limit, bool Normalize, int OutputFormat = 0 );
 template<typename FloatType> bool makeLPF(FloatType* filter, int Length, FloatType transFreq, FloatType sampFreq);
 
 template<typename FloatType>
