@@ -40,6 +40,14 @@ int main(int argc, char * argv[])
 	getCmdlineParam(argv, argv + argc, "-b", outBitFormat);
 	
 	bool bUseDoublePrecision = findCmdlineOption(argv, argv + argc, "--doubleprecision");
+
+	bool bListSubFormats = findCmdlineOption(argv, argv + argc, "--listsubformats");
+	if (bListSubFormats) {
+		std::string filetype;
+		getCmdlineParam(argv, argv + argc, "--listsubformats", filetype);
+		listSubFormats(filetype);
+		exit(EXIT_SUCCESS);
+	}
 	
 	bool bNormalize = findCmdlineOption(argv, argv + argc, "-n");
 	if (bNormalize) {
@@ -256,6 +264,41 @@ int determineOutputFormat(const std::string& outFileExt, const std::string& bitF
 	}
 
 	return format;
+}
+
+void listSubFormats(const std::string& f)
+{
+	SF_FORMAT_INFO	info;
+	int format = 0;
+	int major_count;
+	memset(&info, 0, sizeof(info));
+	sf_command(NULL, SFC_GET_FORMAT_MAJOR_COUNT, &major_count, sizeof(int));
+	bool bFileExtFound = false;
+
+	// Loop through all major formats to find match for outFileExt:
+	for (int m = 0; m < major_count; ++m) {
+		info.format = m;
+		sf_command(NULL, SFC_GET_FORMAT_MAJOR, &info, sizeof(info));
+		if (strcmpi(info.extension,f.c_str()) == 0) {
+			bFileExtFound = true;
+			break;
+		}
+	}
+	if (bFileExtFound) {
+		SF_INFO sfinfo;
+		memset(&sfinfo, 0, sizeof(sfinfo));
+		sfinfo.channels = 1;
+
+		// loop through all subformats and find which ones are valid for f:
+		for (auto& subformat : subFormats) {
+			sfinfo.format = (info.format & SF_FORMAT_TYPEMASK) | subformat.second;
+			if (sf_format_check(&sfinfo))
+				std::cout << subformat.first << std::endl;
+		}
+	}
+	else {
+		std::cout << "File extension " << f << " unknown" << std::endl;
+	}
 }
 
 // Note: listFormats() taken straight from the list_formats.c file in the /examples folder of the libsndfile source distribution:

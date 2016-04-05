@@ -75,6 +75,7 @@ const std::map<std::string, std::string> defaultSubFormats = {
 
 bool determineBestBitFormat(std::string & BitFormat, const std::string & inFilename, const std::string & outFilename);
 int determineOutputFormat(const std::string & outFileExt, const std::string & bitFormat);
+void listSubFormats(const std::string & f);
 void listFormats();
 int gcd(int a, int b);
 Fraction GetSimplifiedFraction(int InputSampleRate, int OutputSampleRate);
