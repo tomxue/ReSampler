@@ -19,7 +19,7 @@ typedef struct fraction {
 const std::map<std::string,int> subFormats = { 
 	{ "s8",SF_FORMAT_PCM_S8 },
 	{ "u8",SF_FORMAT_PCM_U8 },
-	{ "8",SF_FORMAT_PCM_U8 },	// signed or unsigned depends on major format of output file
+	{ "8",SF_FORMAT_PCM_U8 },	// signed or unsigned depends on major format of output file eg. wav files unsigned
 	{ "16", SF_FORMAT_PCM_16 },
 	{ "24", SF_FORMAT_PCM_24 },
 	{ "32", SF_FORMAT_PCM_32 },
@@ -47,6 +47,33 @@ const std::map<std::string,int> subFormats = {
 	{ "alac32",SF_FORMAT_ALAC_32 }
 };
 
+// map of default (ie sensible) subformats (usually 16-bit PCM)
+const std::map<std::string, std::string> defaultSubFormats = {
+	{"aiff","16"},
+	{"au","16"},
+	{"avr","16"},
+	{"caf","16"},
+	{"flac","16"},
+	{"htk","16"},
+	{"iff","16"},
+	{"mat","16"},
+	{"mpc","16"},
+	{"oga","vorbis"},
+	{"paf","16"},
+	{"pvf","16"},
+	{"raw","16"},
+	{"rf64","16"},
+	{"sd2","16"},
+	{"sds","16"},
+	{"sf","16"},
+	{"voc","16"},
+	{"w64","16"},
+	{"wav","16"},
+	{"wve","alaw"},
+	{"xi","dpcm16"}
+};
+
+bool determineBestBitFormat(std::string & BitFormat, const std::string & inFilename, const std::string & outFilename);
 int determineOutputFormat(const std::string & outFileExt, const std::string & bitFormat);
 void listFormats();
 int gcd(int a, int b);
@@ -55,19 +82,11 @@ void getCmdlineParam(char ** begin, char ** end, const std::string & OptionName,
 void getCmdlineParam(char ** begin, char ** end, const std::string & OptionName, unsigned int & nParameter);
 void getCmdlineParam(char ** begin, char ** end, const std::string & OptionName, double & Parameter);
 bool findCmdlineOption(char ** begin, char ** end, const std::string & option);
-
-template<typename FloatType>
-bool Convert(const std::string & InputFilename, const std::string & OutputFilename, unsigned int OutputSampleRate, FloatType Limit, bool Normalize, int OutputFormat = 0 );
+template<typename FloatType> bool Convert(const std::string & InputFilename, const std::string & OutputFilename, unsigned int OutputSampleRate, FloatType Limit, bool Normalize, int OutputFormat = 0 );
 template<typename FloatType> bool makeLPF(FloatType* filter, int Length, FloatType transFreq, FloatType sampFreq);
-
-template<typename FloatType>
-bool applyBlackmanWindow(FloatType * filter, int Length);
-
-template<typename FloatType>
-bool applyKaiserWindow(FloatType * filter, int Length, FloatType Beta);
-
-template<typename FloatType>
-FloatType I0(FloatType z); // 0th-order Modified Bessel function of the first kind
+template<typename FloatType> bool applyBlackmanWindow(FloatType * filter, int Length);
+template<typename FloatType> bool applyKaiserWindow(FloatType * filter, int Length, FloatType Beta);
+template<typename FloatType> FloatType I0(FloatType z); // 0th-order Modified Bessel function of the first kind
 
 // Timer macros:
 #define START_TIMER() LARGE_INTEGER starttime,finishtime,elapsed,frequency,timetaken; \

@@ -29,9 +29,9 @@ int main(int argc, char * argv[])
 {	
 	std::string sourceFilename("");
 	std::string destFilename("");
-	std::string outBitFormat;
+	std::string outBitFormat("");
 	int outFileFormat = 0;
-	unsigned int OutputSampleRate = 48000;
+	unsigned int OutputSampleRate;
 	double NormalizeAmount = 1.0;
 
 	getCmdlineParam(argv, argv + argc, "-i", sourceFilename);
@@ -118,25 +118,102 @@ int main(int argc, char * argv[])
 	
 	if (destFilename.find_last_of(".") != std::string::npos)
 		outFileExt = destFilename.substr(destFilename.find_last_of(".") + 1);
-	
-	// If file extensions differ, or user specified output bit format, determine new output format: 
-	if ((outFileExt != inFileExt) || !outBitFormat.empty())
-	{
-		if (outBitFormat.empty()) {
-			// to-do: user changed file extension only. Attempt to preserve bit Format:
-			// (without this feature, actual saved file format will not change if the user doesn't specify bit format)
+
+	if (!outBitFormat.empty()) { // new output bit format
+		if (outFileFormat = determineOutputFormat(outFileExt, outBitFormat))
+			std::cout << "Changing output bit format to " << outBitFormat << std::endl;
+		else { // user-supplied bit format not valid; try choosing appropriate format
+			determineBestBitFormat(outBitFormat, sourceFilename, destFilename); 
+			if (outFileFormat = determineOutputFormat(outFileExt, outBitFormat))
+				std::cout << "Changing output bit format to " << outBitFormat << std::endl;
+			else {
+				std::cout << "Warning: NOT Changing output file bit format !" << std::endl;
+				outFileFormat = 0; // back where it started
+			}
+		}
+	}	
+
+	if (outFileExt != inFileExt)
+	{ // file extensions differ, determine new output format: 
+
+		if (outBitFormat.empty()) { // user changed file extension only. Attempt to choose appropriate output sub format
+			std::cout << "Output Bit Format not specified" << std::endl;
+			determineBestBitFormat(outBitFormat, sourceFilename, destFilename);
 		}
 		
 		if(outFileFormat = determineOutputFormat(outFileExt, outBitFormat))
-			std::cout << "Changing output file format." << std::endl;
+			std::cout << "Changing output file format to " << outFileExt << std::endl;
+		else
+			std::cout << "Warning: NOT Changing output file format ! (extension different, but format will remain the same)" << std::endl;
 	}
-	
+		
 	if (bUseDoublePrecision) {
 		std::cout << "\nUsing double precision for calculations.\n" << std::endl;
 		return (Convert<double>(sourceFilename, destFilename, OutputSampleRate, Limit, bNormalize, outFileFormat)) ? EXIT_SUCCESS : EXIT_FAILURE;
 	}
 	else
 		return (Convert<float>(sourceFilename, destFilename, OutputSampleRate, Limit, bNormalize, outFileFormat)) ? EXIT_SUCCESS : EXIT_FAILURE;
+}
+
+bool determineBestBitFormat(std::string& BitFormat, const std::string& inFilename, const std::string& outFilename)
+{
+	// Inspect input file for format:
+	SndfileHandle infile(inFilename, SFM_READ);
+	int inFileFormat = infile.format();
+
+	if (int e = infile.error()) {
+		std::cout << "Couldn't Open Input File (" << sf_error_number(e) << ")" << std::endl;
+		return false;
+	}
+
+	// get BitFormat of inFile as a string:
+	for (auto& subformat : subFormats) {
+		if (subformat.second == (inFileFormat & SF_FORMAT_SUBMASK)) {
+			BitFormat = subformat.first;
+			break;
+		}
+	}
+	
+	// get file extensions:
+	std::string inFileExt("");
+	if (inFilename.find_last_of(".") != std::string::npos)
+		inFileExt = inFilename.substr(inFilename.find_last_of(".") + 1);
+
+	std::string outFileExt("");
+	if (outFilename.find_last_of(".") != std::string::npos)
+		outFileExt = outFilename.substr(outFilename.find_last_of(".") + 1);
+
+	// get total number of major formats:
+	SF_FORMAT_INFO	formatinfo;
+	int format, major_count;
+	memset(&formatinfo, 0, sizeof(formatinfo));
+	sf_command(NULL, SFC_GET_FORMAT_MAJOR_COUNT, &major_count, sizeof(int));
+	
+	// determine if inFile's subformat is valid for outFile
+	for (int m = 0; m < major_count; m++)
+	{
+		formatinfo.format = m;
+		sf_command(NULL, SFC_GET_FORMAT_MAJOR, &formatinfo, sizeof(formatinfo));	
+		
+		if (stricmp(formatinfo.extension, outFileExt.c_str()) == 0) {
+			format = formatinfo.format | (inFileFormat & SF_FORMAT_SUBMASK); // combine outfile's major format with infile's subformat 
+		
+		   // Check if format / subformat combination is valid:
+			SF_INFO sfinfo;
+			memset(&sfinfo, 0, sizeof(sfinfo));
+			sfinfo.channels = 1;
+			sfinfo.format = format;
+			if (!sf_format_check(&sfinfo))  { // not valid
+				std::cout << "Output file format " << outFileExt << " and subformat " << BitFormat << " combination not valid ... ";
+				BitFormat.clear();
+				BitFormat = defaultSubFormats.find(outFileExt)->second;
+				std::cout << "defaulting to " << BitFormat << std::endl;
+				break;
+			}	
+		}
+	}
+	
+	return true;
 }
 
 int determineOutputFormat(const std::string& outFileExt, const std::string& bitFormat)
@@ -164,7 +241,7 @@ int determineOutputFormat(const std::string& outFileExt, const std::string& bitF
 		if (sf != subFormats.end())
 			format = info.format | sf->second;
 		else
-			std::cout << "bit format " << bitFormat << " not recognised !" << std::endl;
+			std::cout << "Warning: bit format " << bitFormat << " not recognised !" << std::endl;
 	}
 
 	// Special cases:
@@ -228,7 +305,7 @@ bool Convert(const std::string& InputFilename, const std::string& OutputFilename
 	SndfileHandle infile(InputFilename, SFM_READ);
 	
 	if (int e=infile.error()) {
-		std::cout << "Couldn't Open Input File (" << sf_error_number(e) << ")" << std::endl;
+		std::cout << "Error: Couldn't Open Input File (" << sf_error_number(e) << ")" << std::endl;
 		return false;
 	}
 
@@ -237,33 +314,15 @@ bool Convert(const std::string& InputFilename, const std::string& OutputFilename
 	unsigned int InputSampleRate = infile.samplerate();
 	
 	int InputFileFormat = infile.format();
-	
-	int BitDepth = 16;
 	bool bFloat = false;
 	bool bDouble = false;
 
+	// detect if input format is a floating-point format:
 	switch (InputFileFormat & SF_FORMAT_SUBMASK) {
-	case SF_FORMAT_PCM_S8:
-		BitDepth = 8;
-		break;
-	case SF_FORMAT_PCM_U8:
-		BitDepth = 8;
-		break;
-	case SF_FORMAT_PCM_16:
-		BitDepth = 16;
-		break;
-	case SF_FORMAT_PCM_24:
-		BitDepth = 24;
-		break;
-	case SF_FORMAT_PCM_32:
-		BitDepth = 32;
-		break;
 	case SF_FORMAT_FLOAT:
-		BitDepth = 32;
 		bFloat = true;
 		break;
 	case SF_FORMAT_DOUBLE:
-		BitDepth = 64;
 		bDouble = true;
 		break;
 	}
@@ -274,7 +333,13 @@ bool Convert(const std::string& InputFilename, const std::string& OutputFilename
 
 	std::cout << "source file channels: " << nChannels << std::endl;
 	std::cout << "input sample rate: " << InputSampleRate << "\noutput sample rate: " << OutputSampleRate << std::endl;
-	std::cout << "input bit depth: " << BitDepth;
+	
+	for (auto& subformat : subFormats) {
+		if (subformat.second == (InputFileFormat & SF_FORMAT_SUBMASK)) {
+			std::cout << "input bit format: " << subformat.first;
+			break;
+		}
+	}
 	
 	if (bFloat)
 		std::cout << " (float)" << std::endl;
@@ -288,7 +353,7 @@ bool Convert(const std::string& InputFilename, const std::string& OutputFilename
 	
 	FloatType PeakInputSample = 0;
 	sf_count_t SamplesRead = 0i64;
-	std::cout << "Scanning input file for peaks ...";
+	std::cout << "Scanning input file for peaks ..."; // to-do: can we read the PEAK chunk in floating-point files ?
 	sf_count_t count;
 	do {
 		count = infile.read(inbuffer, BufferSize);
@@ -337,29 +402,33 @@ bool Convert(const std::string& InputFilename, const std::string& OutputFilename
 		Gain *= OvershootCompensationFactor;
 	
 	FloatType PeakOutputSample;
-	
+	SndfileHandle* pOutFile;
+
+	// if the OutputFormat is zero, it means "No change to file format"
+	// if output file format has changed, use OutputFormat. Otherwise, use same format as infile: 
+	int OutputFileFormat = OutputFormat ? OutputFormat : InputFileFormat; 
+
+	// if the minor (sub) format of OutputFileFormat is not set, attempt to use minor format of input file (as a last resort)
+	if (OutputFileFormat & SF_FORMAT_SUBMASK == 0) {
+		OutputFileFormat |= (InputFileFormat & SF_FORMAT_SUBMASK); // may not be valid subformat for new file format. 
+	}
+
 	START_TIMER();
 
 	do { // clipping detection loop (repeat if clipping detected)
-
-		SndfileHandle* pOutFile;
-
-		// if the OutputFormat is zero, it means "No change to file format"
-		// if output file format has changed, use OutputFormat. Otherwise, use same format as infile: 
-		int OutputFileFormat = OutputFormat ? OutputFormat : InputFileFormat; 
 
 		try { // Open output file:
 			pOutFile = new SndfileHandle(OutputFilename, SFM_WRITE, OutputFileFormat, nChannels, OutputSampleRate); // needs to be dynamically allocated, 
 			// because only way to close file is to go out of scope ... and we may need to overwrite file on 2nd pass
 
 			if (int e = pOutFile->error()) {
-				std::cout << "Couldn't Open Output File (" << sf_error_number(e) << ")" << std::endl;
+				std::cout << "Error: Couldn't Open Output File (" << sf_error_number(e) << ")" << std::endl;
 				return false;
 			}
 		}
 
 		catch (std::bad_alloc& b) {
-			std::cout << "Couldn't Open Output File (memory allocation problem)" << std::endl;
+			std::cout << "Error: Couldn't Open Output File (memory allocation problem)" << std::endl;
 			return false;
 		}
 
