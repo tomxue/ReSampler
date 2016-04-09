@@ -67,8 +67,13 @@ int main(int argc, char * argv[])
 		else {
 			std::cout << "Output filename not specified" << std::endl;
 			destFilename = sourceFilename;
-			auto dot = destFilename.find_last_of(".");
-			destFilename.insert(dot, "(converted)");
+			if (destFilename.find(".") != std::string::npos) {
+				auto dot = destFilename.find_last_of(".");
+				destFilename.insert(dot, "(converted)");
+			}
+			else {
+				destFilename.append("(converted)");
+			}
 			std::cout << "defaulting to: " << destFilename << "\n" << std::endl;
 		}
 	}
