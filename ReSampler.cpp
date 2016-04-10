@@ -34,13 +34,23 @@ int main(int argc, char * argv[])
 	unsigned int OutputSampleRate;
 	double NormalizeAmount = 1.0;
 
+	// parse core parameters:
 	getCmdlineParam(argv, argv + argc, "-i", sourceFilename);
 	getCmdlineParam(argv, argv + argc, "-o", destFilename);
 	getCmdlineParam(argv, argv + argc, "-r", OutputSampleRate);
 	getCmdlineParam(argv, argv + argc, "-b", outBitFormat);
+
+	// parse help switch:
+	if (findCmdlineOption(argv, argv + argc, "--help") || findCmdlineOption(argv, argv + argc, "-h")) {
+		std::cout << strUsage << std::endl;
+		std::cout << "Additional options:\n\n" << strExtraOptions << std::endl;
+		exit(EXIT_SUCCESS);
+	}
 	
+	// parse double precision switch:
 	bool bUseDoublePrecision = findCmdlineOption(argv, argv + argc, "--doubleprecision");
 
+	// parse bit format (sub format) parameter
 	bool bListSubFormats = findCmdlineOption(argv, argv + argc, "--listsubformats");
 	if (bListSubFormats) {
 		std::string filetype;
@@ -49,6 +59,7 @@ int main(int argc, char * argv[])
 		exit(EXIT_SUCCESS);
 	}
 	
+	// parse normalize option and parameter:
 	bool bNormalize = findCmdlineOption(argv, argv + argc, "-n");
 	if (bNormalize) {
 		getCmdlineParam(argv, argv + argc, "-n", NormalizeAmount);
@@ -76,6 +87,10 @@ int main(int argc, char * argv[])
 			}
 			std::cout << "defaulting to: " << destFilename << "\n" << std::endl;
 		}
+	}
+	else if (destFilename == sourceFilename) {
+		std::cout << "\nError: Input and Output filenames cannot be the same" << std::endl;
+		bBadParams = true;
 	}
 
 	if (OutputSampleRate == 0) {
@@ -156,17 +171,24 @@ int main(int argc, char * argv[])
 		
 		if(outFileFormat = determineOutputFormat(outFileExt, outBitFormat))
 			std::cout << "Changing output file format to " << outFileExt << std::endl;
-		else
+		else { // cannot determine subformat of output file
 			std::cout << "Warning: NOT Changing output file format ! (extension different, but format will remain the same)" << std::endl;
+		}
 	}
 		
 	if (bUseDoublePrecision) {
 		std::cout << "\nUsing double precision for calculations.\n" << std::endl;
 		return (Convert<double>(sourceFilename, destFilename, OutputSampleRate, Limit, bNormalize, outFileFormat)) ? EXIT_SUCCESS : EXIT_FAILURE;
 	}
-	else
+	else {
 		return (Convert<float>(sourceFilename, destFilename, OutputSampleRate, Limit, bNormalize, outFileFormat)) ? EXIT_SUCCESS : EXIT_FAILURE;
+	}
 }
+
+// determineBestBitFormat() : determines the most appropriate bit format for the output file, through the following process:
+// 1. Try to use infile's format and if that isn't valid for outfile, then:
+// 2. use the default subformat for outfile.
+// store best bit format as a string in BitFormat
 
 bool determineBestBitFormat(std::string& BitFormat, const std::string& inFilename, const std::string& outFilename)
 {
@@ -216,7 +238,7 @@ bool determineBestBitFormat(std::string& BitFormat, const std::string& inFilenam
 			memset(&sfinfo, 0, sizeof(sfinfo));
 			sfinfo.channels = 1;
 			sfinfo.format = format;
-			if (!sf_format_check(&sfinfo))  { // not valid
+			if (!sf_format_check(&sfinfo))  { // not valid; use default format
 				std::cout << "Output file format " << outFileExt << " and subformat " << BitFormat << " combination not valid ... ";
 				BitFormat.clear();
 				BitFormat = defaultSubFormats.find(outFileExt)->second;
@@ -229,6 +251,7 @@ bool determineBestBitFormat(std::string& BitFormat, const std::string& inFilenam
 	return true;
 }
 
+// determineOutputFormat() : returns an integer representing the output format, which libsndfile understands:
 int determineOutputFormat(const std::string& outFileExt, const std::string& bitFormat)
 {
 	SF_FORMAT_INFO	info;
@@ -271,6 +294,7 @@ int determineOutputFormat(const std::string& outFileExt, const std::string& bitF
 	return format;
 }
 
+// listSubFormats() - lists all valid subformats for a given file extension (without "." or "*."):
 void listSubFormats(const std::string& f)
 {
 	SF_FORMAT_INFO	info;
@@ -457,7 +481,7 @@ bool Convert(const std::string& InputFilename, const std::string& OutputFilename
 	int OutputFileFormat = OutputFormat ? OutputFormat : InputFileFormat; 
 
 	// if the minor (sub) format of OutputFileFormat is not set, attempt to use minor format of input file (as a last resort)
-	if (OutputFileFormat & SF_FORMAT_SUBMASK == 0) {
+	if ((OutputFileFormat & SF_FORMAT_SUBMASK) == 0) {
 		OutputFileFormat |= (InputFileFormat & SF_FORMAT_SUBMASK); // may not be valid subformat for new file format. 
 	}
 

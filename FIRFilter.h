@@ -74,7 +74,7 @@ public:
 		// speed-up is around 3x on my system ...
 
 		FloatType output = 0.0;
-		FloatType* Kernel;
+		FloatType* Kernel = Kernel0;
 		int Index = (CurrentIndex >> 2) << 2; // make multiple-of-four
 		int Phase = CurrentIndex & 3;
 		
