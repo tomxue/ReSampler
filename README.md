@@ -1,7 +1,7 @@
 ## Synopsis
-Resampler is a basic command-line audio sample rate conversion tool for Windows, which can convert *.wav file formats with variety of different bit-depths and audio channel configurations. 
+Resampler is a basic command-line audio sample rate conversion tool for Windows, which can convert audio file formats with a variety of different bit-depths and audio channel configurations. 
 
-Resampler is intended to produce outstanding quality sound files, keeping aliasing and other unwanted artifacts to a minimum, as these following graphs show:
+Resampler is intended to produce outstanding quality sound files, keeping aliasing and other unwanted artifacts to a minimum, as the following actual measurement graphs show:
 
 ![FIR Filter response - downsample 96k->44k](https://github.com/jniemann66/ReSampler/blob/master/147_160_FIR_Frequency-response-2016-03-30-KAISER_WINDOW.JPG)   
 *Typical frequency response when downsampling from 96kHz to 44.1kHz*
@@ -13,9 +13,11 @@ Resampler is intended to produce outstanding quality sound files, keeping aliasi
  
 Sample Rate Conversion is accomplished using the usual interpolation/decimation techniques. However, when using complex conversion ratios (such as 44.1k <--> 48k), a rather large FIR lowpass filter is used to ensure a clean conversion.
 
-Resampler uses the C++ wrapper of the outstanding [libsndfile](http://www.mega-nerd.com/libsndfile/) library for sound file I/O operations. (I originally embarked upon writing my own sound-file I/O library, but quickly realised the enormity of such an undertaking, and subsequently decided it was a whole world-of-hurt which would be best avoided)
+Resampler uses the C++ wrapper of the outstanding [libsndfile](http://www.mega-nerd.com/libsndfile/) library for sound file I/O operations. (I originally embarked upon writing my own sound-file I/O library, but quickly realised the enormity of such an undertaking, and subsequently adopted libsndfile)
 
-Resampler needs to be compiled on Visual C++ 2015, as it uses some C++11 features. (Porting to other environments is intended in the future)
+The FIR filter class written for this project uses SSE SIMD instructions when using single-precision floating-point to perform 4 multiply/accumulate operations simultaneously. This has been found to yield a speed improvement of approximately 3x. Some experimentaion was also done with 2x double-precision SSE2 SIMD, but was found to be no faster than the basic scalar implementation, and has thus been commented-out (but not deleted) from the source.
+
+Resampler was developed on Visual C++ 2015, as it uses some C++11 features. (Porting to other environments is intended in the future)
 
 ## Motivation
 This project arose out of: 
@@ -24,7 +26,7 @@ This project arose out of:
 * a requirement to have a simple command-line tool to be used in a script to convert a large collection of audio files
 * a need for a *quality* SRC tool, as the quality of other offerings (both commercial and free) varies wildly from terrific to appalling
 
-Future versions of this project are anticipated to receive a dramatic speed improvement through the use of SIMD vectorisation, multithreading, and more efficient FIR filter designs. 
+Future versions of this project are anticipated to receive a dramatic speed improvement through the use of multithreading, and more efficient FIR filter designs. 
 
 ## Usage
 
@@ -74,3 +76,12 @@ Additional options:
 **[--doubleprecision]** will force resampler to use double-precision arithmetic for its *internal calculations* and doesn't have anything to do with the file formats, although if you are working with 64-bit double-precision files, it would make sense to use double precision for calculations used in processing.
 
 **[--listsubformats <filetype\>]** will list all valid subformats for a given filetype
+
+## Supported Formats
+
+Resampler can handle any of the file formats libsndfile can handle.  
+Thus, the following file extensions are supported:  
+![Supported Formats](https://github.com/jniemann66/ReSampler/blob/master/supported_formats.png)
+
+For more information, please refer to the [libsndfile documentation](http://www.mega-nerd.com/libsndfile/)
+ 
