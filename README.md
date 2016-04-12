@@ -3,6 +3,14 @@ Resampler is a basic command-line audio sample rate conversion tool for Windows,
 
 Resampler is intended to produce outstanding quality sound files, keeping aliasing and other unwanted artifacts to a minimum.
 
+![FIR Filter response - downsample 96k->44k](https://github.com/jniemann66/ReSampler/blob/master/147_160_FIR_Frequency-response-2016-03-30-KAISER_WINDOW.JPG)
+
+*Typical frequency response when downsampling from 96kHz to 44.1kHz*
+
+![spectrogram: 0-48khz sweep ](https://github.com/jniemann66/ReSampler/blob/master/96khz_sweep-3dBFS_64f(to44k).png)
+
+*Spectrogram of 0-48kHz Sine Sweep @-3dBFS, after having been downsampled to 44kHz sample rate*
+
 ## Description of code
  
 Sample Rate Conversion is accomplished using the usual interpolation/decimation techniques. However, when using complex conversion ratios (such as 44.1k <--> 48k), a rather large FIR lowpass filter is used to ensure a clean conversion.
