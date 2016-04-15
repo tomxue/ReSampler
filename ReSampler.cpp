@@ -6,6 +6,7 @@
 #include <vector>
 #include <algorithm>
 #include <memory>
+#include <iomanip>
 
 #define _USE_MATH_DEFINES
 
@@ -27,6 +28,10 @@
  
 int main(int argc, char * argv[])
 {	
+	/*for (int q = 0; q < 210; q += 10)
+	{
+		std::cout << q << " dB, Kaiser beta=" << std::setw(11) << std::setprecision(6) << calcKaiserBeta<float>(q) << std::endl;
+	}*/
 	std::string sourceFilename("");
 	std::string destFilename("");
 	std::string outBitFormat("");
@@ -330,44 +335,6 @@ void listSubFormats(const std::string& f)
 	}
 }
 
-// Note: listFormats() taken straight from the list_formats.c file in the /examples folder of the libsndfile source distribution:
-void listFormats()
-{
-	SF_FORMAT_INFO	info;
-	SF_INFO 		sfinfo;
-	int format, major_count, subtype_count, m, s;
-
-	memset(&sfinfo, 0, sizeof(sfinfo));
-	printf("Version : %s\n\n", sf_version_string());
-
-	sf_command(NULL, SFC_GET_FORMAT_MAJOR_COUNT, &major_count, sizeof(int));
-	sf_command(NULL, SFC_GET_FORMAT_SUBTYPE_COUNT, &subtype_count, sizeof(int));
-
-	sfinfo.channels = 1;
-	for (m = 0; m < major_count; m++)
-	{
-		info.format = m;
-		sf_command(NULL, SFC_GET_FORMAT_MAJOR, &info, sizeof(info));
-		printf("%s  (extension \"%s\")\n", info.name, info.extension);
-
-		format = info.format;
-
-		for (s = 0; s < subtype_count; s++)
-		{
-			info.format = s;
-			sf_command(NULL, SFC_GET_FORMAT_SUBTYPE, &info, sizeof(info));
-
-			format = (format & SF_FORMAT_TYPEMASK) | info.format;
-
-			sfinfo.format = format;
-			if (sf_format_check(&sfinfo))
-				printf("   %s\n", info.name);
-		};
-		puts("");
-	};
-	puts("");
-} 
-
 template<typename FloatType> 
 bool Convert(const std::string& InputFilename, const std::string& OutputFilename, unsigned int OutputSampleRate, FloatType Limit, bool Normalize, int OutputFormat /* = 0 */)
 {
@@ -440,7 +407,9 @@ bool Convert(const std::string& InputFilename, const std::string& OutputFilename
 
 	// Calculate filter parameters:
 	int OverSampFreq = InputSampleRate * F.numerator; // eg 160 * 44100
-	int TransitionWidth = min(InputSampleRate, OutputSampleRate) / 22;
+	unsigned int minSampleRate = min(InputSampleRate, OutputSampleRate);
+	int TransitionWidth = minSampleRate / 22; // reasonable estimate for allowing transition width to scale with sample rate
+	//TransitionWidth = max(TransitionWidth, 1700); // put a limit on how narrow the transition can be (too narrow will cause issues with low target samplerates)
 	int ft = min(InputSampleRate, OutputSampleRate) / 2.0 - TransitionWidth;
 
 	// Make some filters. Huge Filters are used for complex ratios.
@@ -449,12 +418,12 @@ bool Convert(const std::string& InputFilename, const std::string& OutputFilename
 	FloatType HugeFilterTaps[FILTERSIZE_HUGE];
 	int HugeFilterSize = FILTERSIZE_HUGE;
 	makeLPF<FloatType>(HugeFilterTaps, HugeFilterSize, ft, OverSampFreq);
-	applyKaiserWindow<FloatType>(HugeFilterTaps, HugeFilterSize, 14.0);
+	applyKaiserWindow<FloatType>(HugeFilterTaps, HugeFilterSize, calcKaiserBeta(130));
 
 	FloatType MedFilterTaps[FILTERSIZE_MEDIUM];
 	int MedFilterSize = FILTERSIZE_MEDIUM;
 	makeLPF<FloatType>(MedFilterTaps, MedFilterSize, ft, OverSampFreq);
-	applyKaiserWindow<FloatType>(MedFilterTaps, MedFilterSize, 20.0);
+	applyKaiserWindow<FloatType>(MedFilterTaps, MedFilterSize, calcKaiserBeta(200));
 	
 	// make a vector of huge filters (one filter for each channel):
 	std::vector<FIRFilter<FloatType, FILTERSIZE_HUGE>> HugeFilters;
@@ -634,56 +603,6 @@ bool Convert(const std::string& InputFilename, const std::string& OutputFilename
 
 	STOP_TIMER();
 	return true;
-}
-
-template<typename FloatType> bool makeLPF(FloatType* filter, int Length, FloatType transFreq, FloatType sampFreq)
-{
-	FloatType ft = transFreq / sampFreq; // normalised transition frequency
-	assert(ft < 0.5);	
-	int halfLength = Length / 2;
-	FloatType halfM = 0.5 * (Length - 1);
-	
-	// To avoid divide-by-zero, Set centre tap if odd-length:
-	if (halfLength & 1)
-		filter[halfLength] = 2.0 * ft;
-
-	// Calculate taps:
-	for (int n = 0; n<halfLength; ++n) {
-		FloatType sinc = sin(2.0 * M_PI * ft * (n - halfM)) / (M_PI * (n - halfM));	// sinc filter
-		filter[Length - n - 1] = filter[n] = sinc;	// exploit symmetry
-	}
-
-	return true;
-}
-
-template<typename FloatType> bool applyBlackmanWindow(FloatType* filter, int Length)
-{
-	int M = (Length & 1) ? (Length + 1) / 2 : Length / 2; // (32767 + 1) /2 = 16384
-	for (int n = 0; n < M; ++n) {
-		FloatType Blackman = 0.42 - 0.5 * cos(2.0 * M_PI * n / (Length - 1)) + 0.08 * cos(4.0 * M_PI * n / (Length - 1)); // Blackman window
-		filter[n] *= Blackman;				// First half
-		filter[Length - n - 1] *= Blackman;	// second half
-	}
-	return true;
-}
-
-template<typename FloatType> bool applyKaiserWindow(FloatType* filter, int Length, FloatType Beta)
-{
-	for (int n = 0; n < Length; ++n) {
-		filter[n] *= I0((2.0 * Beta / Length) * sqrt(n*(Length - n))) / I0(Beta); // simplified Kaiser Window Equation
-	}
-	return true;
-}
-
-template<typename FloatType> FloatType I0(FloatType z) 
-{	// 0th-order Modified Bessel function of the first kind
-	FloatType result = 0.0;
-	FloatType kfact = 1.0;
-	for (int k = 0; k < 16; ++k) {
-		if (k) kfact *= k;
-		result += pow((pow(z, 2.0) / 4.0), k) / pow(kfact, 2.0);
-	}
-	return result;
 }
 
 int gcd(int a, int b) {

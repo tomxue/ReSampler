@@ -291,4 +291,57 @@ double FIRFilter<double, FILTERSIZE_HUGE>::get() {
 
 #endif // USE_SIMD
 
+template<typename FloatType> bool makeLPF(FloatType* filter, int Length, FloatType transitionFreq, FloatType sampleRate)
+{
+	FloatType ft = transitionFreq / sampleRate; // normalised transition frequency
+	assert(ft < 0.5);
+	int halfLength = Length / 2;
+	FloatType halfM = 0.5 * (Length - 1);
+
+	if (halfLength & 1)
+		filter[halfLength] = 2.0 * ft; // if length is odd, avoid divide-by-zero at centre-tap
+
+	for (int n = 0; n<halfLength; ++n) {
+		FloatType sinc = sin(2.0 * M_PI * ft * (n - halfM)) / (M_PI * (n - halfM));	// sinc function
+		filter[Length - n - 1] = filter[n] = sinc;	// exploit symmetry
+	}
+
+	return true;
+}
+
+// This function converts a requested sidelobe height (in dB) to a value for the Beta parameter used in a Kaiser window:
+template<typename FloatType> FloatType calcKaiserBeta(FloatType dB) 
+{
+	if(dB<21.0)
+	{
+		return 0;
+	}
+	else if ((dB >= 21.0) && (dB <= 50.0)) {
+		return 0.5842 * pow((dB - 21), 0.4) + 0.07886 * (dB - 21);
+	}
+	else if (dB>50.0) {
+		return 0.1102 * (dB - 8.7);
+	}
+}
+
+// This function applies a Kaiser Window to an array of filter coefficients:
+template<typename FloatType> bool applyKaiserWindow(FloatType* filter, int Length, FloatType Beta)
+{
+	for (int n = 0; n < Length; ++n) {
+		filter[n] *= I0((2.0 * Beta / Length) * sqrt(n*(Length - n))) / I0(Beta); // simplified Kaiser Window Equation
+	}
+	return true;
+}
+
+template<typename FloatType> FloatType I0(FloatType z)
+{	// 0th-order Modified Bessel function of the first kind
+	FloatType result = 0.0;
+	FloatType kfact = 1.0;
+	for (int k = 0; k < 16; ++k) {
+		if (k) kfact *= k;
+		result += pow((pow(z, 2.0) / 4.0), k) / pow(kfact, 2.0);
+	}
+	return result;
+}
+
 #endif // FIRFFILTER_H_

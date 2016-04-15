@@ -77,7 +77,6 @@ const std::map<std::string, std::string> defaultSubFormats = {
 bool determineBestBitFormat(std::string & BitFormat, const std::string & inFilename, const std::string & outFilename);
 int determineOutputFormat(const std::string & outFileExt, const std::string & bitFormat);
 void listSubFormats(const std::string & f);
-void listFormats();
 int gcd(int a, int b);
 Fraction GetSimplifiedFraction(int InputSampleRate, int OutputSampleRate);
 void getCmdlineParam(char ** begin, char ** end, const std::string & OptionName, std::string & Parameter);
@@ -85,10 +84,6 @@ void getCmdlineParam(char ** begin, char ** end, const std::string & OptionName,
 void getCmdlineParam(char ** begin, char ** end, const std::string & OptionName, double & Parameter);
 bool findCmdlineOption(char ** begin, char ** end, const std::string & option);
 template<typename FloatType> bool Convert(const std::string & InputFilename, const std::string & OutputFilename, unsigned int OutputSampleRate, FloatType Limit, bool Normalize, int OutputFormat = 0 );
-template<typename FloatType> bool makeLPF(FloatType* filter, int Length, FloatType transFreq, FloatType sampFreq);
-template<typename FloatType> bool applyBlackmanWindow(FloatType * filter, int Length);
-template<typename FloatType> bool applyKaiserWindow(FloatType * filter, int Length, FloatType Beta);
-template<typename FloatType> FloatType I0(FloatType z); // 0th-order Modified Bessel function of the first kind
 
 // Timer macros:
 #define START_TIMER() LARGE_INTEGER starttime,finishtime,elapsed,frequency,timetaken; \
