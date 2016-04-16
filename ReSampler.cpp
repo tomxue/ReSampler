@@ -13,6 +13,7 @@
 #include <math.h>
 #include "ReSampler.h"
 #include "FIRFilter.h"
+#include "ditherer.h"
 
 ////////////////////////////////////////////////////////////////////////////////////////
 // This program uses the libsndfile Library, 
@@ -28,10 +29,7 @@
  
 int main(int argc, char * argv[])
 {	
-	/*for (int q = 0; q < 210; q += 10)
-	{
-		std::cout << q << " dB, Kaiser beta=" << std::setw(11) << std::setprecision(6) << calcKaiserBeta<float>(q) << std::endl;
-	}*/
+	
 	std::string sourceFilename("");
 	std::string destFilename("");
 	std::string outBitFormat("");
@@ -74,6 +72,9 @@ int main(int argc, char * argv[])
 			std::cout << "\nWarning: Normalization factor greater than 1.0 - THIS WILL CAUSE CLIPPING !!\n" << std::endl;
 	}
 
+	// parse dither option:
+	bool bDither = findCmdlineOption(argv, argv + argc, "--dither");
+	
 	bool bBadParams = false;
 	if (destFilename.empty()) {
 		if (sourceFilename.empty()) {
@@ -183,10 +184,10 @@ int main(int argc, char * argv[])
 		
 	if (bUseDoublePrecision) {
 		std::cout << "\nUsing double precision for calculations.\n" << std::endl;
-		return (Convert<double>(sourceFilename, destFilename, OutputSampleRate, Limit, bNormalize, outFileFormat)) ? EXIT_SUCCESS : EXIT_FAILURE;
+		return (Convert<double>(sourceFilename, destFilename, OutputSampleRate, Limit, bNormalize, outFileFormat, bDither)) ? EXIT_SUCCESS : EXIT_FAILURE;
 	}
 	else {
-		return (Convert<float>(sourceFilename, destFilename, OutputSampleRate, Limit, bNormalize, outFileFormat)) ? EXIT_SUCCESS : EXIT_FAILURE;
+		return (Convert<float>(sourceFilename, destFilename, OutputSampleRate, Limit, bNormalize, outFileFormat, bDither)) ? EXIT_SUCCESS : EXIT_FAILURE;
 	}
 }
 
@@ -336,7 +337,7 @@ void listSubFormats(const std::string& f)
 }
 
 template<typename FloatType> 
-bool Convert(const std::string& InputFilename, const std::string& OutputFilename, unsigned int OutputSampleRate, FloatType Limit, bool Normalize, int OutputFormat /* = 0 */)
+bool Convert(const std::string& InputFilename, const std::string& OutputFilename, unsigned int OutputSampleRate, FloatType Limit, bool Normalize, int OutputFormat, bool bDither)
 {
 	const FloatType OvershootCompensationFactor = 0.992; // Scaling factor to allow for filter overshoot
 
@@ -453,7 +454,29 @@ bool Convert(const std::string& InputFilename, const std::string& OutputFilename
 	if ((OutputFileFormat & SF_FORMAT_SUBMASK) == 0) {
 		OutputFileFormat |= (InputFileFormat & SF_FORMAT_SUBMASK); // may not be valid subformat for new file format. 
 	}
-
+	
+	// determine number of bits in output format, for Ditherers:
+	int signalBits;
+	switch (OutputFileFormat & SF_FORMAT_SUBMASK) {
+	case SF_FORMAT_PCM_24:
+		signalBits = 24;
+		break;
+	case SF_FORMAT_PCM_S8:
+	case SF_FORMAT_PCM_U8:
+		signalBits = 8;
+		break;
+	default:
+		signalBits = 16;
+	}
+	if (bDither)
+		std::cout << "Generating dither for " << signalBits << "-bit output format" << std::endl;
+	
+	// make a vector of ditherers (one ditherer for each channel):
+	std::vector<Ditherer<FloatType>> Ditherers;
+	for (unsigned int n = 0; n < nChannels; n++) {
+		Ditherers.emplace_back(signalBits, 1.0f);
+	}
+	//
 	START_TIMER();
 
 	do { // clipping detection loop (repeat if clipping detected)
@@ -477,7 +500,7 @@ bool Convert(const std::string& InputFilename, const std::string& OutputFilename
 		unsigned int DecimationIndex = 0;
 		unsigned int OutBufferIndex = 0;
 		PeakOutputSample = 0;
-
+		
 		if (F.numerator == 1) { // Decimate Only
 			do { // Read and process blocks of samples until the end of file is reached
 				count = infile.read(inbuffer, BufferSize);
@@ -489,7 +512,11 @@ bool Convert(const std::string& InputFilename, const std::string& OutputFilename
 
 					if (DecimationIndex == 0) { // Decimate
 						for (int Channel = 0; Channel < nChannels; Channel++) {
-							FloatType OutputSample = Gain * MedFilters[Channel].get();
+
+							FloatType OutputSample = bDither ? 
+								OutputSample = Ditherers[Channel].Dither(Gain * MedFilters[Channel].get()) : 
+								Gain * MedFilters[Channel].get();
+
 							outbuffer[OutBufferIndex + Channel] = OutputSample;
 							PeakOutputSample = max(abs(PeakOutputSample), abs(OutputSample));
 						}
@@ -519,8 +546,11 @@ bool Convert(const std::string& InputFilename, const std::string& OutputFilename
 								MedFilters[Channel].put(inbuffer[s + Channel]); // inject a source sample
 							else
 								MedFilters[Channel].putZero(); // inject a Zero
-							//FloatType OutputSample = Gain * MedFilters[Channel].get();
-							FloatType OutputSample = Gain * MedFilters[Channel].LazyGet(F.numerator);
+							
+							FloatType OutputSample = bDither ?
+								OutputSample = Ditherers[Channel].Dither(Gain * MedFilters[Channel].LazyGet(F.numerator)) : 
+								Gain * MedFilters[Channel].LazyGet(F.numerator);
+							
 							outbuffer[OutBufferIndex + Channel] = OutputSample;
 							PeakOutputSample = max(PeakOutputSample, abs(OutputSample));
 						}
@@ -554,8 +584,11 @@ bool Convert(const std::string& InputFilename, const std::string& OutputFilename
 
 						if (DecimationIndex == 0) { // decimate
 							for (int Channel = 0; Channel < nChannels; Channel++) {
-								//FloatType OutputSample = Gain * HugeFilters[Channel].get();
-								FloatType OutputSample = Gain * HugeFilters[Channel].LazyGet(F.numerator);
+
+								FloatType OutputSample = bDither ?
+									OutputSample = Ditherers[Channel].Dither(Gain * HugeFilters[Channel].LazyGet(F.numerator)) :
+									Gain * HugeFilters[Channel].LazyGet(F.numerator);
+
 								outbuffer[OutBufferIndex + Channel] = OutputSample;
 								PeakOutputSample = max(PeakOutputSample, abs(OutputSample));
 							}

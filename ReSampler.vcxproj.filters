@@ -26,5 +26,8 @@
     <ClInclude Include="FIRFilter.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ditherer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

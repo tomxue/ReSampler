@@ -7,7 +7,7 @@
 #include <map>
 
 const std::string strUsage("usage: resampler.exe -i <inputfile> [-o <outputfile>] -r <samplerate> [-b <bitformat>] [-n [<normalization factor>]]\n");
-const std::string strExtraOptions("--doubleprecision\n--listsubformats <ext>\n--help\n");
+const std::string strExtraOptions("--doubleprecision\n--listsubformats <ext>\n--dither\n--help\n");
 
 #define BUFFERSIZE 8192 // buffer size for file reads
 
@@ -83,7 +83,7 @@ void getCmdlineParam(char ** begin, char ** end, const std::string & OptionName,
 void getCmdlineParam(char ** begin, char ** end, const std::string & OptionName, unsigned int & nParameter);
 void getCmdlineParam(char ** begin, char ** end, const std::string & OptionName, double & Parameter);
 bool findCmdlineOption(char ** begin, char ** end, const std::string & option);
-template<typename FloatType> bool Convert(const std::string & InputFilename, const std::string & OutputFilename, unsigned int OutputSampleRate, FloatType Limit, bool Normalize, int OutputFormat = 0 );
+template<typename FloatType> bool Convert(const std::string & InputFilename, const std::string & OutputFilename, unsigned int OutputSampleRate, FloatType Limit, bool Normalize, int OutputFormat, bool bDither);
 
 // Timer macros:
 #define START_TIMER() LARGE_INTEGER starttime,finishtime,elapsed,frequency,timetaken; \
