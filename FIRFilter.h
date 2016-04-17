@@ -324,7 +324,7 @@ template<typename FloatType> FloatType calcKaiserBeta(FloatType dB)
 	}
 }
 
-// This function applies a Kaiser Window to an array of filter coefficients:
+ //This function applies a Kaiser Window to an array of filter coefficients:
 //template<typename FloatType> bool applyKaiserWindow(FloatType* filter, int Length, FloatType Beta)
 //{
 //	if (Length < 1)
@@ -332,7 +332,7 @@ template<typename FloatType> FloatType calcKaiserBeta(FloatType dB)
 //
 //	for (int n = 0; n < Length/2; ++n) { // note: for odd lengths, centre tap is left unchanged (equivalent to *=1.0 )
 //		filter[n] *= I0((2.0 * Beta / Length) * sqrt(n*(Length - n))) / I0(Beta); // simplified Kaiser Window Equation
-//		filter[Length-n-1] = filter[n]; // make symmetrical
+//		filter[Length-n-1] *= I0((2.0 * Beta / Length) * sqrt(n*(Length - n))) / I0(Beta); // make symmetrical
 //	}
 //	return true;
 //}
