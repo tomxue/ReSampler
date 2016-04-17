@@ -327,17 +327,30 @@ template<typename FloatType> FloatType calcKaiserBeta(FloatType dB)
 // This function applies a Kaiser Window to an array of filter coefficients:
 template<typename FloatType> bool applyKaiserWindow(FloatType* filter, int Length, FloatType Beta)
 {
-	for (int n = 0; n < Length; ++n) {
+	if (Length < 1)
+		return false;
+
+	for (int n = 0; n < Length/2; ++n) { // note: for odd lengths, centre tap is left unchanged (equivalent to *=1.0 )
 		filter[n] *= I0((2.0 * Beta / Length) * sqrt(n*(Length - n))) / I0(Beta); // simplified Kaiser Window Equation
+		filter[Length-n-1] = filter[n]; // make symmetrical
 	}
 	return true;
+}
+
+// dumpKaiserWindow() - utility function for displaying Kaiser Window:
+void dumpKaiserWindow(int Length, double Beta) {
+	std::vector<double> f(Length, 1);
+	applyKaiserWindow<double>(f.data(), Length, Beta);
+	for (int i = 0; i < Length; ++i) {
+		std::cout << i << ": " << f[i] << std::endl;
+	}
 }
 
 template<typename FloatType> FloatType I0(FloatType z)
 {	// 0th-order Modified Bessel function of the first kind
 	FloatType result = 0.0;
 	FloatType kfact = 1.0;
-	for (int k = 0; k < 16; ++k) {
+	for (int k = 0; k < 18; ++k) {
 		if (k) kfact *= k;
 		result += pow((pow(z, 2.0) / 4.0), k) / pow(kfact, 2.0);
 	}

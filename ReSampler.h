@@ -83,7 +83,7 @@ void getCmdlineParam(char ** begin, char ** end, const std::string & OptionName,
 void getCmdlineParam(char ** begin, char ** end, const std::string & OptionName, unsigned int & nParameter);
 void getCmdlineParam(char ** begin, char ** end, const std::string & OptionName, double & Parameter);
 bool findCmdlineOption(char ** begin, char ** end, const std::string & option);
-template<typename FloatType> bool Convert(const std::string & InputFilename, const std::string & OutputFilename, unsigned int OutputSampleRate, FloatType Limit, bool Normalize, int OutputFormat, bool bDither);
+template<typename FloatType> bool Convert(const std::string & InputFilename, const std::string & OutputFilename, unsigned int OutputSampleRate, FloatType Limit, bool Normalize, int OutputFormat, bool bDither, FloatType DitherAmount);
 
 // Timer macros:
 #define START_TIMER() LARGE_INTEGER starttime,finishtime,elapsed,frequency,timetaken; \

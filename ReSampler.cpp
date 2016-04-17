@@ -29,13 +29,13 @@
  
 int main(int argc, char * argv[])
 {	
-	
 	std::string sourceFilename("");
 	std::string destFilename("");
 	std::string outBitFormat("");
 	int outFileFormat = 0;
 	unsigned int OutputSampleRate;
 	double NormalizeAmount = 1.0;
+	double DitherAmount = 1.0;
 
 	// parse core parameters:
 	getCmdlineParam(argv, argv + argc, "-i", sourceFilename);
@@ -72,8 +72,13 @@ int main(int argc, char * argv[])
 			std::cout << "\nWarning: Normalization factor greater than 1.0 - THIS WILL CAUSE CLIPPING !!\n" << std::endl;
 	}
 
-	// parse dither option:
+	// parse dither option and parameter:
 	bool bDither = findCmdlineOption(argv, argv + argc, "--dither");
+	if (bDither) {
+		getCmdlineParam(argv, argv + argc, "--dither", DitherAmount);
+		if (DitherAmount <= 0.0)
+			DitherAmount = 1.0;
+	}
 	
 	bool bBadParams = false;
 	if (destFilename.empty()) {
@@ -184,10 +189,10 @@ int main(int argc, char * argv[])
 		
 	if (bUseDoublePrecision) {
 		std::cout << "\nUsing double precision for calculations.\n" << std::endl;
-		return (Convert<double>(sourceFilename, destFilename, OutputSampleRate, Limit, bNormalize, outFileFormat, bDither)) ? EXIT_SUCCESS : EXIT_FAILURE;
+		return (Convert<double>(sourceFilename, destFilename, OutputSampleRate, Limit, bNormalize, outFileFormat, bDither, DitherAmount)) ? EXIT_SUCCESS : EXIT_FAILURE;
 	}
 	else {
-		return (Convert<float>(sourceFilename, destFilename, OutputSampleRate, Limit, bNormalize, outFileFormat, bDither)) ? EXIT_SUCCESS : EXIT_FAILURE;
+		return (Convert<float>(sourceFilename, destFilename, OutputSampleRate, Limit, bNormalize, outFileFormat, bDither, DitherAmount)) ? EXIT_SUCCESS : EXIT_FAILURE;
 	}
 }
 
@@ -337,7 +342,7 @@ void listSubFormats(const std::string& f)
 }
 
 template<typename FloatType> 
-bool Convert(const std::string& InputFilename, const std::string& OutputFilename, unsigned int OutputSampleRate, FloatType Limit, bool Normalize, int OutputFormat, bool bDither)
+bool Convert(const std::string& InputFilename, const std::string& OutputFilename, unsigned int OutputSampleRate, FloatType Limit, bool Normalize, int OutputFormat, bool bDither, FloatType DitherAmount)
 {
 	const FloatType OvershootCompensationFactor = 0.992; // Scaling factor to allow for filter overshoot
 
@@ -474,7 +479,7 @@ bool Convert(const std::string& InputFilename, const std::string& OutputFilename
 	// make a vector of ditherers (one ditherer for each channel):
 	std::vector<Ditherer<FloatType>> Ditherers;
 	for (unsigned int n = 0; n < nChannels; n++) {
-		Ditherers.emplace_back(signalBits, 1.0f);
+		Ditherers.emplace_back(signalBits, DitherAmount);
 	}
 	//
 	START_TIMER();
