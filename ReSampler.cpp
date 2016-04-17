@@ -424,13 +424,15 @@ bool Convert(const std::string& InputFilename, const std::string& OutputFilename
 	FloatType HugeFilterTaps[FILTERSIZE_HUGE];
 	int HugeFilterSize = FILTERSIZE_HUGE;
 	makeLPF<FloatType>(HugeFilterTaps, HugeFilterSize, ft, OverSampFreq);
-	applyKaiserWindow<FloatType>(HugeFilterTaps, HugeFilterSize, calcKaiserBeta(130));
+	//applyKaiserWindow<FloatType>(HugeFilterTaps, HugeFilterSize, calcKaiserBeta(130));
+	applyKaiserWindow<FloatType>(HugeFilterTaps, HugeFilterSize, 14);
 
 	FloatType MedFilterTaps[FILTERSIZE_MEDIUM];
 	int MedFilterSize = FILTERSIZE_MEDIUM;
 	makeLPF<FloatType>(MedFilterTaps, MedFilterSize, ft, OverSampFreq);
-	applyKaiserWindow<FloatType>(MedFilterTaps, MedFilterSize, calcKaiserBeta(200));
-	
+	// applyKaiserWindow<FloatType>(MedFilterTaps, MedFilterSize, calcKaiserBeta(200));
+	applyKaiserWindow<FloatType>(MedFilterTaps, MedFilterSize, 20);
+
 	// make a vector of huge filters (one filter for each channel):
 	std::vector<FIRFilter<FloatType, FILTERSIZE_HUGE>> HugeFilters;
 
@@ -519,7 +521,7 @@ bool Convert(const std::string& InputFilename, const std::string& OutputFilename
 						for (int Channel = 0; Channel < nChannels; Channel++) {
 
 							FloatType OutputSample = bDither ? 
-								OutputSample = Ditherers[Channel].Dither(Gain * MedFilters[Channel].get()) : 
+								Ditherers[Channel].Dither(Gain * MedFilters[Channel].get()) : 
 								Gain * MedFilters[Channel].get();
 
 							outbuffer[OutBufferIndex + Channel] = OutputSample;
@@ -553,7 +555,7 @@ bool Convert(const std::string& InputFilename, const std::string& OutputFilename
 								MedFilters[Channel].putZero(); // inject a Zero
 							
 							FloatType OutputSample = bDither ?
-								OutputSample = Ditherers[Channel].Dither(Gain * MedFilters[Channel].LazyGet(F.numerator)) : 
+								Ditherers[Channel].Dither(Gain * MedFilters[Channel].LazyGet(F.numerator)) : 
 								Gain * MedFilters[Channel].LazyGet(F.numerator);
 							
 							outbuffer[OutBufferIndex + Channel] = OutputSample;
@@ -591,7 +593,7 @@ bool Convert(const std::string& InputFilename, const std::string& OutputFilename
 							for (int Channel = 0; Channel < nChannels; Channel++) {
 
 								FloatType OutputSample = bDither ?
-									OutputSample = Ditherers[Channel].Dither(Gain * HugeFilters[Channel].LazyGet(F.numerator)) :
+									Ditherers[Channel].Dither(Gain * HugeFilters[Channel].LazyGet(F.numerator)) :
 									Gain * HugeFilters[Channel].LazyGet(F.numerator);
 
 								outbuffer[OutBufferIndex + Channel] = OutputSample;
