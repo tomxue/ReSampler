@@ -329,7 +329,7 @@ void listSubFormats(const std::string& f)
 		memset(&sfinfo, 0, sizeof(sfinfo));
 		sfinfo.channels = 1;
 
-		// loop through all subformats and find which ones are valid for f:
+		// loop through all subformats and find which ones are valid for file type:
 		for (auto& subformat : subFormats) {
 			sfinfo.format = (info.format & SF_FORMAT_TYPEMASK) | subformat.second;
 			if (sf_format_check(&sfinfo))
@@ -344,8 +344,6 @@ void listSubFormats(const std::string& f)
 template<typename FloatType> 
 bool Convert(const std::string& InputFilename, const std::string& OutputFilename, unsigned int OutputSampleRate, FloatType Limit, bool Normalize, int OutputFormat, bool bDither, FloatType DitherAmount)
 {
-	const FloatType OvershootCompensationFactor = 0.992; // Scaling factor to allow for filter overshoot
-
 	// Open input file:
 	SndfileHandle infile(InputFilename, SFM_READ);
 	
@@ -372,14 +370,14 @@ bool Convert(const std::string& InputFilename, const std::string& OutputFilename
 		break;
 	}
 
-	size_t BufferSize = (BUFFERSIZE / nChannels) * nChannels; // round down to integer multiple of nChannels (file may have odd number of channels)
+	size_t BufferSize = (BUFFERSIZE / nChannels) * nChannels; // round down to integer multiple of nChannels (file may have odd number of channels!)
 	FloatType inbuffer[BUFFERSIZE];
 	FloatType outbuffer[BUFFERSIZE];
 
 	std::cout << "source file channels: " << nChannels << std::endl;
 	std::cout << "input sample rate: " << InputSampleRate << "\noutput sample rate: " << OutputSampleRate << std::endl;
 	
-	for (auto& subformat : subFormats) {
+	for (auto& subformat : subFormats) { // scan subformats for a match:
 		if (subformat.second == (InputFileFormat & SF_FORMAT_SUBMASK)) {
 			std::cout << "input bit format: " << subformat.first;
 			break;
@@ -444,24 +442,15 @@ bool Convert(const std::string& InputFilename, const std::string& OutputFilename
 		MedFilters.emplace_back(MedFilterTaps);
 	}
 
-	FloatType Gain = Normalize ? F.numerator * (Limit/PeakInputSample) : F.numerator * Limit;
-
-	// Conditionally guard against potential overshoot:
-	if ((PeakInputSample > OvershootCompensationFactor) && !Normalize)
-		Gain *= OvershootCompensationFactor;
-	
-	FloatType PeakOutputSample;
-	SndfileHandle* pOutFile;
-
 	// if the OutputFormat is zero, it means "No change to file format"
 	// if output file format has changed, use OutputFormat. Otherwise, use same format as infile: 
-	int OutputFileFormat = OutputFormat ? OutputFormat : InputFileFormat; 
+	int OutputFileFormat = OutputFormat ? OutputFormat : InputFileFormat;
 
 	// if the minor (sub) format of OutputFileFormat is not set, attempt to use minor format of input file (as a last resort)
 	if ((OutputFileFormat & SF_FORMAT_SUBMASK) == 0) {
 		OutputFileFormat |= (InputFileFormat & SF_FORMAT_SUBMASK); // may not be valid subformat for new file format. 
 	}
-	
+
 	// determine number of bits in output format, for Ditherers:
 	int signalBits;
 	switch (OutputFileFormat & SF_FORMAT_SUBMASK) {
@@ -477,12 +466,29 @@ bool Convert(const std::string& InputFilename, const std::string& OutputFilename
 	}
 	if (bDither)
 		std::cout << "Generating dither for " << signalBits << "-bit output format" << std::endl;
-	
+
 	// make a vector of ditherers (one ditherer for each channel):
 	std::vector<Ditherer<FloatType>> Ditherers;
 	for (unsigned int n = 0; n < nChannels; n++) {
 		Ditherers.emplace_back(signalBits, DitherAmount);
 	}
+	
+	// Estimate initial gain:
+	FloatType Gain = Normalize ? F.numerator * (Limit/PeakInputSample) : F.numerator * Limit;
+
+	// Conditionally guard against filter overshoot:
+	const FloatType OvershootCompensationFactor = 0.992; // Scaling factor to allow for filter overshoot
+	if ((PeakInputSample > OvershootCompensationFactor) && !Normalize)
+		Gain *= OvershootCompensationFactor;
+
+	if (bDither) { // allow headroom for dithering:
+		FloatType DitherCompensation =
+			(pow(2, signalBits - 1) - pow(2, DitherAmount - 1)) / pow(2, signalBits - 1); // eg 32767/32768 = 0.999969 (-0.00027 dB)
+			Gain *= DitherCompensation;
+	}
+	
+	FloatType PeakOutputSample;
+	SndfileHandle* pOutFile;
 	//
 	START_TIMER();
 
@@ -632,7 +638,17 @@ bool Convert(const std::string& InputFilename, const std::string& OutputFilename
 
 		// Test for clipping:
 		if (PeakOutputSample > Limit) {
-			FloatType GainAdjustment = Limit / PeakOutputSample;
+			FloatType GainAdjustment;
+			
+			if (bDither) {
+				FloatType DitherLevel = pow(2, DitherAmount - 1) / pow(2, signalBits - 1);
+				// take Ditherlevel out of calculations, as dither is NOT subject to gain control:
+				GainAdjustment = (Limit-DitherLevel) / (PeakOutputSample-DitherLevel); 
+			}
+
+			else 
+				GainAdjustment = Limit / PeakOutputSample;
+
 			Gain *= GainAdjustment;
 			std::cout << "\nClipping detected !" << std::endl;
 			std::cout << "Re-doing with " << 20 * log10(GainAdjustment) << " dB gain adjustment" << std::endl;
