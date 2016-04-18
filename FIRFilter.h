@@ -356,6 +356,7 @@ void dumpKaiserWindow(int Length, double Beta) {
 	}
 }
 
+// dumpFilter() - utility function for displaying filter coefficients:
 template<typename FloatType> void dumpFilter(const FloatType* Filter, int Length) {
 	for (int i = 0; i < Length; ++i) {
 		std::cout << i << ": " << Filter[i] << std::endl;

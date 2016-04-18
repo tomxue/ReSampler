@@ -75,6 +75,16 @@ Additional options:
 
 **[--doubleprecision]** will force resampler to use double-precision arithmetic for its *internal calculations* and doesn't have anything to do with the file formats, although if you are working with 64-bit double-precision files, it would make sense to use double precision for calculations used in processing.
 
+**[--dither [<amount\>]]** adds +/-<amount\> bits of dither the output file. Dithering deliberately adds a small amount of a particular type of noise (triangular pdf with noise-shaping) prior to quantization to the output file. The goal of dithering is to reduce distortion, and allow extremely quiet passages to be preserved when they would otherwise be below the threshold of the target bit depth. Usually, it only makes sense to add dither when you are converting to a lower bit depth, for example:
+ 
+- floating-point -> 24bit
+- 24bit -> 16bit
+- 16bit -> 8bit
+
+The <amount\> parameter represents the number of *bits* of dither to add. The actual *level* of dithering added is equal to **+/- 2^(<amount\>-1)** *steps*. The default is 1. <amount\> doesn't have to be an integer. Values such as 1.63 are perfectly acceptable, and values in the range 1-6 are sensible for most situations. The noise-shaping curve becomes more pronounced at higher dithering amounts.  
+
+The effect of dithering is most noticable during extremely quiet passages (typically, in fade-outs) of the audio. If you can hear modulation effects, or "tearing" in the quietest passages of your output file, then a greater amount of dither may need to be applied. (note: in many cases, these passages are so quiet, you will need to normalize them just to hear them).
+
 **[--listsubformats <filetype\>]** will list all valid subformats for a given filetype
 
 ## Supported Formats
