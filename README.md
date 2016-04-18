@@ -81,7 +81,7 @@ Additional options:
 - 24bit -> 16bit
 - 16bit -> 8bit
 
-The <amount\> parameter represents the number of *bits* of dither to add. The actual *level* of dithering added is equal to **+/- 2^(amount-1)** *steps*. The default is 1. *amount* doesn't have to be an integer. Values such as 1.63 are perfectly acceptable, and values in the range 1-6 are sensible for most situations. The noise-shaping curve becomes more pronounced at higher dithering amounts.  
+The *amount* parameter represents the number of *bits* of dither to add. The actual *level* of dithering added is equal to **+/- 2^(amount-1)** *steps* (in other words, 2\* *amount* bits peak-to-peak). The default is for *amount* is 1.0, and it doesn't need to be an integer. Values in the range 1-6 are sensible for most situations. The noise-shaping curve becomes more pronounced at higher dithering amounts.  
 
 The effect of dithering is most noticable during extremely quiet passages (typically, in fade-outs) of the audio. If you can hear modulation effects, or "tearing" in the quietest passages of your output file, then a greater amount of dither may need to be applied. (note: in many cases, these passages are so quiet, you will need to normalize them just to hear them).
 
