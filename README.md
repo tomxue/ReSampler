@@ -75,7 +75,7 @@ Additional options:
 
 **[--doubleprecision]** will force resampler to use double-precision arithmetic for its *internal calculations* and doesn't have anything to do with the file formats, although if you are working with 64-bit double-precision files, it would make sense to use double precision for calculations used in processing.
 
-**[--dither [amount]]** adds **+/-*amount*** bits of dither the output file. Dithering deliberately adds a small amount of a particular type of noise (triangular pdf with noise-shaping) prior to quantization to the output file. The goal of dithering is to reduce distortion, and allow extremely quiet passages to be preserved when they would otherwise be below the threshold of the target bit depth. Usually, it only makes sense to add dither when you are converting to a lower bit depth, for example:
+**[--dither [amount]]** adds **+/-amount** *bit*s of dither the output file. Dithering deliberately adds a small amount of a particular type of noise (triangular pdf with noise-shaping) prior to quantization to the output file. The goal of dithering is to reduce distortion, and allow extremely quiet passages to be preserved when they would otherwise be below the threshold of the target bit depth. Usually, it only makes sense to add dither when you are converting to a lower bit depth, for example:
  
 - floating-point -> 24bit
 - 24bit -> 16bit
