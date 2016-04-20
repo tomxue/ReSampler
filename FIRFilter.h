@@ -293,16 +293,18 @@ double FIRFilter<double, FILTERSIZE_HUGE>::get() {
 
 template<typename FloatType> bool makeLPF(FloatType* filter, int Length, FloatType transitionFreq, FloatType sampleRate)
 {
-	FloatType ft = transitionFreq / sampleRate; // normalised transition frequency
+	// use doubles internally, regardless of FloatType (speed not an issue here):
+	// (or long doubles, if they actually worked properly ... ) 
+	double ft = transitionFreq / sampleRate; // normalised transition frequency
 	assert(ft < 0.5);
 	int halfLength = Length / 2;
-	FloatType halfM = 0.5 * (Length - 1);
+	double halfM = 0.5 * (Length - 1);
 
 	if (Length & 1)
 		filter[halfLength] = 2.0 * ft; // if length is odd, avoid divide-by-zero at centre-tap
 
 	for (int n = 0; n<halfLength; ++n) {
-		FloatType sinc = sin(2.0 * M_PI * ft * (n - halfM)) / (M_PI * (n - halfM));	// sinc function
+		double sinc = sin(2.0 * M_PI * ft * (n - halfM)) / (M_PI * (n - halfM));	// sinc function
 		filter[Length - n - 1] = filter[n] = sinc;	// exploit symmetry
 	}
 
@@ -324,19 +326,19 @@ template<typename FloatType> FloatType calcKaiserBeta(FloatType dB)
 	}
 }
 
-// This function applies a Kaiser Window to an array of filter coefficients:
+// applyKaiserWindow() - applies a Kaiser Window to an array of filter coefficients:
 template<typename FloatType> bool applyKaiserWindow(FloatType* filter, int Length, FloatType Beta)
  {
-	 FloatType A;
-	 FloatType maxA = 0; // for diagnostics
-	for (int n = 0; n < Length; ++n) {
+	 double A;	// use double internally, regardless of FloatType (speed not an issue here; no reason not to)
+	 double maxA = 0; // for diagnostics
+	 for (int n = 0; n < Length; ++n) {
 
-		// simplified Kaiser Window Equation:
-		A = (2.0 * Beta / Length) * sqrt(n*(Length - n - 1));
-//		A = (2.0 * Beta / Length) * sqrt(n*(Length - n)); // original (not symmetrical, but good results !)
-		maxA = max(maxA, A);
-		filter[n] *= I0(A) / I0(Beta); 
-	}
+		 // simplified Kaiser Window Equation:
+		 A = (2.0 * Beta / Length) * sqrt(n*(Length - n - 1));
+		 //		A = (2.0 * Beta / Length) * sqrt(n*(Length - n)); // original (not symmetrical, but good results !)
+		 maxA = max(maxA, A);
+		 filter[n] *= I0(A) / I0(Beta);
+	 }
 	
 	//// diagnostic to check accuracy of I0():
 	//	std::cout << "I0( " << maxA << " ) ==" << I0(maxA) << std::endl;
@@ -345,7 +347,18 @@ template<typename FloatType> bool applyKaiserWindow(FloatType* filter, int Lengt
 	return true;
 }
 
-// This function applies a Kaiser Window to an array of filter coefficients ("raw" version):
+template<typename FloatType> FloatType I0(FloatType z)
+{	// 0th-order Modified Bessel function of the first kind
+	double result = 0.0; // double for internal calcs
+	double kfact = 1.0;
+	for (int k = 0; k < 30; ++k) {
+		if (k) kfact *= static_cast<double>(k);
+		result += pow((pow(z, 2.0) / 4.0), k) / pow(kfact, 2.0);
+	}
+	return static_cast<FloatType>(result);
+}
+
+// applyKaiserWindow2() - This function applies a Kaiser Window to an array of filter coefficients ("textbook" version):
 template<typename FloatType> bool applyKaiserWindow2(FloatType* filter, int Length, FloatType Beta)
 {
 	if (Length < 1)
@@ -385,16 +398,6 @@ template<typename FloatType> void dumpFilter(const FloatType* Filter, int Length
 	}
 }
 
-template<typename FloatType> FloatType I0(FloatType z)
-{	// 0th-order Modified Bessel function of the first kind
-	double result = 0.0;
-	double kfact = 1.0;
-	for (int k = 0; k < 30; ++k) {
-		if (k) kfact *= static_cast<double>(k);
-		result += pow((pow(z, 2.0) / 4.0), k) / pow(kfact, 2.0);
-	}
-	return static_cast<FloatType>(result);
-}
 
 
 #endif // FIRFFILTER_H_
