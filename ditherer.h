@@ -11,7 +11,7 @@
 
 #include <cmath>
 
-#define NOISE_SHAPING_FILTER_SIZE 9
+#define NOISE_SHAPING_FILTER_SIZE 11
 
 template<typename FloatType>
 class Ditherer {
@@ -32,43 +32,56 @@ public:
 	
 	FloatType Dither(FloatType inSample) {
 		newRandom = rand();
-
+		
 		// put tpdf noise into history buffer (noise goes in "backwards"):
 		noise[currentIndex] = ditherMagnitude * static_cast<FloatType>(newRandom - oldRandom);
-		if (currentIndex == 0)
-			currentIndex = NOISE_SHAPING_FILTER_SIZE - 1; // wrap
-		else
-			--currentIndex;
-
+		currentIndex = currentIndex ? currentIndex-1 : NOISE_SHAPING_FILTER_SIZE - 1; 
+	
 		// Filter the noise:
 		FloatType shapedNoise = 0.0;
 		int index = currentIndex;
 		for (int i = 0; i <  NOISE_SHAPING_FILTER_SIZE; ++i) {
 			shapedNoise += noise[index] * NoiseShapeCoeffs[i];
-			if (index == NOISE_SHAPING_FILTER_SIZE -1)
-				index = 0; // wrap
-			else
-				index++;
+			index = (index == NOISE_SHAPING_FILTER_SIZE - 1) ? 0 : index + 1;
 		}
 
 		oldRandom = newRandom;
-		return inSample + shapedNoise;
+		outSample = inSample + shapedNoise;
+		
+		return outSample;
 	}
 
 private:
 	int oldRandom, newRandom;
+		
+	FloatType outSample;
 	FloatType signalMagnitude;
 	FloatType ditherMagnitude;
 	int currentIndex;
 	
 	// to-do: feed quantize error signal into filter
-	// to-do FIR doesn't really cut it; need IIR to get the right curve !!
+	// to-do: FIR doesn't really cut it; need IIR to get the right curve !!
 	
 	// small FIR filter for noise-shaping:
 	double NoiseShapeCoeffs[NOISE_SHAPING_FILTER_SIZE] = {
-				
+	
+		// 11-tap:
+		-0.014702063883960252,
+		-0.0010319367876352055,
+		0.06696663418581869,
+		0.0010013618187379699,
+		-0.30273448956854543,
+		0.49822670684302905,
+		-0.30273448956854543,
+		0.0010013618187379699,
+		0.06696663418581869,
+		-0.0010319367876351854,
+		-0.014702063883960252
+
+		// previous filter attempts: 
+
 		// 9-tap:
-		-0.044563530870540866,
+	/*	-0.044563530870540866,
 		-0.0512547777405835,
 		0.01658357145118836,
 		-0.205550523954609,
@@ -76,7 +89,7 @@ private:
 		-0.20555052395460902,
 		0.016583571451188384,
 		-0.0512547777405835,
-		-0.04456353087054085
+		-0.04456353087054085*/
 
 		// 7-tap:
 	/*	-0.021149859750950312,

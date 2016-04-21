@@ -29,7 +29,6 @@
  
 int main(int argc, char * argv[])
 {	
-	//dumpKaiserWindow(29, 14);
 	std::string sourceFilename("");
 	std::string destFilename("");
 	std::string outBitFormat("");
