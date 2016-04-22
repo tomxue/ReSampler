@@ -29,5 +29,8 @@
     <ClInclude Include="ditherer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="biquad.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
