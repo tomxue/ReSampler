@@ -1,4 +1,7 @@
 // Ditherer.h
+//
+// by J.Niemann, 2016
+//
 // defines Ditherer class, for adding tpdf dither to input samples
 //
 // signalBits is the number of bits of the target bitformat
@@ -8,6 +11,7 @@
 
 #ifndef DITHERER_H
 #define DITHERER_H 1
+
 #define FIR_NOISE_SHAPING_FILTER_SIZE 9
 
 #define USE_IIR // if defined, use IIR Filter for noise shaping, otherwise use FIR. 
@@ -20,14 +24,15 @@
 #include <cmath>
 #include "biquad.h"
 #include <random>
-#include <functional>
 
 template<typename FloatType>
 class Ditherer {
 public:
 	unsigned int signalBits;
 	FloatType ditherBits;
-	
+
+// Constructor:
+
 	Ditherer(unsigned int signalBits, FloatType ditherBits)
 		: signalBits(signalBits), ditherBits(ditherBits), E(0)
 
@@ -82,11 +87,12 @@ public:
 		ditherMagnitude = pow(2,ditherBits-1) / signalMagnitude / RAND_MAX;
 		oldRandom = newRandom = 0;
 		
-	}
+	} // Ends Constructor 
+
 
 // The Dither function ///////////////////////////////////////////////////////
 //
-// 1. My Topology:
+// 1. Ditherer Topology:
 //
 //          tpdf Dither------>[filter]
 //                               |
@@ -144,18 +150,19 @@ public:
 
 //
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// 2. "textbook" topology (as described in the paper "Psychoacoustically Optimal Noise Shaping" by Robert. A. Wannamaker)
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// 2. conventional topology (as described in the paper "Psychoacoustically Optimal Noise Shaping" by Robert. A. Wannamaker *)
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 //
-//                           tpdf Dither
-//                               |     ------------> outSample
-//                               v    |                        
-//   inSample ----->+( )------->(+)---+-->[Q]---+--> quantizedOutSample
-//                    -               |         |
-//                    |               -->-( )+<-- 
-//                 [filter]<---------------|
+//                         tpdf Dither
+//                              |     +--------------> outSample
+//                              v     |                        
+//   inSample ----->+( )------>(+)----+--->[Q]----+--> quantizedOutSample
+//                    -               |           |
+//                    ^               +-->-( )+<--+
+//                    |                     |
+//                    +--<--[filter]<-------+
 //
 //
 //
@@ -283,7 +290,7 @@ private:
 		-0.20555052395460902,
 		0.016583571451188384,
 		-0.0512547777405835,
-		-0.04456353087054085*/
+		-0.04456353087054085 */
 
 		// 7-tap:
 	/*	-0.021149859750950312,
@@ -292,7 +299,7 @@ private:
 		0.5731512044421722,
 		-0.15368643534442833,
 		0.033161869936279724,
-		-0.021149859750950312*/
+		-0.021149859750950312 */
 	
 	};
 
@@ -300,5 +307,9 @@ private:
 	FloatType noise[FIR_NOISE_SHAPING_FILTER_SIZE];
 #endif
 };
+
+// *Psychoacoustically Optimal Noise Shaping
+// Robert. A. Wannamaker
+// Journal of the Audio Engineering Society 40(7 / 8) : 611 - 620 · July 1992
 
 #endif // !DITHERER_H
