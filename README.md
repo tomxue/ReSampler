@@ -85,6 +85,8 @@ The *amount* parameter represents the number of *bits* of dither to add. The act
 
 The effect of dithering is most noticable during extremely quiet passages (typically, in fade-outs) of the audio. If you can hear modulation effects, or "tearing" in the quietest passages of your output file, then a greater amount of dither may need to be applied. (note: in many cases, these passages are so quiet, you will need to normalize them just to hear them).
 
+**[--autoblank]** when specified in conjuction with **--dither** , mute the dithering after 30,000 consecutive input samples of *silence* (< -193dB is considered silence). Dithering is re-enabled immediately upon a non-zero input sample being detected.
+
 **[--listsubformats *filetype*]** will list all valid subformats for a given *filetype*
 
 ## Supported Formats
