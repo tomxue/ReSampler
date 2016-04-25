@@ -23,6 +23,8 @@
 
 #define NOISE_SHAPER_TOPOLOGY 1
 
+#define DITHER_USE_SATURATION 1 // restrict output amplitude to +/- 0.999 (guards against excessive dither levels causing clipping)
+
 #include <cmath>
 #include "biquad.h"
 #include <random>
@@ -182,6 +184,12 @@ public:
 		E = quantizedOutSample - inSample; // calculate error 
 		
 		oldRandom = newRandom;
+
+#ifdef DITHER_USE_SATURATION
+		// branchless clipping - restrict to +/- 0.999 (-0.0087 dB):
+		outSample = 0.5*(fabs(outSample + 0.999) - fabs(outSample - 0.999));							
+#endif
+
 		return outSample;
 	}
 
@@ -263,6 +271,11 @@ public:
 		quantizedOutSample = reciprocalSignalMagnitude * round(signalMagnitude * outSample); // quantize
 		E = quantizedOutSample - inSample; // calculate error 
 		oldRandom = newRandom;
+
+#ifdef DITHER_USE_SATURATION
+		// branchless clipping - restrict to +/- 0.999 (-0.0087 dB):
+		outSample = 0.5*(fabs(outSample + 0.999) - fabs(outSample - 0.999));
+#endif
 		return outSample;
 	}
 #endif
