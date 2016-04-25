@@ -1,6 +1,8 @@
 #ifndef FIRFFILTER_H_
 #define FIRFFILTER_H_
 
+// FIRFilter.h : simple FIR filter implementation by J.Niemann
+
 #include <typeinfo>
 
 #define FILTERSIZE_HUGE 32767
@@ -397,7 +399,5 @@ template<typename FloatType> void dumpFilter(const FloatType* Filter, int Length
 		std::cout << i << ": " << Filter[i] << std::endl;
 	}
 }
-
-
 
 #endif // FIRFFILTER_H_

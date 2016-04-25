@@ -1,10 +1,10 @@
 #ifndef RESAMPLER_H
 #define RESAMPLER_H 1
 
+#include <map>
+
 #include <Windows.h>
 #include <sndfile.h>
-
-#include <map>
 
 const std::string strUsage("usage: resampler.exe -i <inputfile> [-o <outputfile>] -r <samplerate> [-b <bitformat>] [-n [<normalization factor>]]\n");
 const std::string strExtraOptions("--doubleprecision\n--listsubformats <ext>\n--dither [<amount>]\n--help\n");
@@ -74,6 +74,21 @@ const std::map<std::string, std::string> defaultSubFormats = {
 	{"xi","dpcm16"}
 };
 
+// structure for holding all the parameters required for a conversion job:
+template<typename FloatType> struct conversionInfo
+{
+	std::string InputFilename;
+	std::string OutputFilename;
+	unsigned int OutputSampleRate;
+	FloatType Limit;
+	bool bNormalize;
+	int OutputFormat;
+	bool bDither;
+	FloatType DitherAmount;
+	bool bAutoBlankingEnabled;
+};
+
+
 bool determineBestBitFormat(std::string & BitFormat, const std::string & inFilename, const std::string & outFilename);
 int determineOutputFormat(const std::string & outFileExt, const std::string & bitFormat);
 void listSubFormats(const std::string & f);
@@ -83,7 +98,7 @@ void getCmdlineParam(char ** begin, char ** end, const std::string & OptionName,
 void getCmdlineParam(char ** begin, char ** end, const std::string & OptionName, unsigned int & nParameter);
 void getCmdlineParam(char ** begin, char ** end, const std::string & OptionName, double & Parameter);
 bool findCmdlineOption(char ** begin, char ** end, const std::string & option);
-template<typename FloatType> bool Convert(const std::string & InputFilename, const std::string & OutputFilename, unsigned int OutputSampleRate, FloatType Limit, bool Normalize, int OutputFormat, bool bDither, FloatType DitherAmount);
+template<typename FloatType> bool Convert(const conversionInfo<FloatType>& ci);
 
 // Timer macros:
 #define START_TIMER() LARGE_INTEGER starttime,finishtime,elapsed,frequency,timetaken; \

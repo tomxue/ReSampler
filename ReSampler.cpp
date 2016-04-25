@@ -16,10 +16,11 @@
 #include "ditherer.h"
 
 ////////////////////////////////////////////////////////////////////////////////////////
-// This program uses the libsndfile Library, 
+// This program uses the libsndfile Library,                                          //
 // available at http://www.mega-nerd.com/libsndfile/
 //
 // (copy of entire package included in $(ProjectDir)\libsbdfile)
+//
 //
 
 #include "sndfile.hh"
@@ -79,6 +80,9 @@ int main(int argc, char * argv[])
 		if (DitherAmount <= 0.0)
 			DitherAmount = 1.0;
 	}
+
+	// parse auto-blanking option (for dithering):
+	bool bAutoBlankingEnabled = findCmdlineOption(argv, argv + argc, "--autoblank");
 	
 	bool bBadParams = false;
 	if (destFilename.empty()) {
@@ -175,7 +179,7 @@ int main(int argc, char * argv[])
 	if (outFileExt != inFileExt)
 	{ // file extensions differ, determine new output format: 
 
-		if (outBitFormat.empty()) { // user changed file extension only. Attempt to choose appropriate output sub format
+		if (outBitFormat.empty()) { // user changed file extension only. Attempt to choose appropriate output sub format:
 			std::cout << "Output Bit Format not specified" << std::endl;
 			determineBestBitFormat(outBitFormat, sourceFilename, destFilename);
 		}
@@ -186,13 +190,39 @@ int main(int argc, char * argv[])
 			std::cout << "Warning: NOT Changing output file format ! (extension different, but format will remain the same)" << std::endl;
 		}
 	}
-		
 	if (bUseDoublePrecision) {
+
 		std::cout << "\nUsing double precision for calculations.\n" << std::endl;
-		return (Convert<double>(sourceFilename, destFilename, OutputSampleRate, Limit, bNormalize, outFileFormat, bDither, DitherAmount)) ? EXIT_SUCCESS : EXIT_FAILURE;
+		using floattype = double;
+		conversionInfo<double> ci;
+		ci.InputFilename = sourceFilename;
+		ci.OutputFilename = destFilename;
+		ci.OutputSampleRate = OutputSampleRate;
+		ci.Limit = Limit;
+		ci.bNormalize = bNormalize;
+		ci.OutputFormat = outFileFormat;
+		ci.bDither = bDither;
+		ci.DitherAmount = DitherAmount;
+		ci.bAutoBlankingEnabled = bAutoBlankingEnabled;
+		return Convert<double>(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
+
 	}
+	
 	else {
-		return (Convert<float>(sourceFilename, destFilename, OutputSampleRate, Limit, bNormalize, outFileFormat, bDither, DitherAmount)) ? EXIT_SUCCESS : EXIT_FAILURE;
+
+		conversionInfo<float> ci;
+		ci.InputFilename = sourceFilename;
+		ci.OutputFilename = destFilename;
+		ci.OutputSampleRate = OutputSampleRate;
+		ci.Limit = Limit;
+		ci.bNormalize = bNormalize;
+		ci.OutputFormat = outFileFormat;
+		ci.bDither = bDither;
+		ci.DitherAmount = DitherAmount;
+		ci.bAutoBlankingEnabled = bAutoBlankingEnabled;
+		
+		return Convert<float>(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
+
 	}
 }
 
@@ -341,26 +371,25 @@ void listSubFormats(const std::string& f)
 	}
 }
 
-template<typename FloatType> 
-bool Convert(const std::string& InputFilename, const std::string& OutputFilename, unsigned int OutputSampleRate, FloatType Limit, bool Normalize, int OutputFormat, bool bDither, FloatType DitherAmount)
+template<typename FloatType>
+bool Convert(const conversionInfo<FloatType>& ci)
 {
 	// Open input file:
-	SndfileHandle infile(InputFilename, SFM_READ);
-	
-	if (int e=infile.error()) {
+	SndfileHandle infile(ci.InputFilename, SFM_READ);
+
+	if (int e = infile.error()) {
 		std::cout << "Error: Couldn't Open Input File (" << sf_error_number(e) << ")" << std::endl;
 		return false;
 	}
 
-	// Calculate conversion parameters, and print a summary for user:
+	// read file properties:
 	unsigned int nChannels = infile.channels();
 	unsigned int InputSampleRate = infile.samplerate();
-	
 	int InputFileFormat = infile.format();
-	bool bFloat = false;
-	bool bDouble = false;
 
 	// detect if input format is a floating-point format:
+	bool bFloat = false;
+	bool bDouble = false;
 	switch (InputFileFormat & SF_FORMAT_SUBMASK) {
 	case SF_FORMAT_FLOAT:
 		bFloat = true;
@@ -370,34 +399,38 @@ bool Convert(const std::string& InputFilename, const std::string& OutputFilename
 		break;
 	}
 
-	size_t BufferSize = (BUFFERSIZE / nChannels) * nChannels; // round down to integer multiple of nChannels (file may have odd number of channels!)
-	FloatType inbuffer[BUFFERSIZE];
-	FloatType outbuffer[BUFFERSIZE];
-
 	std::cout << "source file channels: " << nChannels << std::endl;
-	std::cout << "input sample rate: " << InputSampleRate << "\noutput sample rate: " << OutputSampleRate << std::endl;
-	
+	std::cout << "input sample rate: " << InputSampleRate << "\noutput sample rate: " << ci.OutputSampleRate << std::endl;
+
 	for (auto& subformat : subFormats) { // scan subformats for a match:
 		if (subformat.second == (InputFileFormat & SF_FORMAT_SUBMASK)) {
 			std::cout << "input bit format: " << subformat.first;
 			break;
 		}
 	}
-	
+
 	if (bFloat)
 		std::cout << " (float)" << std::endl;
 	if (bDouble)
 		std::cout << " (double precision)" << std::endl;
-	
-	Fraction F = GetSimplifiedFraction(InputSampleRate, OutputSampleRate);
-	FloatType ResamplingFactor = static_cast<FloatType>(OutputSampleRate) / InputSampleRate;
+
+	Fraction F = GetSimplifiedFraction(InputSampleRate, ci.OutputSampleRate);
+	FloatType ResamplingFactor = static_cast<FloatType>(ci.OutputSampleRate) / InputSampleRate;
 	std::cout << "\nConversion ratio: " << ResamplingFactor
 		<< " (" << F.numerator << ":" << F.denominator << ") \n" << std::endl;
+		
+	size_t BufferSize = (BUFFERSIZE / nChannels) * nChannels; // round down to integer multiple of nChannels (file may have odd number of channels!)
+	assert(BUFFERSIZE >= BufferSize);
 	
-	FloatType PeakInputSample = 0;
-	sf_count_t SamplesRead = 0i64;
-	std::cout << "Scanning input file for peaks ..."; // to-do: can we read the PEAK chunk in floating-point files ?
+	FloatType inbuffer[BUFFERSIZE];
+	FloatType outbuffer[BUFFERSIZE];
+		
 	sf_count_t count;
+	sf_count_t SamplesRead = 0i64;
+	FloatType PeakInputSample = 0.0;
+	
+	std::cout << "Scanning input file for peaks ..."; // to-do: can we read the PEAK chunk in floating-point files ?
+	
 	do {
 		count = infile.read(inbuffer, BufferSize);
 		SamplesRead += count;
@@ -405,16 +438,17 @@ bool Convert(const std::string& InputFilename, const std::string& OutputFilename
 			PeakInputSample = max(PeakInputSample, abs(inbuffer[s]));
 		}
 	} while (count > 0);
+
 	std::cout << "Done\n";
 	std::cout << "Peak input sample: " << std::fixed << PeakInputSample << " (" << 20 * log10(PeakInputSample) << " dBFS)" << std::endl;
 	infile.seek(0i64, SEEK_SET);
 
 	// Calculate filter parameters:
 	int OverSampFreq = InputSampleRate * F.numerator; // eg 160 * 44100
-	unsigned int minSampleRate = min(InputSampleRate, OutputSampleRate);
+	unsigned int minSampleRate = min(InputSampleRate, ci.OutputSampleRate);
 	int TransitionWidth = minSampleRate / 22; // reasonable estimate for allowing transition width to scale with sample rate
-	//TransitionWidth = max(TransitionWidth, 1700); // put a limit on how narrow the transition can be (too narrow will cause issues with low target samplerates)
-	int ft = min(InputSampleRate, OutputSampleRate) / 2.0 - TransitionWidth;
+											  //TransitionWidth = max(TransitionWidth, 1700); // put a limit on how narrow the transition can be (too narrow will cause issues with low target samplerates)
+	int ft = min(InputSampleRate, ci.OutputSampleRate) / 2.0 - TransitionWidth;
 
 	// Make some filters. Huge Filters are used for complex ratios.
 	// Medium filters used for simple ratios (ie 1 in numerator or denominator)
@@ -422,14 +456,12 @@ bool Convert(const std::string& InputFilename, const std::string& OutputFilename
 	FloatType HugeFilterTaps[FILTERSIZE_HUGE];
 	int HugeFilterSize = FILTERSIZE_HUGE;
 	makeLPF<FloatType>(HugeFilterTaps, HugeFilterSize, ft, OverSampFreq);
-	//applyKaiserWindow<FloatType>(HugeFilterTaps, HugeFilterSize, calcKaiserBeta(130));
-	applyKaiserWindow<FloatType>(HugeFilterTaps, HugeFilterSize, 14);
+	applyKaiserWindow<FloatType>(HugeFilterTaps, HugeFilterSize, calcKaiserBeta(140));
 
 	FloatType MedFilterTaps[FILTERSIZE_MEDIUM];
 	int MedFilterSize = FILTERSIZE_MEDIUM;
 	makeLPF<FloatType>(MedFilterTaps, MedFilterSize, ft, OverSampFreq);
-	// applyKaiserWindow<FloatType>(MedFilterTaps, MedFilterSize, calcKaiserBeta(200));
-	applyKaiserWindow<FloatType>(MedFilterTaps, MedFilterSize, 20);
+	applyKaiserWindow<FloatType>(MedFilterTaps, MedFilterSize, calcKaiserBeta(195));
 
 	// make a vector of huge filters (one filter for each channel):
 	std::vector<FIRFilter<FloatType, FILTERSIZE_HUGE>> HugeFilters;
@@ -444,7 +476,7 @@ bool Convert(const std::string& InputFilename, const std::string& OutputFilename
 
 	// if the OutputFormat is zero, it means "No change to file format"
 	// if output file format has changed, use OutputFormat. Otherwise, use same format as infile: 
-	int OutputFileFormat = OutputFormat ? OutputFormat : InputFileFormat;
+	int OutputFileFormat = ci.OutputFormat ? ci.OutputFormat : InputFileFormat;
 
 	// if the minor (sub) format of OutputFileFormat is not set, attempt to use minor format of input file (as a last resort)
 	if ((OutputFileFormat & SF_FORMAT_SUBMASK) == 0) {
@@ -462,31 +494,37 @@ bool Convert(const std::string& InputFilename, const std::string& OutputFilename
 		signalBits = 8;
 		break;
 	default:
-		signalBits = 16;
+		signalBits = 16; // to-do: what should it be for floating-point types ?
 	}
-	if (bDither)
-		std::cout << "Generating dither for " << signalBits << "-bit output format" << std::endl;
+
+	// confirm dithering options for user:
+	if (ci.bDither) {
+		std::cout << "Generating dither for " << signalBits << "-bit output format";
+		if (ci.bAutoBlankingEnabled)
+			std::cout << ", with auto-blanking";
+		std::cout << std::endl;
+	}
 
 	// make a vector of ditherers (one ditherer for each channel):
 	std::vector<Ditherer<FloatType>> Ditherers;
 	for (unsigned int n = 0; n < nChannels; n++) {
-		Ditherers.emplace_back(signalBits, DitherAmount);
+		Ditherers.emplace_back(signalBits, ci.DitherAmount, ci.bAutoBlankingEnabled);
 	}
-	
+
 	// Estimate initial gain:
-	FloatType Gain = Normalize ? F.numerator * (Limit/PeakInputSample) : F.numerator * Limit;
+	FloatType Gain = ci.bNormalize ? F.numerator * (ci.Limit / PeakInputSample) : F.numerator * ci.Limit;
 
 	// Conditionally guard against filter overshoot:
 	const FloatType OvershootCompensationFactor = 0.992; // Scaling factor to allow for filter overshoot
-	if ((PeakInputSample > OvershootCompensationFactor) && !Normalize)
+	if ((PeakInputSample > OvershootCompensationFactor) && !ci.bNormalize)
 		Gain *= OvershootCompensationFactor;
 
-	if (bDither) { // allow headroom for dithering:
+	if (ci.bDither) { // allow headroom for dithering:
 		FloatType DitherCompensation =
-			(pow(2, signalBits - 1) - pow(2, DitherAmount - 1)) / pow(2, signalBits - 1); // eg 32767/32768 = 0.999969 (-0.00027 dB)
-			Gain *= DitherCompensation;
+			(pow(2, signalBits - 1) - pow(2, ci.DitherAmount - 1)) / pow(2, signalBits - 1); // eg 32767/32768 = 0.999969 (-0.00027 dB)
+		Gain *= DitherCompensation;
 	}
-	
+
 	FloatType PeakOutputSample;
 	SndfileHandle* pOutFile;
 	//
@@ -495,8 +533,11 @@ bool Convert(const std::string& InputFilename, const std::string& OutputFilename
 	do { // clipping detection loop (repeat if clipping detected)
 
 		try { // Open output file:
-			pOutFile = new SndfileHandle(OutputFilename, SFM_WRITE, OutputFileFormat, nChannels, OutputSampleRate); // needs to be dynamically allocated, 
-			// because only way to close file is to go out of scope ... and we may need to overwrite file on 2nd pass
+
+			// pOutFile needs to be dynamically allocated, because the only way to close file is to go out of scope 
+			// ... and we may need to overwrite file on subsequent pass:
+
+			pOutFile = new SndfileHandle(ci.OutputFilename, SFM_WRITE, OutputFileFormat, nChannels, ci.OutputSampleRate);	
 
 			if (int e = pOutFile->error()) {
 				std::cout << "Error: Couldn't Open Output File (" << sf_error_number(e) << ")" << std::endl;
@@ -512,8 +553,8 @@ bool Convert(const std::string& InputFilename, const std::string& OutputFilename
 		std::cout << "Converting ...";
 		unsigned int DecimationIndex = 0;
 		unsigned int OutBufferIndex = 0;
-		PeakOutputSample = 0;
-		
+		PeakOutputSample = 0.0;
+
 		if (F.numerator == 1) { // Decimate Only
 			do { // Read and process blocks of samples until the end of file is reached
 				count = infile.read(inbuffer, BufferSize);
@@ -526,8 +567,8 @@ bool Convert(const std::string& InputFilename, const std::string& OutputFilename
 					if (DecimationIndex == 0) { // Decimate
 						for (int Channel = 0; Channel < nChannels; Channel++) {
 
-							FloatType OutputSample = bDither ? 
-								Ditherers[Channel].Dither(Gain * MedFilters[Channel].get()) : 
+							FloatType OutputSample = ci.bDither ?
+								Ditherers[Channel].Dither(Gain * MedFilters[Channel].get()) :
 								Gain * MedFilters[Channel].get();
 
 							outbuffer[OutBufferIndex + Channel] = OutputSample;
@@ -559,11 +600,11 @@ bool Convert(const std::string& InputFilename, const std::string& OutputFilename
 								MedFilters[Channel].put(inbuffer[s + Channel]); // inject a source sample
 							else
 								MedFilters[Channel].putZero(); // inject a Zero
-							
-							FloatType OutputSample = bDither ?
-								Ditherers[Channel].Dither(Gain * MedFilters[Channel].LazyGet(F.numerator)) : 
+
+							FloatType OutputSample = ci.bDither ?
+								Ditherers[Channel].Dither(Gain * MedFilters[Channel].LazyGet(F.numerator)) :
 								Gain * MedFilters[Channel].LazyGet(F.numerator);
-							
+
 							outbuffer[OutBufferIndex + Channel] = OutputSample;
 							PeakOutputSample = max(PeakOutputSample, abs(OutputSample));
 						}
@@ -583,7 +624,7 @@ bool Convert(const std::string& InputFilename, const std::string& OutputFilename
 				count = infile.read(inbuffer, BufferSize);
 				for (unsigned int s = 0; s < count; s += nChannels) {
 					for (int ii = 0; ii < F.numerator; ++ii) { // (ii stands for "interpolation index")
-						// Interpolate:
+															   // Interpolate:
 						if (ii == 0) { // inject a source sample
 							for (int Channel = 0; Channel < nChannels; Channel++) {
 								HugeFilters[Channel].put(inbuffer[s + Channel]);
@@ -598,7 +639,7 @@ bool Convert(const std::string& InputFilename, const std::string& OutputFilename
 						if (DecimationIndex == 0) { // decimate
 							for (int Channel = 0; Channel < nChannels; Channel++) {
 
-								FloatType OutputSample = bDither ?
+								FloatType OutputSample = ci.bDither ?
 									Ditherers[Channel].Dither(Gain * HugeFilters[Channel].LazyGet(F.numerator)) :
 									Gain * HugeFilters[Channel].LazyGet(F.numerator);
 
@@ -629,37 +670,37 @@ bool Convert(const std::string& InputFilename, const std::string& OutputFilename
 
 		std::cout << "Done" << std::endl;
 		std::cout << "\nPeak output sample: " << PeakOutputSample << " (" << 20 * log10(PeakOutputSample) << " dBFS)" << std::endl;
-		
+
 		delete pOutFile; // Close output file
-
-		// To-do: Confirm assumption upon which the following statement is built:
-		if (bDouble || bFloat)
+						
+		if (bDouble || bFloat) // To-do: Confirm assumption upon which the following statement is built:
 			break; // Clipping is not a concern with Floating-Point formats. 
-
+		
 		// Test for clipping:
-		if (PeakOutputSample > Limit) {
-			FloatType GainAdjustment;
+		if (PeakOutputSample > ci.Limit) { // Clipping !
 			
-			if (bDither) {
-				FloatType DitherLevel = pow(2, DitherAmount - 1) / pow(2, signalBits - 1);
+			FloatType GainAdjustment;
+
+			if (ci.bDither) {
+				FloatType DitherLevel = pow(2, ci.DitherAmount - 1) / pow(2, signalBits - 1);
 				// take Ditherlevel out of calculations, as dither is NOT subject to gain control:
-				GainAdjustment = (Limit-DitherLevel) / (PeakOutputSample-DitherLevel); 
+				GainAdjustment = (ci.Limit - DitherLevel) / (PeakOutputSample - DitherLevel);
 			}
 
-			else 
-				GainAdjustment = Limit / PeakOutputSample;
+			else
+				GainAdjustment = ci.Limit / PeakOutputSample;
 
 			Gain *= GainAdjustment;
 			std::cout << "\nClipping detected !" << std::endl;
 			std::cout << "Re-doing with " << 20 * log10(GainAdjustment) << " dB gain adjustment" << std::endl;
-			infile.seek(0i64,SEEK_SET);
+			infile.seek(0i64, SEEK_SET);
 		}
-		
-	} while (PeakOutputSample > Limit);
+
+	} while (PeakOutputSample > ci.Limit);
 
 	STOP_TIMER();
 	return true;
-}
+} // ends Convert()
 
 int gcd(int a, int b) {
 	if (a<0) a = -a;

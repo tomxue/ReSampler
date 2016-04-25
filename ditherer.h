@@ -12,7 +12,7 @@
 #ifndef DITHERER_H
 #define DITHERER_H 1
 
-#define FIR_NOISE_SHAPING_FILTER_SIZE 9
+#define FIR_NOISE_SHAPING_FILTER_SIZE 11
 
 #define USE_IIR // if defined, use IIR Filter for noise shaping, otherwise use FIR. 
 // Note: through experimentation, it has proven difficult to get the desired response curve using FIR
@@ -20,6 +20,8 @@
 
 #define USE_HIGH_QUALITY_RANDOM // if defined, uses C++ std library, instead of rand(), for "better" random numbers.
 // Note: the audible difference in quality between rand() and MT is VERY noticable, so high-quality random numbers are important.
+
+#define NOISE_SHAPER_TOPOLOGY 1
 
 #include <cmath>
 #include "biquad.h"
@@ -31,10 +33,17 @@ public:
 	unsigned int signalBits;
 	FloatType ditherBits;
 
+	// Auto-Blanking parameters:
+	bool bAutoBlankingEnabled; 
+	FloatType autoBlankLevelThreshold;				// input signals below this threshold are considered zero
+	FloatType autoBlankTimeThreshold;				// number of zero samples before activating blanking
+	const FloatType autoBlankDecayFactor = 0.9995;	// dither level will decrease by this factor for each sample when blanking is active
+	
+
 // Constructor:
 
-	Ditherer(unsigned int signalBits, FloatType ditherBits)
-		: signalBits(signalBits), ditherBits(ditherBits), E(0)
+	Ditherer(unsigned int signalBits, FloatType ditherBits, bool bAutoBlankingEnabled)
+		: signalBits(signalBits), ditherBits(ditherBits), bAutoBlankingEnabled(bAutoBlankingEnabled), E(0)
 
 #ifdef USE_HIGH_QUALITY_RANDOM
 		,randGenerator(666)		// initialize (seed) RNG
@@ -84,11 +93,24 @@ public:
 		
 		signalMagnitude = static_cast<FloatType>(1 << (signalBits - 1));
 		reciprocalSignalMagnitude = 1.0 / signalMagnitude;
-		ditherMagnitude = pow(2,ditherBits-1) / signalMagnitude / RAND_MAX;
+		maxDitherMagnitude = pow(2,ditherBits-1) / signalMagnitude / RAND_MAX;
 		oldRandom = newRandom = 0;
+
+		if (bAutoBlankingEnabled) {	// initial state: silence
+			ditherMagnitude = 0.0;
+		}
+		else {	// initial state: dithering
+			ditherMagnitude = maxDitherMagnitude; 
+		}
+
+		autoBlankLevelThreshold = 1.0 / pow(2, 32); // 1 LSB of 32-bit digital
+		autoBlankTimeThreshold = 30000; // number of zero samples before activating autoblank
+		autoBlankDecayCutoff = 0.9 * reciprocalSignalMagnitude / RAND_MAX;
+		zeroCount = 0;
 		
 	} // Ends Constructor 
 
+#if NOISE_SHAPER_TOPOLOGY == 1
 
 // The Dither function ///////////////////////////////////////////////////////
 //
@@ -107,6 +129,22 @@ public:
 
 	FloatType Dither(FloatType inSample) {
 		
+		// Auto-Blanking
+		if (bAutoBlankingEnabled) {
+			if (abs(inSample) < autoBlankLevelThreshold) {
+				++zeroCount;
+				if (zeroCount > autoBlankTimeThreshold) {
+					ditherMagnitude *= 0.9995; // decay
+					if (ditherMagnitude < autoBlankDecayCutoff)
+						ditherMagnitude = 0.0; // decay cutoff
+				}
+			}	
+			else {
+				zeroCount = 0; // reset
+				ditherMagnitude = maxDitherMagnitude; // restore
+			}
+		} // ends auto-blanking
+
 		FloatType shapedNoise = 0.0;
 
 #ifdef USE_HIGH_QUALITY_RANDOM
@@ -132,8 +170,7 @@ public:
 		}
 #else
 		// IIR Noise Shaping:
-		shapedNoise = 1.05 * // tweak factor
-			f2.filter(f1.filter(tpdfNoise)); // filter the triangular noise with two cascaded biQuads 
+		shapedNoise = f2.filter(f1.filter(tpdfNoise)); // filter the triangular noise with two cascaded biQuads 
 #endif
 
 		outSample = inSample + shapedNoise;
@@ -148,7 +185,7 @@ public:
 		return outSample;
 	}
 
-//
+#elif NOISE_SHAPER_TOPOLOGY == 2
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // 2. conventional topology (as described in the paper "Psychoacoustically Optimal Noise Shaping" by Robert. A. Wannamaker *)
@@ -166,52 +203,69 @@ public:
 //
 //
 //
-//	FloatType Dither(FloatType inSample) {
-//		FloatType shapedNoise = 0.0;
-//
-//#ifdef USE_HIGH_QUALITY_RANDOM
-//	newRandom = dist(randGenerator);
-//#else
-//	newRandom = rand();
-//#endif
-//		
-//		FloatType tpdfNoise = ditherMagnitude * static_cast<FloatType>(newRandom - oldRandom);
-//
-//// filtering happens here: /////////////////////////
-//
-//#ifndef USE_IIR
-//		// FIR Noise Shaping:
-//		// put last quantization error into history buffer (goes in "backwards"):
-//		noise[currentIndex] = E;
-//		currentIndex = currentIndex ? currentIndex - 1 : FIR_NOISE_SHAPING_FILTER_SIZE - 1;
-//
-//		// Filter the noise:
-//
-//		int index = currentIndex;
-//		for (int i = 0; i < FIR_NOISE_SHAPING_FILTER_SIZE; ++i) {
-//			shapedNoise += noise[index] * NoiseShapeCoeffs[i];
-//			index = (index == FIR_NOISE_SHAPING_FILTER_SIZE - 1) ? 0 : index + 1;
-//		}
-//#else
-//		// IIR Noise Shaping:
-//		shapedNoise = 1.05 * // tweak factor
-//			f2.filter(f1.filter(tpdfNoise)); // filter the triangular noise with two cascaded biQuads 
-//#endif
-//
-//// ends filtering //////////////////////////////////
-//
-//		inSample -= shapedNoise; // apply Error Feedback
-//		outSample = inSample + tpdfNoise; // apply dither
-//
-//		// Calculate the quantization error. This needs to exactly model the behavior of the I/O library writing samples to outfile, 
-//		// which in our case, appears to use round() ( ... as opposed to floor(), or cast-to-integer ...)
-//
-//		quantizedOutSample = reciprocalSignalMagnitude * round(signalMagnitude * outSample); // quantize
-//		
-//		E = quantizedOutSample - inSample; // calculate error 
-//		oldRandom = newRandom;
-//		return outSample;
-//	}
+	FloatType Dither(FloatType inSample) {
+
+		// Auto-Blanking
+		if (bAutoBlankingEnabled) {
+			if (abs(inSample) < autoBlankLevelThreshold) {
+				++zeroCount;
+				if (zeroCount > autoBlankTimeThreshold) {
+					ditherMagnitude *= 0.9995; // decay
+					if (ditherMagnitude < autoBlankDecayCutoff)
+						ditherMagnitude = 0.0; // decay cutoff
+				}
+			}
+			else {
+				zeroCount = 0; // reset
+				ditherMagnitude = maxDitherMagnitude; // restore
+			}
+		} // ends auto-blanking
+
+#ifdef USE_HIGH_QUALITY_RANDOM
+	newRandom = dist(randGenerator);
+#else
+	newRandom = rand();
+#endif
+		
+		FloatType tpdfNoise = ditherMagnitude * static_cast<FloatType>(newRandom - oldRandom);
+
+// filtering happens here: /////////////////////////
+		
+		FloatType shapedNoise = 0.0;
+
+#ifndef USE_IIR
+		// FIR Noise Shaping:
+		// put last quantization error into history buffer (goes in "backwards"):
+		noise[currentIndex] = E;
+		currentIndex = currentIndex ? currentIndex - 1 : FIR_NOISE_SHAPING_FILTER_SIZE - 1;
+
+		// Filter the noise:
+
+		int index = currentIndex;
+		for (int i = 0; i < FIR_NOISE_SHAPING_FILTER_SIZE; ++i) {
+			shapedNoise += noise[index] * NoiseShapeCoeffs[i];
+			index = (index == FIR_NOISE_SHAPING_FILTER_SIZE - 1) ? 0 : index + 1;
+		}
+#else
+		// IIR Noise Shaping:
+		shapedNoise = 1.05 * // tweak factor
+			f2.filter(f1.filter(E)); // filter the error with two cascaded biQuads 
+#endif
+
+// ends filtering //////////////////////////////////
+
+		inSample -= shapedNoise; // apply Error Feedback
+		outSample = inSample + tpdfNoise; // apply dither
+
+		// Calculate the quantization error. This needs to exactly model the behavior of the I/O library writing samples to outfile, 
+		// which in our case, appears to use round() ( ... as opposed to floor(), or cast-to-integer ...)
+
+		quantizedOutSample = reciprocalSignalMagnitude * round(signalMagnitude * outSample); // quantize
+		E = quantizedOutSample - inSample; // calculate error 
+		oldRandom = newRandom;
+		return outSample;
+	}
+#endif
 
 private:
 	int oldRandom, newRandom;
@@ -220,7 +274,9 @@ private:
 	FloatType outSample;
 	FloatType signalMagnitude;	// maximum integral value for signal target bit depth (for quantizing) 
 	FloatType reciprocalSignalMagnitude; // for normalizing quantized signal back to +/- 1.0 
-	FloatType ditherMagnitude;	// maximum integral value for dither target bit depth
+	FloatType maxDitherMagnitude, ditherMagnitude;	// maximum integral value for dither target bit depth
+	__int64 zeroCount; // number of consecutive zeroes in input;
+	FloatType autoBlankDecayCutoff;	// threshold at which ditherMagnitude is set to zero during active blanking
 
 #ifdef USE_HIGH_QUALITY_RANDOM
 	std::mt19937 randGenerator; // Mersenne Twister - one of the best random number algorithms available
@@ -238,7 +294,7 @@ private:
 	double NoiseShapeCoeffs[FIR_NOISE_SHAPING_FILTER_SIZE] = {
 	
 		// 11-tap:
-		/*-0.014702063883960252,
+		-0.014702063883960252,
 		-0.0010319367876352055,
 		0.06696663418581869,
 		0.0010013618187379699,
@@ -248,16 +304,22 @@ private:
 		0.0010013618187379699,
 		0.06696663418581869,
 		-0.0010319367876351854,
-		-0.014702063883960252*/
+		-0.014702063883960252
 
-		// super-duper 9-tap (Psychoacoustically Optimal Noise Shaping):
+		// Psychoacoustically Optimal Noise Shaping:
 		// this filter is the "F-Weighted" noise filter described by Wannaker.
 		// It is designed to produce minimum audibility, but I personally don't like the sound of it. 
 		// However, YMMV ...
 		// From experimentation, it seems clear that 
 		// "audibility" and "pleastantness/unpleasantness" of noise are two very different things !
-		/*
-		2.412,
+
+		// 3-tap:
+	/*	1.623,
+		-0.982,
+		0.109*/
+
+		// 9-tap:
+		/*	2.412,
 		-3.370,
 		3.937,
 		-4.174,
@@ -265,19 +327,54 @@ private:
 		-2.205,
 		1.281,
 		-0.569,
-		0.0847 */
+		0.0847 
+	*/
+		//0.09648,
+		//- 0.13480,
+		//0.15748,
+		//- 0.16696,
+		//0.13412,
+		//- 0.08820,
+		//0.05124,
+		//- 0.02276,
+		//0.00339 // normalized to 0dB peak (x0.04)
+			
+		
+		//0.00339,  // reversed, normalized to 0dB peak (x0.04)
+		//- 0.02276,
+		//0.05124,
+		//- 0.08820,
+		//0.13412,
+		//- 0.16696,
+		//0.15748,
+		//- 0.13480,
+		//0.09648
 
-		0.09648,
-		- 0.13480,
-		0.15748,
-		- 0.16696,
-		0.13412,
-		- 0.08820,
-		0.05124,
-		- 0.02276,
-		0.00339 // normalized to 0dB peak (x0.04)
-
-
+		//24-tap (needs normalization):
+	/*	2.391510,
+		-3.284444,
+		3.679506,
+		-3.635044,
+		2.524185,
+		-1.146701,
+		0.115354,
+		0.513745,
+		-0.749277,
+		0.512386,
+		-0.188997,
+		-0.043705,
+		0.149843,
+		-0.151186,
+		0.076302,
+		-0.012070,
+		-0.021127,
+		0.025232,
+		-0.016121,
+		0.004453,
+		0.000876,
+		-0.001799,
+		0.000774,
+		-0.000128*/
 		
 		// previous filter attempts: 
 

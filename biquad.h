@@ -1,6 +1,8 @@
 #ifndef biquad_H
 #define biquad_H
 
+// Simple iir biquad filter implementation
+
 template<typename FloatType> class Biquad {
 public:
 	
@@ -16,7 +18,7 @@ public:
 		// Biquad calculation using transposed Direct Form 2:
 		
 		FloatType outSample = inSample * a0 + z1;
-		z1 = inSample * a1 + z2 - b1 * outSample	;
+		z1 = inSample * a1 + z2 - b1 * outSample;
 		z2 = inSample * a2 - b2 * outSample;
 		return outSample;
 	}
