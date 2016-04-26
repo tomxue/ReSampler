@@ -11,6 +11,8 @@ const std::string strExtraOptions("--doubleprecision\n--listsubformats <ext>\n--
 
 #define BUFFERSIZE 8192 // buffer size for file reads
 
+
+
 typedef struct fraction {
 	int numerator;
 	int denominator;

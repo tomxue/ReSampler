@@ -9,8 +9,8 @@
 #include <iomanip>
 
 #define _USE_MATH_DEFINES
-
 #include <math.h>
+
 #include "ReSampler.h"
 #include "FIRFilter.h"
 #include "ditherer.h"
@@ -34,7 +34,7 @@ int main(int argc, char * argv[])
 	std::string destFilename("");
 	std::string outBitFormat("");
 	int outFileFormat = 0;
-	unsigned int OutputSampleRate;
+	unsigned int OutputSampleRate=44100;
 	double NormalizeAmount = 1.0;
 	double DitherAmount = 1.0;
 
@@ -650,6 +650,7 @@ bool Convert(const conversionInfo<FloatType>& ci)
 		} // ends Interpolate Only
 
 		else { // Interpolate and Decimate
+
 			do { // Read and process blocks of samples until the end of file is reached
 				count = infile.read(inbuffer, BufferSize);
 				for (unsigned int s = 0; s < count; s += nChannels) {
@@ -667,6 +668,7 @@ bool Convert(const conversionInfo<FloatType>& ci)
 						}
 
 						if (DecimationIndex == 0) { // decimate
+
 							for (int Channel = 0; Channel < nChannels; Channel++) {
 
 								FloatType OutputSample = ci.bDither ?
