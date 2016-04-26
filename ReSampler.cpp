@@ -555,7 +555,37 @@ bool Convert(const conversionInfo<FloatType>& ci)
 		unsigned int OutBufferIndex = 0;
 		PeakOutputSample = 0.0;
 
-		if (F.numerator == 1) { // Decimate Only
+		if (F.numerator == 1 && F.denominator == 1) { // no change to sample rate; format conversion only
+			
+			std::cout << " No change to sample rate" << std::endl;
+			do { // Read and process blocks of samples until the end of file is reached
+
+				count = infile.read(inbuffer, BufferSize);
+
+				for (unsigned int s = 0; s < count; s += nChannels) {
+
+					for (int Channel = 0; Channel < nChannels; Channel++)
+					{
+						FloatType OutputSample = ci.bDither ?
+							Ditherers[Channel].Dither(Gain * inbuffer[s + Channel]) :
+							Gain * inbuffer[s + Channel];
+
+						outbuffer[OutBufferIndex + Channel] = OutputSample;
+						PeakOutputSample = max(abs(PeakOutputSample), abs(OutputSample));
+					}
+
+					OutBufferIndex += nChannels;
+					if (OutBufferIndex == BufferSize) {
+						OutBufferIndex = 0;
+						pOutFile->write(outbuffer, BufferSize);
+					}
+
+				} // ends loop over s
+			} while (count > 0);
+		}
+
+
+		else if (F.numerator == 1 && F.denominator != 1) { // Decimate Only
 			do { // Read and process blocks of samples until the end of file is reached
 				count = infile.read(inbuffer, BufferSize);
 
@@ -664,6 +694,7 @@ bool Convert(const conversionInfo<FloatType>& ci)
 			} while (count > 0);
 		} // ends Interpolate and Decimate
 
+		// Tail:
 		if (OutBufferIndex != 0) {
 			pOutFile->write(outbuffer, OutBufferIndex); // finish writing whatever remains in the buffer 
 		}
