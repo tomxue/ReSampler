@@ -191,7 +191,6 @@ int main(int argc, char * argv[])
 		}
 	}
 	if (bUseDoublePrecision) {
-
 		std::cout << "\nUsing double precision for calculations.\n" << std::endl;
 		using floattype = double;
 		conversionInfo<double> ci;
@@ -205,11 +204,9 @@ int main(int argc, char * argv[])
 		ci.DitherAmount = DitherAmount;
 		ci.bAutoBlankingEnabled = bAutoBlankingEnabled;
 		return Convert<double>(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
-
 	}
 	
 	else {
-
 		conversionInfo<float> ci;
 		ci.InputFilename = sourceFilename;
 		ci.OutputFilename = destFilename;
@@ -220,9 +217,7 @@ int main(int argc, char * argv[])
 		ci.bDither = bDither;
 		ci.DitherAmount = DitherAmount;
 		ci.bAutoBlankingEnabled = bAutoBlankingEnabled;
-		
 		return Convert<float>(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
-
 	}
 }
 

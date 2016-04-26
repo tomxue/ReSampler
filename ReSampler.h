@@ -7,11 +7,9 @@
 #include <sndfile.h>
 
 const std::string strUsage("usage: resampler.exe -i <inputfile> [-o <outputfile>] -r <samplerate> [-b <bitformat>] [-n [<normalization factor>]]\n");
-const std::string strExtraOptions("--doubleprecision\n--listsubformats <ext>\n--dither [<amount>]\n--help\n");
+const std::string strExtraOptions("--doubleprecision\n--listsubformats <ext>\n--dither [<amount>]\n--autoblank\n--help\n");
 
 #define BUFFERSIZE 8192 // buffer size for file reads
-
-
 
 typedef struct fraction {
 	int numerator;
