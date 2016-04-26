@@ -126,7 +126,7 @@ public:
 //                    -               |           |
 //                    ^               +-->-( )+<--+ 
 //                    |                     |
-//                    +----------<----------+
+//                    +-------[z^-1]--------+
 //
 
 	FloatType Dither(FloatType inSample) {
@@ -320,7 +320,7 @@ private:
 		-0.014702063883960252
 
 		// Psychoacoustically Optimal Noise Shaping:
-		// this filter is the "F-Weighted" noise filter described by Wannaker.
+		// this filter is the "F-Weighted" noise filter described by Wannamaker.
 		// It is designed to produce minimum audibility, but I personally don't like the sound of it. 
 		// However, YMMV ...
 		// From experimentation, it seems clear that 
