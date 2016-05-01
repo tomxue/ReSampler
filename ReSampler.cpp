@@ -433,11 +433,18 @@ bool Convert(const conversionInfo<FloatType>& ci)
 			PeakInputSample = max(PeakInputSample, abs(inbuffer[s]));
 		}
 	} while (count > 0);
-
+	
+	infile.seek(0i64, SEEK_SET); // rewind back to start of file
+	
 	std::cout << "Done\n";
 	std::cout << "Peak input sample: " << std::fixed << PeakInputSample << " (" << 20 * log10(PeakInputSample) << " dBFS)" << std::endl;
-	infile.seek(0i64, SEEK_SET);
-
+	
+	if (ci.bNormalize) { // echo Normalization settings to user
+		std::ios::fmtflags f(std::cout.flags());
+		std::cout << "Normalizing to " << std::setprecision(2) << ci.Limit << std::endl;
+		std::cout.flags(f);
+	}
+	
 	// Calculate filter parameters:
 	int OverSampFreq = InputSampleRate * F.numerator; // eg 160 * 44100
 	unsigned int minSampleRate = min(InputSampleRate, ci.OutputSampleRate);
@@ -494,7 +501,9 @@ bool Convert(const conversionInfo<FloatType>& ci)
 
 	// confirm dithering options for user:
 	if (ci.bDither) {
-		std::cout << "Generating dither for " << signalBits << "-bit output format";
+		std::ios::fmtflags f(std::cout.flags());
+		std::cout << "Generating " << std::setprecision(2) << ci.DitherAmount << " bits of dither for " << signalBits << "-bit output format";
+		std::cout.flags(f);
 		if (ci.bAutoBlankingEnabled)
 			std::cout << ", with auto-blanking";
 		std::cout << std::endl;
@@ -697,7 +706,7 @@ bool Convert(const conversionInfo<FloatType>& ci)
 		}
 
 		std::cout << "Done" << std::endl;
-		std::cout << "\nPeak output sample: " << PeakOutputSample << " (" << 20 * log10(PeakOutputSample) << " dBFS)" << std::endl;
+		std::cout << "\nPeak output sample: " << std::setprecision(6)  << PeakOutputSample << " ("  <<  20 * log10(PeakOutputSample) << " dBFS)" << std::endl;
 
 		delete pOutFile; // Close output file
 						
