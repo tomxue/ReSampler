@@ -44,6 +44,12 @@ int main(int argc, char * argv[])
 	getCmdlineParam(argv, argv + argc, "-r", OutputSampleRate);
 	getCmdlineParam(argv, argv + argc, "-b", outBitFormat);
 
+	// parse version switch:
+	if (findCmdlineOption(argv, argv + argc, "--version")) {
+		std::cout << strVersion << std::endl;
+		exit(EXIT_SUCCESS);
+	}
+
 	// parse help switch:
 	if (findCmdlineOption(argv, argv + argc, "--help") || findCmdlineOption(argv, argv + argc, "-h")) {
 		std::cout << strUsage << std::endl;
@@ -435,7 +441,7 @@ bool Convert(const conversionInfo<FloatType>& ci)
 	} while (count > 0);
 	
 	infile.seek(0i64, SEEK_SET); // rewind back to start of file
-	
+
 	std::cout << "Done\n";
 	std::cout << "Peak input sample: " << std::fixed << PeakInputSample << " (" << 20 * log10(PeakInputSample) << " dBFS)" << std::endl;
 	
