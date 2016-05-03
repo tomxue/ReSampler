@@ -125,7 +125,7 @@ int main(int argc, char * argv[])
 	}
 
 #ifdef _M_X64
-	std::cout << "64-bit version\n" << std::endl;
+	std::cout << "64-bit version" << std::endl;
 #else
 	std::cout << "32-bit version";
 #if defined(USE_SSE2)
@@ -197,7 +197,7 @@ int main(int argc, char * argv[])
 		}
 	}
 	if (bUseDoublePrecision) {
-		std::cout << "\nUsing double precision for calculations.\n" << std::endl;
+		std::cout << "Using double precision for calculations." << std::endl;
 		using floattype = double;
 		conversionInfo<double> ci;
 		ci.InputFilename = sourceFilename;
@@ -418,7 +418,7 @@ bool Convert(const conversionInfo<FloatType>& ci)
 	Fraction F = GetSimplifiedFraction(InputSampleRate, ci.OutputSampleRate);
 	FloatType ResamplingFactor = static_cast<FloatType>(ci.OutputSampleRate) / InputSampleRate;
 	std::cout << "\nConversion ratio: " << ResamplingFactor
-		<< " (" << F.numerator << ":" << F.denominator << ") \n" << std::endl;
+		<< " (" << F.numerator << ":" << F.denominator << ")" << std::endl;
 		
 	size_t BufferSize = (BUFFERSIZE / nChannels) * nChannels; // round down to integer multiple of nChannels (file may have odd number of channels!)
 	assert(BUFFERSIZE >= BufferSize);
@@ -712,7 +712,7 @@ bool Convert(const conversionInfo<FloatType>& ci)
 		}
 
 		std::cout << "Done" << std::endl;
-		std::cout << "\nPeak output sample: " << std::setprecision(6)  << PeakOutputSample << " ("  <<  20 * log10(PeakOutputSample) << " dBFS)" << std::endl;
+		std::cout << "Peak output sample: " << std::setprecision(6)  << PeakOutputSample << " ("  <<  20 * log10(PeakOutputSample) << " dBFS)" << std::endl;
 
 		delete pOutFile; // Close output file
 						
