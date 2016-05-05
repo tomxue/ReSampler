@@ -27,14 +27,14 @@
 
 //                                                                                    //
 ////////////////////////////////////////////////////////////////////////////////////////
- 
+
 int main(int argc, char * argv[])
-{	
+{
 	std::string sourceFilename("");
 	std::string destFilename("");
 	std::string outBitFormat("");
 	int outFileFormat = 0;
-	unsigned int OutputSampleRate=44100;
+	unsigned int OutputSampleRate = 44100;
 	double NormalizeAmount = 1.0;
 	double DitherAmount = 1.0;
 
@@ -56,7 +56,7 @@ int main(int argc, char * argv[])
 		std::cout << "Additional options:\n\n" << strExtraOptions << std::endl;
 		exit(EXIT_SUCCESS);
 	}
-	
+
 	// parse double precision switch:
 	bool bUseDoublePrecision = findCmdlineOption(argv, argv + argc, "--doubleprecision");
 
@@ -68,7 +68,7 @@ int main(int argc, char * argv[])
 		listSubFormats(filetype);
 		exit(EXIT_SUCCESS);
 	}
-	
+
 	// parse normalize option and parameter:
 	bool bNormalize = findCmdlineOption(argv, argv + argc, "-n");
 	if (bNormalize) {
@@ -89,7 +89,7 @@ int main(int argc, char * argv[])
 
 	// parse auto-blanking option (for dithering):
 	bool bAutoBlankingEnabled = findCmdlineOption(argv, argv + argc, "--autoblank");
-	
+
 	bool bBadParams = false;
 	if (destFilename.empty()) {
 		if (sourceFilename.empty()) {
@@ -155,16 +155,16 @@ int main(int argc, char * argv[])
 
 	std::cout << "Input file: " << sourceFilename << std::endl;
 	std::cout << "Output file: " << destFilename << std::endl;
-	
+
 	double Limit = bNormalize ? NormalizeAmount : 1.0;
 
 	// Isolate the file extensions
 	std::string inFileExt("");
 	std::string outFileExt("");
-	
+
 	if (sourceFilename.find_last_of(".") != std::string::npos)
 		inFileExt = sourceFilename.substr(sourceFilename.find_last_of(".") + 1);
-	
+
 	if (destFilename.find_last_of(".") != std::string::npos)
 		outFileExt = destFilename.substr(destFilename.find_last_of(".") + 1);
 
@@ -172,7 +172,7 @@ int main(int argc, char * argv[])
 		if (outFileFormat = determineOutputFormat(outFileExt, outBitFormat))
 			std::cout << "Changing output bit format to " << outBitFormat << std::endl;
 		else { // user-supplied bit format not valid; try choosing appropriate format
-			determineBestBitFormat(outBitFormat, sourceFilename, destFilename); 
+			determineBestBitFormat(outBitFormat, sourceFilename, destFilename);
 			if (outFileFormat = determineOutputFormat(outFileExt, outBitFormat))
 				std::cout << "Changing output bit format to " << outBitFormat << std::endl;
 			else {
@@ -180,7 +180,7 @@ int main(int argc, char * argv[])
 				outFileFormat = 0; // back where it started
 			}
 		}
-	}	
+	}
 
 	if (outFileExt != inFileExt)
 	{ // file extensions differ, determine new output format: 
@@ -189,8 +189,8 @@ int main(int argc, char * argv[])
 			std::cout << "Output Bit Format not specified" << std::endl;
 			determineBestBitFormat(outBitFormat, sourceFilename, destFilename);
 		}
-		
-		if(outFileFormat = determineOutputFormat(outFileExt, outBitFormat))
+
+		if (outFileFormat = determineOutputFormat(outFileExt, outBitFormat))
 			std::cout << "Changing output file format to " << outFileExt << std::endl;
 		else { // cannot determine subformat of output file
 			std::cout << "Warning: NOT Changing output file format ! (extension different, but format will remain the same)" << std::endl;
@@ -211,7 +211,7 @@ int main(int argc, char * argv[])
 		ci.bAutoBlankingEnabled = bAutoBlankingEnabled;
 		return Convert<double>(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
 	}
-	
+
 	else {
 		conversionInfo<float> ci;
 		ci.InputFilename = sourceFilename;
@@ -250,7 +250,7 @@ bool determineBestBitFormat(std::string& BitFormat, const std::string& inFilenam
 			break;
 		}
 	}
-	
+
 	// get file extensions:
 	std::string inFileExt("");
 	if (inFilename.find_last_of(".") != std::string::npos)
@@ -265,31 +265,29 @@ bool determineBestBitFormat(std::string& BitFormat, const std::string& inFilenam
 	int format, major_count;
 	memset(&formatinfo, 0, sizeof(formatinfo));
 	sf_command(NULL, SFC_GET_FORMAT_MAJOR_COUNT, &major_count, sizeof(int));
-	
+
 	// determine if inFile's subformat is valid for outFile
 	for (int m = 0; m < major_count; m++)
 	{
 		formatinfo.format = m;
-		sf_command(NULL, SFC_GET_FORMAT_MAJOR, &formatinfo, sizeof(formatinfo));	
-		
+		sf_command(NULL, SFC_GET_FORMAT_MAJOR, &formatinfo, sizeof(formatinfo));
+
 		if (stricmp(formatinfo.extension, outFileExt.c_str()) == 0) {
 			format = formatinfo.format | (inFileFormat & SF_FORMAT_SUBMASK); // combine outfile's major format with infile's subformat 
-		
-		   // Check if format / subformat combination is valid:
+			// Check if format / subformat combination is valid:
 			SF_INFO sfinfo;
 			memset(&sfinfo, 0, sizeof(sfinfo));
 			sfinfo.channels = 1;
 			sfinfo.format = format;
-			if (!sf_format_check(&sfinfo))  { // not valid; use default format
+			if (!sf_format_check(&sfinfo)) { // not valid; use default format
 				std::cout << "Output file format " << outFileExt << " and subformat " << BitFormat << " combination not valid ... ";
 				BitFormat.clear();
 				BitFormat = defaultSubFormats.find(outFileExt)->second;
 				std::cout << "defaulting to " << BitFormat << std::endl;
 				break;
-			}	
+			}
 		}
 	}
-	
 	return true;
 }
 
@@ -304,10 +302,10 @@ int determineOutputFormat(const std::string& outFileExt, const std::string& bitF
 	bool bFileExtFound = false;
 
 	// Loop through all major formats to find match for outFileExt:
-	for (int m = 0; m < major_count; ++m) { 
+	for (int m = 0; m < major_count; ++m) {
 		info.format = m;
 		sf_command(NULL, SFC_GET_FORMAT_MAJOR, &info, sizeof(info));
-		if (strcmpi(info.extension, outFileExt.c_str())==0) {	
+		if (strcmpi(info.extension, outFileExt.c_str()) == 0) {
 			bFileExtFound = true;
 			break;
 		}
@@ -326,7 +324,7 @@ int determineOutputFormat(const std::string& outFileExt, const std::string& bitF
 	if (bitFormat == "8") {
 		// user specified 8-bit. Determine whether it must be unsigned or signed, based on major type:
 		// These formats always use unsigned 8-bit when they use 8-bit: mat rf64 voc w64 wav
-		
+
 		if ((outFileExt == "mat") || (outFileExt == "rf64") || (outFileExt == "voc") || (outFileExt == "w64") || (outFileExt == "wav"))
 			format = info.format | SF_FORMAT_PCM_U8;
 		else
@@ -350,7 +348,7 @@ void listSubFormats(const std::string& f)
 	for (int m = 0; m < major_count; ++m) {
 		info.format = m;
 		sf_command(NULL, SFC_GET_FORMAT_MAJOR, &info, sizeof(info));
-		if (strcmpi(info.extension,f.c_str()) == 0) {
+		if (strcmpi(info.extension, f.c_str()) == 0) {
 			bFileExtFound = true;
 			break;
 		}
@@ -419,19 +417,19 @@ bool Convert(const conversionInfo<FloatType>& ci)
 	FloatType ResamplingFactor = static_cast<FloatType>(ci.OutputSampleRate) / InputSampleRate;
 	std::cout << "\nConversion ratio: " << ResamplingFactor
 		<< " (" << F.numerator << ":" << F.denominator << ")" << std::endl;
-		
+
 	size_t BufferSize = (BUFFERSIZE / nChannels) * nChannels; // round down to integer multiple of nChannels (file may have odd number of channels!)
 	assert(BUFFERSIZE >= BufferSize);
-	
+
 	FloatType inbuffer[BUFFERSIZE];
 	FloatType outbuffer[BUFFERSIZE];
-		
+
 	sf_count_t count;
 	sf_count_t SamplesRead = 0i64;
 	FloatType PeakInputSample = 0.0;
-	
+
 	std::cout << "Scanning input file for peaks ..."; // to-do: can we read the PEAK chunk in floating-point files ?
-	
+
 	do {
 		count = infile.read(inbuffer, BufferSize);
 		SamplesRead += count;
@@ -439,18 +437,18 @@ bool Convert(const conversionInfo<FloatType>& ci)
 			PeakInputSample = max(PeakInputSample, abs(inbuffer[s]));
 		}
 	} while (count > 0);
-	
+
 	infile.seek(0i64, SEEK_SET); // rewind back to start of file
 
 	std::cout << "Done\n";
 	std::cout << "Peak input sample: " << std::fixed << PeakInputSample << " (" << 20 * log10(PeakInputSample) << " dBFS)" << std::endl;
-	
+
 	if (ci.bNormalize) { // echo Normalization settings to user
 		std::ios::fmtflags f(std::cout.flags());
 		std::cout << "Normalizing to " << std::setprecision(2) << ci.Limit << std::endl;
 		std::cout.flags(f);
 	}
-	
+
 	// Calculate filter parameters:
 	int OverSampFreq = InputSampleRate * F.numerator; // eg 160 * 44100
 	unsigned int minSampleRate = min(InputSampleRate, ci.OutputSampleRate);
@@ -544,10 +542,10 @@ bool Convert(const conversionInfo<FloatType>& ci)
 
 		try { // Open output file:
 
-			// pOutFile needs to be dynamically allocated, because the only way to close file is to go out of scope 
-			// ... and we may need to overwrite file on subsequent pass:
+			  // pOutFile needs to be dynamically allocated, because the only way to close file is to go out of scope 
+			  // ... and we may need to overwrite file on subsequent pass:
 
-			pOutFile = new SndfileHandle(ci.OutputFilename, SFM_WRITE, OutputFileFormat, nChannels, ci.OutputSampleRate);	
+			pOutFile = new SndfileHandle(ci.OutputFilename, SFM_WRITE, OutputFileFormat, nChannels, ci.OutputSampleRate);
 
 			if (int e = pOutFile->error()) {
 				std::cout << "Error: Couldn't Open Output File (" << sf_error_number(e) << ")" << std::endl;
@@ -566,7 +564,7 @@ bool Convert(const conversionInfo<FloatType>& ci)
 		PeakOutputSample = 0.0;
 
 		if (F.numerator == 1 && F.denominator == 1) { // no change to sample rate; format conversion only
-			
+
 			std::cout << " No change to sample rate" << std::endl;
 			do { // Read and process blocks of samples until the end of file is reached
 
@@ -706,22 +704,22 @@ bool Convert(const conversionInfo<FloatType>& ci)
 			} while (count > 0);
 		} // ends Interpolate and Decimate
 
-		// Tail:
+		  // Tail:
 		if (OutBufferIndex != 0) {
 			pOutFile->write(outbuffer, OutBufferIndex); // finish writing whatever remains in the buffer 
 		}
 
 		std::cout << "Done" << std::endl;
-		std::cout << "Peak output sample: " << std::setprecision(6)  << PeakOutputSample << " ("  <<  20 * log10(PeakOutputSample) << " dBFS)" << std::endl;
+		std::cout << "Peak output sample: " << std::setprecision(6) << PeakOutputSample << " (" << 20 * log10(PeakOutputSample) << " dBFS)" << std::endl;
 
 		delete pOutFile; // Close output file
-						
+
 		if (bDouble || bFloat) // To-do: Confirm assumption upon which the following statement is built:
 			break; // Clipping is not a concern with Floating-Point formats. 
-		
-		// Test for clipping:
+
+				   // Test for clipping:
 		if (PeakOutputSample > ci.Limit) { // Clipping !
-			
+
 			FloatType GainAdjustment;
 
 			if (ci.bDither) {
@@ -764,10 +762,10 @@ Fraction GetSimplifiedFraction(int InputSampleRate, int OutputSampleRate)			// e
 	return f;
 }
 
-void getCmdlineParam(char** begin, char** end, const std::string& OptionName, std::string& Parameter) 
+void getCmdlineParam(char** begin, char** end, const std::string& OptionName, std::string& Parameter)
 {
 	Parameter = "";
-	char** it = std::find(begin, end, OptionName);	
+	char** it = std::find(begin, end, OptionName);
 	if (it != end)	// found option
 		if (++it != end) // found parameter after option
 			Parameter = *it;
