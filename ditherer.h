@@ -12,7 +12,7 @@
 #ifndef DITHERER_H
 #define DITHERER_H 1
 
-#define FIR_NOISE_SHAPING_FILTER_SIZE 11
+#define FIR_NOISE_SHAPING_FILTER_SIZE 9
 
 #define USE_IIR // if defined, use IIR Filter for noise shaping, otherwise use FIR. 
 // Note: through experimentation, it has proven difficult to get the desired response curve using FIR
@@ -23,7 +23,7 @@
 
 #define NOISE_SHAPER_TOPOLOGY 1
 
-#define DITHER_USE_SATURATION 1 // restrict output amplitude to +/- 0.999 (guards against excessive dither levels causing clipping)
+#define DITHER_USE_SATURATION  // restrict output amplitude to +/- 0.999 (guards against excessive dither levels causing clipping)
 
 #include <cmath>
 #include "biquad.h"
@@ -117,10 +117,37 @@ public:
 		
 	} // Ends Constructor 
 
+// The Dither function ///////////////////////////////////////////////////////
+
+	FloatType Dither(FloatType inSample) {
+
+		// Auto-Blanking
+		if (bAutoBlankingEnabled) {
+			if (abs(inSample) < autoBlankLevelThreshold) {
+				++zeroCount;
+				if (zeroCount > autoBlankTimeThreshold) {
+					ditherMagnitude *= autoBlankDecayFactor; // decay
+					if (ditherMagnitude < autoBlankDecayCutoff)
+						ditherMagnitude = 0.0; // decay cutoff
+				}
+			}
+			else {
+				zeroCount = 0; // reset
+				ditherMagnitude = maxDitherMagnitude; // restore
+			}
+		} // ends auto-blanking
+
+#ifdef USE_HIGH_QUALITY_RANDOM
+		newRandom = dist(randGenerator);
+#else
+		newRandom = rand();
+#endif	
+
+FloatType tpdfNoise = ditherMagnitude * static_cast<FloatType>(newRandom - oldRandom);
+FloatType shapedNoise = 0.0;
+
 #if NOISE_SHAPER_TOPOLOGY == 1
 
-// The Dither function ///////////////////////////////////////////////////////
-//
 // 1. Ditherer Topology:
 //
 //          tpdf Dither------>[filter]
@@ -134,39 +161,12 @@ public:
 //                    +-------[z^-1]--------+
 //                    | +1.00               |
 //                    +-------[z^-2]--------+
-//					    -0.043
+//                      -0.043
 //
 //
 
-	FloatType Dither(FloatType inSample) {
-		
-		// Auto-Blanking
-		if (bAutoBlankingEnabled) {
-			if (abs(inSample) < autoBlankLevelThreshold) {
-				++zeroCount;
-				if (zeroCount > autoBlankTimeThreshold) {
-					ditherMagnitude *= autoBlankDecayFactor; // decay
-					if (ditherMagnitude < autoBlankDecayCutoff)
-						ditherMagnitude = 0.0; // decay cutoff
-				}
-			}	
-			else {
-				zeroCount = 0; // reset
-				ditherMagnitude = maxDitherMagnitude; // restore
-			}
-		} // ends auto-blanking
-
-		FloatType shapedNoise = 0.0;
-
-#ifdef USE_HIGH_QUALITY_RANDOM
-		newRandom = dist(randGenerator);
-#else
-		newRandom = rand();
-#endif
 		inSample -= E1;				// apply 1st order Error Feedback
 		inSample += E2*0.043;		// apply 2nd order Error Feedback
-	
-		FloatType tpdfNoise = ditherMagnitude * static_cast<FloatType>(newRandom - oldRandom);
 
 #ifndef USE_IIR
 		// FIR Noise Shaping:
@@ -186,11 +186,10 @@ public:
 		shapedNoise = f2.filter(f1.filter(tpdfNoise)); // filter the triangular noise with two cascaded biQuads 
 		//	shapedNoise = f1.filter(tpdfNoise); // filter the triangular noise with one biQuad 
 #endif
-
 		outSample = inSample + shapedNoise;
 		
 		// Calculate the quantization error. This needs to exactly model the behavior of the I/O library writing samples to outfile, 
-		// which in our case, appears to use round() ( ... as opposed to floor(), or cast-to-integer ...)
+		// otherwise nasty quantization distortion will result.
 		
 		quantizedOutSample = reciprocalSignalMagnitude * round(signalMagnitude * outSample); // quantize
 			
@@ -198,16 +197,7 @@ public:
 		E1 = quantizedOutSample - inSample; // calculate error 
 		
 		oldRandom = newRandom;
-
-#ifdef DITHER_USE_SATURATION
-		// branchless clipping - restrict to +/- 0.999 (-0.0087 dB):
-		quantizedOutSample = 0.5*(fabs(quantizedOutSample + 0.999) - fabs(quantizedOutSample - 0.999));
-#endif
-
-		return quantizedOutSample;
-	}
 		
-
 #elif NOISE_SHAPER_TOPOLOGY == 2
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -224,42 +214,13 @@ public:
 //                    |                     |
 //                    +--<--[filter]<-------+
 //
-//
-//
-	FloatType Dither(FloatType inSample) {
-
-		// Auto-Blanking
-		if (bAutoBlankingEnabled) {
-			if (abs(inSample) < autoBlankLevelThreshold) {
-				++zeroCount;
-				if (zeroCount > autoBlankTimeThreshold) {
-					ditherMagnitude *= autoBlankDecayFactor; // decay
-					if (ditherMagnitude < autoBlankDecayCutoff)
-						ditherMagnitude = 0.0; // decay cutoff
-				}
-			}
-			else {
-				zeroCount = 0; // reset
-				ditherMagnitude = maxDitherMagnitude; // restore
-			}
-		} // ends auto-blanking
-
-#ifdef USE_HIGH_QUALITY_RANDOM
-	newRandom = dist(randGenerator);
-#else
-	newRandom = rand();
-#endif
-		
-		FloatType tpdfNoise = ditherMagnitude * static_cast<FloatType>(newRandom - oldRandom);
 
 // filtering happens here: /////////////////////////
-		
-		FloatType shapedNoise = 0.0;
 
 #ifndef USE_IIR
 		// FIR Noise Shaping:
 		// put last quantization error into history buffer (goes in "backwards"):
-		noise[currentIndex] = E1;
+		noise[currentIndex] = -E1;
 		currentIndex = currentIndex ? currentIndex - 1 : FIR_NOISE_SHAPING_FILTER_SIZE - 1;
 
 		// Filter the noise:
@@ -287,15 +248,17 @@ public:
 		E1 = quantizedOutSample - inSample; // calculate error 
 		oldRandom = newRandom;
 
+#endif // NOISE SHAPER TOPLOGY 2
+		
 #ifdef DITHER_USE_SATURATION
 		// branchless clipping - restrict to +/- 0.999 (-0.0087 dB):
 		quantizedOutSample = 0.5*(fabs(quantizedOutSample + 0.999) - fabs(quantizedOutSample - 0.999));
 #endif
 		return quantizedOutSample;
-	}
-#endif // NOISE SHAPER TOPLOGY 2
+	} // ends function: Dither()
 
-	
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 private:
 	int oldRandom, newRandom;
 	FloatType E1,E2;				// last Quantization error
@@ -323,7 +286,7 @@ private:
 	double NoiseShapeCoeffs[FIR_NOISE_SHAPING_FILTER_SIZE] = {
 	
 		// 11-tap:
-		-0.014702063883960252,
+		/*-0.014702063883960252,
 		-0.0010319367876352055,
 		0.06696663418581869,
 		0.0010013618187379699,
@@ -333,7 +296,7 @@ private:
 		0.0010013618187379699,
 		0.06696663418581869,
 		-0.0010319367876351854,
-		-0.014702063883960252
+		-0.014702063883960252*/
 
 		// Psychoacoustically Optimal Noise Shaping:
 		// this filter is the "F-Weighted" noise filter described by Wannamaker.
@@ -348,7 +311,7 @@ private:
 		0.109*/
 
 		// 9-tap:
-		/*	2.412,
+			2.412,
 		-3.370,
 		3.937,
 		-4.174,
@@ -357,7 +320,7 @@ private:
 		1.281,
 		-0.569,
 		0.0847 
-	*/
+	
 		//0.09648,
 		//- 0.13480,
 		//0.15748,
@@ -433,47 +396,6 @@ private:
 	FloatType noise[FIR_NOISE_SHAPING_FILTER_SIZE];
 #endif
 };
-
-// diagnostic function to compare sample values from quantizer output with sample values actually written to file:
-template <typename FloatType>
-void testQuantizationErrors(int bitDepth) {
-	
-	std::cout << std::fixed << std::setprecision(17);
-	
-	// 1. create 201 values between -0.1 and 0.1, inclusive
-	// 2. put them through a ditherer that doesn't apply any dither, but just quantizes
-	// 3. write it to an output file
-	{
-		Ditherer<FloatType> D(bitDepth, 0, true); // 16 bits , 0 bits of dither (quantize only):
-		SndfileHandle testOutFile("E:\\test.wav", SFM_WRITE, SF_FORMAT_WAV | SF_FORMAT_PCM_16, 1, 44100);
-		std::cout << "This is what we are writing to file:\n";
-		for (int x = -100; x < 101; ++x) {
-		//	FloatType y = 1.00003051850948000 * D.Dither((FloatType)x / 100.0); scale by 32768/32767
-			FloatType y = D.Dither((FloatType)x / 100.0);
-			testOutFile.write(&y, 1);
-			std::cout << y << std::endl;
-		}
-	} // close testOutFile
-
-
-	std::cout << "Press Enter\n";
-	getchar();
-	
-	// read the file back:
-	{
-		SndfileHandle testInFile("E:\\test.wav", SFM_READ);
-		std::cout << "This is what came back:\n";
-		for (int x = -100; x < 101; ++x) {
-			FloatType z;
-			testInFile.read(&z, 1);
-			std::cout << z << std::endl;
-		}
-	} // close testInfile
-
-	std::cout << "Press Enter\n";
-	getchar();
-}
-
 
 // *Psychoacoustically Optimal Noise Shaping
 // Robert. A. Wannamaker
