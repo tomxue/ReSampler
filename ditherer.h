@@ -155,19 +155,19 @@ FloatType shapedNoise = 0.0;
 //                               |    +-----> outSample
 //                               v    |                        
 //   inSample ----->+( )------->(+)---+--->[Q]-->-+--> quantizedOutSample
-//                    -               |           |
+//                    +               |           |
 //                    ^               +-->-( )+<--+ 
 //                    |                     |
 //                    +-------[z^-1]--------+
-//                    | +1.00               |
+//                    | -1.00               |
 //                    +-------[z^-2]--------+
-//                      -0.043
+//                      +0.043
 //
 //
 
 		inSample -= E1;				// apply 1st order Error Feedback
 		inSample += E2*0.043;		// apply 2nd order Error Feedback
-
+	
 #ifndef USE_IIR
 		// FIR Noise Shaping:
 		// put tpdf noise into history buffer (noise goes in "backwards"):

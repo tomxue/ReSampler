@@ -124,6 +124,7 @@ int main(int argc, char * argv[])
 		exit(EXIT_FAILURE);
 	}
 
+	std::cout << strVersion << " ";
 #ifdef _M_X64
 	std::cout << "64-bit version" << std::endl;
 #else
