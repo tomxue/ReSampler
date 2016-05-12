@@ -96,4 +96,13 @@ Thus, the following file extensions are supported:
 ![Supported Formats](https://github.com/jniemann66/ReSampler/blob/master/supported_formats.png)
 
 For more information, please refer to the [libsndfile documentation](http://www.mega-nerd.com/libsndfile/)
- 
+
+## Additional Information
+
+####Clipping Protection
+
+Resampler employs a multiple-pass approach with regards to clipping detection. If clipping is detected (ie normalized signal level exceeded +/- 1.0) during processing, it will re-do the conversion with the overall gain adjusted appropriately to avoid clipping. 
+
+####Conversion to same sampling rate
+
+When the target sampling rate is the same as the input file (ie 1:1 ratio), sample-rate conversion is not actually performed. However, bit-depth / file format conversion and other features such as dithering and normalization are performed when requested.
