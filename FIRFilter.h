@@ -4,6 +4,8 @@
 // FIRFilter.h : simple FIR filter implementation by J.Niemann
 
 #include <typeinfo>
+#include <complex>
+#include "fftw3.h"
 
 #define FILTERSIZE_HUGE 32767
 #define FILTERSIZE_MEDIUM 511
@@ -397,6 +399,170 @@ void dumpKaiserWindow(int Length, double Beta) {
 template<typename FloatType> void dumpFilter(const FloatType* Filter, int Length) {
 	for (int i = 0; i < Length; ++i) {
 		std::cout << i << ": " << Filter[i] << std::endl;
+	}
+}
+
+// the following is a set of Complex-In, Complex-Out transforms used for constructing a minimum-Phase FIR:
+
+// logV() : logarithm of a vector of Complex doubles
+std::vector<std::complex<double>>
+logV(const std::vector<std::complex<double>>& input) {
+	std::vector<std::complex<double>> output(input.size(), 0);
+	std::transform(input.begin(), input.end(), output.begin(),
+		[](std::complex<double> x) -> std::complex<double> {return std::log(x); });
+	return output;
+}
+
+// realV() : real parts of a vector of Complex doubles
+std::vector<std::complex<double>>
+realV(const std::vector<std::complex<double>>& input) {
+	std::vector<std::complex<double>> output(input.size(), 0);
+	std::transform(input.begin(), input.end(), output.begin(),
+		[](std::complex<double> x) -> std::complex<double> {return x.real(); });
+	return output;
+}
+
+// imagV() : imaginary parts of a vector of Complex doubles (answer placed in imaginary part of output):
+std::vector<std::complex<double>>
+imagV(const std::vector<std::complex<double>>& input) {
+	std::vector<std::complex<double>> output(input.size(), 0);
+	std::transform(input.begin(), input.end(), output.begin(),
+		[](std::complex<double> x) -> std::complex<double> {return{ 0,x.imag() }; });
+	return output;
+}
+
+// expV() : exp of a vector of Complex doubles
+std::vector<std::complex<double>>
+expV(const std::vector<std::complex<double>>& input) {
+	std::vector<std::complex<double>> output(input.size(), 0);
+	std::transform(input.begin(), input.end(), output.begin(),
+		[](std::complex<double> x) -> std::complex<double> {return exp(x); });
+	return output;
+}
+
+// fftV() : FFT of vector of Complex doubles
+std::vector<std::complex<double>>
+fftV(std::vector<std::complex<double>>& input) {
+	
+	std::vector<std::complex<double>> output(input.size(), 0); // output vector
+		
+	// create, execute, destroy plan:
+	fftw_plan p = fftw_plan_dft_1d(input.size(), 
+		reinterpret_cast<fftw_complex*>(&input[0]), 
+		reinterpret_cast<fftw_complex*>(&output[0]), 
+		FFTW_FORWARD, 
+		FFTW_ESTIMATE);
+
+	fftw_execute(p);
+	fftw_destroy_plan(p);
+	
+	return output;
+}
+
+// ifftV() : Inverse FFT of vector of Complex doubles
+std::vector<std::complex<double>>
+ifftV(std::vector<std::complex<double>>& input) {
+
+	std::vector<std::complex<double>> output(input.size(), 0); // output vector
+
+	// create, execute, destroy plan:
+	fftw_plan p = fftw_plan_dft_1d(input.size(),
+		reinterpret_cast<fftw_complex*>(&input[0]),
+		reinterpret_cast<fftw_complex*>(&output[0]),
+		FFTW_BACKWARD,
+		FFTW_ESTIMATE);
+
+	fftw_execute(p);
+	fftw_destroy_plan(p);
+
+	// scale output:
+	double reciprocalSize = 1.0 / input.size();
+	for (auto &c : output){
+		c *= reciprocalSize;
+	}
+
+	return output;
+}
+
+// AnalyticSignalV() : Analytic signal of vector of Complex doubles
+std::vector<std::complex<double>>
+AnalyticSignalV(std::vector<std::complex<double>>& input) {
+
+	std::vector<std::complex<double>> U = fftV(input);
+
+	int N = input.size();
+	int halfN = N / 2;
+	
+	// Note: U[0], U[halfN] unchanged:
+	for (int n = 1; n < N; ++n) {
+		if (n > halfN)
+			U[n] = 0;
+		if (n < halfN)
+			U[n] *= 2.0;
+	}
+	
+	std::vector<std::complex<double>> output = ifftV(U);
+	return output;
+}
+
+// makeMinPhase() : transform linear-phase FIR filter coefficients into minimum-phase (in-place)
+template<typename FloatType>
+void makeMinPhase(FloatType* pFIRcoeffs, size_t length)
+{
+	size_t pow2length = pow(2, 1.0 + floor(log2(length)));
+
+	std::vector <std::complex<double>> complexInput;
+	std::vector <std::complex<double>> complexOutput;
+
+	for (int n = 0; n < pow2length; ++n) {
+		if (n<length)
+			complexInput.push_back({ pFIRcoeffs[n], 0 });
+		else
+			complexInput.push_back({ 0, 0 }); // pad remainder with zeros
+	}
+
+	// Formula is as follows:
+	//	take the reversed array
+	//  of the real parts
+	//  of the ifft
+	//  of e to the power
+	//	of the Analalytic Signal
+	//	of the real parts 
+	//	of the log of
+	//	the fft of the original filter
+
+	complexOutput = realV(ifftV(expV(AnalyticSignalV(realV(logV(fftV(complexInput)))))));
+	
+	std::reverse(complexOutput.begin(), complexOutput.end());
+
+	// write all the real parts back to coeff array:
+	int n = 0;
+	for (auto &c : complexOutput) {
+		if (n < length) {
+			pFIRcoeffs[n] = c.real();
+			++n;
+		}
+		else
+			break;
+	}
+}
+
+// utility functions:
+
+void testMinPhase() {
+	double MedFilterTaps[FILTERSIZE_MEDIUM];
+	int MedFilterSize = FILTERSIZE_MEDIUM;
+	makeLPF<double>(MedFilterTaps, MedFilterSize, 20000, 88200);
+	applyKaiserWindow<double>(MedFilterTaps, MedFilterSize, calcKaiserBeta(195));
+
+	makeMinPhase(MedFilterTaps, FILTERSIZE_MEDIUM);
+	dumpFilter(MedFilterTaps, FILTERSIZE_MEDIUM);
+}
+
+void dumpComplexVector(const std::vector<std::complex<double>>& v)
+{
+	for (auto &c : v) {
+		std::cout << "Real: " << c.real() << ", Imag:" << c.imag() << std::endl;
 	}
 }
 

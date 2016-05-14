@@ -210,6 +210,7 @@ int main(int argc, char * argv[])
 		ci.bDither = bDither;
 		ci.DitherAmount = DitherAmount;
 		ci.bAutoBlankingEnabled = bAutoBlankingEnabled;
+		ci.bMinPhase = false;
 		return Convert<double>(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
 	}
 
@@ -224,6 +225,7 @@ int main(int argc, char * argv[])
 		ci.bDither = bDither;
 		ci.DitherAmount = DitherAmount;
 		ci.bAutoBlankingEnabled = bAutoBlankingEnabled;
+		ci.bMinPhase = false;
 		return Convert<float>(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
 	}
 }
@@ -464,11 +466,16 @@ bool Convert(const conversionInfo<FloatType>& ci)
 	int HugeFilterSize = FILTERSIZE_HUGE;
 	makeLPF<FloatType>(HugeFilterTaps, HugeFilterSize, ft, OverSampFreq);
 	applyKaiserWindow<FloatType>(HugeFilterTaps, HugeFilterSize, calcKaiserBeta(140));
+	if(ci.bMinPhase)
+		makeMinPhase<FloatType>(HugeFilterTaps, HugeFilterSize);
+	
 
 	FloatType MedFilterTaps[FILTERSIZE_MEDIUM];
 	int MedFilterSize = FILTERSIZE_MEDIUM;
 	makeLPF<FloatType>(MedFilterTaps, MedFilterSize, ft, OverSampFreq);
 	applyKaiserWindow<FloatType>(MedFilterTaps, MedFilterSize, calcKaiserBeta(195));
+	if (ci.bMinPhase)
+		makeMinPhase<FloatType>(MedFilterTaps, MedFilterSize);
 
 	// make a vector of huge filters (one filter for each channel):
 	std::vector<FIRFilter<FloatType, FILTERSIZE_HUGE>> HugeFilters;

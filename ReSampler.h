@@ -88,6 +88,7 @@ template<typename FloatType> struct conversionInfo
 	bool bDither;
 	FloatType DitherAmount;
 	bool bAutoBlankingEnabled;
+	bool bMinPhase;
 };
 
 bool determineBestBitFormat(std::string & BitFormat, const std::string & inFilename, const std::string & outFilename);

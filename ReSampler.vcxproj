@@ -71,23 +71,23 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>E:\CPP_Projects\ReSampler\SFML-2.3.2\include\;E:\CPP_Projects\ReSampler\SFML-2.3.2\include\SFML;E:\CPP_Projects\ReSampler\SFML-2.3.2\include\SFML\Audio;$(IncludePath)</IncludePath>
-    <LibraryPath>E:\CPP_Projects\ReSampler\SFML-2.3.2\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(ProjectDir)libsndfile32\include;$(projectDir)fftw32;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)libsndfile32\lib;$(projectDir)fftw32;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(ProjectDir)libsndfile\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(projectDir)libsndfile\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(projectDir)fftw64;$(ProjectDir)libsndfile\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(projectDir)fftw64;$(projectDir)libsndfile\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(ProjectDir)libsndfile32\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(ProjectDir)libsndfile32\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(projectDir)fftw32;$(ProjectDir)libsndfile32\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(projectDir)fftw32;$(ProjectDir)libsndfile32\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(ProjectDir)libsndfile\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(ProjectDir)\libsndfile\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(projectDir)fftw64;$(ProjectDir)libsndfile\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)fftw64;$(ProjectDir)\libsndfile\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -100,6 +100,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>libfftw3-3.lib;libsndfile-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -120,7 +121,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>libsndfile-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libsndfile-1.lib;libfftw3-3.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -143,7 +144,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>libsndfile-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libsndfile-1.lib;libfftw3-3.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -170,7 +171,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>libsndfile-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libsndfile-1.lib;libfftw3-3.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
