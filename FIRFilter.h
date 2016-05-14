@@ -559,10 +559,38 @@ void testMinPhase() {
 	dumpFilter(MedFilterTaps, FILTERSIZE_MEDIUM);
 }
 
+
+
+
+
 void dumpComplexVector(const std::vector<std::complex<double>>& v)
 {
 	for (auto &c : v) {
 		std::cout << "Real: " << c.real() << ", Imag:" << c.imag() << std::endl;
+	}
+}
+
+template<typename FloatType>
+void dumpFFT(FloatType* data, size_t length)
+{
+	size_t pow2length = pow(2, 1.0 + floor(log2(length)));
+
+	std::vector <std::complex<double>> complexInput;
+	std::vector <std::complex<double>> complexOutput;
+
+	for (int n = 0; n < pow2length; ++n) {
+		if (n<length)
+			complexInput.push_back({ data[n], 0 });
+		else
+			complexInput.push_back({ 0, 0 }); // pad remainder with zeros
+	}
+	
+	complexOutput = fftV(complexInput);
+
+	std::setprecision(17);
+	std::cout << "real,imag,mag,phase" << std::endl;
+	for (auto &c : complexOutput) {
+		std::cout << c.real() << "," << c.imag() << "," << abs(c) << "," << arg(c) << std::endl;
 	}
 }
 

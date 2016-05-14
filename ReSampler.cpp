@@ -90,6 +90,10 @@ int main(int argc, char * argv[])
 	// parse auto-blanking option (for dithering):
 	bool bAutoBlankingEnabled = findCmdlineOption(argv, argv + argc, "--autoblank");
 
+	// parse minimum-phase option: // WARNING (2016-05-15) : not ready for prime-time yet !!
+	bool bMinPhase = findCmdlineOption(argv, argv + argc, "--minphase");
+
+
 	bool bBadParams = false;
 	if (destFilename.empty()) {
 		if (sourceFilename.empty()) {
@@ -210,7 +214,7 @@ int main(int argc, char * argv[])
 		ci.bDither = bDither;
 		ci.DitherAmount = DitherAmount;
 		ci.bAutoBlankingEnabled = bAutoBlankingEnabled;
-		ci.bMinPhase = false;
+		ci.bMinPhase = bMinPhase;
 		return Convert<double>(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
 	}
 
@@ -225,7 +229,7 @@ int main(int argc, char * argv[])
 		ci.bDither = bDither;
 		ci.DitherAmount = DitherAmount;
 		ci.bAutoBlankingEnabled = bAutoBlankingEnabled;
-		ci.bMinPhase = false;
+		ci.bMinPhase = bMinPhase;
 		return Convert<float>(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
 	}
 }
@@ -469,7 +473,6 @@ bool Convert(const conversionInfo<FloatType>& ci)
 	if(ci.bMinPhase)
 		makeMinPhase<FloatType>(HugeFilterTaps, HugeFilterSize);
 	
-
 	FloatType MedFilterTaps[FILTERSIZE_MEDIUM];
 	int MedFilterSize = FILTERSIZE_MEDIUM;
 	makeLPF<FloatType>(MedFilterTaps, MedFilterSize, ft, OverSampFreq);
