@@ -14,6 +14,7 @@
 #include "ReSampler.h"
 #include "FIRFilter.h"
 #include "ditherer.h"
+#include "biquad.h"
 
 ////////////////////////////////////////////////////////////////////////////////////////
 // This program uses the libsndfile Library,                                          //
@@ -30,6 +31,7 @@
 
 int main(int argc, char * argv[])
 {
+
 	std::string sourceFilename("");
 	std::string destFilename("");
 	std::string outBitFormat("");
@@ -470,16 +472,18 @@ bool Convert(const conversionInfo<FloatType>& ci)
 	int HugeFilterSize = FILTERSIZE_HUGE;
 	makeLPF<FloatType>(HugeFilterTaps, HugeFilterSize, ft, OverSampFreq);
 	applyKaiserWindow<FloatType>(HugeFilterTaps, HugeFilterSize, calcKaiserBeta(140));
-	if(ci.bMinPhase)
-		makeMinPhase<FloatType>(HugeFilterTaps, HugeFilterSize);
 	
 	FloatType MedFilterTaps[FILTERSIZE_MEDIUM];
 	int MedFilterSize = FILTERSIZE_MEDIUM;
 	makeLPF<FloatType>(MedFilterTaps, MedFilterSize, ft, OverSampFreq);
 	applyKaiserWindow<FloatType>(MedFilterTaps, MedFilterSize, calcKaiserBeta(195));
-	if (ci.bMinPhase)
+	
+	if (ci.bMinPhase) {
+		std::cout << "Warning: Minimum Phase is under construction, and not working properly yet !!" << std::endl;
+		makeMinPhase<FloatType>(HugeFilterTaps, HugeFilterSize);
 		makeMinPhase<FloatType>(MedFilterTaps, MedFilterSize);
-
+	}
+		
 	// make a vector of huge filters (one filter for each channel):
 	std::vector<FIRFilter<FloatType, FILTERSIZE_HUGE>> HugeFilters;
 
@@ -647,6 +651,7 @@ bool Convert(const conversionInfo<FloatType>& ci)
 						for (int Channel = 0; Channel < nChannels; Channel++) {
 							if (ii == 0)
 								MedFilters[Channel].put(inbuffer[s + Channel]); // inject a source sample
+							
 							else
 								MedFilters[Channel].putZero(); // inject a Zero
 
@@ -693,7 +698,7 @@ bool Convert(const conversionInfo<FloatType>& ci)
 								FloatType OutputSample = ci.bDither ?
 									Ditherers[Channel].Dither(Gain * HugeFilters[Channel].LazyGet(F.numerator)) :
 									Gain * HugeFilters[Channel].LazyGet(F.numerator);
-
+									
 								outbuffer[OutBufferIndex + Channel] = OutputSample;
 								PeakOutputSample = max(PeakOutputSample, abs(OutputSample));
 							}

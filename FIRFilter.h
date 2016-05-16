@@ -328,6 +328,10 @@ template<typename FloatType> FloatType calcKaiserBeta(FloatType dB)
 	else if (dB>50.0) {
 		return 0.1102 * (dB - 8.7);
 	}
+	else
+	{
+		return 0;
+	}
 }
 
 // applyKaiserWindow() - applies a Kaiser Window to an array of filter coefficients:
@@ -380,28 +384,6 @@ template<typename FloatType> bool applyKaiserWindow2(FloatType* filter, int Leng
 	return true;
 }
 
-// dumpKaiserWindow() - utility function for displaying Kaiser Window:
-void dumpKaiserWindow(int Length, double Beta) {
-	std::vector<double> f(Length, 1);
-	applyKaiserWindow<double>(f.data(), Length, Beta);
-	for (int i = 0; i < Length; ++i) {
-		std::cout << i << ": " << f[i] << std::endl;
-	}
-
-	std::vector<double> g(Length, 1);
-	applyKaiserWindow2<double>(g.data(), Length, Beta);
-	for (int i = 0; i < Length; ++i) {
-		std::cout << i << ": " << g[i] << std::endl;
-	}
-}
-
-// dumpFilter() - utility function for displaying filter coefficients:
-template<typename FloatType> void dumpFilter(const FloatType* Filter, int Length) {
-	for (int i = 0; i < Length; ++i) {
-		std::cout << i << ": " << Filter[i] << std::endl;
-	}
-}
-
 // the following is a set of Complex-In, Complex-Out transforms used for constructing a minimum-Phase FIR:
 
 // logV() : logarithm of a vector of Complex doubles
@@ -410,6 +392,35 @@ logV(const std::vector<std::complex<double>>& input) {
 	std::vector<std::complex<double>> output(input.size(), 0);
 	std::transform(input.begin(), input.end(), output.begin(),
 		[](std::complex<double> x) -> std::complex<double> {return std::log(x); });
+	return output;
+}
+
+// limitDynRangeV() : set a limit (-dB) on how quiet signal is allowed to be below the peak
+std::vector<std::complex<double>>
+limitDynRangeV(const std::vector<std::complex<double>>& input, double dynRangeDB) {
+	double dynRangeLinear = pow(10, dynRangeDB / 20.0);
+	
+	// find peak:
+	double peak=0.0;
+	for (auto &c : input) {
+		peak = max(peak, abs(c));
+	}
+	
+	// determine low threshold
+	double lowThresh = peak * dynRangeLinear;
+	
+	std::vector<std::complex<double>> output(input.size(), 0);
+
+	std::transform(input.begin(), input.end(), output.begin(),
+		[lowThresh](std::complex<double> x) -> std::complex<double> {
+		
+		double level = abs(x);
+		if (level < lowThresh)
+			x *= lowThresh / level;
+
+		return x; } // ends lambda
+	); // ends call to std::transform()
+
 	return output;
 }
 
@@ -530,9 +541,8 @@ void makeMinPhase(FloatType* pFIRcoeffs, size_t length)
 	//	of the real parts 
 	//	of the log of
 	//	the fft of the original filter
-
-	complexOutput = realV(ifftV(expV(AnalyticSignalV(realV(logV(fftV(complexInput)))))));
 	
+	complexOutput = realV(ifftV(expV(AnalyticSignalV(realV(logV(limitDynRangeV(fftV(complexInput),-140)))))));	
 	std::reverse(complexOutput.begin(), complexOutput.end());
 
 	// write all the real parts back to coeff array:
@@ -549,24 +559,44 @@ void makeMinPhase(FloatType* pFIRcoeffs, size_t length)
 
 // utility functions:
 
+// dumpKaiserWindow() - utility function for displaying Kaiser Window:
+void dumpKaiserWindow(int Length, double Beta) {
+	std::vector<double> f(Length, 1);
+	applyKaiserWindow<double>(f.data(), Length, Beta);
+	for (int i = 0; i < Length; ++i) {
+		std::cout << i << ": " << f[i] << std::endl;
+	}
+
+	std::vector<double> g(Length, 1);
+	applyKaiserWindow2<double>(g.data(), Length, Beta);
+	for (int i = 0; i < Length; ++i) {
+		std::cout << i << ": " << g[i] << std::endl;
+	}
+}
+
+// dumpFilter() - utility function for displaying filter coefficients:
+template<typename FloatType> void dumpFilter(const FloatType* Filter, int Length) {
+	for (int i = 0; i < Length; ++i) {
+		std::cout << i << ": " << Filter[i] << std::endl;
+	}
+}
+
+
 void testMinPhase() {
 	double MedFilterTaps[FILTERSIZE_MEDIUM];
 	int MedFilterSize = FILTERSIZE_MEDIUM;
 	makeLPF<double>(MedFilterTaps, MedFilterSize, 20000, 88200);
 	applyKaiserWindow<double>(MedFilterTaps, MedFilterSize, calcKaiserBeta(195));
-
-	makeMinPhase(MedFilterTaps, FILTERSIZE_MEDIUM);
 	dumpFilter(MedFilterTaps, FILTERSIZE_MEDIUM);
+	makeMinPhase(MedFilterTaps, FILTERSIZE_MEDIUM);
+	//dumpFilter(MedFilterTaps, FILTERSIZE_MEDIUM);
 }
-
-
-
-
 
 void dumpComplexVector(const std::vector<std::complex<double>>& v)
 {
 	for (auto &c : v) {
-		std::cout << "Real: " << c.real() << ", Imag:" << c.imag() << std::endl;
+		//std::cout << c.real() << "," << c.imag() << std::endl;
+		std::cout << c.real() << "+" << c.imag() << "i" << std::endl;
 	}
 }
 
