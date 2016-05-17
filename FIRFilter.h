@@ -297,6 +297,8 @@ double FIRFilter<double, FILTERSIZE_HUGE>::get() {
 
 template<typename FloatType> bool makeLPF(FloatType* filter, int Length, FloatType transitionFreq, FloatType sampleRate)
 {
+	//std::cout << transitionFreq << "," << sampleRate << std::endl;
+
 	// use doubles internally, regardless of FloatType (speed not an issue here):
 	// (or long doubles, if they actually worked properly ... ) 
 	double ft = transitionFreq / sampleRate; // normalised transition frequency
@@ -334,6 +336,17 @@ template<typename FloatType> FloatType calcKaiserBeta(FloatType dB)
 	}
 }
 
+template<typename FloatType> FloatType I0(FloatType z)
+{	// 0th-order Modified Bessel function of the first kind
+	double result = 0.0; // double for internal calcs
+	double kfact = 1.0;
+	for (int k = 0; k < 30; ++k) {
+		if (k) kfact *= static_cast<double>(k);
+		result += pow((pow(z, 2.0) / 4.0), k) / pow(kfact, 2.0);
+	}
+	return static_cast<FloatType>(result);
+}
+
 // applyKaiserWindow() - applies a Kaiser Window to an array of filter coefficients:
 template<typename FloatType> bool applyKaiserWindow(FloatType* filter, int Length, FloatType Beta)
  {
@@ -355,17 +368,6 @@ template<typename FloatType> bool applyKaiserWindow(FloatType* filter, int Lengt
 	return true;
 }
 
-template<typename FloatType> FloatType I0(FloatType z)
-{	// 0th-order Modified Bessel function of the first kind
-	double result = 0.0; // double for internal calcs
-	double kfact = 1.0;
-	for (int k = 0; k < 30; ++k) {
-		if (k) kfact *= static_cast<double>(k);
-		result += pow((pow(z, 2.0) / 4.0), k) / pow(kfact, 2.0);
-	}
-	return static_cast<FloatType>(result);
-}
-
 // applyKaiserWindow2() - This function applies a Kaiser Window to an array of filter coefficients ("textbook" version):
 template<typename FloatType> bool applyKaiserWindow2(FloatType* filter, int Length, FloatType Beta)
 {
@@ -378,7 +380,7 @@ template<typename FloatType> bool applyKaiserWindow2(FloatType* filter, int Leng
 	//}
 
 	for (int n = 0; n < Length; ++n) {
-		filter[n] = I0(/*M_PI **/ Beta * sqrt(1.0 - pow((2.0 * n / (Length - 1) - 1), 2.0)))
+		filter[n] *= I0(/*M_PI **/ Beta * sqrt(1.0 - pow((2.0 * n / (Length - 1) - 1), 2.0)))
 			/ I0(/*M_PI**/Beta);
 	}
 	return true;
@@ -520,12 +522,16 @@ AnalyticSignalV(std::vector<std::complex<double>>& input) {
 template<typename FloatType>
 void makeMinPhase(FloatType* pFIRcoeffs, size_t length)
 {
-	size_t pow2length = pow(2, 1.0 + floor(log2(length)));
+	
+	size_t fftLength = pow(2, 2.0 + ceil(log2(length))); // use FFT 4x larger than (length rounded-up to power-of-2)
+
+	//std::cout << "FIR Size: " << length;
+	//std::cout << ", FFT for minimum-phase calculation: " << fftLength << std::endl;
 
 	std::vector <std::complex<double>> complexInput;
 	std::vector <std::complex<double>> complexOutput;
 
-	for (int n = 0; n < pow2length; ++n) {
+	for (int n = 0; n < fftLength; ++n) {
 		if (n<length)
 			complexInput.push_back({ pFIRcoeffs[n], 0 });
 		else
@@ -542,18 +548,18 @@ void makeMinPhase(FloatType* pFIRcoeffs, size_t length)
 	//	of the log of
 	//	the fft of the original filter
 	
-	complexOutput = realV(ifftV(expV(AnalyticSignalV(realV(logV(limitDynRangeV(fftV(complexInput),-140)))))));	
+	complexOutput = realV(ifftV(expV(AnalyticSignalV(realV(logV(limitDynRangeV(fftV(complexInput),-190)))))));
+	//complexOutput = realV(ifftV(expV(AnalyticSignalV(realV(logV(fftV(complexInput))))))); // no dynamic-range limiting
 	std::reverse(complexOutput.begin(), complexOutput.end());
 
 	// write all the real parts back to coeff array:
 	int n = 0;
 	for (auto &c : complexOutput) {
-		if (n < length) {
-			pFIRcoeffs[n] = c.real();
-			++n;
-		}
+		if (n < length)
+			pFIRcoeffs[n] = c.real();	
 		else
 			break;
+		++n;
 	}
 }
 
@@ -577,19 +583,20 @@ void dumpKaiserWindow(int Length, double Beta) {
 // dumpFilter() - utility function for displaying filter coefficients:
 template<typename FloatType> void dumpFilter(const FloatType* Filter, int Length) {
 	for (int i = 0; i < Length; ++i) {
-		std::cout << i << ": " << Filter[i] << std::endl;
+	//	std::cout << i << ": " << Filter[i] << std::endl;
+		std::cout << Filter[i] << std::endl;
 	}
 }
 
-
 void testMinPhase() {
+	std::cout << std::setprecision(15);
 	double MedFilterTaps[FILTERSIZE_MEDIUM];
 	int MedFilterSize = FILTERSIZE_MEDIUM;
-	makeLPF<double>(MedFilterTaps, MedFilterSize, 20000, 88200);
+	makeLPF<double>(MedFilterTaps, MedFilterSize, 21819, 96000);
 	applyKaiserWindow<double>(MedFilterTaps, MedFilterSize, calcKaiserBeta(195));
 	dumpFilter(MedFilterTaps, FILTERSIZE_MEDIUM);
 	makeMinPhase(MedFilterTaps, FILTERSIZE_MEDIUM);
-	//dumpFilter(MedFilterTaps, FILTERSIZE_MEDIUM);
+	dumpFilter(MedFilterTaps, FILTERSIZE_MEDIUM);
 }
 
 void dumpComplexVector(const std::vector<std::complex<double>>& v)
