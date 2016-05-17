@@ -498,6 +498,10 @@ ifftV(std::vector<std::complex<double>>& input) {
 }
 
 // AnalyticSignalV() : Analytic signal of vector of Complex doubles
+// (Note: This function is referred to as "hilbert()" in Matlab / Octave, but it is not exactly a hilbert transform. 
+// The hilbert Transform is placed in the imaginary part, and the original input is in the real part.)
+// See Footnote* below for more information on algorithm ...
+
 std::vector<std::complex<double>>
 AnalyticSignalV(std::vector<std::complex<double>>& input) {
 
@@ -525,11 +529,14 @@ void makeMinPhase(FloatType* pFIRcoeffs, size_t length)
 	
 	size_t fftLength = pow(2, 2.0 + ceil(log2(length))); // use FFT 4x larger than (length rounded-up to power-of-2)
 
+	//for debugging (may be potentially useful as verbose output for user):
 	//std::cout << "FIR Size: " << length;
 	//std::cout << ", FFT for minimum-phase calculation: " << fftLength << std::endl;
 
 	std::vector <std::complex<double>> complexInput;
 	std::vector <std::complex<double>> complexOutput;
+
+	//
 
 	for (int n = 0; n < fftLength; ++n) {
 		if (n<length)
@@ -539,17 +546,19 @@ void makeMinPhase(FloatType* pFIRcoeffs, size_t length)
 	}
 
 	// Formula is as follows:
-	//	take the reversed array
-	//  of the real parts
-	//  of the ifft
-	//  of e to the power
-	//	of the Analalytic Signal
-	//	of the real parts 
-	//	of the log of
-	//	the fft of the original filter
-	
+
+	// take the reversed array of
+	// the real parts of
+	// the ifft of
+	// e to the power of
+	// the Analytic Signal of
+	// the real parts of 
+	// the log of
+	// the dynamic-ranged limited version of
+	// the fft of 
+	// the original filter
+			
 	complexOutput = realV(ifftV(expV(AnalyticSignalV(realV(logV(limitDynRangeV(fftV(complexInput),-190)))))));
-	//complexOutput = realV(ifftV(expV(AnalyticSignalV(realV(logV(fftV(complexInput))))))); // no dynamic-range limiting
 	std::reverse(complexOutput.begin(), complexOutput.end());
 
 	// write all the real parts back to coeff array:
@@ -563,6 +572,7 @@ void makeMinPhase(FloatType* pFIRcoeffs, size_t length)
 	}
 }
 
+///////////////////////////////////////////////////////////////////////
 // utility functions:
 
 // dumpKaiserWindow() - utility function for displaying Kaiser Window:
@@ -619,7 +629,7 @@ void dumpFFT(FloatType* data, size_t length)
 		if (n<length)
 			complexInput.push_back({ data[n], 0 });
 		else
-			complexInput.push_back({ 0, 0 }); // pad remainder with zeros
+			complexInput.push_back({ 0, 0 }); // pad remainder with zeros (to-do: does it mattter where the zeros are put ?)
 	}
 	
 	complexOutput = fftV(complexInput);
@@ -630,5 +640,7 @@ void dumpFFT(FloatType* data, size_t length)
 		std::cout << c.real() << "," << c.imag() << "," << abs(c) << "," << arg(c) << std::endl;
 	}
 }
+
+// *Marple, S. L. "Computing the Discrete-Time Analytic Signal via FFT." IEEE Transactions on Signal Processing. Vol. 47, 1999, pp. 2600–2603
 
 #endif // FIRFFILTER_H_

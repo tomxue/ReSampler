@@ -17,12 +17,17 @@
 #include "biquad.h"
 
 ////////////////////////////////////////////////////////////////////////////////////////
-// This program uses the libsndfile Library,                                          //
+// This program uses the following libraries:
+// 1:
+// libsndfile                                          
 // available at http://www.mega-nerd.com/libsndfile/
 //
 // (copy of entire package included in $(ProjectDir)\libsbdfile)
-//
-//
+// 
+// 2:
+// fftw
+// http://www.fftw.org/
+// 
 
 #include "sndfile.hh"
 
@@ -92,9 +97,8 @@ int main(int argc, char * argv[])
 	// parse auto-blanking option (for dithering):
 	bool bAutoBlankingEnabled = findCmdlineOption(argv, argv + argc, "--autoblank");
 
-	// parse minimum-phase option: // WARNING (2016-05-15) : not ready for prime-time yet !!
+	// parse minimum-phase option: // WARNING (2016-05-15) : under construction - not ready for prime-time yet !!
 	bool bMinPhase = findCmdlineOption(argv, argv + argc, "--minphase");
-
 
 	bool bBadParams = false;
 	if (destFilename.empty()) {
@@ -115,6 +119,7 @@ int main(int argc, char * argv[])
 			std::cout << "defaulting to: " << destFilename << "\n" << std::endl;
 		}
 	}
+
 	else if (destFilename == sourceFilename) {
 		std::cout << "\nError: Input and Output filenames cannot be the same" << std::endl;
 		bBadParams = true;
@@ -462,10 +467,11 @@ bool Convert(const conversionInfo<FloatType>& ci)
 	int OverSampFreq = InputSampleRate * F.numerator; // eg 160 * 44100
 	unsigned int minSampleRate = min(InputSampleRate, ci.OutputSampleRate);
 	int TransitionWidth = minSampleRate / 22; // reasonable estimate for allowing transition width to scale with sample rate
-											  //TransitionWidth = max(TransitionWidth, 1700); // put a limit on how narrow the transition can be (too narrow will cause issues with low target samplerates)
+//	TransitionWidth = max(TransitionWidth, 1700); // put a limit on how narrow the transition can be (too narrow will cause issues with low target samplerates)
 	int ft = min(InputSampleRate, ci.OutputSampleRate) / 2.0 - TransitionWidth;
 
-	// Make some filters. Huge Filters are used for complex ratios.
+	// Make some filters: 
+	// Huge Filters are used for complex ratios.
 	// Medium filters used for simple ratios (ie 1 in numerator or denominator)
 
 	FloatType HugeFilterTaps[FILTERSIZE_HUGE];
@@ -733,7 +739,7 @@ bool Convert(const conversionInfo<FloatType>& ci)
 		if (bDouble || bFloat) // To-do: Confirm assumption upon which the following statement is built:
 			break; // Clipping is not a concern with Floating-Point formats. 
 
-				   // Test for clipping:
+		// Test for clipping:
 		if (PeakOutputSample > ci.Limit) { // Clipping !
 
 			FloatType GainAdjustment;
@@ -759,6 +765,7 @@ bool Convert(const conversionInfo<FloatType>& ci)
 	return true;
 } // ends Convert()
 
+// gcd() - greatest common divisor:
 int gcd(int a, int b) {
 	if (a<0) a = -a;
 	if (b<0) b = -b;
@@ -770,6 +777,7 @@ int gcd(int a, int b) {
 	return a;
 }
 
+//  GetSimplifiedFraction() - turns a sample-rate ratio into a fraction:
 Fraction GetSimplifiedFraction(int InputSampleRate, int OutputSampleRate)			// eg 44100, 48000
 {
 	Fraction f;
@@ -777,6 +785,9 @@ Fraction GetSimplifiedFraction(int InputSampleRate, int OutputSampleRate)			// e
 	f.denominator = (InputSampleRate / gcd(InputSampleRate, OutputSampleRate));		// M (eg 147)
 	return f;
 }
+
+
+// The following functions are used for parsing commandline parameters:
 
 void getCmdlineParam(char** begin, char** end, const std::string& OptionName, std::string& Parameter)
 {
@@ -808,3 +819,5 @@ void getCmdlineParam(char** begin, char** end, const std::string& OptionName, do
 bool findCmdlineOption(char** begin, char** end, const std::string& option) {
 	return (std::find(begin, end, option) != end);
 }
+
+//

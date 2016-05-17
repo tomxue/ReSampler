@@ -21,8 +21,6 @@
 #define USE_HIGH_QUALITY_RANDOM // if defined, uses C++ std library, instead of rand(), for "better" random numbers.
 // Note: the audible difference in quality between rand() and MT is VERY noticable, so high-quality random numbers are important.
 
-#define NOISE_SHAPER_TOPOLOGY 1
-
 #define DITHER_USE_SATURATION  // restrict output amplitude to +/- 0.999 (guards against excessive dither levels causing clipping)
 
 #include <cmath>
@@ -32,7 +30,6 @@
 template<typename FloatType>
 class Ditherer {
 public:
-
 	unsigned int signalBits;
 	FloatType ditherBits;
 
@@ -146,7 +143,6 @@ public:
 FloatType tpdfNoise = ditherMagnitude * static_cast<FloatType>(newRandom - oldRandom);
 FloatType shapedNoise = 0.0;
 
-#if NOISE_SHAPER_TOPOLOGY == 1
 
 // 1. Ditherer Topology:
 //
@@ -197,58 +193,6 @@ FloatType shapedNoise = 0.0;
 		E1 = quantizedOutSample - inSample; // calculate error 
 		
 		oldRandom = newRandom;
-		
-#elif NOISE_SHAPER_TOPOLOGY == 2
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// 2. conventional topology (as described in the paper "Psychoacoustically Optimal Noise Shaping" by Robert. A. Wannamaker *)
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//
-//
-//                         tpdf Dither
-//                              |     +--------------> outSample
-//                              v     |                        
-//   inSample ----->+( )------>(+)----+--->[Q]----+--> quantizedOutSample
-//                    -               |           |
-//                    ^               +-->-( )+<--+
-//                    |                     |
-//                    +--<--[filter]<-------+
-//
-
-// filtering happens here: /////////////////////////
-
-#ifndef USE_IIR
-		// FIR Noise Shaping:
-		// put last quantization error into history buffer (goes in "backwards"):
-		noise[currentIndex] = -E1;
-		currentIndex = currentIndex ? currentIndex - 1 : FIR_NOISE_SHAPING_FILTER_SIZE - 1;
-
-		// Filter the noise:
-
-		int index = currentIndex;
-		for (int i = 0; i < FIR_NOISE_SHAPING_FILTER_SIZE; ++i) {
-			shapedNoise += noise[index] * NoiseShapeCoeffs[i];
-			index = (index == FIR_NOISE_SHAPING_FILTER_SIZE - 1) ? 0 : index + 1;
-		}
-#else
-		// IIR Noise Shaping:
-		shapedNoise = 1.05 * // tweak factor
-			f2.filter(f1.filter(E1)); // filter the error with two cascaded biQuads 
-#endif
-
-// ends filtering //////////////////////////////////
-
-		inSample -= shapedNoise; // apply Error Feedback
-		outSample = inSample + tpdfNoise; // apply dither
-
-		// Calculate the quantization error. This needs to exactly model the behavior of the I/O library writing samples to outfile, 
-		// which in our case, appears to use round() ( ... as opposed to floor(), or cast-to-integer ...)
-
-		quantizedOutSample = reciprocalSignalMagnitude * round(signalMagnitude * outSample); // quantize
-		E1 = quantizedOutSample - inSample; // calculate error 
-		oldRandom = newRandom;
-
-#endif // NOISE SHAPER TOPLOGY 2
 		
 #ifdef DITHER_USE_SATURATION
 		// branchless clipping - restrict to +/- 0.999 (-0.0087 dB):
@@ -368,7 +312,7 @@ private:
 		0.000774,
 		-0.000128*/
 		
-		// previous filter attempts: 
+		// some previous filter attempts: 
 
 		// 9-tap:
 	/*	-0.044563530870540866,
