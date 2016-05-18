@@ -97,7 +97,7 @@ int main(int argc, char * argv[])
 	// parse auto-blanking option (for dithering):
 	bool bAutoBlankingEnabled = findCmdlineOption(argv, argv + argc, "--autoblank");
 
-	// parse minimum-phase option: // WARNING (2016-05-15) : under construction - not ready for prime-time yet !!
+	// parse minimum-phase option:
 	bool bMinPhase = findCmdlineOption(argv, argv + argc, "--minphase");
 
 	bool bBadParams = false;
@@ -428,10 +428,20 @@ bool Convert(const conversionInfo<FloatType>& ci)
 		std::cout << " (double precision)" << std::endl;
 
 	Fraction F = GetSimplifiedFraction(InputSampleRate, ci.OutputSampleRate);
+
+	if (ci.bMinPhase) {
+		if (F.numerator <= 4 && F.denominator <= 4) { 
+			if (F.numerator != F.denominator) { // oversample to improve filter performance
+				F.numerator *= 8;	// 8x oversampling
+				F.denominator *= 8;
+			}
+		}
+	}
+
 	FloatType ResamplingFactor = static_cast<FloatType>(ci.OutputSampleRate) / InputSampleRate;
 	std::cout << "\nConversion ratio: " << ResamplingFactor
 		<< " (" << F.numerator << ":" << F.denominator << ")" << std::endl;
-
+	
 	size_t BufferSize = (BUFFERSIZE / nChannels) * nChannels; // round down to integer multiple of nChannels (file may have odd number of channels!)
 	assert(BUFFERSIZE >= BufferSize);
 
@@ -485,7 +495,7 @@ bool Convert(const conversionInfo<FloatType>& ci)
 	applyKaiserWindow<FloatType>(MedFilterTaps, MedFilterSize, calcKaiserBeta(195));
 	
 	if (ci.bMinPhase) {
-		std::cout << "Warning: Minimum Phase is under construction, and not working properly yet !!" << std::endl;
+		std::cout << "Using Minimum-Phase LPF" << std::endl;
 		makeMinPhase<FloatType>(HugeFilterTaps, HugeFilterSize);
 		makeMinPhase<FloatType>(MedFilterTaps, MedFilterSize);
 	}
