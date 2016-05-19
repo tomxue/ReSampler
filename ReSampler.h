@@ -7,7 +7,7 @@
 #include <sndfile.h>
 #include <sndfile.hh>
 
-const std::string strVersion("1.0.7");
+const std::string strVersion("1.0.8");
 const std::string strUsage("usage: resampler.exe -i <inputfile> [-o <outputfile>] -r <samplerate> [-b <bitformat>] [-n [<normalization factor>]]\n");
 const std::string strExtraOptions("--help\n--version\n--doubleprecision\n--listsubformats <ext>\n--dither [<amount>] [--autoblank]\n");
 
@@ -89,6 +89,10 @@ template<typename FloatType> struct conversionInfo
 	FloatType DitherAmount;
 	bool bAutoBlankingEnabled;
 	bool bMinPhase;
+	bool bSetFlacCompression;
+	int flacCompressionLevel;
+	bool bSetVorbisQuality;
+	double vorbisQuality;
 };
 
 bool determineBestBitFormat(std::string & BitFormat, const std::string & inFilename, const std::string & outFilename);
@@ -98,6 +102,7 @@ int gcd(int a, int b);
 Fraction GetSimplifiedFraction(int InputSampleRate, int OutputSampleRate);
 void getCmdlineParam(char ** begin, char ** end, const std::string & OptionName, std::string & Parameter);
 void getCmdlineParam(char ** begin, char ** end, const std::string & OptionName, unsigned int & nParameter);
+void getCmdlineParam(char ** begin, char ** end, const std::string & OptionName, int & nParameter);
 void getCmdlineParam(char ** begin, char ** end, const std::string & OptionName, double & Parameter);
 bool findCmdlineOption(char ** begin, char ** end, const std::string & option);
 template<typename FloatType> bool Convert(const conversionInfo<FloatType>& ci);

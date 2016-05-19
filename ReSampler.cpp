@@ -44,6 +44,8 @@ int main(int argc, char * argv[])
 	unsigned int OutputSampleRate = 44100;
 	double NormalizeAmount = 1.0;
 	double DitherAmount = 1.0;
+	int flacCompressionLevel = 5;
+	double vorbisQuality = 3;
 
 	// parse core parameters:
 	getCmdlineParam(argv, argv + argc, "-i", sourceFilename);
@@ -99,6 +101,26 @@ int main(int argc, char * argv[])
 
 	// parse minimum-phase option:
 	bool bMinPhase = findCmdlineOption(argv, argv + argc, "--minphase");
+
+	// parse flacCompression option and parameter:
+	bool bSetFlacCompression = findCmdlineOption(argv, argv + argc, "--flacCompression");
+	if (bSetFlacCompression) {
+		getCmdlineParam(argv, argv + argc, "--flacCompression",flacCompressionLevel);
+		if (flacCompressionLevel < 0)
+			flacCompressionLevel = 0;
+		if (flacCompressionLevel > 8)
+			flacCompressionLevel = 8;
+	}
+
+	// parse vorbisQuality option and parameter:
+	bool bSetVobisQuality = findCmdlineOption(argv, argv + argc, "--vorbisQuality");
+	if (bSetVobisQuality) {
+		getCmdlineParam(argv, argv + argc, "--vorbisQuality", vorbisQuality);
+		if (vorbisQuality < -1)
+			vorbisQuality = -1;
+		if (vorbisQuality > 10)
+			vorbisQuality = 10;
+	}
 
 	bool bBadParams = false;
 	if (destFilename.empty()) {
@@ -222,6 +244,10 @@ int main(int argc, char * argv[])
 		ci.DitherAmount = DitherAmount;
 		ci.bAutoBlankingEnabled = bAutoBlankingEnabled;
 		ci.bMinPhase = bMinPhase;
+		ci.bSetFlacCompression = bSetFlacCompression;
+		ci.flacCompressionLevel = flacCompressionLevel;
+		ci.bSetVorbisQuality = bSetVobisQuality;
+		ci.vorbisQuality = vorbisQuality;
 		return Convert<double>(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
 	}
 
@@ -237,6 +263,10 @@ int main(int argc, char * argv[])
 		ci.DitherAmount = DitherAmount;
 		ci.bAutoBlankingEnabled = bAutoBlankingEnabled;
 		ci.bMinPhase = bMinPhase;
+		ci.bSetFlacCompression = bSetFlacCompression;
+		ci.flacCompressionLevel = flacCompressionLevel;
+		ci.bSetVorbisQuality = bSetVobisQuality;
+		ci.vorbisQuality = vorbisQuality;
 		return Convert<float>(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
 	}
 }
@@ -430,7 +460,7 @@ bool Convert(const conversionInfo<FloatType>& ci)
 	Fraction F = GetSimplifiedFraction(InputSampleRate, ci.OutputSampleRate);
 
 	if (ci.bMinPhase) {
-		if (F.numerator <= 4 && F.denominator <= 4) { 
+		if (F.numerator <= 4 && F.denominator <= 4) {
 			if (F.numerator != F.denominator) { // oversample to improve filter performance
 				F.numerator *= 8;	// 8x oversampling
 				F.denominator *= 8;
@@ -468,9 +498,9 @@ bool Convert(const conversionInfo<FloatType>& ci)
 	std::cout << "Peak input sample: " << std::fixed << PeakInputSample << " (" << 20 * log10(PeakInputSample) << " dBFS)" << std::endl;
 
 	if (ci.bNormalize) { // echo Normalization settings to user
-		std::ios::fmtflags f(std::cout.flags());
+		auto prec = std::cout.precision();
 		std::cout << "Normalizing to " << std::setprecision(2) << ci.Limit << std::endl;
-		std::cout.flags(f);
+		std::cout.precision(prec);
 	}
 
 	// Calculate filter parameters:
@@ -520,7 +550,7 @@ bool Convert(const conversionInfo<FloatType>& ci)
 		OutputFileFormat |= (InputFileFormat & SF_FORMAT_SUBMASK); // may not be valid subformat for new file format. 
 	}
 
-	// determine number of bits in output format, for Ditherers:
+	// determine number of bits in output format, for Dithering:
 	int signalBits;
 	switch (OutputFileFormat & SF_FORMAT_SUBMASK) {
 	case SF_FORMAT_PCM_24:
@@ -536,9 +566,9 @@ bool Convert(const conversionInfo<FloatType>& ci)
 
 	// confirm dithering options for user:
 	if (ci.bDither) {
-		std::ios::fmtflags f(std::cout.flags());
+		auto prec = std::cout.precision();
 		std::cout << "Generating " << std::setprecision(2) << ci.DitherAmount << " bits of dither for " << signalBits << "-bit output format";
-		std::cout.flags(f);
+		std::cout.precision(prec);
 		if (ci.bAutoBlankingEnabled)
 			std::cout << ", with auto-blanking";
 		std::cout << std::endl;
@@ -582,6 +612,26 @@ bool Convert(const conversionInfo<FloatType>& ci)
 				std::cout << "Error: Couldn't Open Output File (" << sf_error_number(e) << ")" << std::endl;
 				return false;
 			}
+
+			// if the minor (sub) format of OutputFileFormat is flac, and user has requested a specific compression level, set compression level:
+			if (((OutputFileFormat & SF_FORMAT_FLAC) == SF_FORMAT_FLAC) && ci.bSetFlacCompression) {
+				std::cout << "setting flac compression level to " << ci.flacCompressionLevel << std::endl;
+				double cl = static_cast<double>(ci.flacCompressionLevel / 8.0); // there are 9 flac compression levels from 0-8. Normalize to 0-1.0
+				pOutFile->command(SFC_SET_COMPRESSION_LEVEL, &cl, sizeof(cl));
+			}
+
+			// if the minor (sub) format of OutputFileFormat is vorbis, and user has requested a specific quality level, set quality level:
+			if (((OutputFileFormat & SF_FORMAT_VORBIS) == SF_FORMAT_VORBIS) && ci.bSetVorbisQuality) {
+				
+				auto prec = std::cout.precision();
+				std::cout.precision(1);
+				std::cout << "setting vorbis quality level to " << ci.vorbisQuality << std::endl;
+				std::cout.precision(prec);
+				
+				double cl = static_cast<double>((1.0-ci.vorbisQuality) / 11.0); // Normalize from (-1 to 10), to (1.0 to 0) ... why is it backwards ?
+				pOutFile->command(SFC_SET_COMPRESSION_LEVEL, &cl, sizeof(cl));
+			}
+
 		}
 
 		catch (std::bad_alloc& b) {
@@ -742,7 +792,10 @@ bool Convert(const conversionInfo<FloatType>& ci)
 		}
 
 		std::cout << "Done" << std::endl;
+		
+		auto prec = std::cout.precision();
 		std::cout << "Peak output sample: " << std::setprecision(6) << PeakOutputSample << " (" << 20 * log10(PeakOutputSample) << " dBFS)" << std::endl;
+		std::cout.precision(prec);
 
 		delete pOutFile; // Close output file
 
@@ -816,6 +869,16 @@ void getCmdlineParam(char** begin, char** end, const std::string& OptionName, un
 		if (++it != end) // found parameter after option
 			nParameter = atoi(*it);
 }
+
+void getCmdlineParam(char** begin, char** end, const std::string& OptionName, int& nParameter)
+{
+	nParameter = 0;
+	char** it = std::find(begin, end, OptionName);
+	if (it != end)	// found option
+		if (++it != end) // found parameter after option
+			nParameter = atoi(*it);
+}
+
 
 void getCmdlineParam(char** begin, char** end, const std::string& OptionName, double& Parameter)
 {
