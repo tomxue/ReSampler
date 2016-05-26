@@ -195,8 +195,8 @@ FloatType shapedNoise = 0.0;
 		oldRandom = newRandom;
 		
 #ifdef DITHER_USE_SATURATION
-		// branchless clipping - restrict to +/- 0.999 (-0.0087 dB):
-		quantizedOutSample = 0.5*(fabs(quantizedOutSample + 0.999) - fabs(quantizedOutSample - 0.999));
+		// branchless clipping - restrict to +/- 1.0 (0.0000 dB):
+		quantizedOutSample = 0.5*(fabs(quantizedOutSample + 1.0) - fabs(quantizedOutSample - 1.0));
 #endif
 		return quantizedOutSample;
 	} // ends function: Dither()
