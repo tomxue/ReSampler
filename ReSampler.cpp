@@ -122,6 +122,9 @@ int main(int argc, char * argv[])
 			vorbisQuality = 10;
 	}
 
+	// parse noClippingProtection option:
+	bool disableClippingProtection = findCmdlineOption(argv, argv + argc, "--noClippingProtection");
+
 	bool bBadParams = false;
 	if (destFilename.empty()) {
 		if (sourceFilename.empty()) {
@@ -248,6 +251,7 @@ int main(int argc, char * argv[])
 		ci.flacCompressionLevel = flacCompressionLevel;
 		ci.bSetVorbisQuality = bSetVobisQuality;
 		ci.vorbisQuality = vorbisQuality;
+		ci.disableClippingProtection = disableClippingProtection;
 		return Convert<double>(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
 	}
 
@@ -267,6 +271,7 @@ int main(int argc, char * argv[])
 		ci.flacCompressionLevel = flacCompressionLevel;
 		ci.bSetVorbisQuality = bSetVobisQuality;
 		ci.vorbisQuality = vorbisQuality;
+		ci.disableClippingProtection = disableClippingProtection;
 		return Convert<float>(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
 	}
 }
@@ -529,7 +534,7 @@ bool Convert(const conversionInfo<FloatType>& ci)
 		makeMinPhase<FloatType>(HugeFilterTaps, HugeFilterSize);
 		makeMinPhase<FloatType>(MedFilterTaps, MedFilterSize);
 	}
-		
+
 	// make a vector of huge filters (one filter for each channel):
 	std::vector<FIRFilter<FloatType, FILTERSIZE_HUGE>> HugeFilters;
 
@@ -799,8 +804,8 @@ bool Convert(const conversionInfo<FloatType>& ci)
 
 		delete pOutFile; // Close output file
 
-		if (bDouble || bFloat) // To-do: Confirm assumption upon which the following statement is built:
-			break; // Clipping is not a concern with Floating-Point formats. 
+		//if (bDouble || bFloat) // To-do: Confirm assumption upon which the following statement is built:
+		//	break; // Clipping is not a concern with Floating-Point formats. 
 
 		// Test for clipping:
 		if (PeakOutputSample > ci.Limit) { // Clipping !
@@ -818,11 +823,13 @@ bool Convert(const conversionInfo<FloatType>& ci)
 
 			Gain *= GainAdjustment;
 			std::cout << "\nClipping detected !" << std::endl;
-			std::cout << "Re-doing with " << 20 * log10(GainAdjustment) << " dB gain adjustment" << std::endl;
-			infile.seek(0i64, SEEK_SET);
+			if (!ci.disableClippingProtection) {
+				std::cout << "Re-doing with " << 20 * log10(GainAdjustment) << " dB gain adjustment" << std::endl;
+				infile.seek(0i64, SEEK_SET);
+			}
 		}
 
-	} while (PeakOutputSample > ci.Limit);
+	} while ((PeakOutputSample > ci.Limit) && !ci.disableClippingProtection);
 
 	STOP_TIMER();
 	return true;

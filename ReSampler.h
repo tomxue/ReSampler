@@ -93,6 +93,7 @@ template<typename FloatType> struct conversionInfo
 	int flacCompressionLevel;
 	bool bSetVorbisQuality;
 	double vorbisQuality;
+	bool disableClippingProtection;
 };
 
 bool determineBestBitFormat(std::string & BitFormat, const std::string & inFilename, const std::string & outFilename);
