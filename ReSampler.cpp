@@ -585,14 +585,10 @@ bool Convert(const conversionInfo<FloatType>& ci)
 		Ditherers.emplace_back(signalBits, ci.DitherAmount, ci.bAutoBlankingEnabled);
 	}
 
-	// Estimate initial gain:
+	// Calculate initial gain:
 	FloatType Gain = ci.bNormalize ? F.numerator * (ci.Limit / PeakInputSample) : F.numerator * ci.Limit;
 
-	// Conditionally guard against filter overshoot:
-	const FloatType OvershootCompensationFactor = 0.992; // Scaling factor to allow for filter overshoot
-	if ((PeakInputSample > OvershootCompensationFactor) && !ci.bNormalize)
-		Gain *= OvershootCompensationFactor;
-
+	
 	if (ci.bDither) { // allow headroom for dithering:
 		FloatType DitherCompensation =
 			(pow(2, signalBits - 1) - pow(2, ci.DitherAmount - 1)) / pow(2, signalBits - 1); // eg 32767/32768 = 0.999969 (-0.00027 dB)
@@ -803,9 +799,6 @@ bool Convert(const conversionInfo<FloatType>& ci)
 		std::cout.precision(prec);
 
 		delete pOutFile; // Close output file
-
-		//if (bDouble || bFloat) // To-do: Confirm assumption upon which the following statement is built:
-		//	break; // Clipping is not a concern with Floating-Point formats. 
 
 		// Test for clipping:
 		if (PeakOutputSample > ci.Limit) { // Clipping !
