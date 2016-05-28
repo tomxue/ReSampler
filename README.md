@@ -71,11 +71,11 @@ from the command line, the main options are as follows:
 
 **Normalization factor** is **> 0.0** and **<= 1.0**, with 1.0 producing the largest possible output level without clipping. Note: resampler will accept normalization values over 1.0, but this will certainly result in clipping, and is therefore only for experimental and testing purposes. Just using **-n** with no parameter is equivalent to **-n 1.0**
 
-Additional options:
+### Additional options: ###
 
-**[--doubleprecision]** will force resampler to use double-precision arithmetic for its *internal calculations* and doesn't have anything to do with the file formats, although if you are working with 64-bit double-precision files, it would make sense to use double precision for calculations used in processing.
+**--doubleprecision** will force resampler to use double-precision arithmetic for its *internal calculations* and doesn't have anything to do with the file formats, although if you are working with 64-bit double-precision files, it would make sense to use double precision for calculations used in processing.
 
-**[--dither [amount]]** adds **+/-amount** *bits* of dither the output file. Dithering deliberately adds a small amount of a particular type of noise (triangular pdf with noise-shaping) prior to quantization to the output file. The goal of dithering is to reduce distortion, and allow extremely quiet passages to be preserved when they would otherwise be below the threshold of the target bit depth. Usually, it only makes sense to add dither when you are converting to a lower bit depth, for example:
+**--dither [amount]** adds **+/-amount** *bits* of dither the output file. Dithering deliberately adds a small amount of a particular type of noise (triangular pdf with noise-shaping) prior to quantization to the output file. The goal of dithering is to reduce distortion, and allow extremely quiet passages to be preserved when they would otherwise be below the threshold of the target bit depth. Usually, it only makes sense to add dither when you are converting to a lower bit depth, for example:
  
 - floating-point -> 24bit
 - 24bit -> 16bit
@@ -85,9 +85,21 @@ The *amount* parameter represents the number of *bits* of dither to add. The act
 
 The effect of dithering is most noticable during extremely quiet passages (typically, in fade-outs) of the audio. If you can hear modulation effects, or "tearing" in the quietest passages of your output file, then a greater amount of dither may need to be applied. (note: in many cases, these passages are so quiet, you will need to normalize them just to hear them).
 
-**[--autoblank]** when specified in conjuction with **--dither** , mute the dithering after 30,000 consecutive input samples of *silence* (< -193dB is considered silence). Dithering is re-enabled immediately upon a non-zero input sample being detected.
+**--autoblank** when specified in conjuction with **--dither** , mute the dithering after 30,000 consecutive input samples of *silence* (< -193dB is considered silence). Dithering is re-enabled immediately upon a non-zero input sample being detected.
 
-**[--listsubformats *filetype*]** will list all valid subformats for a given *filetype*
+**--listsubformats *filetype*** will list all valid subformats for a given *filetype*
+
+**--version** will display the version number of the program
+
+**--minphase** use a minimum-phase FIR filter, instead of Linear-Phase
+
+**--flacCompression *compressionlevel*** sets the compression level for flac output files (between 0 and 8)
+
+**--vorbisQuality *quality*** sets the quality level for ogg vorbis output files (between -1 and 10)
+
+**--noClippingProtection** diables clipping protection (clipping protection is normally active by default)
+
+ 
 
 ## Supported Formats
 
