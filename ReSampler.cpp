@@ -36,7 +36,6 @@
 
 int main(int argc, char * argv[])
 {
-
 	std::string sourceFilename("");
 	std::string destFilename("");
 	std::string outBitFormat("");
@@ -434,6 +433,9 @@ bool Convert(const conversionInfo<FloatType>& ci)
 	unsigned int nChannels = infile.channels();
 	unsigned int InputSampleRate = infile.samplerate();
 	int InputFileFormat = infile.format();
+	sf_count_t InputSampleCount = infile.frames() * nChannels;
+	sf_count_t IncrementalProgressThreshold = InputSampleCount / 10;
+	
 
 	// detect if input format is a floating-point format:
 	bool bFloat = false;
@@ -644,6 +646,8 @@ bool Convert(const conversionInfo<FloatType>& ci)
 		unsigned int DecimationIndex = 0;
 		unsigned int OutBufferIndex = 0;
 		PeakOutputSample = 0.0;
+		SamplesRead = 0i64;
+		sf_count_t NextProgressThreshold = IncrementalProgressThreshold;
 
 		if (F.numerator == 1 && F.denominator == 1) { // no change to sample rate; format conversion only
 
@@ -651,6 +655,7 @@ bool Convert(const conversionInfo<FloatType>& ci)
 			do { // Read and process blocks of samples until the end of file is reached
 
 				count = infile.read(inbuffer, BufferSize);
+				SamplesRead += count;
 
 				for (unsigned int s = 0; s < count; s += nChannels) {
 
@@ -671,13 +676,21 @@ bool Convert(const conversionInfo<FloatType>& ci)
 					}
 
 				} // ends loop over s
+
+				// conditionally send progress update:
+				if (SamplesRead > NextProgressThreshold) {
+					int ProgressPercentage = min(99, 100 * SamplesRead / InputSampleCount);
+					std::cout << ProgressPercentage << "%\b\b\b" << std::flush;
+					NextProgressThreshold += IncrementalProgressThreshold;
+				}
+
 			} while (count > 0);
 		}
-
 
 		else if (F.numerator == 1 && F.denominator != 1) { // Decimate Only
 			do { // Read and process blocks of samples until the end of file is reached
 				count = infile.read(inbuffer, BufferSize);
+				SamplesRead += count;
 
 				for (unsigned int s = 0; s < count; s += nChannels) {
 
@@ -707,12 +720,20 @@ bool Convert(const conversionInfo<FloatType>& ci)
 						DecimationIndex = 0;
 				} // ends loop over s
 
+				// conditionally send progress update:
+				if (SamplesRead > NextProgressThreshold) {
+					int ProgressPercentage = min(99, 100 * SamplesRead / InputSampleCount);
+					std::cout << ProgressPercentage << "%\b\b\b" << std::flush;
+					NextProgressThreshold += IncrementalProgressThreshold;
+				}
+
 			} while (count > 0);
 		} // ends Decimate Only
 
 		else if (F.denominator == 1) { // Interpolate only
 			do { // Read and process blocks of samples until the end of file is reached
 				count = infile.read(inbuffer, BufferSize);
+				SamplesRead += count;
 				for (unsigned int s = 0; s < count; s += nChannels) {
 					for (int ii = 0; ii < F.numerator; ++ii) {
 						for (int Channel = 0; Channel < nChannels; Channel++) {
@@ -737,6 +758,14 @@ bool Convert(const conversionInfo<FloatType>& ci)
 						}
 					} // ends loop over ii
 				} // ends loop over s
+
+				// conditionally send progress update:
+				if (SamplesRead > NextProgressThreshold) {
+					int ProgressPercentage = min(99, 100 * SamplesRead / InputSampleCount);
+					std::cout << ProgressPercentage << "%\b\b\b" << std::flush;
+					NextProgressThreshold += IncrementalProgressThreshold;
+				}
+
 			} while (count > 0);
 		} // ends Interpolate Only
 
@@ -744,6 +773,7 @@ bool Convert(const conversionInfo<FloatType>& ci)
 
 			do { // Read and process blocks of samples until the end of file is reached
 				count = infile.read(inbuffer, BufferSize);
+				SamplesRead += count;
 				for (unsigned int s = 0; s < count; s += nChannels) {
 					for (int ii = 0; ii < F.numerator; ++ii) { // (ii stands for "interpolation index")
 															   // Interpolate:
@@ -784,6 +814,14 @@ bool Convert(const conversionInfo<FloatType>& ci)
 						// To-do: showProgress();
 					} // ends loop over ii
 				} // ends loop over s
+
+				// conditionally send progress update:
+				if (SamplesRead > NextProgressThreshold) {
+					int ProgressPercentage = min(99, 100 * SamplesRead / InputSampleCount);
+					std::cout << ProgressPercentage << "%\b\b\b" << std::flush;
+					NextProgressThreshold += IncrementalProgressThreshold;
+				}
+
 			} while (count > 0);
 		} // ends Interpolate and Decimate
 
@@ -793,7 +831,6 @@ bool Convert(const conversionInfo<FloatType>& ci)
 		}
 
 		std::cout << "Done" << std::endl;
-		
 		auto prec = std::cout.precision();
 		std::cout << "Peak output sample: " << std::setprecision(6) << PeakOutputSample << " (" << 20 * log10(PeakOutputSample) << " dBFS)" << std::endl;
 		std::cout.precision(prec);
