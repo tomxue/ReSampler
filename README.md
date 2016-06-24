@@ -113,7 +113,7 @@ For more information, please refer to the [libsndfile documentation](http://www.
 
 ####Clipping Protection
 
-Resampler employs a multiple-pass approach with regards to clipping detection. If clipping is detected (ie normalized signal level exceeded +/- 1.0) during processing, it will re-do the conversion with the overall gain adjusted appropriately to avoid clipping. (This can be disabled with the --noClippingProtection option)
+Resampler employs a multiple-pass approach with regards to clipping detection. If clipping is detected (ie normalized signal level exceeded +/- 1.0) during processing, it will re-do the conversion with the overall gain adjusted appropriately to avoid clipping. (This can be disabled with the **--noClippingProtection** option)
 
 ####Conversion to same sampling rate
 
