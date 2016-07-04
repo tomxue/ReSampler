@@ -286,6 +286,7 @@ bool determineBestBitFormat(std::string& BitFormat, const std::string& inFilenam
 	SndfileHandle infile(inFilename, SFM_READ);
 	int inFileFormat = infile.format();
 
+
 	if (int e = infile.error()) {
 		std::cout << "Couldn't Open Input File (" << sf_error_number(e) << ")" << std::endl;
 		return false;
@@ -300,10 +301,21 @@ bool determineBestBitFormat(std::string& BitFormat, const std::string& inFilenam
 	}
 
 	// get file extensions:
+
+	// get infile's extension from filename:
 	std::string inFileExt("");
 	if (inFilename.find_last_of(".") != std::string::npos)
 		inFileExt = inFilename.substr(inFilename.find_last_of(".") + 1);
 
+	// retrieve infile's TRUE extension (from the file contents), and if retrieval is successful, override extension derived from filename:
+	SF_FORMAT_INFO infileFormatInfo;
+	infileFormatInfo.format = inFileFormat & SF_FORMAT_TYPEMASK;
+	if (sf_command(NULL, SFC_GET_FORMAT_INFO, &infileFormatInfo, sizeof(infileFormatInfo)) == 0) {
+		inFileExt = std::string(infileFormatInfo.extension);
+		// std::cout << "input file type is " << inFileExt << std::endl;
+	}
+	
+	// get outfile's extension:
 	std::string outFileExt("");
 	if (outFilename.find_last_of(".") != std::string::npos)
 		outFileExt = outFilename.substr(outFilename.find_last_of(".") + 1);
@@ -320,14 +332,18 @@ bool determineBestBitFormat(std::string& BitFormat, const std::string& inFilenam
 		formatinfo.format = m;
 		sf_command(NULL, SFC_GET_FORMAT_MAJOR, &formatinfo, sizeof(formatinfo));
 
-		if (stricmp(formatinfo.extension, outFileExt.c_str()) == 0) {
-			format = formatinfo.format | (inFileFormat & SF_FORMAT_SUBMASK); // combine outfile's major format with infile's subformat 
+		if (stricmp(formatinfo.extension, outFileExt.c_str()) == 0) { // match between format number m and outfile's file extension
+			format = formatinfo.format | (inFileFormat & SF_FORMAT_SUBMASK); // combine outfile's major format with infile's subformat
+			
 			// Check if format / subformat combination is valid:
 			SF_INFO sfinfo;
 			memset(&sfinfo, 0, sizeof(sfinfo));
 			sfinfo.channels = 1;
 			sfinfo.format = format;
-			if (!sf_format_check(&sfinfo)) { // not valid; use default format
+
+			if (sf_format_check(&sfinfo)) { // Match: infile's subformat is valid for outfile's format
+				break;
+			} else { // infile's subformat is not valid for outfile's format; use outfile's default subformat
 				std::cout << "Output file format " << outFileExt << " and subformat " << BitFormat << " combination not valid ... ";
 				BitFormat.clear();
 				BitFormat = defaultSubFormats.find(outFileExt)->second;
