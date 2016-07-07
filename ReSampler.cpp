@@ -160,8 +160,16 @@ int main(int argc, char * argv[])
 	}
 
 	std::cout << strVersion << " ";
+
 #ifdef _M_X64
-	std::cout << "64-bit version" << std::endl;
+	std::cout << "64-bit version";
+
+#ifdef USE_AVX
+	std::cout << " AVX build ...";
+#endif // USE_AVX
+
+	std::cout << std::endl;
+
 #else
 	std::cout << "32-bit version";
 #if defined(USE_SSE2)
@@ -758,10 +766,15 @@ bool Convert(const conversionInfo<FloatType>& ci)
 							
 							else
 								MedFilters[Channel].putZero(); // inject a Zero
-
+#ifdef USE_AVX
+							FloatType OutputSample = ci.bDither ?
+								Ditherers[Channel].Dither(Gain * MedFilters[Channel].get()) :
+								Gain * MedFilters[Channel].get();
+#else
 							FloatType OutputSample = ci.bDither ?
 								Ditherers[Channel].Dither(Gain * MedFilters[Channel].LazyGet(F.numerator)) :
 								Gain * MedFilters[Channel].LazyGet(F.numerator);
+#endif
 
 							outbuffer[OutBufferIndex + Channel] = OutputSample;
 							PeakOutputSample = max(PeakOutputSample, abs(OutputSample));

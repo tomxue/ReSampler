@@ -12,6 +12,10 @@
 
 #define USE_SSE2 1 // Use SSE2-specific intrinsics in the build
 
+#ifdef USE_AVX
+#include "FIRFilterAVX.h"
+
+#else
 #if (defined(_M_X64) || defined(USE_SSE2)) // All x64 CPUs have SSE2 instructions, but some older 32-bit CPUs do not. 
 	#define USE_SIMD 1 // Vectorise main loop in FIRFilter::get() by using SSE2 SIMD instrinsics 
 	// 2016/04/01: Needs specializations (4xfloat SIMD code won't work for double precision)
@@ -294,6 +298,9 @@ double FIRFilter<double, FILTERSIZE_HUGE>::get() {
 //}
 
 #endif // USE_SIMD
+#endif // !USE_AVX
+
+// --- //
 
 template<typename FloatType> bool makeLPF(FloatType* filter, int Length, FloatType transitionFreq, FloatType sampleRate)
 {
