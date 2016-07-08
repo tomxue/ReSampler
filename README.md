@@ -118,3 +118,12 @@ Resampler employs a multiple-pass approach with regards to clipping detection. I
 ####Conversion to same sampling rate
 
 When the target sampling rate is the same as the input file (ie 1:1 ratio), sample-rate conversion is not actually performed. However, bit-depth / file format conversion and other features such as dithering and normalization are performed when requested.
+
+####Description of Binaries included in distribution
+
+**ReSampler/Release/ReSampler.exe** : 32-bit Windows with **SSE2** instruction set
+
+**ReSampler/x64/Release/ReSampler.exe** : 64-bit Windows (*uses SSE2, but all 64-bit CPUs should have this*)
+
+**ReSampler/x64/AVX_Release/ReSampler.exe** : 64-bit Windows with **AVX2** instruction set (Requires Intel *Haswell* CPU or higher, AMD *Carrizo* or higher. Requires Windows 7 SP1 or higher, Windows Server 2008 R2 SP1 or higher OS) 
+
