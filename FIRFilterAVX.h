@@ -214,132 +214,141 @@ private:
 
 #ifdef USE_AVX
 
-// Specializations for doubles (To-do: work out how to perfectly-forward the non-type template parameter 'size' ? ):
+// ================================= 
+// AVX specializations for doubles :
+// =================================
 
 double FIRFilter<double, FILTERSIZE_MEDIUM>::get() {
+
+	// AVX implementation: This only works with doubles !
+	// Processes four doubles at a time.
+
 	double output = 0.0;
-	int index = CurrentIndex;
-	for (int i = 0; i < FILTERSIZE_MEDIUM; ++i) {
-		output += Signal[index] * Kernel0[i];
-		index++;
+	double* Kernel;
+	int Index = (CurrentIndex >> 2) << 2; // make multiple-of-four
+	int Phase = CurrentIndex & 3;
+
+	// Part1 : Head
+	// select proper Kernel phase and calculate first Block of 4:
+	switch (Phase) {
+
+	case 0:
+		Kernel = Kernel0;
+		output = Kernel[0] * Signal[Index] + Kernel[1] * Signal[Index + 1] + Kernel[2] * Signal[Index + 2] + Kernel[3] * Signal[Index + 3];
+		break;
+
+	case 1:
+		Kernel = Kernel1;
+		output = Kernel[0] * Signal[Index + FILTERSIZE_MEDIUM] + Kernel[1] * Signal[Index + 1] + Kernel[2] * Signal[Index + 2] + Kernel[3] * Signal[Index + 3];
+		break;
+
+	case 2:
+		Kernel = Kernel2;
+		output = Kernel[0] * Signal[Index + FILTERSIZE_MEDIUM] + Kernel[1] * Signal[Index + FILTERSIZE_MEDIUM + 1] + Kernel[2] * Signal[Index + 2] + Kernel[3] * Signal[Index + 3];
+		break;
+
+	case 3:
+		Kernel = Kernel3;
+		output = Kernel[0] * Signal[Index + FILTERSIZE_MEDIUM] + Kernel[1] * Signal[Index + FILTERSIZE_MEDIUM + 1] + Kernel[2] * Signal[Index + FILTERSIZE_MEDIUM + 2] + Kernel[3] * Signal[Index + 3];
+		break;
+
 	}
+	Index += 4;
+
+	// Part 2: Body
+	alignas(32) __m256d signal;	// AVX Vector Registers for calculation
+	alignas(32) __m256d kernel;
+	alignas(32) __m256d product;
+	alignas(32) __m256d accumulator = _mm256_setzero_pd();
+
+	for (int i = 4; i < (FILTERSIZE_MEDIUM >> 2) << 2; i += 4) {
+		signal = _mm256_load_pd(Signal + Index);
+		kernel = _mm256_load_pd(Kernel + i);
+		product = _mm256_mul_pd(signal, kernel);
+		accumulator = _mm256_add_pd(product, accumulator);
+		Index += 4;
+	}
+
+	output +=
+		accumulator.m256d_f64[0] +
+		accumulator.m256d_f64[1] +
+		accumulator.m256d_f64[2] +
+		accumulator.m256d_f64[3];
+
+	// Part 3: Tail
+	for (int j = (FILTERSIZE_MEDIUM >> 2) << 2; j < FILTERSIZE_MEDIUM; ++j) {
+		output += Signal[Index] * Kernel[j];
+		++Index;
+	}
+
 	return output;
 }
 
 double FIRFilter<double, FILTERSIZE_HUGE>::get() {
+
+	// AVX implementation: This only works with doubles !
+	// Processes four doubles at a time.
+
 	double output = 0.0;
-	int index = CurrentIndex;
-	for (int i = 0; i < FILTERSIZE_HUGE; ++i) {
-		output += Signal[index] * Kernel0[i];
-		index++;
+	double* Kernel;
+	int Index = (CurrentIndex >> 2) << 2; // make multiple-of-four
+	int Phase = CurrentIndex & 3;
+
+	// Part1 : Head
+	// select proper Kernel phase and calculate first Block of 4:
+	switch (Phase) {
+
+	case 0:
+		Kernel = Kernel0;
+		output = Kernel[0] * Signal[Index] + Kernel[1] * Signal[Index + 1] + Kernel[2] * Signal[Index + 2] + Kernel[3] * Signal[Index + 3];
+		break;
+
+	case 1:
+		Kernel = Kernel1;
+		output = Kernel[0] * Signal[Index + FILTERSIZE_HUGE] + Kernel[1] * Signal[Index + 1] + Kernel[2] * Signal[Index + 2] + Kernel[3] * Signal[Index + 3];
+		break;
+
+	case 2:
+		Kernel = Kernel2;
+		output = Kernel[0] * Signal[Index + FILTERSIZE_HUGE] + Kernel[1] * Signal[Index + FILTERSIZE_HUGE + 1] + Kernel[2] * Signal[Index + 2] + Kernel[3] * Signal[Index + 3];
+		break;
+
+	case 3:
+		Kernel = Kernel3;
+		output = Kernel[0] * Signal[Index + FILTERSIZE_HUGE] + Kernel[1] * Signal[Index + FILTERSIZE_HUGE + 1] + Kernel[2] * Signal[Index + FILTERSIZE_HUGE + 2] + Kernel[3] * Signal[Index + 3];
+		break;
+
 	}
+	Index += 4;
+
+	// Part 2: Body
+	alignas(32) __m256d signal;	// AVX Vector Registers for calculation
+	alignas(32) __m256d kernel;
+	alignas(32) __m256d product;
+	alignas(32) __m256d accumulator = _mm256_setzero_pd();
+
+	for (int i = 4; i < (FILTERSIZE_HUGE >> 2) << 2; i += 4) {
+		signal = _mm256_load_pd(Signal + Index);
+		kernel = _mm256_load_pd(Kernel + i);
+		product = _mm256_mul_pd(signal, kernel);
+		accumulator = _mm256_add_pd(product, accumulator);
+		Index += 4;
+	}
+
+	output +=
+		accumulator.m256d_f64[0] +
+		accumulator.m256d_f64[1] +
+		accumulator.m256d_f64[2] +
+		accumulator.m256d_f64[3];
+
+	// Part 3: Tail
+	for (int j = (FILTERSIZE_HUGE >> 2) << 2; j < FILTERSIZE_HUGE; ++j) {
+		output += Signal[Index] * Kernel[j];
+		++Index;
+	}
+
 	return output;
 }
-
-// actual AVX implementations for doubles :
-
-//double FIRFilter<double, FILTERSIZE_MEDIUM>::get() {
-//
-//	// AVX implementation: This only works with doubles !
-//	// Processes two doubles at a time.
-//
-//	double output = 0.0;
-//	double* Kernel;
-//	int Index = (CurrentIndex >> 1) << 1; // make multiple-of-two
-//	int Phase = CurrentIndex & 1;
-//
-//	// Part1 : Head
-//	// select proper Kernel phase and calculate first Block of 2:
-//	switch (Phase) {
-//	case 0:
-//		Kernel = Kernel0;
-//		// signal already aligned and ready to use
-//		output = Kernel[0] * Signal[Index] + Kernel[1] * Signal[Index + 1];
-//		break;
-//	case 1:
-//		Kernel = Kernel1;
-//		// signal starts at +1 : load first value from history (ie upper half of buffer)
-//		output = Kernel[0] * Signal[Index + FILTERSIZE_MEDIUM] + Kernel[1] * Signal[Index + 1];
-//		break;
-//	}
-//	Index += 2;
-//
-//	// Part 2: Body
-//	alignas(32) __m128d signal;	// AVX Vector Registers for calculation
-//	alignas(32) __m128d kernel;
-//	alignas(32) __m128d product;
-//	alignas(32) __m128d accumulator = _mm_setzero_pd();
-//
-//	for (int i = 2; i < (FILTERSIZE_MEDIUM >> 1) << 1; i += 2) {
-//		signal = _mm_load_pd(Signal + Index);
-//		kernel = _mm_load_pd(Kernel + i);
-//		product = _mm_mul_pd(signal, kernel);
-//		accumulator = _mm_add_pd(product, accumulator);
-//		Index += 2;
-//	}
-//
-//	output += accumulator.m128d_f64[0] + accumulator.m128d_f64[1];
-//
-//	// Part 3: Tail
-//	for (int j = (FILTERSIZE_MEDIUM >> 1) << 1; j < FILTERSIZE_MEDIUM; ++j) {
-//		output += Signal[Index] * Kernel[j];
-//		++Index;
-//	}
-//
-//	return output;
-//}
-//
-//double FIRFilter<double, FILTERSIZE_HUGE>::get() {
-//
-//	// AVX implementation: This only works with doubles !
-//	// Processes two doubles at a time.
-//
-//	double output = 0.0;
-//	double* Kernel;
-//	int Index = (CurrentIndex >> 1) << 1; // make multiple-of-two
-//	int Phase = CurrentIndex & 1;
-//
-//	// Part1 : Head
-//	// select proper Kernel phase and calculate first Block of 2:
-//	switch (Phase) {
-//	case 0:
-//		Kernel = Kernel0;
-//		// signal already aligned and ready to use
-//		output = Kernel[0] * Signal[Index] + Kernel[1] * Signal[Index + 1];
-//		break;
-//	case 1:
-//		Kernel = Kernel1;
-//		// signal starts at +1 : load first value from history (ie upper half of buffer)
-//		output = Kernel[0] * Signal[Index + FILTERSIZE_HUGE] + Kernel[1] * Signal[Index + 1];
-//		break;
-//	}
-//	Index += 2;
-//
-//	// Part 2: Body
-//	alignas(32) __m128d signal;	// AVX Vector Registers for calculation
-//	alignas(32) __m128d kernel;
-//	alignas(32) __m128d product;
-//	alignas(32) __m128d accumulator = _mm_setzero_pd();
-//
-//	for (int i = 2; i < (FILTERSIZE_HUGE >> 1) << 1; i += 2) {
-//		signal = _mm_load_pd(Signal + Index);
-//		kernel = _mm_load_pd(Kernel + i);
-//		product = _mm_mul_pd(signal, kernel);
-//		accumulator = _mm_add_pd(product, accumulator);
-//		Index += 2;
-//	}
-//	
-//	output += accumulator.m128d_f64[0] + accumulator.m128d_f64[1];
-//
-//	// Part 3: Tail
-//	for (int j = (FILTERSIZE_HUGE >> 1) << 1; j < FILTERSIZE_HUGE; ++j) {
-//		output += Signal[Index] * Kernel[j];
-//		++Index;
-//	}
-//
-//	return output;
-//}
-
 #endif // USE_AVX
 
 #endif // FIRFFILTER_AVX_H_
