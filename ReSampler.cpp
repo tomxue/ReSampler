@@ -165,10 +165,33 @@ int main(int argc, char * argv[])
 	std::cout << "64-bit version";
 
 #ifdef USE_AVX
-	std::cout << " AVX build ...";
-#endif // USE_AVX
+	std::cout << " AVX build ... ";
 
+	// Verify CPU capabilities:
+	bool bAVXok = false;
+//	bool bAVX2ok = false;
+	int cpuInfo[4] = { 0,0,0,0 };
+	__cpuid(cpuInfo, 0);
+	if (cpuInfo[0] != 0) {
+		__cpuid(cpuInfo, 1);
+		if (cpuInfo[2] & (1 << 28)) {
+			bAVXok = true; // Note: this test only confirms CPU AVX capability, and does not check OS capability.
+			// to-do: check for AVX2 ...
+		}
+	}
+	if (bAVXok)
+		std::cout << "CPU supports AVX (ok)";
+	else {
+		std::cout << "Your CPU doesn't support AVX - please try a non-AVX2 build on this machine" << std::endl;
+		getchar();
+		exit(EXIT_FAILURE);
+	}
+#endif // USE_AVX	
+	
 	std::cout << std::endl;
+	
+
+
 
 #else
 	std::cout << "32-bit version";
