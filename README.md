@@ -17,6 +17,8 @@ Resampler uses the C++ wrapper of the outstanding [libsndfile](http://www.mega-n
 
 The FIR filter class written for this project uses SSE SIMD instructions when using single-precision floating-point to perform 4 multiply/accumulate operations simultaneously. This has been found to yield a speed improvement of approximately 3x. Some experimentation was also done with 2x double-precision SSE2 SIMD, but was found to be no faster than the basic scalar implementation, and has thus been commented-out (but not deleted) from the source.
 
+(Additionally, some progress has been made recently with a build of the project using AVX instructions, on supported CPUs / OSes, to perform 8 single-precision or 4 double-precision multiply/accumulate operations at a time.) 
+
 Resampler was developed on Visual C++ 2015, as it uses some C++11 features. (Porting to other environments is intended in the future)
 
 ## Motivation
