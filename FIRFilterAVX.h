@@ -1,6 +1,8 @@
 #ifndef FIRFFILTER_AVX_H_
 #define FIRFFILTER_AVX_H_
 
+//#define USE_FMA 1
+
 // FIRFilterAVX.h : AVX-specific code for FIR filtering
 
 #include <immintrin.h>
@@ -154,8 +156,13 @@ public:
 		for (int i = 8; i < (size >> 3) << 3; i += 8) {
 			signal = _mm256_load_ps(Signal + Index);
 			kernel = _mm256_load_ps(Kernel + i);
+#ifdef USE_FMA
+			accumulator = _mm256_fmadd_ps(signal, kernel, accumulator);
+#else
 			product = _mm256_mul_ps(signal, kernel);
 			accumulator = _mm256_add_ps(product, accumulator);
+#endif
+
 			Index += 8;
 		}	
 
