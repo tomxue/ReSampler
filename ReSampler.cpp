@@ -182,8 +182,7 @@ int main(int argc, char * argv[])
 	if (bAVXok)
 		std::cout << "CPU supports AVX (ok)";
 	else {
-		std::cout << "Your CPU doesn't support AVX - please try a non-AVX2 build on this machine" << std::endl;
-		getchar();
+		std::cout << "Your CPU doesn't support AVX - please try a non-AVX build on this machine" << std::endl;
 		exit(EXIT_FAILURE);
 	}
 #endif // USE_AVX	
