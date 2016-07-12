@@ -166,7 +166,7 @@ int main(int argc, char * argv[])
 
 #ifdef USE_AVX
 	std::cout << " AVX build ... ";
-
+#if defined (_MSC_VER) || defined (__INTEL_COMPILER)
 	// Verify CPU capabilities:
 	bool bAVXok = false;
 //	bool bAVX2ok = false;
@@ -179,18 +179,18 @@ int main(int argc, char * argv[])
 			// to-do: check for AVX2 ...
 		}
 	}
+
 	if (bAVXok)
 		std::cout << "CPU supports AVX (ok)";
 	else {
 		std::cout << "Your CPU doesn't support AVX - please try a non-AVX build on this machine" << std::endl;
 		exit(EXIT_FAILURE);
 	}
+
+#endif // defined (_MSC_VER) || defined (__INTEL_COMPILER)
 #endif // USE_AVX	
 	
 	std::cout << std::endl;
-	
-
-
 
 #else
 	std::cout << "32-bit version";
