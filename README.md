@@ -9,18 +9,6 @@ Resampler is intended to produce outstanding quality sound files, keeping aliasi
 ![spectrogram: 0-48khz sweep ](https://github.com/jniemann66/ReSampler/blob/master/96khz_sweep-3dBFS_64f(to44k).png)  
 *Spectrogram of 0-48kHz Sine Sweep @96kHz sample rate, after having been downsampled to 44kHz sample rate*
 
-## Description of code
- 
-Sample Rate Conversion is accomplished using the usual interpolation/decimation techniques. However, when using complex conversion ratios (such as 44.1k <--> 48k), a rather large FIR lowpass filter is used to ensure a clean conversion.
-
-Resampler uses the C++ wrapper of the outstanding [libsndfile](http://www.mega-nerd.com/libsndfile/) library for sound file I/O operations. (I originally embarked upon writing my own sound-file I/O library, but quickly realised the enormity of such an undertaking, and subsequently adopted libsndfile)
-
-The FIR filter class written for this project uses SSE SIMD instructions when using single-precision floating-point to perform 4 multiply/accumulate operations simultaneously. This has been found to yield a speed improvement of approximately 3x. Some experimentation was also done with 2x double-precision SSE2 SIMD, but was found to be no faster than the basic scalar implementation, and has thus been commented-out (but not deleted) from the source.
-
-(Additionally, some progress has been made recently with a build of the project using AVX instructions, on supported CPUs / OSes, to perform 8 single-precision or 4 double-precision multiply/accumulate operations at a time.) 
-
-Resampler was developed on Visual C++ 2015, as it uses some C++11 features. (Porting to other environments is intended in the future)
-
 ## Motivation
 This project arose out of: 
 
@@ -121,11 +109,43 @@ Resampler employs a multiple-pass approach with regards to clipping detection. I
 
 When the target sampling rate is the same as the input file (ie 1:1 ratio), sample-rate conversion is not actually performed. However, bit-depth / file format conversion and other features such as dithering and normalization are performed when requested.
 
-####Description of Binaries included in distribution
+## Description of code
+ 
+Sample Rate Conversion is accomplished using the usual interpolation/decimation techniques. However, when using complex conversion ratios (such as 44.1k <--> 48k), a rather large FIR lowpass filter is used to ensure a clean conversion.
+
+Resampler uses the C++ wrapper of the outstanding [libsndfile](http://www.mega-nerd.com/libsndfile/) library for sound file I/O operations. (I originally embarked upon writing my own sound-file I/O library, but quickly realised the enormity of such an undertaking, and subsequently adopted libsndfile)
+
+The FIR filter class written for this project uses SSE SIMD instructions when using single-precision floating-point to perform 4 multiply/accumulate operations simultaneously. This has been found to yield a speed improvement of approximately 3x. Some experimentation was also done with 2x double-precision SSE2 SIMD, but was found to be no faster than the basic scalar implementation, and has thus been commented-out (but not deleted) from the source.
+
+(Additionally, some progress has been made recently with a build of the project using AVX instructions, on supported CPUs / OSes, to perform 8 single-precision or 4 double-precision multiply/accumulate operations at a time.) 
+
+Resampler was developed on Visual C++ 2015, as it uses some C++11 features. (Porting to other environments is intended in the future).
+
+#### explanation of cource code files:
+
+
+----------
+
+
+**resampler.cpp**		core of program
+
+**FIRFilter.h**       	FIR Filter DSP code
+
+**FIRFilterAVX.h**		AVX-specific DSP code (conditional #include in AVX build)
+ 
+**Biquad.h**            IIR Filter (used in dithering)
+
+**Ditherer.h**          defines ditherer class, for adding dither
+
+*(the class implementations are all inline in the .h files)*
+
+----------
+
+
+## Description of Binaries included in distribution
 
 **ReSampler/Release/ReSampler.exe** : 32-bit Windows with **SSE2** instruction set
 
 **ReSampler/x64/Release/ReSampler.exe** : 64-bit Windows (*uses SSE2, but all 64-bit CPUs should have this*)
 
 **ReSampler/x64/AVX_Release/ReSampler.exe** : 64-bit Windows with **AVX2** instruction set (Requires Intel *Haswell* CPU or higher, AMD *Carrizo* or higher. Requires Windows 7 SP1 or higher, Windows Server 2008 R2 SP1 or higher OS) 
-
