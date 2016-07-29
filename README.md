@@ -127,15 +127,17 @@ Resampler was developed on Visual C++ 2015, as it uses some C++11 features. (Por
 ----------
 
 
-**resampler.cpp**		core of program
+**resampler.cpp** :	core of program
 
-**FIRFilter.h**       	FIR Filter DSP code
+**resampler.h** : important data structures and function declarations
 
-**FIRFilterAVX.h**		AVX-specific DSP code (conditional #include in AVX build)
+**FIRFilter.h** : FIR Filter DSP code
+
+**FIRFilterAVX.h** : AVX-specific DSP code (conditional #include in AVX build)
  
-**Biquad.h**            IIR Filter (used in dithering)
+**Biquad.h** : IIR Filter (used in dithering)
 
-**Ditherer.h**          defines ditherer class, for adding dither
+**Ditherer.h** : defines ditherer class, for adding dither
 
 *(the class implementations are all inline in the .h files)*
 
