@@ -89,7 +89,6 @@ The effect of dithering is most noticable during extremely quiet passages (typic
 
 **--noClippingProtection** diables clipping protection (clipping protection is normally active by default)
 
- 
 
 ## Supported Formats
 
@@ -123,9 +122,7 @@ Resampler was developed on Visual C++ 2015, as it uses some C++11 features. (Por
 
 #### explanation of cource code files:
 
-
 ----------
-
 
 **resampler.cpp** :	core of program
 
@@ -142,7 +139,6 @@ Resampler was developed on Visual C++ 2015, as it uses some C++11 features. (Por
 *(the class implementations are all inline in the .h files)*
 
 ----------
-
 
 ## Description of Binaries included in distribution
 

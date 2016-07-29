@@ -417,7 +417,7 @@ int determineOutputFormat(const std::string& outFileExt, const std::string& bitF
 	// Special cases:
 	if (bitFormat == "8") {
 		// user specified 8-bit. Determine whether it must be unsigned or signed, based on major type:
-		// These formats always use unsigned 8-bit when they use 8-bit: mat rf64 voc w64 wav
+		// These formats always use unsigned: 8-bit when they use 8-bit: mat rf64 voc w64 wav
 
 		if ((outFileExt == "mat") || (outFileExt == "rf64") || (outFileExt == "voc") || (outFileExt == "w64") || (outFileExt == "wav"))
 			format = info.format | SF_FORMAT_PCM_U8;
@@ -482,7 +482,6 @@ bool Convert(const conversionInfo<FloatType>& ci)
 	sf_count_t InputSampleCount = infile.frames() * nChannels;
 	sf_count_t IncrementalProgressThreshold = InputSampleCount / 10;
 	
-
 	// detect if input format is a floating-point format:
 	bool bFloat = false;
 	bool bDouble = false;
@@ -635,7 +634,6 @@ bool Convert(const conversionInfo<FloatType>& ci)
 
 	// Calculate initial gain:
 	FloatType Gain = ci.bNormalize ? F.numerator * (ci.Limit / PeakInputSample) : F.numerator * ci.Limit;
-
 	
 	if (ci.bDither) { // allow headroom for dithering:
 		FloatType DitherCompensation =
@@ -680,7 +678,6 @@ bool Convert(const conversionInfo<FloatType>& ci)
 				double cl = static_cast<double>((1.0-ci.vorbisQuality) / 11.0); // Normalize from (-1 to 10), to (1.0 to 0) ... why is it backwards ?
 				pOutFile->command(SFC_SET_COMPRESSION_LEVEL, &cl, sizeof(cl));
 			}
-
 		}
 
 		catch (std::bad_alloc& b) {
@@ -980,5 +977,3 @@ void getCmdlineParam(char** begin, char** end, const std::string& OptionName, do
 bool findCmdlineOption(char** begin, char** end, const std::string& option) {
 	return (std::find(begin, end, option) != end);
 }
-
-//
