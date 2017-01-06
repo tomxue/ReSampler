@@ -356,7 +356,7 @@ bool determineBestBitFormat(std::string& BitFormat, const std::string& inFilenam
 	memset(&formatinfo, 0, sizeof(formatinfo));
 	sf_command(NULL, SFC_GET_FORMAT_MAJOR_COUNT, &major_count, sizeof(int));
 
-	// determine if inFile's subformat is valid for outFile
+	// determine if inFile's subformat is valid for outFile:
 	for (int m = 0; m < major_count; m++)
 	{
 		formatinfo.format = m;
