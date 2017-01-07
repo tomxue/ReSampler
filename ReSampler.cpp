@@ -557,10 +557,10 @@ bool Convert(const conversionInfo<FloatType>& ci)
 
 	// Calculate filter parameters:
 	int OverSampFreq = InputSampleRate * F.numerator; // eg 160 * 44100
-	unsigned int minSampleRate = min(InputSampleRate, ci.OutputSampleRate);
-	int TransitionWidth = minSampleRate / 22; // reasonable estimate for allowing transition width to scale with sample rate
-//	TransitionWidth = max(TransitionWidth, 1700); // put a limit on how narrow the transition can be (too narrow will cause issues with low target samplerates)
-	int ft = min(InputSampleRate, ci.OutputSampleRate) / 2.0 - TransitionWidth;
+	double targetNyquist = min(InputSampleRate, ci.OutputSampleRate) / 2.0;
+	double ft = 0.909091 * targetNyquist; // 0.090991 is 10/11 (take an 11th off the end)
+	int TransitionWidth = targetNyquist - ft;
+	std::cout << "LPF ft: " << ft << " Hz, transition band: " << TransitionWidth << " Hz" << std::endl;
 
 	// Make some filters: 
 	// Huge Filters are used for complex ratios.
