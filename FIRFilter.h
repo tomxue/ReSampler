@@ -23,8 +23,21 @@
 
 template <typename FloatType, unsigned int size>
 class FIRFilter {
-public:
 
+private:
+	alignas(16) FloatType Kernel0[size];
+
+#ifdef USE_SIMD
+	// Polyphase Filter Kernel table:
+	alignas(16) FloatType Kernel1[size];
+	alignas(16) FloatType Kernel2[size];
+	alignas(16) FloatType Kernel3[size];
+#endif
+	alignas(16) FloatType Signal[size * 2];	// Double-length signal buffer, to facilitate fast emulation of a circular buffer
+	int CurrentIndex;
+	int LastPut;
+
+public:
 	FIRFilter(FloatType* taps) :
 		CurrentIndex(size-1), LastPut(0)
 	{
@@ -154,19 +167,6 @@ public:
 		}
 		return output;
 	}
-
-private:
-	alignas(16) FloatType Kernel0[size];
-
-#ifdef USE_SIMD
-	// Polyphase Filter Kernel table:
-	alignas(16) FloatType Kernel1[size];
-	alignas(16) FloatType Kernel2[size];
-	alignas(16) FloatType Kernel3[size];
-#endif
-	alignas(16) FloatType Signal[size*2];	// Double-length signal buffer, to facilitate fast emulation of a circular buffer
-	int CurrentIndex;
-	int LastPut;
 };
 
 
