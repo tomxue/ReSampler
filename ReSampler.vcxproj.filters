@@ -35,5 +35,8 @@
     <ClInclude Include="FIRFilterAVX.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="alignedmalloc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

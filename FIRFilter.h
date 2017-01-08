@@ -169,6 +169,7 @@ private:
 	int LastPut;
 };
 
+
 #ifdef USE_SIMD
 
 // super-annoying Specializations for doubles (To-do: work out how to perfectly-forward the non-type template parameter 'size' ? ):

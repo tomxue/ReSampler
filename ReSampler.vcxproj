@@ -354,6 +354,7 @@
     <ClCompile Include="ReSampler.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="alignedmalloc.h" />
     <ClInclude Include="biquad.h" />
     <ClInclude Include="ditherer.h" />
     <ClInclude Include="FIRFilter.h" />
