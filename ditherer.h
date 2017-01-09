@@ -37,7 +37,7 @@ public:
 	bool bAutoBlankingEnabled; 
 	FloatType autoBlankLevelThreshold;				// input signals below this threshold are considered zero
 	FloatType autoBlankTimeThreshold;				// number of zero samples before activating blanking
-	const FloatType autoBlankDecayFactor = 0.9995;	// dither level will decrease by this factor for each sample when blanking is active
+	const FloatType autoBlankDecayFactor = (FloatType)0.9995;	// dither level will decrease by this factor for each sample when blanking is active
 
 // Constructor:
 
@@ -149,10 +149,10 @@ FloatType shapedNoise = 0.0;
 //          tpdf Dither------>[filter]
 //                               |
 //                               |    +-----> outSample
-//                               v    |                        
+//                               v    |
 //   inSample ----->+( )------->(+)---+--->[Q]-->-+--> quantizedOutSample
 //                    +               |           |
-//                    ^               +-->-( )+<--+ 
+//                    ^               +-->-( )+<--+
 //                    |                     |
 //                    +-------[z^-1]--------+
 //                    | -1.00               |

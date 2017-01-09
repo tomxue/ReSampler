@@ -1,5 +1,8 @@
 #ifndef FIRFFILTER_AVX_H_
 #define FIRFFILTER_AVX_H_
+#ifdef USE_AVX
+
+#define AVX_ALIGNMENT_SIZE 32
 
 //#define USE_FMA 1
 
@@ -7,25 +10,32 @@
 
 #include <immintrin.h>
 #include <typeinfo>
+#include <cstdint>
+#include <cassert>
 
-#define FILTERSIZE_HUGE 32767
-#define FILTERSIZE_MEDIUM 511
+#include "alignedmalloc.h"
 
-template <typename FloatType, unsigned int size>
+template <typename FloatType>
 class FIRFilter {
-public:
 
-	FIRFilter(FloatType* taps) :
-		CurrentIndex(size-1), LastPut(0)
+public:
+	// constructor:
+	FIRFilter(FloatType* taps, size_t size) :
+		size(size), CurrentIndex(size-1), LastPut(0),
+		Signal(NULL), Kernel0(NULL), Kernel1(NULL), Kernel2(NULL), Kernel3(NULL), Kernel4(NULL), Kernel5(NULL), Kernel6(NULL), Kernel7(NULL)
 	{
+		// allocate buffers:
+		allocateBuffers();
+		assertAlignment();
+
+		// initialize filter kernel and signal buffers
 		for (unsigned int i = 0; i < size; ++i) {
 			Kernel0[i] = taps[i];
 			Signal[i] = 0.0;
 			Signal[i + size] = 0.0;
 		}
 
-#ifdef USE_AVX
-		// Populate remaining kernel Phases:
+		// Populate additional kernel Phases:
 		memcpy(1 + Kernel1, Kernel0, (size - 1) * sizeof(FloatType));
 		Kernel1[0] = Kernel0[size - 1];
 		memcpy(1 + Kernel2, Kernel1, (size - 1) * sizeof(FloatType));
@@ -42,10 +52,88 @@ public:
 		memcpy(1 + Kernel7, Kernel6, (size - 1) * sizeof(FloatType));
 		Kernel7[0] = Kernel6[size - 1];
 
-#endif
-
 	}
 
+	// deconstructor:
+	~FIRFilter() {
+		freeBuffers();
+	}
+
+	// copy constructor: 
+	FIRFilter(const FIRFilter& other) : size(other.size), CurrentIndex(other.CurrentIndex), LastPut(other.LastPut)
+	{
+		allocateBuffers();
+		assertAlignment();
+		copyBuffers(other);
+	}
+
+	// move constructor:
+	FIRFilter(FIRFilter&& other) :
+		size(other.size), CurrentIndex(other.CurrentIndex), LastPut(other.LastPut),
+		Signal(other.Signal), Kernel0(other.Kernel0), Kernel1(other.Kernel1), Kernel2(other.Kernel2), Kernel3(other.Kernel3),
+		Kernel4(other.Kernel4), Kernel5(other.Kernel5), Kernel6(other.Kernel6), Kernel7(other.Kernel7)
+	{
+		assertAlignment();
+		other.Signal = nullptr;
+		other.Kernel0 = nullptr;
+		other.Kernel1 = nullptr;
+		other.Kernel2 = nullptr;
+		other.Kernel3 = nullptr;
+		other.Kernel4 = nullptr;
+		other.Kernel5 = nullptr;
+		other.Kernel6 = nullptr;
+		other.Kernel7 = nullptr;
+	}
+
+	// copy assignment:
+	FIRFilter& operator= (const FIRFilter& other)
+	{
+		size = other.size;
+		CurrentIndex = other.CurrentIndex;
+		LastPut = other.LastPut;
+		freeBuffers();
+		allocateBuffers();
+		assertAlignment();
+		copyBuffers(other);
+		return *this;
+	}
+
+	// move assignment:
+	FIRFilter& operator= (FIRFilter&& other)
+	{
+		if (this != &other) // prevent self-assignment
+		{
+			size = other.size;
+			CurrentIndex = other.CurrentIndex;
+			LastPut = other.LastPut;
+
+			freeBuffers();
+
+			Signal = other.Signal;
+			Kernel0 = other.Kernel0;
+			Kernel1 = other.Kernel1;
+			Kernel2 = other.Kernel2;
+			Kernel3 = other.Kernel3;
+			Kernel4 = other.Kernel4;
+			Kernel5 = other.Kernel5;
+			Kernel6 = other.Kernel6;
+			Kernel7 = other.Kernel7;
+
+			assertAlignment();
+
+			other.Signal = nullptr;
+			other.Kernel0 = nullptr;
+			other.Kernel1 = nullptr;
+			other.Kernel2 = nullptr;
+			other.Kernel3 = nullptr;
+			other.Kernel4 = nullptr;
+			other.Kernel5 = nullptr;
+			other.Kernel6 = nullptr;
+			other.Kernel7 = nullptr;
+		}
+		return *this;
+	}
+	
 	void put(FloatType value) { // Put signal in reverse order.
 		Signal[CurrentIndex] = value;
 		LastPut = CurrentIndex;
@@ -69,16 +157,7 @@ public:
 
 	FloatType get() {
 
-#ifndef USE_AVX
-		FloatType output = 0.0;
-		int index = CurrentIndex;
-		for (int i = 0; i < size; ++i) {
-			output += Signal[index] * Kernel0[i];
-			index++;
-		}
-		return output;
-#else
-		// AVX implementation: This only works with floats !
+		// AVX implementation: This only works with floats - doubles need specialization ...
 
 		FloatType output = 0.0;
 		FloatType* Kernel = Kernel0;
@@ -148,10 +227,10 @@ public:
 		Index += 8;
 
 		// Part 2: Body
-		alignas(32) __m256 signal;	// AVX Vector Registers for calculation
-		alignas(32) __m256 kernel;
-		alignas(32) __m256 product;
-		alignas(32) __m256 accumulator = _mm256_setzero_ps();
+		alignas(AVX_ALIGNMENT_SIZE) __m256 signal;	// AVX Vector Registers for calculation
+		alignas(AVX_ALIGNMENT_SIZE) __m256 kernel;
+		alignas(AVX_ALIGNMENT_SIZE) __m256 product;
+		alignas(AVX_ALIGNMENT_SIZE) __m256 accumulator = _mm256_setzero_ps();
 
 		for (int i = 8; i < (size >> 3) << 3; i += 8) {
 			signal = _mm256_load_ps(Signal + Index);
@@ -183,8 +262,6 @@ public:
 		}
 
 		return output;
-
-#endif // !USE_AVX
 	}
 
 	FloatType LazyGet(int L) {	// Skips stuffed-zeros introduced by interpolation, by only calculating every Lth sample from LastPut
@@ -201,31 +278,81 @@ public:
 	}
 
 private:
-	alignas(32) FloatType Kernel0[size];
-
-#ifdef USE_AVX
-	// Polyphase Filter Kernel table:
-	alignas(32) FloatType Kernel1[size];
-	alignas(32) FloatType Kernel2[size];
-	alignas(32) FloatType Kernel3[size];
-	alignas(32) FloatType Kernel4[size];
-	alignas(32) FloatType Kernel5[size];
-	alignas(32) FloatType Kernel6[size];
-	alignas(32) FloatType Kernel7[size];
-
-#endif
-	alignas(32) FloatType Signal[size*2];	// Double-length signal buffer, to facilitate fast emulation of a circular buffer
+	size_t size;
+	FloatType* Signal; // Double-length signal buffer, to facilitate fast emulation of a circular buffer
 	int CurrentIndex;
 	int LastPut;
-};
 
-#ifdef USE_AVX
+	// Polyphase Filter Kernel table:
+	FloatType* Kernel0;
+	FloatType* Kernel1;
+	FloatType* Kernel2;
+	FloatType* Kernel3;
+	FloatType* Kernel4;
+	FloatType* Kernel5;
+	FloatType* Kernel6;
+	FloatType* Kernel7;
+
+	void allocateBuffers()
+	{
+		Signal = static_cast<FloatType*>(aligned_malloc(2 * size * sizeof(FloatType), AVX_ALIGNMENT_SIZE));
+		Kernel0 = static_cast<FloatType*>(aligned_malloc(size * sizeof(FloatType), AVX_ALIGNMENT_SIZE));
+		Kernel1 = static_cast<FloatType*>(aligned_malloc(size * sizeof(FloatType), AVX_ALIGNMENT_SIZE));
+		Kernel2 = static_cast<FloatType*>(aligned_malloc(size * sizeof(FloatType), AVX_ALIGNMENT_SIZE));
+		Kernel3 = static_cast<FloatType*>(aligned_malloc(size * sizeof(FloatType), AVX_ALIGNMENT_SIZE));
+		Kernel4 = static_cast<FloatType*>(aligned_malloc(size * sizeof(FloatType), AVX_ALIGNMENT_SIZE));
+		Kernel5 = static_cast<FloatType*>(aligned_malloc(size * sizeof(FloatType), AVX_ALIGNMENT_SIZE));
+		Kernel6 = static_cast<FloatType*>(aligned_malloc(size * sizeof(FloatType), AVX_ALIGNMENT_SIZE));
+		Kernel7 = static_cast<FloatType*>(aligned_malloc(size * sizeof(FloatType), AVX_ALIGNMENT_SIZE));
+	}
+
+	void copyBuffers(const FIRFilter& other)
+	{
+		memcpy(Signal, other.Signal, 2 * size * sizeof(FloatType));
+		memcpy(Kernel0, other.Kernel0, size * sizeof(FloatType));
+		memcpy(Kernel1, other.Kernel1, size * sizeof(FloatType));
+		memcpy(Kernel2, other.Kernel2, size * sizeof(FloatType));
+		memcpy(Kernel3, other.Kernel3, size * sizeof(FloatType));
+		memcpy(Kernel4, other.Kernel4, size * sizeof(FloatType));
+		memcpy(Kernel5, other.Kernel5, size * sizeof(FloatType));
+		memcpy(Kernel6, other.Kernel6, size * sizeof(FloatType));
+		memcpy(Kernel7, other.Kernel7, size * sizeof(FloatType));
+	}
+
+	void freeBuffers()
+	{
+		aligned_free(Signal);
+		aligned_free(Kernel0);
+		aligned_free(Kernel1);
+		aligned_free(Kernel2);
+		aligned_free(Kernel3);
+		aligned_free(Kernel4);
+		aligned_free(Kernel5);
+		aligned_free(Kernel6);
+		aligned_free(Kernel7);
+	}
+
+	// assertAlignment() : asserts that all private data buffers are aligned on expected boundaries
+	void assertAlignment()
+	{
+		const std::uintptr_t alignment = SSE_ALIGNMENT_SIZE;
+		assert(reinterpret_cast<std::uintptr_t>(Signal) % alignment == 0);
+		assert(reinterpret_cast<std::uintptr_t>(Kernel0) % alignment == 0);
+		assert(reinterpret_cast<std::uintptr_t>(Kernel1) % alignment == 0);
+		assert(reinterpret_cast<std::uintptr_t>(Kernel2) % alignment == 0);
+		assert(reinterpret_cast<std::uintptr_t>(Kernel3) % alignment == 0);
+		assert(reinterpret_cast<std::uintptr_t>(Kernel4) % alignment == 0);
+		assert(reinterpret_cast<std::uintptr_t>(Kernel5) % alignment == 0);
+		assert(reinterpret_cast<std::uintptr_t>(Kernel6) % alignment == 0);
+		assert(reinterpret_cast<std::uintptr_t>(Kernel7) % alignment == 0);
+	}
+};
 
 // ================================= 
 // AVX specializations for doubles :
 // =================================
 
-double FIRFilter<double, FILTERSIZE_MEDIUM>::get() {
+double FIRFilter<double>::get() {
 
 	// AVX implementation: This only works with doubles !
 	// Processes four doubles at a time.
@@ -246,29 +373,29 @@ double FIRFilter<double, FILTERSIZE_MEDIUM>::get() {
 
 	case 1:
 		Kernel = Kernel1;
-		output = Kernel[0] * Signal[Index + FILTERSIZE_MEDIUM] + Kernel[1] * Signal[Index + 1] + Kernel[2] * Signal[Index + 2] + Kernel[3] * Signal[Index + 3];
+		output = Kernel[0] * Signal[Index + size] + Kernel[1] * Signal[Index + 1] + Kernel[2] * Signal[Index + 2] + Kernel[3] * Signal[Index + 3];
 		break;
 
 	case 2:
 		Kernel = Kernel2;
-		output = Kernel[0] * Signal[Index + FILTERSIZE_MEDIUM] + Kernel[1] * Signal[Index + FILTERSIZE_MEDIUM + 1] + Kernel[2] * Signal[Index + 2] + Kernel[3] * Signal[Index + 3];
+		output = Kernel[0] * Signal[Index + size] + Kernel[1] * Signal[Index + size + 1] + Kernel[2] * Signal[Index + 2] + Kernel[3] * Signal[Index + 3];
 		break;
 
 	case 3:
 		Kernel = Kernel3;
-		output = Kernel[0] * Signal[Index + FILTERSIZE_MEDIUM] + Kernel[1] * Signal[Index + FILTERSIZE_MEDIUM + 1] + Kernel[2] * Signal[Index + FILTERSIZE_MEDIUM + 2] + Kernel[3] * Signal[Index + 3];
+		output = Kernel[0] * Signal[Index + size] + Kernel[1] * Signal[Index + size + 1] + Kernel[2] * Signal[Index + size + 2] + Kernel[3] * Signal[Index + 3];
 		break;
 
 	}
 	Index += 4;
 
 	// Part 2: Body
-	alignas(32) __m256d signal;	// AVX Vector Registers for calculation
-	alignas(32) __m256d kernel;
-	alignas(32) __m256d product;
-	alignas(32) __m256d accumulator = _mm256_setzero_pd();
+	alignas(AVX_ALIGNMENT_SIZE) __m256d signal;	// AVX Vector Registers for calculation
+	alignas(AVX_ALIGNMENT_SIZE) __m256d kernel;
+	alignas(AVX_ALIGNMENT_SIZE) __m256d product;
+	alignas(AVX_ALIGNMENT_SIZE) __m256d accumulator = _mm256_setzero_pd();
 
-	for (int i = 4; i < (FILTERSIZE_MEDIUM >> 2) << 2; i += 4) {
+	for (int i = 4; i < (size >> 2) << 2; i += 4) {
 		signal = _mm256_load_pd(Signal + Index);
 		kernel = _mm256_load_pd(Kernel + i);
 		product = _mm256_mul_pd(signal, kernel);
@@ -283,73 +410,7 @@ double FIRFilter<double, FILTERSIZE_MEDIUM>::get() {
 		accumulator.m256d_f64[3];
 
 	// Part 3: Tail
-	for (int j = (FILTERSIZE_MEDIUM >> 2) << 2; j < FILTERSIZE_MEDIUM; ++j) {
-		output += Signal[Index] * Kernel[j];
-		++Index;
-	}
-
-	return output;
-}
-
-double FIRFilter<double, FILTERSIZE_HUGE>::get() {
-
-	// AVX implementation: This only works with doubles !
-	// Processes four doubles at a time.
-
-	double output = 0.0;
-	double* Kernel;
-	int Index = (CurrentIndex >> 2) << 2; // make multiple-of-four
-	int Phase = CurrentIndex & 3;
-
-	// Part1 : Head
-	// select proper Kernel phase and calculate first Block of 4:
-	switch (Phase) {
-
-	case 0:
-		Kernel = Kernel0;
-		output = Kernel[0] * Signal[Index] + Kernel[1] * Signal[Index + 1] + Kernel[2] * Signal[Index + 2] + Kernel[3] * Signal[Index + 3];
-		break;
-
-	case 1:
-		Kernel = Kernel1;
-		output = Kernel[0] * Signal[Index + FILTERSIZE_HUGE] + Kernel[1] * Signal[Index + 1] + Kernel[2] * Signal[Index + 2] + Kernel[3] * Signal[Index + 3];
-		break;
-
-	case 2:
-		Kernel = Kernel2;
-		output = Kernel[0] * Signal[Index + FILTERSIZE_HUGE] + Kernel[1] * Signal[Index + FILTERSIZE_HUGE + 1] + Kernel[2] * Signal[Index + 2] + Kernel[3] * Signal[Index + 3];
-		break;
-
-	case 3:
-		Kernel = Kernel3;
-		output = Kernel[0] * Signal[Index + FILTERSIZE_HUGE] + Kernel[1] * Signal[Index + FILTERSIZE_HUGE + 1] + Kernel[2] * Signal[Index + FILTERSIZE_HUGE + 2] + Kernel[3] * Signal[Index + 3];
-		break;
-
-	}
-	Index += 4;
-
-	// Part 2: Body
-	alignas(32) __m256d signal;	// AVX Vector Registers for calculation
-	alignas(32) __m256d kernel;
-	alignas(32) __m256d product;
-	alignas(32) __m256d accumulator = _mm256_setzero_pd();
-
-	for (int i = 4; i < (FILTERSIZE_HUGE >> 2) << 2; i += 4) {
-		signal = _mm256_load_pd(Signal + Index);
-		kernel = _mm256_load_pd(Kernel + i);
-		product = _mm256_mul_pd(signal, kernel);
-		accumulator = _mm256_add_pd(product, accumulator);
-		Index += 4;
-	}
-
-	output +=
-		accumulator.m256d_f64[0] +
-		accumulator.m256d_f64[1] +
-		accumulator.m256d_f64[2] +
-		accumulator.m256d_f64[3];
-
-	// Part 3: Tail
-	for (int j = (FILTERSIZE_HUGE >> 2) << 2; j < FILTERSIZE_HUGE; ++j) {
+	for (int j = (size >> 2) << 2; j < size; ++j) {
 		output += Signal[Index] * Kernel[j];
 		++Index;
 	}
@@ -357,5 +418,4 @@ double FIRFilter<double, FILTERSIZE_HUGE>::get() {
 	return output;
 }
 #endif // USE_AVX
-
 #endif // FIRFFILTER_AVX_H_

@@ -5,12 +5,23 @@
 
 #include <typeinfo>
 #include <complex>
+#include <cstdint>
+#include <cassert>
+
 #include "fftw3.h"
+#include "alignedmalloc.h"
+
+// ensure C-style NULL pointer is defined (used for aligned_malloc)
+#ifndef NULL
+	#define NULL 0
+#endif
 
 #define FILTERSIZE_HUGE 32767
 #define FILTERSIZE_MEDIUM 511
 
 #define USE_SSE2 1 // Use SSE2-specific intrinsics in the build
+
+#define SSE_ALIGNMENT_SIZE 16
 
 #ifdef USE_AVX
 #include "FIRFilterAVX.h"
@@ -18,45 +29,104 @@
 #else
 #if (defined(_M_X64) || defined(USE_SSE2)) // All x64 CPUs have SSE2 instructions, but some older 32-bit CPUs do not. 
 	#define USE_SIMD 1 // Vectorise main loop in FIRFilter::get() by using SSE2 SIMD instrinsics 
-	// 2016/04/01: Needs specializations (4xfloat SIMD code won't work for double precision)
 #endif
 
-template <typename FloatType, unsigned int size>
+template <typename FloatType>
 class FIRFilter {
 
-private:
-	alignas(16) FloatType Kernel0[size];
-
-#ifdef USE_SIMD
-	// Polyphase Filter Kernel table:
-	alignas(16) FloatType Kernel1[size];
-	alignas(16) FloatType Kernel2[size];
-	alignas(16) FloatType Kernel3[size];
-#endif
-	alignas(16) FloatType Signal[size * 2];	// Double-length signal buffer, to facilitate fast emulation of a circular buffer
-	int CurrentIndex;
-	int LastPut;
-
 public:
-	FIRFilter(FloatType* taps) :
-		CurrentIndex(size-1), LastPut(0)
+	// constructor:
+	FIRFilter(FloatType* taps, size_t size) :
+		size(size), CurrentIndex(size-1), LastPut(0), Signal(NULL),
+		Kernel0(NULL),Kernel1(NULL), Kernel2(NULL), Kernel3(NULL)
 	{
+		assert(nullptr == NULL);
+
+		// allocate buffers:
+		allocateBuffers();
+		assertAlignment();
+
+		// initialize filter kernel and signal buffers
 		for (unsigned int i = 0; i < size; ++i) {
 			Kernel0[i] = taps[i];
 			Signal[i] = 0.0;
 			Signal[i + size] = 0.0;
 		}
 
-#ifdef USE_SIMD
-		// Populate remaining kernel Phases:
+		// Populate additional kernel Phases:
 		memcpy(1 + Kernel1, Kernel0, (size - 1)*sizeof(FloatType));
 		Kernel1[0] = Kernel0[size - 1];
 		memcpy(1 + Kernel2, Kernel1, (size - 1)*sizeof(FloatType));
 		Kernel2[0] = Kernel1[size - 1];
 		memcpy(1 + Kernel3, Kernel2, (size - 1)*sizeof(FloatType));
 		Kernel3[0] = Kernel2[size - 1];
-#endif
+	}
 
+	// deconstructor:
+	~FIRFilter() {
+		freeBuffers();
+	}
+	
+	// copy constructor:
+	FIRFilter(const FIRFilter& other) : size(other.size), CurrentIndex(other.CurrentIndex), LastPut(other.LastPut)
+	{
+		allocateBuffers();
+		assertAlignment();
+		copyBuffers(other);
+	}
+
+	// move constructor:
+	FIRFilter(FIRFilter&& other) :
+		size(other.size), CurrentIndex(other.CurrentIndex), LastPut(other.LastPut),
+		Signal(other.Signal), Kernel0(other.Kernel0), 
+		Kernel1(other.Kernel1), Kernel2(other.Kernel2), Kernel3(other.Kernel3)
+	{
+		assertAlignment();
+		other.Signal = nullptr;
+		other.Kernel0 = nullptr;
+		other.Kernel1 = nullptr;
+		other.Kernel2 = nullptr;
+		other.Kernel3 = nullptr;
+	}
+	
+	// copy assignment:
+	FIRFilter& operator= (const FIRFilter& other)
+	{
+		size = other.size;
+		CurrentIndex = other.CurrentIndex;
+		LastPut = other.LastPut;
+		freeBuffers();
+		allocateBuffers();
+		assertAlignment();
+		copyBuffers(other);
+		return *this;
+	}
+
+	// move assignment:
+	FIRFilter& operator= (FIRFilter&& other)
+	{
+		if(this!=&other) // prevent self-assignment
+		{
+			size = other.size;
+			CurrentIndex = other.CurrentIndex;
+			LastPut = other.LastPut;
+
+			freeBuffers();
+			
+			Signal = other.Signal;
+			Kernel0 = other.Kernel0;
+			Kernel1 = other.Kernel1;
+			Kernel2 = other.Kernel2;
+			Kernel3 = other.Kernel3;
+			assertAlignment();
+
+			other.Signal = nullptr;
+			other.Kernel0 = nullptr;
+			other.Kernel1 = nullptr;
+			other.Kernel2 = nullptr;
+			other.Kernel3 = nullptr;
+		}
+		return *this;
 	}
 
 	void put(FloatType value) { // Put signal in reverse order.
@@ -91,8 +161,7 @@ public:
 		}
 		return output;
 #else
-		// SIMD implementation: This only works with floats !
-		// speed-up is around 3x on my system ...
+		// SIMD implementation: This only works with floats (doubles need specialisation)
 
 		FloatType output = 0.0;
 		FloatType* Kernel = Kernel0;
@@ -126,10 +195,10 @@ public:
 		Index += 4;
 
 		// Part 2: Body
-		alignas(16) __m128 signal;	// SIMD Vector Registers for calculation
-		alignas(16) __m128 kernel;
-		alignas(16) __m128 product;
-		alignas(16) __m128 accumulator = _mm_setzero_ps();
+		alignas(SSE_ALIGNMENT_SIZE) __m128 signal;	// SIMD Vector Registers for calculation
+		alignas(SSE_ALIGNMENT_SIZE) __m128 kernel;
+		alignas(SSE_ALIGNMENT_SIZE) __m128 product;
+		alignas(SSE_ALIGNMENT_SIZE) __m128 accumulator = _mm_setzero_ps();
 
 		for (int i = 4; i < (size >> 2) << 2; i += 4) {
 			signal = _mm_load_ps(Signal + Index);
@@ -137,7 +206,7 @@ public:
 			product = _mm_mul_ps(signal, kernel);
 			accumulator = _mm_add_ps(product, accumulator);
 			Index += 4;
-		}	
+		}
 
 		output += accumulator.m128_f32[0] +
 			accumulator.m128_f32[1] +
@@ -167,27 +236,66 @@ public:
 		}
 		return output;
 	}
-};
 
+private:
+	size_t size;
+	FloatType* Signal; // Double-length signal buffer, to facilitate fast emulation of a circular buffer
+	int CurrentIndex;
+	int LastPut;
+
+	// Polyphase Filter Kernel table:
+	FloatType* Kernel0;
+	FloatType* Kernel1;
+	FloatType* Kernel2;
+	FloatType* Kernel3;
+
+	void allocateBuffers()
+	{
+		Signal = static_cast<FloatType*>(aligned_malloc(2 * size * sizeof(FloatType), SSE_ALIGNMENT_SIZE));
+		Kernel0 = static_cast<FloatType*>(aligned_malloc(size * sizeof(FloatType), SSE_ALIGNMENT_SIZE));
+		Kernel1 = static_cast<FloatType*>(aligned_malloc(size * sizeof(FloatType), SSE_ALIGNMENT_SIZE));
+		Kernel2 = static_cast<FloatType*>(aligned_malloc(size * sizeof(FloatType), SSE_ALIGNMENT_SIZE));
+		Kernel3 = static_cast<FloatType*>(aligned_malloc(size * sizeof(FloatType), SSE_ALIGNMENT_SIZE));
+	}
+
+	void copyBuffers(const FIRFilter& other)
+	{
+		memcpy(Signal, other.Signal, 2 * size * sizeof(FloatType));
+		memcpy(Kernel0, other.Kernel0, size * sizeof(FloatType));
+		memcpy(Kernel1, other.Kernel1, size * sizeof(FloatType));
+		memcpy(Kernel2, other.Kernel2, size * sizeof(FloatType));
+		memcpy(Kernel3, other.Kernel3, size * sizeof(FloatType));
+	}
+
+	void freeBuffers()
+	{
+		aligned_free(Signal);
+		aligned_free(Kernel0);
+		aligned_free(Kernel1);
+		aligned_free(Kernel2);
+		aligned_free(Kernel3);
+	}
+	
+	// assertAlignment() : asserts that all private data buffers are aligned on expected boundaries
+	void assertAlignment()
+	{
+		const std::uintptr_t alignment = SSE_ALIGNMENT_SIZE;
+		assert(reinterpret_cast<std::uintptr_t>(Signal) % alignment == 0);
+		assert(reinterpret_cast<std::uintptr_t>(Kernel0) % alignment == 0);
+		assert(reinterpret_cast<std::uintptr_t>(Kernel1) % alignment == 0);
+		assert(reinterpret_cast<std::uintptr_t>(Kernel2) % alignment == 0);
+		assert(reinterpret_cast<std::uintptr_t>(Kernel3) % alignment == 0);
+	}
+};
 
 #ifdef USE_SIMD
 
-// super-annoying Specializations for doubles (To-do: work out how to perfectly-forward the non-type template parameter 'size' ? ):
+// Specialization for doubles:
 
-double FIRFilter<double, FILTERSIZE_MEDIUM>::get() {
+double FIRFilter<double>::get() {
 	double output = 0.0;
 	int index = CurrentIndex;
-	for (int i = 0; i < FILTERSIZE_MEDIUM; ++i) {
-		output += Signal[index] * Kernel0[i];
-		index++;
-	}
-	return output;
-}
-
-double FIRFilter<double, FILTERSIZE_HUGE>::get() {
-	double output = 0.0;
-	int index = CurrentIndex;
-	for (int i = 0; i < FILTERSIZE_HUGE; ++i) {
+	for (int i = 0; i < size; ++i) {
 		output += Signal[index] * Kernel0[i];
 		index++;
 	}
@@ -196,7 +304,7 @@ double FIRFilter<double, FILTERSIZE_HUGE>::get() {
 
 // actual SIMD implementations for doubles (not worth the effort - no faster than than naive):
 
-//double FIRFilter<double, FILTERSIZE_MEDIUM>::get() {
+//double FIRFilter<double>::get() {
 //
 //	// SIMD implementation: This only works with doubles !
 //	// Processes two doubles at a time.
@@ -217,18 +325,18 @@ double FIRFilter<double, FILTERSIZE_HUGE>::get() {
 //	case 1:
 //		Kernel = Kernel1;
 //		// signal starts at +1 : load first value from history (ie upper half of buffer)
-//		output = Kernel[0] * Signal[Index + FILTERSIZE_MEDIUM] + Kernel[1] * Signal[Index + 1];
+//		output = Kernel[0] * Signal[Index + size] + Kernel[1] * Signal[Index + 1];
 //		break;
 //	}
 //	Index += 2;
 //
 //	// Part 2: Body
-//	alignas(16) __m128d signal;	// SIMD Vector Registers for calculation
-//	alignas(16) __m128d kernel;
-//	alignas(16) __m128d product;
-//	alignas(16) __m128d accumulator = _mm_setzero_pd();
+//	alignas(SSE_ALIGNMENT_SIZE) __m128d signal;	// SIMD Vector Registers for calculation
+//	alignas(SSE_ALIGNMENT_SIZE) __m128d kernel;
+//	alignas(SSE_ALIGNMENT_SIZE) __m128d product;
+//	alignas(SSE_ALIGNMENT_SIZE) __m128d accumulator = _mm_setzero_pd();
 //
-//	for (int i = 2; i < (FILTERSIZE_MEDIUM >> 1) << 1; i += 2) {
+//	for (int i = 2; i < (size >> 1) << 1; i += 2) {
 //		signal = _mm_load_pd(Signal + Index);
 //		kernel = _mm_load_pd(Kernel + i);
 //		product = _mm_mul_pd(signal, kernel);
@@ -239,58 +347,7 @@ double FIRFilter<double, FILTERSIZE_HUGE>::get() {
 //	output += accumulator.m128d_f64[0] + accumulator.m128d_f64[1];
 //
 //	// Part 3: Tail
-//	for (int j = (FILTERSIZE_MEDIUM >> 1) << 1; j < FILTERSIZE_MEDIUM; ++j) {
-//		output += Signal[Index] * Kernel[j];
-//		++Index;
-//	}
-//
-//	return output;
-//}
-//
-//double FIRFilter<double, FILTERSIZE_HUGE>::get() {
-//
-//	// SIMD implementation: This only works with doubles !
-//	// Processes two doubles at a time.
-//
-//	double output = 0.0;
-//	double* Kernel;
-//	int Index = (CurrentIndex >> 1) << 1; // make multiple-of-two
-//	int Phase = CurrentIndex & 1;
-//
-//	// Part1 : Head
-//	// select proper Kernel phase and calculate first Block of 2:
-//	switch (Phase) {
-//	case 0:
-//		Kernel = Kernel0;
-//		// signal already aligned and ready to use
-//		output = Kernel[0] * Signal[Index] + Kernel[1] * Signal[Index + 1];
-//		break;
-//	case 1:
-//		Kernel = Kernel1;
-//		// signal starts at +1 : load first value from history (ie upper half of buffer)
-//		output = Kernel[0] * Signal[Index + FILTERSIZE_HUGE] + Kernel[1] * Signal[Index + 1];
-//		break;
-//	}
-//	Index += 2;
-//
-//	// Part 2: Body
-//	alignas(16) __m128d signal;	// SIMD Vector Registers for calculation
-//	alignas(16) __m128d kernel;
-//	alignas(16) __m128d product;
-//	alignas(16) __m128d accumulator = _mm_setzero_pd();
-//
-//	for (int i = 2; i < (FILTERSIZE_HUGE >> 1) << 1; i += 2) {
-//		signal = _mm_load_pd(Signal + Index);
-//		kernel = _mm_load_pd(Kernel + i);
-//		product = _mm_mul_pd(signal, kernel);
-//		accumulator = _mm_add_pd(product, accumulator);
-//		Index += 2;
-//	}
-//	
-//	output += accumulator.m128d_f64[0] + accumulator.m128d_f64[1];
-//
-//	// Part 3: Tail
-//	for (int j = (FILTERSIZE_HUGE >> 1) << 1; j < FILTERSIZE_HUGE; ++j) {
+//	for (int j = (size >> 1) << 1; j < size; ++j) {
 //		output += Signal[Index] * Kernel[j];
 //		++Index;
 //	}
@@ -301,7 +358,9 @@ double FIRFilter<double, FILTERSIZE_HUGE>::get() {
 #endif // USE_SIMD
 #endif // !USE_AVX
 
-// --- //
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// -- Functions beyond this point are for manipulating filter taps, and not for actually performing filtering -- //
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 template<typename FloatType> bool makeLPF(FloatType* filter, int Length, FloatType transitionFreq, FloatType sampleRate)
 {
@@ -543,8 +602,6 @@ void makeMinPhase(FloatType* pFIRcoeffs, size_t length)
 
 	std::vector <std::complex<double>> complexInput;
 	std::vector <std::complex<double>> complexOutput;
-
-	//
 
 	for (int n = 0; n < fftLength; ++n) {
 		if (n<length)

@@ -2,16 +2,18 @@
 #define RESAMPLER_H 1
 
 #include <map>
-
 #include <Windows.h>
 #include <sndfile.h>
 #include <sndfile.hh>
 
-const std::string strVersion("1.1.0");
+const std::string strVersion("1.1.2");
 const std::string strUsage("usage: resampler.exe -i <inputfile> [-o <outputfile>] -r <samplerate> [-b <bitformat>] [-n [<normalization factor>]]\n");
 const std::string strExtraOptions("--help\n--version\n--doubleprecision\n--listsubformats <ext>\n--dither [<amount>] [--autoblank]\n--minphase\n--flacCompression <compressionlevel>\n--vorbisQuality <quality>\n--noClippingProtection\n");
 
 #define BUFFERSIZE 8192 // buffer size for file reads
+
+#pragma warning(disable : 4996) // suppress pointless MS "deprecation" warnings
+#pragma warning(disable : 4244) // suppress double-to-float warnings
 
 typedef struct fraction {
 	int numerator;

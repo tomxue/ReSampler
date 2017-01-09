@@ -189,7 +189,7 @@ int main(int argc, char * argv[])
 
 #endif // defined (_MSC_VER) || defined (__INTEL_COMPILER)
 #endif // USE_AVX	
-	
+
 	std::cout << std::endl;
 
 #else
@@ -316,7 +316,6 @@ bool determineBestBitFormat(std::string& BitFormat, const std::string& inFilenam
 	SndfileHandle infile(inFilename, SFM_READ);
 	int inFileFormat = infile.format();
 
-
 	if (int e = infile.error()) {
 		std::cout << "Couldn't Open Input File (" << sf_error_number(e) << ")" << std::endl;
 		return false;
@@ -351,7 +350,7 @@ bool determineBestBitFormat(std::string& BitFormat, const std::string& inFilenam
 		outFileExt = outFilename.substr(outFilename.find_last_of(".") + 1);
 
 	// get total number of major formats:
-	SF_FORMAT_INFO	formatinfo;
+	SF_FORMAT_INFO formatinfo;
 	int format, major_count;
 	memset(&formatinfo, 0, sizeof(formatinfo));
 	sf_command(NULL, SFC_GET_FORMAT_MAJOR_COUNT, &major_count, sizeof(int));
@@ -388,7 +387,7 @@ bool determineBestBitFormat(std::string& BitFormat, const std::string& inFilenam
 // determineOutputFormat() : returns an integer representing the output format, which libsndfile understands:
 int determineOutputFormat(const std::string& outFileExt, const std::string& bitFormat)
 {
-	SF_FORMAT_INFO	info;
+	SF_FORMAT_INFO info;
 	int format = 0;
 	int major_count;
 	memset(&info, 0, sizeof(info));
@@ -399,7 +398,7 @@ int determineOutputFormat(const std::string& outFileExt, const std::string& bitF
 	for (int m = 0; m < major_count; ++m) {
 		info.format = m;
 		sf_command(NULL, SFC_GET_FORMAT_MAJOR, &info, sizeof(info));
-		if (strcmpi(info.extension, outFileExt.c_str()) == 0) {
+		if (stricmp(info.extension, outFileExt.c_str()) == 0) {
 			bFileExtFound = true;
 			break;
 		}
@@ -442,7 +441,7 @@ void listSubFormats(const std::string& f)
 	for (int m = 0; m < major_count; ++m) {
 		info.format = m;
 		sf_command(NULL, SFC_GET_FORMAT_MAJOR, &info, sizeof(info));
-		if (strcmpi(info.extension, f.c_str()) == 0) {
+		if (stricmp(info.extension, f.c_str()) == 0) {
 			bFileExtFound = true;
 			break;
 		}
@@ -556,11 +555,15 @@ bool Convert(const conversionInfo<FloatType>& ci)
 	}
 
 	// Calculate filter parameters:
-	int OverSampFreq = InputSampleRate * F.numerator; // eg 160 * 44100
+	int OverSampFreq = InputSampleRate * F.numerator; // eg 44100 * 160
 	double targetNyquist = min(InputSampleRate, ci.OutputSampleRate) / 2.0;
 	double ft = 0.909091 * targetNyquist; // 0.090991 is 10/11 (take an 11th off the end)
 	int TransitionWidth = targetNyquist - ft;
-	std::cout << "LPF ft: " << ft << " Hz, transition band: " << TransitionWidth << " Hz" << std::endl;
+
+	// echo cutoff frequency to user:
+	auto prec = std::cout.precision();
+	std::cout << "LPF ft: " << std::setprecision(2) << ft << " Hz, transition band: " << TransitionWidth << " Hz" << std::endl;
+	std::cout.precision(prec);
 
 	// Make some filters: 
 	// Huge Filters are used for complex ratios.
@@ -583,14 +586,14 @@ bool Convert(const conversionInfo<FloatType>& ci)
 	}
 
 	// make a vector of huge filters (one filter for each channel):
-	std::vector<FIRFilter<FloatType, FILTERSIZE_HUGE>> HugeFilters;
+	std::vector<FIRFilter<FloatType>> HugeFilters;
 
 	// make a vector of medium filters (one filter for each channel):
-	std::vector<FIRFilter<FloatType, FILTERSIZE_MEDIUM >> MedFilters;
+	std::vector<FIRFilter<FloatType>> MedFilters;
 
 	for (unsigned int n = 0; n < nChannels; n++) {
-		HugeFilters.emplace_back(HugeFilterTaps);
-		MedFilters.emplace_back(MedFilterTaps);
+		HugeFilters.emplace_back(HugeFilterTaps, FILTERSIZE_HUGE);
+		MedFilters.emplace_back(MedFilterTaps, FILTERSIZE_MEDIUM);
 	}
 
 	// if the OutputFormat is zero, it means "No change to file format"
@@ -933,7 +936,6 @@ Fraction GetSimplifiedFraction(int InputSampleRate, int OutputSampleRate)			// e
 	f.denominator = (InputSampleRate / gcd(InputSampleRate, OutputSampleRate));		// M (eg 147)
 	return f;
 }
-
 
 // The following functions are used for parsing commandline parameters:
 
