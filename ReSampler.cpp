@@ -522,8 +522,9 @@ bool Convert(const conversionInfo<FloatType>& ci)
 	if (bDouble)
 		std::cout << " (double precision)" << std::endl;
 
-	Fraction F = GetSimplifiedFraction(InputSampleRate, ci.OutputSampleRate);
-
+	Fraction FOriginal = GetSimplifiedFraction(InputSampleRate, ci.OutputSampleRate);
+	Fraction F = FOriginal;
+	
 	if (ci.bMinPhase) {
 		if (F.numerator <= 4 && F.denominator <= 4) {
 			if (F.numerator != F.denominator) { // oversample to improve filter performance
@@ -532,7 +533,7 @@ bool Convert(const conversionInfo<FloatType>& ci)
 			}
 		}
 	}
-
+	
 	FloatType ResamplingFactor = static_cast<FloatType>(ci.OutputSampleRate) / InputSampleRate;
 	std::cout << "\nConversion ratio: " << ResamplingFactor
 		<< " (" << F.numerator << ":" << F.denominator << ")" << std::endl;
@@ -584,12 +585,12 @@ bool Convert(const conversionInfo<FloatType>& ci)
 	// Medium filters used for simple ratios (ie 1 in numerator or denominator)
 
 	// determine best filter size
-	int FilterSize = ((F.numerator == 1) || (F.denominator == 1)) ?
-		FILTERSIZE_MEDIUM :
-		FILTERSIZE_HUGE;
+	int FilterSize = ((FOriginal.numerator == 1) || (FOriginal.denominator == 1)) ?
+		(ci.bMinPhase ? FILTERSIZE_MEDIUM * 4 - 1 : FILTERSIZE_MEDIUM) : // when using Min phase with small filter, make it 4x larger. (Also, filter length should always be odd.)
+		FILTERSIZE_HUGE; // use huge filter for complex ratios
 
 	// determine sidelobe attenuation
-	int SidelobeAtten = ((F.numerator == 1) || (F.denominator == 1)) ?
+	int SidelobeAtten = ((FOriginal.numerator == 1) || (FOriginal.denominator == 1)) ?
 		195 :
 		140;
 	
@@ -610,7 +611,7 @@ bool Convert(const conversionInfo<FloatType>& ci)
 		Filters.emplace_back(FilterTaps, FilterSize);
 	}
 
-	// filter taps are no longer required - deallocate:
+	// filter taps no longer required - deallocate:
 	delete[] FilterTaps;
 	FilterTaps = nullptr;
 
