@@ -281,7 +281,14 @@ int main(int argc, char * argv[])
 		ci.bSetVorbisQuality = bSetVobisQuality;
 		ci.vorbisQuality = vorbisQuality;
 		ci.disableClippingProtection = disableClippingProtection;
-		return Convert<double>(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
+
+		try {
+			return Convert<double>(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
+		}
+		catch (const std::exception& e) {
+			std::cerr << "fatal error: " << e.what();
+			return EXIT_FAILURE;
+		}
 	}
 
 	else {
@@ -301,7 +308,14 @@ int main(int argc, char * argv[])
 		ci.bSetVorbisQuality = bSetVobisQuality;
 		ci.vorbisQuality = vorbisQuality;
 		ci.disableClippingProtection = disableClippingProtection;
-		return Convert<float>(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
+
+		try {
+			return Convert<float>(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
+		}
+		catch (const std::exception& e) {
+			std::cerr << "fatal error: " << e.what();
+			return EXIT_FAILURE;
+		}
 	}
 }
 
@@ -569,16 +583,16 @@ bool Convert(const conversionInfo<FloatType>& ci)
 	// Huge Filters are used for complex ratios.
 	// Medium filters used for simple ratios (ie 1 in numerator or denominator)
 
-	FloatType HugeFilterTaps[FILTERSIZE_HUGE];
 	int HugeFilterSize = FILTERSIZE_HUGE;
+	FloatType* HugeFilterTaps = new FloatType[HugeFilterSize];
 	makeLPF<FloatType>(HugeFilterTaps, HugeFilterSize, ft, OverSampFreq);
 	applyKaiserWindow<FloatType>(HugeFilterTaps, HugeFilterSize, calcKaiserBeta(140));
-	
-	FloatType MedFilterTaps[FILTERSIZE_MEDIUM];
+
 	int MedFilterSize = FILTERSIZE_MEDIUM;
+	FloatType* MedFilterTaps = new FloatType[MedFilterSize];
 	makeLPF<FloatType>(MedFilterTaps, MedFilterSize, ft, OverSampFreq);
 	applyKaiserWindow<FloatType>(MedFilterTaps, MedFilterSize, calcKaiserBeta(195));
-	
+
 	if (ci.bMinPhase) {
 		std::cout << "Using Minimum-Phase LPF" << std::endl;
 		makeMinPhase<FloatType>(HugeFilterTaps, HugeFilterSize);
@@ -592,9 +606,14 @@ bool Convert(const conversionInfo<FloatType>& ci)
 	std::vector<FIRFilter<FloatType>> MedFilters;
 
 	for (unsigned int n = 0; n < nChannels; n++) {
-		HugeFilters.emplace_back(HugeFilterTaps, FILTERSIZE_HUGE);
-		MedFilters.emplace_back(MedFilterTaps, FILTERSIZE_MEDIUM);
+		HugeFilters.emplace_back(HugeFilterTaps, HugeFilterSize);
+		MedFilters.emplace_back(MedFilterTaps, MedFilterSize);
 	}
+
+	// filter taps are no longer required - deallocate:
+	delete[] HugeFilterTaps;
+	delete[] MedFilterTaps;
+	HugeFilterTaps = MedFilterTaps = nullptr;
 
 	// if the OutputFormat is zero, it means "No change to file format"
 	// if output file format has changed, use OutputFormat. Otherwise, use same format as infile: 
