@@ -36,7 +36,7 @@ class FIRFilter {
 
 public:
 	// constructor:
-	FIRFilter(FloatType* taps, size_t size) :
+	FIRFilter(const FloatType* taps, size_t size) :
 		size(size), CurrentIndex(size-1), LastPut(0), Signal(NULL),
 		Kernel0(NULL),Kernel1(NULL), Kernel2(NULL), Kernel3(NULL)
 	{
