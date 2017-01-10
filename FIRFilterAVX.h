@@ -335,7 +335,8 @@ private:
 	// assertAlignment() : asserts that all private data buffers are aligned on expected boundaries
 	void assertAlignment()
 	{
-		const std::uintptr_t alignment = SSE_ALIGNMENT_SIZE;
+		const std::uintptr_t alignment = AVX_ALIGNMENT_SIZE;
+		
 		assert(reinterpret_cast<std::uintptr_t>(Signal) % alignment == 0);
 		assert(reinterpret_cast<std::uintptr_t>(Kernel0) % alignment == 0);
 		assert(reinterpret_cast<std::uintptr_t>(Kernel1) % alignment == 0);
@@ -345,6 +346,27 @@ private:
 		assert(reinterpret_cast<std::uintptr_t>(Kernel5) % alignment == 0);
 		assert(reinterpret_cast<std::uintptr_t>(Kernel6) % alignment == 0);
 		assert(reinterpret_cast<std::uintptr_t>(Kernel7) % alignment == 0);
+
+		/*
+		// for diagnostics (report to stdout) ...
+		if (
+			(reinterpret_cast<std::uintptr_t>(Signal) % alignment == 0) &&
+			(reinterpret_cast<std::uintptr_t>(Kernel0) % alignment == 0) &&
+			(reinterpret_cast<std::uintptr_t>(Kernel1) % alignment == 0) &&
+			(reinterpret_cast<std::uintptr_t>(Kernel2) % alignment == 0) &&
+			(reinterpret_cast<std::uintptr_t>(Kernel3) % alignment == 0) &&
+			(reinterpret_cast<std::uintptr_t>(Kernel4) % alignment == 0) &&
+			(reinterpret_cast<std::uintptr_t>(Kernel5) % alignment == 0) &&
+			(reinterpret_cast<std::uintptr_t>(Kernel6) % alignment == 0) &&
+			(reinterpret_cast<std::uintptr_t>(Kernel7) % alignment == 0)
+			) {
+			std::cout << "Data Alignment OK !" << std::endl;
+		}
+		else {
+			std::cout << "Data Alignment BAD !" << std::endl;
+		}
+		*/
+
 	}
 };
 
