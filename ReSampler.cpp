@@ -583,37 +583,36 @@ bool Convert(const conversionInfo<FloatType>& ci)
 	// Huge Filters are used for complex ratios.
 	// Medium filters used for simple ratios (ie 1 in numerator or denominator)
 
-	int HugeFilterSize = FILTERSIZE_HUGE;
-	FloatType* HugeFilterTaps = new FloatType[HugeFilterSize];
-	makeLPF<FloatType>(HugeFilterTaps, HugeFilterSize, ft, OverSampFreq);
-	applyKaiserWindow<FloatType>(HugeFilterTaps, HugeFilterSize, calcKaiserBeta(140));
+	// determine best filter size
+	int FilterSize = ((F.numerator == 1) || (F.denominator == 1)) ?
+		FILTERSIZE_MEDIUM :
+		FILTERSIZE_HUGE;
 
-	int MedFilterSize = FILTERSIZE_MEDIUM;
-	FloatType* MedFilterTaps = new FloatType[MedFilterSize];
-	makeLPF<FloatType>(MedFilterTaps, MedFilterSize, ft, OverSampFreq);
-	applyKaiserWindow<FloatType>(MedFilterTaps, MedFilterSize, calcKaiserBeta(195));
+	// determine sidelobe attenuation
+	int SidelobeAtten = ((F.numerator == 1) || (F.denominator == 1)) ?
+		195 :
+		140;
+	
+	// std::cout << "Using FIR Filter size of " << FilterSize << " taps" << std::endl;
+	
+	FloatType* FilterTaps = new FloatType[FilterSize];
+	makeLPF<FloatType>(FilterTaps, FilterSize, ft, OverSampFreq);
+	applyKaiserWindow<FloatType>(FilterTaps, FilterSize, calcKaiserBeta(SidelobeAtten));
 
 	if (ci.bMinPhase) {
 		std::cout << "Using Minimum-Phase LPF" << std::endl;
-		makeMinPhase<FloatType>(HugeFilterTaps, HugeFilterSize);
-		makeMinPhase<FloatType>(MedFilterTaps, MedFilterSize);
+		makeMinPhase<FloatType>(FilterTaps, FilterSize);
 	}
 
-	// make a vector of huge filters (one filter for each channel):
-	std::vector<FIRFilter<FloatType>> HugeFilters;
-
-	// make a vector of medium filters (one filter for each channel):
-	std::vector<FIRFilter<FloatType>> MedFilters;
-
+	// make a vector of filters (one filter for each channel):
+	std::vector<FIRFilter<FloatType>> Filters;
 	for (unsigned int n = 0; n < nChannels; n++) {
-		HugeFilters.emplace_back(HugeFilterTaps, HugeFilterSize);
-		MedFilters.emplace_back(MedFilterTaps, MedFilterSize);
+		Filters.emplace_back(FilterTaps, FilterSize);
 	}
 
 	// filter taps are no longer required - deallocate:
-	delete[] HugeFilterTaps;
-	delete[] MedFilterTaps;
-	HugeFilterTaps = MedFilterTaps = nullptr;
+	delete[] FilterTaps;
+	FilterTaps = nullptr;
 
 	// if the OutputFormat is zero, it means "No change to file format"
 	// if output file format has changed, use OutputFormat. Otherwise, use same format as infile: 
@@ -760,14 +759,14 @@ bool Convert(const conversionInfo<FloatType>& ci)
 				for (unsigned int s = 0; s < count; s += nChannels) {
 
 					for (int Channel = 0; Channel < nChannels; Channel++)
-						MedFilters[Channel].put(inbuffer[s + Channel]); // inject a source sample
+						Filters[Channel].put(inbuffer[s + Channel]); // inject a source sample
 
 					if (DecimationIndex == 0) { // Decimate
 						for (int Channel = 0; Channel < nChannels; Channel++) {
 
 							FloatType OutputSample = ci.bDither ?
-								Ditherers[Channel].Dither(Gain * MedFilters[Channel].get()) :
-								Gain * MedFilters[Channel].get();
+								Ditherers[Channel].Dither(Gain * Filters[Channel].get()) :
+								Gain * Filters[Channel].get();
 
 							outbuffer[OutBufferIndex + Channel] = OutputSample;
 							PeakOutputSample = max(abs(PeakOutputSample), abs(OutputSample));
@@ -803,18 +802,18 @@ bool Convert(const conversionInfo<FloatType>& ci)
 					for (int ii = 0; ii < F.numerator; ++ii) {
 						for (int Channel = 0; Channel < nChannels; Channel++) {
 							if (ii == 0)
-								MedFilters[Channel].put(inbuffer[s + Channel]); // inject a source sample
+								Filters[Channel].put(inbuffer[s + Channel]); // inject a source sample
 							
 							else
-								MedFilters[Channel].putZero(); // inject a Zero
+								Filters[Channel].putZero(); // inject a Zero
 #ifdef USE_AVX
 							FloatType OutputSample = ci.bDither ?
-								Ditherers[Channel].Dither(Gain * MedFilters[Channel].get()) :
-								Gain * MedFilters[Channel].get();
+								Ditherers[Channel].Dither(Gain * Filters[Channel].get()) :
+								Gain * Filters[Channel].get();
 #else
 							FloatType OutputSample = ci.bDither ?
-								Ditherers[Channel].Dither(Gain * MedFilters[Channel].LazyGet(F.numerator)) :
-								Gain * MedFilters[Channel].LazyGet(F.numerator);
+								Ditherers[Channel].Dither(Gain * Filters[Channel].LazyGet(F.numerator)) :
+								Gain * Filters[Channel].LazyGet(F.numerator);
 #endif
 
 							outbuffer[OutBufferIndex + Channel] = OutputSample;
@@ -849,12 +848,12 @@ bool Convert(const conversionInfo<FloatType>& ci)
 															   // Interpolate:
 						if (ii == 0) { // inject a source sample
 							for (int Channel = 0; Channel < nChannels; Channel++) {
-								HugeFilters[Channel].put(inbuffer[s + Channel]);
+								Filters[Channel].put(inbuffer[s + Channel]);
 							}
 						}
 						else { // inject a zero
 							for (int Channel = 0; Channel < nChannels; Channel++) {
-								HugeFilters[Channel].putZero();
+								Filters[Channel].putZero();
 							}
 						}
 
@@ -863,8 +862,8 @@ bool Convert(const conversionInfo<FloatType>& ci)
 							for (int Channel = 0; Channel < nChannels; Channel++) {
 
 								FloatType OutputSample = ci.bDither ?
-									Ditherers[Channel].Dither(Gain * HugeFilters[Channel].LazyGet(F.numerator)) :
-									Gain * HugeFilters[Channel].LazyGet(F.numerator);
+									Ditherers[Channel].Dither(Gain * Filters[Channel].LazyGet(F.numerator)) :
+									Gain * Filters[Channel].LazyGet(F.numerator);
 									
 								outbuffer[OutBufferIndex + Channel] = OutputSample;
 								PeakOutputSample = max(PeakOutputSample, abs(OutputSample));

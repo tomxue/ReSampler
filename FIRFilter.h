@@ -129,6 +129,19 @@ public:
 		return *this;
 	}
 
+	bool operator== (const FIRFilter& other) const 
+	{
+		if (size != other.size)
+			return false;
+		
+		for (int i = 0; i < size; i++) {
+			if (Kernel0[i] != other.Kernel0[i])
+				return false;
+		}
+		
+		return true;
+	}
+
 	void put(FloatType value) { // Put signal in reverse order.
 		Signal[CurrentIndex] = value;
 		LastPut = CurrentIndex;
