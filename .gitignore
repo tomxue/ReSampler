@@ -26,9 +26,9 @@ bld/
 # [Bb]in/
 [Oo]bj/
 AVX_Release/*
-x64/AVX_Release/*
-!x64/AVX_Release/*.exe
-!x64/AVX_Release/*.dll
+x64/AVX_[Rr]elease/*
+!x64/AVX_[Rr]elease/*.exe
+!x64/AVX_[Rr]elease/*.dll
 Release/*
 !Release/*.exe
 !release/*.dll
