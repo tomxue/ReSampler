@@ -124,6 +124,9 @@ int main(int argc, char * argv[])
 	// parse noClippingProtection option:
 	bool disableClippingProtection = findCmdlineOption(argv, argv + argc, "--noClippingProtection");
 
+	// parse relaxedLPF option:
+	bool relaxedLPF = findCmdlineOption(argv, argv + argc, "--relaxedLPF");
+
 	bool bBadParams = false;
 	if (destFilename.empty()) {
 		if (sourceFilename.empty()) {
@@ -143,7 +146,7 @@ int main(int argc, char * argv[])
 			std::cout << "defaulting to: " << destFilename << "\n" << std::endl;
 		}
 	}
-
+	
 	else if (destFilename == sourceFilename) {
 		std::cout << "\nError: Input and Output filenames cannot be the same" << std::endl;
 		bBadParams = true;
@@ -281,6 +284,7 @@ int main(int argc, char * argv[])
 		ci.bSetVorbisQuality = bSetVobisQuality;
 		ci.vorbisQuality = vorbisQuality;
 		ci.disableClippingProtection = disableClippingProtection;
+		ci.relaxedLPF = relaxedLPF;
 
 		try {
 			return Convert<double>(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
@@ -308,6 +312,7 @@ int main(int argc, char * argv[])
 		ci.bSetVorbisQuality = bSetVobisQuality;
 		ci.vorbisQuality = vorbisQuality;
 		ci.disableClippingProtection = disableClippingProtection;
+		ci.relaxedLPF = relaxedLPF;
 
 		try {
 			return Convert<float>(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
@@ -585,9 +590,15 @@ bool Convert(const conversionInfo<FloatType>& ci)
 	// Medium filters used for simple ratios (ie 1 in numerator or denominator)
 
 	// determine best filter size
-	int FilterSize = ((FOriginal.numerator == 1) || (FOriginal.denominator == 1)) ?
-		(ci.bMinPhase ? FILTERSIZE_MEDIUM * 4 - 1 : FILTERSIZE_MEDIUM) : // when using Min phase with small filter, make it 4x larger. (Also, filter length should always be odd.)
-		FILTERSIZE_HUGE; // use huge filter for complex ratios
+	int BaseFilterSize = ((FOriginal.numerator == 1) || (FOriginal.denominator == 1)) ?
+		(ci.bMinPhase ? 4 * FILTERSIZE_MEDIUM : FILTERSIZE_MEDIUM) : // for minphase, make filter 4x larger 
+		FILTERSIZE_HUGE;
+	
+	// scale the filter size, according to selected options:
+	int FilterSize = 
+		(BaseFilterSize /
+		(ci.relaxedLPF ? 2 : 1))	// for relaxed, make filter half as large
+		| (int)(1);					// ensure that filter length is always odd
 
 	// determine sidelobe attenuation
 	int SidelobeAtten = ((FOriginal.numerator == 1) || (FOriginal.denominator == 1)) ?
