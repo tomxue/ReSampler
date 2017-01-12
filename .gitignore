@@ -39,6 +39,7 @@ x64/release/*
 !x64/release/*.exe
 !x64/release/*.dll
 x64/Release(NoSSE)/*
+x64/Release_AVX/*
 # Visual Studio 2015 cache/options directory
 .vs/
 
