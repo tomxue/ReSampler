@@ -19,7 +19,7 @@
 #define FILTERSIZE_HUGE 32767
 #define FILTERSIZE_MEDIUM 511
 
-#define USE_SSE2 1 // Use SSE2-specific intrinsics in the build
+// #define USE_SSE2 1 // Use SSE2-specific intrinsics in the build
 
 #define SSE_ALIGNMENT_SIZE 16
 
