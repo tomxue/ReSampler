@@ -593,7 +593,7 @@ bool Convert(const conversionInfo<FloatType>& ci)
 	int BaseFilterSize = ((FOriginal.numerator == 1) || (FOriginal.denominator == 1)) ?
 		(ci.bMinPhase ? 4 * FILTERSIZE_MEDIUM : FILTERSIZE_MEDIUM) : // for minphase, make filter 4x larger 
 		FILTERSIZE_HUGE;
-	
+
 	// scale the filter size, according to selected options:
 	int FilterSize = 
 		(BaseFilterSize /

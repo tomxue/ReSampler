@@ -146,4 +146,4 @@ Resampler was developed on Visual C++ 2015, as it uses some C++11 features. (Por
 
 **ReSampler/x64/Release/ReSampler.exe** : 64-bit Windows (*uses SSE2, but all 64-bit CPUs should have this*)
 
-**ReSampler/x64/AVX_Release/ReSampler.exe** : 64-bit Windows with **AVX2** instruction set (Requires Intel *Haswell* CPU or higher, AMD *Carrizo* or higher. Requires Windows 7 SP1 or higher, Windows Server 2008 R2 SP1 or higher OS) 
+**ReSampler/x64/AVX_Release/ReSampler.exe** : 64-bit Windows with **AVX** instruction set (Requires Intel *Sandy Bridge* CPU or higher, AMD *Bulldozer* or higher. Requires Windows 7 SP1 or higher, Windows Server 2008 R2 SP1 or higher OS) 
