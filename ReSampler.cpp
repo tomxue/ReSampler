@@ -662,7 +662,7 @@ bool Convert(const conversionInfo<FloatType>& ci)
 	// make a vector of ditherers (one ditherer for each channel):
 	std::vector<Ditherer<FloatType>> Ditherers;
 	for (unsigned int n = 0; n < nChannels; n++) {
-		Ditherers.emplace_back(signalBits, ci.DitherAmount, ci.bAutoBlankingEnabled, n + 666 /* to-do: explore other seed-generation options */);
+		Ditherers.emplace_back(signalBits, ci.DitherAmount, ci.bAutoBlankingEnabled, n + time(0) /* to-do: explore other seed-generation options */);
 	}
 
 	// Calculate initial gain:
