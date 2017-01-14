@@ -41,11 +41,11 @@ public:
 
 // Constructor:
 
-	Ditherer(unsigned int signalBits, FloatType ditherBits, bool bAutoBlankingEnabled)
-		: signalBits(signalBits), ditherBits(ditherBits), bAutoBlankingEnabled(bAutoBlankingEnabled), E1(0), E2(0)
+	Ditherer(unsigned int signalBits, FloatType ditherBits, bool bAutoBlankingEnabled, int seed)
+		: signalBits(signalBits), ditherBits(ditherBits), bAutoBlankingEnabled(bAutoBlankingEnabled), seed(seed), E1(0), E2(0)
 
 #ifdef USE_HIGH_QUALITY_RANDOM
-		,randGenerator(666)		// initialize (seed) RNG
+		,randGenerator(seed)		// initialize (seed) RNG
 		,dist(0,RAND_MAX)		// set the range of the random number distribution
 #endif
 
@@ -205,6 +205,7 @@ FloatType shapedNoise = 0.0;
 
 private:
 	int oldRandom, newRandom;
+	int seed;
 	FloatType E1,E2;				// last Quantization error
 	FloatType quantizedOutSample;
 	FloatType outSample;
