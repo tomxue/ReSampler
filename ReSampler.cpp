@@ -127,6 +127,13 @@ int main(int argc, char * argv[])
 	// parse relaxedLPF option:
 	bool relaxedLPF = findCmdlineOption(argv, argv + argc, "--relaxedLPF");
 
+	// parse seed option and parameter:
+	bool bUseSeed = findCmdlineOption(argv, argv + argc, "--seed");
+	int seed = 0;
+	if (bUseSeed) {
+		getCmdlineParam(argv, argv + argc, "--seed", seed);
+	}
+
 	bool bBadParams = false;
 	if (destFilename.empty()) {
 		if (sourceFilename.empty()) {
@@ -285,6 +292,8 @@ int main(int argc, char * argv[])
 		ci.vorbisQuality = vorbisQuality;
 		ci.disableClippingProtection = disableClippingProtection;
 		ci.relaxedLPF = relaxedLPF;
+		ci.bUseSeed = bUseSeed;
+		ci.seed = seed;
 
 		try {
 			return Convert<double>(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
@@ -313,6 +322,8 @@ int main(int argc, char * argv[])
 		ci.vorbisQuality = vorbisQuality;
 		ci.disableClippingProtection = disableClippingProtection;
 		ci.relaxedLPF = relaxedLPF;
+		ci.bUseSeed = bUseSeed;
+		ci.seed = seed;
 
 		try {
 			return Convert<float>(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
@@ -661,8 +672,13 @@ bool Convert(const conversionInfo<FloatType>& ci)
 
 	// make a vector of ditherers (one ditherer for each channel):
 	std::vector<Ditherer<FloatType>> Ditherers;
+	int seed = ci.bUseSeed ? ci.seed : time(0);
+	
 	for (unsigned int n = 0; n < nChannels; n++) {
-		Ditherers.emplace_back(signalBits, ci.DitherAmount, ci.bAutoBlankingEnabled, n + time(0) /* to-do: explore other seed-generation options */);
+		// to-do: explore other seed-generation options (remote possibility of overlap)
+		// maybe use a single global RNG ? 
+		// or use discard/jump-ahead ... to ensure parallel streams are sufficiently "far away" from each other ?
+		Ditherers.emplace_back(signalBits, ci.DitherAmount, ci.bAutoBlankingEnabled, n + seed );
 	}
 
 	// Calculate initial gain:

@@ -6,7 +6,7 @@
 #include <sndfile.h>
 #include <sndfile.hh>
 
-const std::string strVersion("1.1.4");
+const std::string strVersion("1.1.5");
 const std::string strUsage("usage: resampler.exe -i <inputfile> [-o <outputfile>] -r <samplerate> [-b <bitformat>] [-n [<normalization factor>]]\n");
 const std::string strExtraOptions("--help\n--version\n--doubleprecision\n--listsubformats <ext>\n--dither [<amount>] [--autoblank]\n--minphase\n--flacCompression <compressionlevel>\n--vorbisQuality <quality>\n--noClippingProtection\n");
 
@@ -97,6 +97,8 @@ template<typename FloatType> struct conversionInfo
 	double vorbisQuality;
 	bool disableClippingProtection;
 	bool relaxedLPF;
+	bool bUseSeed;
+	int seed; // seed for RNG
 };
 
 bool determineBestBitFormat(std::string & BitFormat, const std::string & inFilename, const std::string & outFilename);
