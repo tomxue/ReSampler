@@ -52,15 +52,15 @@ public:
 		ditherBits(ditherBits),
 		bAutoBlankingEnabled(bAutoBlankingEnabled),
 		seed(seed),
-		E1(0),
-		E2(0)
+		Z1(0),
+		Z2(0)
 #ifndef USE_IIR
 		,FIR((FloatType*)FIRNoiseShapeCoeffs, FIR_NOISE_SHAPING_FILTER_SIZE)
 #endif
 
 #ifdef USE_HIGH_QUALITY_RANDOM
 		,randGenerator(seed)		// initialize (seed) RNG
-		,dist(0,RAND_MAX)		// set the range of the random number distribution
+		,dist(0,randMax)		// set the range of the random number distribution
 #endif
 
 	{
@@ -108,20 +108,20 @@ public:
 
 #endif // USE_IIR	
 		signalMagnitude = static_cast<FloatType>((1 << (signalBits - 1)) - 1); // note the -1 : match 32767 scaling factor for 16 bit !
-		reciprocalSignalMagnitude = 1.0 / signalMagnitude;
-		maxDitherMagnitude = pow(2,ditherBits-1) / signalMagnitude / RAND_MAX;
+		reciprocalSignalMagnitude = 1.0 / signalMagnitude; // value of LSB in target format
+		maxDitherScaleFactor = (pow(2,ditherBits-1) * reciprocalSignalMagnitude) / randMax;
 		oldRandom = newRandom = 0;
 
 		if (bAutoBlankingEnabled) {	// initial state: silence
-			ditherMagnitude = 0.0;
+			ditherScaleFactor = 0.0;
 		}
 		else {	// initial state: dithering
-			ditherMagnitude = maxDitherMagnitude; 
+			ditherScaleFactor = maxDitherScaleFactor; 
 		}
 
 		autoBlankLevelThreshold = 1.0 / pow(2, 32); // 1 LSB of 32-bit digital
 		autoBlankTimeThreshold = 30000; // number of zero samples before activating autoblank
-		autoBlankDecayCutoff = 0.7 * reciprocalSignalMagnitude / RAND_MAX;
+		autoBlankDecayCutoff = 0.7 * reciprocalSignalMagnitude / randMax;
 		zeroCount = 0;
 		
 	} // Ends Constructor 
@@ -155,14 +155,14 @@ FloatType Dither(FloatType inSample) {
 		if (abs(inSample) < autoBlankLevelThreshold) {
 			++zeroCount;
 			if (zeroCount > autoBlankTimeThreshold) {
-				ditherMagnitude *= autoBlankDecayFactor; // decay
-				if (ditherMagnitude < autoBlankDecayCutoff)
-					ditherMagnitude = 0.0; // decay cutoff
+				ditherScaleFactor *= autoBlankDecayFactor; // decay
+				if (ditherScaleFactor < autoBlankDecayCutoff)
+					ditherScaleFactor = 0.0; // decay cutoff
 			}
 		}
 		else {
 			zeroCount = 0; // reset
-			ditherMagnitude = maxDitherMagnitude; // restore
+			ditherScaleFactor = maxDitherScaleFactor; // restore
 		}
 	} // ends auto-blanking
 
@@ -172,8 +172,8 @@ FloatType Dither(FloatType inSample) {
 	newRandom = rand();
 #endif	
 
-	FloatType tpdfNoise = ditherMagnitude * static_cast<FloatType>(newRandom - oldRandom);
-	FloatType preDither = inSample - E1 + E2*0.043;
+	FloatType tpdfNoise = ditherScaleFactor * static_cast<FloatType>(newRandom - oldRandom);
+	FloatType preDither = inSample - Z1 + Z2*0.043;
 
 #ifndef USE_IIR
 	// FIR Noise Shaping:
@@ -197,8 +197,8 @@ FloatType Dither(FloatType inSample) {
 	// otherwise nasty quantization distortion will result.
 	FloatType preQuantize = preDither + shapedNoise;
 	FloatType postQuantize = reciprocalSignalMagnitude * round(signalMagnitude * preQuantize); // quantize
-	E2 = E1;
-	E1 = postQuantize - preDither; // calculate error 
+	Z2 = Z1;
+	Z1 = postQuantize - preDither; // calculate error 
 	oldRandom = newRandom;
 
 #ifdef DITHER_USE_SATURATION
@@ -236,19 +236,19 @@ FloatType Dither(FloatType inSample) {
 		if (abs(inSample) < autoBlankLevelThreshold) {
 			++zeroCount;
 			if (zeroCount > autoBlankTimeThreshold) {
-				ditherMagnitude *= autoBlankDecayFactor; // decay
-				if (ditherMagnitude < autoBlankDecayCutoff)
-					ditherMagnitude = 0.0; // decay cutoff
+				ditherScaleFactor *= autoBlankDecayFactor; // decay
+				if (ditherScaleFactor < autoBlankDecayCutoff)
+					ditherScaleFactor = 0.0; // decay cutoff
 			}
 		}
 		else {
 			zeroCount = 0; // reset
-			ditherMagnitude = maxDitherMagnitude; // restore
+			ditherScaleFactor = maxDitherScaleFactor; // restore
 		}
 	} // ends auto-blanking
 
 	newRandom = dist(randGenerator);
-	FloatType tpdfNoise = ditherMagnitude * static_cast<FloatType>(newRandom - oldRandom);
+	FloatType tpdfNoise = ditherScaleFactor * static_cast<FloatType>(newRandom - oldRandom);
 
 #ifdef USE_IIR
 	// IIR Filter:
@@ -257,7 +257,7 @@ FloatType Dither(FloatType inSample) {
 	return f2.filter(f1.filter(tpdfNoise)); // (Output Only Filtered Noise - discard signal)
 	#endif
 
-	FloatType preDither = inSample - f2.filter(f1.filter(E1));
+	FloatType preDither = inSample - f2.filter(f1.filter(Z1));
 #else
 	// FIR Filter:
 
@@ -266,14 +266,14 @@ FloatType Dither(FloatType inSample) {
 	return(FIR.get()); // (Output Only Filtered Noise - discard signal)
 	#endif
 
-	FIR.put(E1);
+	FIR.put(Z1);
 	FloatType preDither = inSample - FIR.get();
 #endif //!USE_IIR
 
 	FloatType preQuantize, postQuantize;
 	preQuantize = preDither + tpdfNoise;
 	postQuantize = reciprocalSignalMagnitude * round(signalMagnitude * preQuantize); // quantize
-	E1 = postQuantize - preDither;
+	Z1 = postQuantize - preDither;
 	oldRandom = newRandom;		
 
 #ifdef DITHER_USE_SATURATION
@@ -295,16 +295,19 @@ private:
 
 	int oldRandom, newRandom;
 	int seed;
-	FloatType E1,E2;				// last Quantization error
+	FloatType Z1,Z2;				// last Quantization error
 	FloatType signalMagnitude;	// maximum integral value for signal target bit depth (for quantizing) 
 	FloatType reciprocalSignalMagnitude; // for normalizing quantized signal back to +/- 1.0 
-	FloatType maxDitherMagnitude, ditherMagnitude;	// maximum integral value for dither target bit depth
+	FloatType maxDitherScaleFactor, ditherScaleFactor;	// maximum integral value for dither target bit depth
 	__int64 zeroCount; // number of consecutive zeroes in input;
-	FloatType autoBlankDecayCutoff;	// threshold at which ditherMagnitude is set to zero during active blanking
+	FloatType autoBlankDecayCutoff;	// threshold at which ditherScaleFactor is set to zero during active blanking
 
 #ifdef USE_HIGH_QUALITY_RANDOM
 	std::mt19937 randGenerator; // Mersenne Twister - one of the best random number algorithms available
 	std::uniform_int_distribution<int> dist; // random number distribution
+	static const int randMax = 16777215; // 2^24 - 1
+#else
+	const int randMax = RAND_MAX;
 #endif
 	
 #ifdef USE_IIR
