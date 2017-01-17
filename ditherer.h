@@ -12,8 +12,6 @@
 #ifndef DITHERER_H
 #define DITHERER_H 1
 
-#include <iostream>
-
 // configuration:
 #define USE_IIR // if defined, use IIR Filter for noise shaping, otherwise use FIR. 
 #define DITHER_TOPOLOGY 1
@@ -162,7 +160,6 @@ FloatType Dither(FloatType inSample) {
 	//oldRandom = dist(randGenerator);
 	FloatType tpdfNoise = static_cast<FloatType>(newRandom - oldRandom);
 	oldRandom = newRandom;
-	//std::cout << tpdfNoise << std::endl;
 	FloatType preDither = inSample - Z1 + Z2*0.043;
 
 #ifdef USE_IIR
