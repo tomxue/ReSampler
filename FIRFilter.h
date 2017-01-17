@@ -46,9 +46,6 @@ public:
 
 		// initialize filter kernel and signal buffers
 		for (unsigned int i = 0; i < size; ++i) {
-			if (size == 9) {
-				std::cout << taps[i] << std::endl;
-			}
 			Kernel0[i] = taps[i];
 			Signal[i] = 0.0;
 			Signal[i + size] = 0.0;

@@ -12,21 +12,14 @@
 #ifndef DITHERER_H
 #define DITHERER_H 1
 
-#define FIR_NOISE_SHAPING_FILTER_SIZE 20
-
+// configuration:
 #define USE_IIR // if defined, use IIR Filter for noise shaping, otherwise use FIR. 
-#ifndef USE_IIR
-#include "FIRfilter.h"
-#endif // !USE_IIR
-
 #define DITHER_TOPOLOGY 1
-
 //#define TEST_FILTER
-
-#define USE_HIGH_QUALITY_RANDOM // if defined, uses C++ std library, instead of rand(), for "better" random numbers.
-// Note: the audible difference in quality between rand() and MT is VERY noticable, so high-quality random numbers are important.
-
 #define DITHER_USE_SATURATION  // restrict output amplitude to +/- 0.999 (guards against excessive dither levels causing clipping)
+// --- //
+
+#define FIR_NOISE_SHAPING_FILTER_SIZE 9
 
 #include <cmath>
 #include "biquad.h"
@@ -54,15 +47,12 @@ public:
 		seed(seed),
 		Z1(0),
 		Z2(0)
+
 #ifndef USE_IIR
 		,FIR((FloatType*)FIRNoiseShapeCoeffs, FIR_NOISE_SHAPING_FILTER_SIZE)
 #endif
-
-#ifdef USE_HIGH_QUALITY_RANDOM
 		,randGenerator(seed)		// initialize (seed) RNG
 		,dist(0,randMax)		// set the range of the random number distribution
-#endif
-
 	{
 
 #ifdef USE_IIR
@@ -109,7 +99,7 @@ public:
 #endif // USE_IIR	
 		signalMagnitude = static_cast<FloatType>((1 << (signalBits - 1)) - 1); // note the -1 : match 32767 scaling factor for 16 bit !
 		reciprocalSignalMagnitude = 1.0 / signalMagnitude; // value of LSB in target format
-		maxDitherScaleFactor = (pow(2,ditherBits-1) * reciprocalSignalMagnitude) / randMax;
+		maxDitherScaleFactor = /*0.0625 * */(pow(2,ditherBits-1) * reciprocalSignalMagnitude) / randMax;
 		oldRandom = newRandom = 0;
 
 		if (bAutoBlankingEnabled) {	// initial state: silence
@@ -166,11 +156,7 @@ FloatType Dither(FloatType inSample) {
 		}
 	} // ends auto-blanking
 
-#ifdef USE_HIGH_QUALITY_RANDOM
 	newRandom = dist(randGenerator);
-#else
-	newRandom = rand();
-#endif	
 
 	FloatType tpdfNoise = static_cast<FloatType>(newRandom - oldRandom);
 	FloatType preDither = inSample - Z1 + Z2*0.043;
@@ -180,17 +166,23 @@ FloatType Dither(FloatType inSample) {
 	FloatType shapedNoise = ditherScaleFactor * f2.filter(f1.filter(tpdfNoise)); // filter the triangular noise with two cascaded biQuads 																				 //	shapedNoise = f1.filter(tpdfNoise); // filter the triangular noise with one biQuad	
 #else
 	// FIR Noise Shaping:
+	
 	// put tpdf noise into history buffer (noise goes in "backwards"):
-	noise[currentIndex] = ditherScaleFactor * tpdfNoise;
-	currentIndex = currentIndex ? currentIndex - 1 : FIR_NOISE_SHAPING_FILTER_SIZE - 1;
+	noise[currentIndex--] = ditherScaleFactor * tpdfNoise;
+	if (currentIndex < 0) {
+		currentIndex = FIR_NOISE_SHAPING_FILTER_SIZE - 1;
+	}
 
-	// Filter the noise:
+	// get result from FIR:
 	FloatType shapedNoise = 0.0;
 	int index = currentIndex;
 	for (int i = 0; i < FIR_NOISE_SHAPING_FILTER_SIZE; ++i) {
+		if (++index == FIR_NOISE_SHAPING_FILTER_SIZE) {
+			index = 0;
+		} 
 		shapedNoise += noise[index] * FIRNoiseShapeCoeffs[i];
-		index = (index == FIR_NOISE_SHAPING_FILTER_SIZE - 1) ? 0 : index + 1;
 	}
+	
 #endif
 
 #ifdef TEST_FILTER
@@ -266,12 +258,28 @@ FloatType Dither(FloatType inSample) {
 	// FIR Filter:
 
 	#ifdef TEST_FILTER
-	FIR.put(tpdfNoise);
-	return(FIR.get()); // (Output Only Filtered Noise - discard signal)
+	//FIR.put(tpdfNoise);
+	//return(FIR.get()); // (Output Only Filtered Noise - discard signal)
 	#endif
 
-	FIR.put(Z1);
-	FloatType preDither = inSample - FIR.get();
+	// put Z1 into history buffer (goes in "backwards"):
+	noise[currentIndex--] = Z1;
+	if (currentIndex < 0) {
+		currentIndex = FIR_NOISE_SHAPING_FILTER_SIZE - 1;
+	}
+
+	// get result from FIR:
+	FloatType filterOutput = 0.0;
+	int index = currentIndex;
+	for (int i = 0; i < FIR_NOISE_SHAPING_FILTER_SIZE; ++i) {
+		if (++index == FIR_NOISE_SHAPING_FILTER_SIZE) {
+			index = 0;
+		}
+		filterOutput += noise[index] * FIRNoiseShapeCoeffs[i];
+	}
+
+	FloatType preDither = inSample - filterOutput;
+
 #endif //!USE_IIR
 
 	FloatType preQuantize, postQuantize;
@@ -293,10 +301,6 @@ FloatType Dither(FloatType inSample) {
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 private:
-#ifndef USE_IIR
-	FIRFilter<FloatType> FIR;
-#endif
-
 	int oldRandom, newRandom;
 	int seed;
 	FloatType Z1,Z2;				// last Quantization error
@@ -305,26 +309,19 @@ private:
 	FloatType maxDitherScaleFactor, ditherScaleFactor;	// maximum integral value for dither target bit depth
 	__int64 zeroCount; // number of consecutive zeroes in input;
 	FloatType autoBlankDecayCutoff;	// threshold at which ditherScaleFactor is set to zero during active blanking
-
-#ifdef USE_HIGH_QUALITY_RANDOM
 	std::mt19937 randGenerator; // Mersenne Twister - one of the best random number algorithms available
 	std::uniform_int_distribution<int> dist; // random number distribution
 	static const int randMax = 16777215; // 2^24 - 1
-#else
-	const int randMax = RAND_MAX;
-#endif
 	
 #ifdef USE_IIR
-	// IIR Filters:
+	// IIR Filter-related stuff:
 	Biquad<double> f1;
 	Biquad<double> f2;
 #else	
 	// FIR Filter-related stuff:
+	FIRFilter<FloatType> FIR;
 	int currentIndex;
-	
-
-	// (circular) buffer for noise history:
-	FloatType noise[FIR_NOISE_SHAPING_FILTER_SIZE];
+	FloatType noise[FIR_NOISE_SHAPING_FILTER_SIZE]; // (circular) buffer for noise history
 #endif
 };
 
@@ -429,7 +426,7 @@ const double FIRNoiseShapeCoeffs[FIR_NOISE_SHAPING_FILTER_SIZE] = {
 	0.0847
 	*/
 
-	/*
+	
 	0.09648,
 	- 0.13480,
 	0.15748,
@@ -439,7 +436,7 @@ const double FIRNoiseShapeCoeffs[FIR_NOISE_SHAPING_FILTER_SIZE] = {
 	0.05124,
 	- 0.02276,
 	0.00339 // normalized to 0dB peak (x0.04)
-	*/
+	
 	//0.00339,  // reversed, normalized to 0dB peak (x0.04)
 	//- 0.02276,
 	//0.05124,
@@ -498,6 +495,7 @@ const double FIRNoiseShapeCoeffs[FIR_NOISE_SHAPING_FILTER_SIZE] = {
 	0.033161869936279724,
 	-0.021149859750950312 */
 	
+	/*
 	// High-Sibata 44k (20 taps)
 		3.0259189605712890625, -6.0268716812133789062,   9.195003509521484375,
 		-11.824929237365722656, 12.767142295837402344, -11.917946815490722656,
@@ -506,7 +504,7 @@ const double FIRNoiseShapeCoeffs[FIR_NOISE_SHAPING_FILTER_SIZE] = {
 		-5.9359521865844726562,  4.903278350830078125,   -3.5527443885803222656,
 		2.1909697055816650391, -1.1672389507293701172,  0.4903914332389831543,
 		-0.16519790887832641602,  0.023217858746647834778
-	
+	*/
 
 };
 
