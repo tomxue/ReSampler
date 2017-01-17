@@ -19,6 +19,8 @@
 #define DITHER_USE_SATURATION  // restrict output amplitude to +/- 0.999 (guards against excessive dither levels causing clipping)
 // --- //
 
+
+#define MAX_FIR_FILTER_SIZE 101
 #define FIR_NOISE_SHAPING_FILTER_SIZE 9
 
 #include <cmath>
@@ -323,41 +325,41 @@ private:
 	Biquad<double> f2;
 #else	
 	// FIR Filter-related stuff:
-	FIRFilter<FloatType> FIR;
 	int currentIndex;
 	FloatType noise[FIR_NOISE_SHAPING_FILTER_SIZE]; // (circular) buffer for noise history
 #endif
 };
 
-const double FIRNoiseShapeCoeffs[FIR_NOISE_SHAPING_FILTER_SIZE] = {
+typedef enum {
+	iir,
+	fir
+} FilterType;
 
-	/*
-	// 11-tap:
-	-0.014702063883960252,
-	-0.0010319367876352055,
-	0.06696663418581869,
-	0.0010013618187379699,
-	-0.30273448956854543,
-	0.49822670684302905,
-	-0.30273448956854543,
-	0.0010013618187379699,
-	0.06696663418581869,
-	-0.0010319367876351854,
-	-0.014702063883960252
-	*/
+typedef struct {
+	const char* name;
+	FilterType type;
+	int intendedSampleRate;
+	int N;
+	const double* coeffs;
+} FilterParams;
 
-	// Psychoacoustically Optimal Noise Shaping:
-	// this filter is the "F-Weighted" noise filter described by Wannamaker.
-	// It is designed to produce minimum audibility:
-	
-	/*
-	// 3-tap:
-		1.623,
+//////////////////////////
+//
+// Filter Coefficients
+//
+//////////////////////////
+
+// Psychoacoustically Optimal Noise Shaping:
+// this filter is the "F-Weighted" noise filter described by Wannamaker(*).
+// It is designed to produce minimum audibility:
+
+const double wan3[] = {
+	1.623,
 	-0.982,
 	0.109
-	*/
+};
 
-	
+const double wan9[] = {
 	// 9-tap:
 	2.412,
 	-3.370,
@@ -368,7 +370,7 @@ const double FIRNoiseShapeCoeffs[FIR_NOISE_SHAPING_FILTER_SIZE] = {
 	1.281,
 	-0.569,
 	0.0847
-	
+
 	/*
 	// 9-tap normalized to 0dB peak (x0.04):
 	0.09648,
@@ -381,7 +383,7 @@ const double FIRNoiseShapeCoeffs[FIR_NOISE_SHAPING_FILTER_SIZE] = {
 	- 0.02276,
 	0.00339
 	*/
-	
+
 	//0.00339,  // reversed, normalized to 0dB peak (x0.04)
 	//- 0.02276,
 	//0.05124,
@@ -391,8 +393,9 @@ const double FIRNoiseShapeCoeffs[FIR_NOISE_SHAPING_FILTER_SIZE] = {
 	//0.15748,
 	//- 0.13480,
 	//0.09648
+};
 
-	/*
+const double wan24[] = {
 	//24-tap (needs normalization):
 	2.391510,
 	-3.284444,
@@ -418,22 +421,38 @@ const double FIRNoiseShapeCoeffs[FIR_NOISE_SHAPING_FILTER_SIZE] = {
 	-0.001799,
 	0.000774,
 	-0.000128
-	*/
-	// some previous filter attempts: 
-	
-	/*
-	// High-Shibata 44k (20 taps)
-		3.0259189605712890625, -6.0268716812133789062,   9.195003509521484375,
-		-11.824929237365722656, 12.767142295837402344, -11.917946815490722656,
-		9.1739168167114257812,  -5.3712320327758789062, 1.1393624544143676758,
-		2.4484779834747314453,  -4.9719839096069335938,   6.0392003059387207031,
-		-5.9359521865844726562,  4.903278350830078125,   -3.5527443885803222656,
-		2.1909697055816650391, -1.1672389507293701172,  0.4903914332389831543,
-		-0.16519790887832641602,  0.023217858746647834778
-	*/
-
 };
 
+const double highShib44[20] = { // High-Shibata 44k (20 taps)
+	3.0259189605712890625, -6.0268716812133789062,   9.195003509521484375,
+	-11.824929237365722656, 12.767142295837402344, -11.917946815490722656,
+	9.1739168167114257812,  -5.3712320327758789062, 1.1393624544143676758,
+	2.4484779834747314453,  -4.9719839096069335938,   6.0392003059387207031,
+	-5.9359521865844726562,  4.903278350830078125,   -3.5527443885803222656,
+	2.1909697055816650391, -1.1672389507293701172,  0.4903914332389831543,
+	-0.16519790887832641602,  0.023217858746647834778
+};
+
+FilterParams filterList[] = {
+	{"Wannamaker 3-tap", fir, 44100, 3, wan3},
+	{"Wannamaker 9-tap", fir, 44100, 9, wan9},
+	{"Wannamaker 24-tap", fir, 44100, 24, wan24},
+	{"High Shibata 44k", fir, 44100, 20, highShib44}
+};
+
+const double FIRNoiseShapeCoeffs[FIR_NOISE_SHAPING_FILTER_SIZE] = {
+
+	// 9-tap:
+	2.412,
+	-3.370,
+	3.937,
+	-4.174,
+	3.353,
+	-2.205,
+	1.281,
+	-0.569,
+	0.0847
+};
 
 // *Psychoacoustically Optimal Noise Shaping
 // Robert. A. Wannamaker
