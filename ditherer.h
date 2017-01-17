@@ -12,6 +12,8 @@
 #ifndef DITHERER_H
 #define DITHERER_H 1
 
+#include <iostream>
+
 // configuration:
 #define USE_IIR // if defined, use IIR Filter for noise shaping, otherwise use FIR. 
 #define DITHER_TOPOLOGY 1
@@ -99,7 +101,7 @@ public:
 #endif // USE_IIR	
 		signalMagnitude = static_cast<FloatType>((1 << (signalBits - 1)) - 1); // note the -1 : match 32767 scaling factor for 16 bit !
 		reciprocalSignalMagnitude = 1.0 / signalMagnitude; // value of LSB in target format
-		maxDitherScaleFactor = /*0.0625 * */(pow(2,ditherBits-1) * reciprocalSignalMagnitude) / randMax;
+		maxDitherScaleFactor = (pow(2,ditherBits-1) * reciprocalSignalMagnitude) / randMax;
 		oldRandom = newRandom = 0;
 
 		if (bAutoBlankingEnabled) {	// initial state: silence
@@ -157,13 +159,15 @@ FloatType Dither(FloatType inSample) {
 	} // ends auto-blanking
 
 	newRandom = dist(randGenerator);
-
+	//oldRandom = dist(randGenerator);
 	FloatType tpdfNoise = static_cast<FloatType>(newRandom - oldRandom);
+	oldRandom = newRandom;
+	//std::cout << tpdfNoise << std::endl;
 	FloatType preDither = inSample - Z1 + Z2*0.043;
 
 #ifdef USE_IIR
 	// IIR Noise Shaping:
-	FloatType shapedNoise = ditherScaleFactor * f2.filter(f1.filter(tpdfNoise)); // filter the triangular noise with two cascaded biQuads 																				 //	shapedNoise = f1.filter(tpdfNoise); // filter the triangular noise with one biQuad	
+	FloatType shapedNoise = ditherScaleFactor * f2.filter(f1.filter(tpdfNoise)); // filter the triangular noise with two cascaded biQuads 																				 
 #else
 	// FIR Noise Shaping:
 	
@@ -195,7 +199,7 @@ FloatType Dither(FloatType inSample) {
 	FloatType postQuantize = reciprocalSignalMagnitude * round(signalMagnitude * preQuantize); // quantize
 	Z2 = Z1;
 	Z1 = postQuantize - preDither; // calculate error 
-	oldRandom = newRandom;
+	
 
 #ifdef DITHER_USE_SATURATION
 	return 0.5*(fabs(postQuantize + 1.0) - fabs(postQuantize - 1.0)); // branchless clipping - restrict to +/- 1.0 (0.0000 dB)
@@ -245,6 +249,7 @@ FloatType Dither(FloatType inSample) {
 
 	newRandom = dist(randGenerator);
 	FloatType tpdfNoise = ditherScaleFactor * static_cast<FloatType>(newRandom - oldRandom);
+	oldRandom = newRandom;
 
 #ifdef USE_IIR
 	// IIR Filter:
@@ -258,8 +263,7 @@ FloatType Dither(FloatType inSample) {
 	// FIR Filter:
 
 	#ifdef TEST_FILTER
-	//FIR.put(tpdfNoise);
-	//return(FIR.get()); // (Output Only Filtered Noise - discard signal)
+		Z1 = tpdfNoise;
 	#endif
 
 	// put Z1 into history buffer (goes in "backwards"):
@@ -278,6 +282,10 @@ FloatType Dither(FloatType inSample) {
 		filterOutput += noise[index] * FIRNoiseShapeCoeffs[i];
 	}
 
+	#ifdef TEST_FILTER
+		return filterOutput;
+	#endif
+
 	FloatType preDither = inSample - filterOutput;
 
 #endif //!USE_IIR
@@ -285,8 +293,7 @@ FloatType Dither(FloatType inSample) {
 	FloatType preQuantize, postQuantize;
 	preQuantize = preDither + tpdfNoise;
 	postQuantize = reciprocalSignalMagnitude * round(signalMagnitude * preQuantize); // quantize
-	Z1 = postQuantize - preDither;
-	oldRandom = newRandom;		
+	Z1 = postQuantize - preDither;		
 
 #ifdef DITHER_USE_SATURATION
 	return (0.5*(fabs(postQuantize + 1.0) - fabs(postQuantize - 1.0))); // branchless clipping (restrict to +/- 1.0)
@@ -311,7 +318,7 @@ private:
 	FloatType autoBlankDecayCutoff;	// threshold at which ditherScaleFactor is set to zero during active blanking
 	std::mt19937 randGenerator; // Mersenne Twister - one of the best random number algorithms available
 	std::uniform_int_distribution<int> dist; // random number distribution
-	static const int randMax = 16777215; // 2^24 - 1
+	static const int randMax = 32767; /*16777215; // 2^24 - 1 */
 	
 #ifdef USE_IIR
 	// IIR Filter-related stuff:
@@ -327,65 +334,6 @@ private:
 
 const double FIRNoiseShapeCoeffs[FIR_NOISE_SHAPING_FILTER_SIZE] = {
 
-	// FIR coefficients:
-	/*
-	-0.004928014440031,
-	0.021283573281195,
-	-0.062162739989566,
-	0.134886720148841,
-	-0.225812744687745,
-	0.292603612567719,
-	-0.282008135641708,
-	0.171636749645404,
-	-0.003857513977063,
-	-0.128172588805701,
-	0.146251188958871,
-	-0.053795948706273,
-	-0.061972118253118,
-	0.103682724062844,
-	-0.048393839646023,
-	-0.038452674450499,
-	0.072672559606361,
-	-0.032584935082076,
-	-0.029413602666838,
-	0.049563067193186,
-	-0.017385829881490,
-	-0.023894246165588,
-	0.031469243566451,
-	-0.006135432797471,
-	-0.018352643462564,
-	0.017675626891899,
-	0.000403575309806,
-	-0.012504293530240,
-	0.008183041603588,
-	0.002929687002285,
-	-0.007234589647027,
-	0.002661815398681,
-	0.002917186174464,
-	-0.003368910725043,
-	0.000183928796985,
-	0.001884898890689,
-	-0.001126421973479,
-	-0.000476482347775,
-	0.000865417637415,
-	-0.000166220157147,
-	-0.000378091858673,
-	0.000256702732724,
-	0.000077400647165,
-	-0.000156004409349,
-	0.000024503877875,
-	0.000061332048650,
-	-0.000031168974096,
-	-0.000015886116183,
-	0.000016516391008,
-	0.000002211453669,
-	-0.000006217417027,
-	-0.000000019213669,
-	0.000002243376921,
-	0.000000797406460,
-	0.000000073736353,
-	0.000000002035512
-	*/
 	/*
 	// 11-tap:
 	-0.014702063883960252,
@@ -403,17 +351,16 @@ const double FIRNoiseShapeCoeffs[FIR_NOISE_SHAPING_FILTER_SIZE] = {
 
 	// Psychoacoustically Optimal Noise Shaping:
 	// this filter is the "F-Weighted" noise filter described by Wannamaker.
-	// It is designed to produce minimum audibility, but I personally don't like the sound of it. 
-	// However, YMMV ...
-	// From experimentation, it seems clear that 
-	// "audibility" and "pleastantness/unpleasantness" of noise are two very different things !
+	// It is designed to produce minimum audibility:
+	
 	/*
 	// 3-tap:
 		1.623,
 	-0.982,
 	0.109
 	*/
-	/*
+
+	
 	// 9-tap:
 	2.412,
 	-3.370,
@@ -424,9 +371,9 @@ const double FIRNoiseShapeCoeffs[FIR_NOISE_SHAPING_FILTER_SIZE] = {
 	1.281,
 	-0.569,
 	0.0847
-	*/
-
 	
+	/*
+	// 9-tap normalized to 0dB peak (x0.04):
 	0.09648,
 	- 0.13480,
 	0.15748,
@@ -435,7 +382,8 @@ const double FIRNoiseShapeCoeffs[FIR_NOISE_SHAPING_FILTER_SIZE] = {
 	- 0.08820,
 	0.05124,
 	- 0.02276,
-	0.00339 // normalized to 0dB peak (x0.04)
+	0.00339
+	*/
 	
 	//0.00339,  // reversed, normalized to 0dB peak (x0.04)
 	//- 0.02276,
@@ -446,6 +394,7 @@ const double FIRNoiseShapeCoeffs[FIR_NOISE_SHAPING_FILTER_SIZE] = {
 	//0.15748,
 	//- 0.13480,
 	//0.09648
+
 	/*
 	//24-tap (needs normalization):
 	2.391510,
@@ -474,29 +423,9 @@ const double FIRNoiseShapeCoeffs[FIR_NOISE_SHAPING_FILTER_SIZE] = {
 	-0.000128
 	*/
 	// some previous filter attempts: 
-
-	// 9-tap:
-	/*	-0.044563530870540866,
-	-0.0512547777405835,
-	0.01658357145118836,
-	-0.205550523954609,
-	0.5489106896304642,
-	-0.20555052395460902,
-	0.016583571451188384,
-	-0.0512547777405835,
-	-0.04456353087054085 */
-
-	// 7-tap:
-	/*	-0.021149859750950312,
-	0.033161869936279724,
-	-0.15368643534442833,
-	0.5731512044421722,
-	-0.15368643534442833,
-	0.033161869936279724,
-	-0.021149859750950312 */
 	
 	/*
-	// High-Sibata 44k (20 taps)
+	// High-Shibata 44k (20 taps)
 		3.0259189605712890625, -6.0268716812133789062,   9.195003509521484375,
 		-11.824929237365722656, 12.767142295837402344, -11.917946815490722656,
 		9.1739168167114257812,  -5.3712320327758789062, 1.1393624544143676758,
