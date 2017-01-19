@@ -4,9 +4,6 @@
 //
 // defines Ditherer class, for adding tpdf dither to input samples
 //
-// signalBits is the number of bits of the target bitformat
-// ditherBits is the number of bits of dither to add, and doesn't have to be an integer
-// input and output samples are of type FloatType
 //
 
 #ifndef DITHERER_H
@@ -19,33 +16,129 @@
 #define DITHER_USE_SATURATION  // restrict output amplitude to +/- 0.999 (guards against excessive dither levels causing clipping)
 // --- //
 
-
-#define MAX_FIR_FILTER_SIZE 101
-#define FIR_NOISE_SHAPING_FILTER_SIZE 20
+#define MAX_FIR_FILTER_SIZE 24
 
 #include <cmath>
 #include "biquad.h"
 #include <random>
 
+typedef enum {
+	iir,
+	fir
+} FilterType;
+
+typedef enum {
+	flat,
+	Wannamaker3tap,
+	Wannamaker9tap,
+	Wannamaker24tap,
+	HighShibata44k,
+	ModEWeighted44k,
+	Lipshitz44k,
+	ImpEWeighted44k
+} FilterID;
+
+typedef struct {
+	FilterID id;
+	const char* name;
+	FilterType type;
+	int intendedSampleRate;
+	int N;
+	const double* coeffs;
+} FilterParams;
+
+//////////////////////////
+//
+// Filter Coefficients
+//
+//////////////////////////
+
+
+const double passthrough[1] = {
+	1
+};
+
+// filters based on F-weighted curves
+// from 'Psychoacoustically Optimal Noise Shaping' (*)
+// this filter is the "F-Weighted" noise filter described by Wannamaker
+// It is designed to produce minimum audibility:
+
+const double wan3[] = {
+	0.916014598760224, -0.554236805904214,  0.061519156663502
+};
+
+const double wan9[] = { // f-weighted used in SoX
+	0.481319388145356, -0.672490189904582,  0.785636165476065,
+	-0.832929985953034,  0.669097806157289, -0.440012127222434,
+	0.255626092957795, -0.113545079541753,  0.016902053140925
+};
+
+const double wan24[] = {
+	0.514957949278981, -0.707231224942256,  0.792298950922098,
+	-0.782725058134344,  0.543526529766033, -0.246916297818599,
+	0.024838892281917,  0.110623443620278, -0.161339968204987,
+	0.110330813502457, -0.040696257820323, -0.009410889845009,
+	0.032265323579584, -0.032554508456871,  0.01642992144958 ,
+	-0.00259900332752 , -0.00454922479706 ,  0.005433144321457,
+	-0.003471295165116,  0.000958853506002,  0.000188626919214,
+	-0.000387374232494,  0.000166663510812, -0.000027561924269
+};
+
+// filters based on E-weighted curves
+// from 'Minimally Audible Noise Shaping' (**)
+
+const double modew44[] = { // Modified E-weighted (appendix: 2)
+	0.866358574385245, -0.658369963567126,  0.251619304365678,
+	-0.151847324138641,  0.066097633713628, -0.058591277834477,
+	0.016951853693747, -0.006594125129948, -0.018369720915365
+};
+
+const double lips44[] = { // improved E-weighted (appendix: 5)
+	0.690593301813357, -0.735432611129325,  0.665456113257436,
+	-0.54010986221507 ,  0.208876449230218
+};
+
+const double impew44[] = { // improved E-weighted 9 coeff (appendix: 6)
+	0.357422249248531, -0.588171140754959,  0.780127101099534,
+	-0.901904263646452,  0.8334830743804  , -0.631734723645454,
+	0.409648331330508, -0.204886937398526,  0.052615266828261
+};
+
+const double highShib44[20] = { // High-Shibata 44k (20 taps)
+	0.210994777646055, -0.420248680433543,  0.64115984143207 ,
+	-0.824542344864141,  0.890242066951182, -0.83102838215377 ,
+	0.639689484122861, -0.374531480587619,  0.07944678322847 ,
+	0.170730305215106, -0.346692245607667,  0.421108345040065,
+	-0.41390894073698 ,  0.341901464927132, -0.247729870518492,
+	0.15277447013028 , -0.081390587810871,  0.034194581138503,
+	-0.011519110890133,  0.001618961712954
+};
+
+FilterParams filterList[] = {
+	{flat, "flat tpdf", fir, 44100, 1, passthrough},
+	{Wannamaker3tap, "Wannamaker 3-tap", fir, 44100, 3, wan3},
+	{Wannamaker9tap, "Wannamaker 9-tap", fir, 44100, 9, wan9},
+	{Wannamaker24tap, "Wannamaker 24-tap", fir, 44100, 24, wan24},
+	{HighShibata44k, "High Shibata 44k", fir, 44100, 20, highShib44},
+	{ModEWeighted44k, "Modified E-Weighted", fir, 44100, 9, modew44},
+	{Lipshitz44k, "Lipshitz", fir, 44100, 5, lips44},
+	{ImpEWeighted44k, "Improved E-Weighted", fir, 44100, 9, impew44}
+};
+
 template<typename FloatType>
 class Ditherer  
 {
 public:
-	unsigned int signalBits;
-	FloatType ditherBits;
+	// Constructor:
+	// signalBits is the number of bits of the target bitformat
+	// ditherBits is the number of bits of dither to add, and doesn't have to be an integer
+	// input and output samples are of type FloatType
 
-	// Auto-Blanking parameters:
-	bool bAutoBlankingEnabled; 
-	FloatType autoBlankLevelThreshold;				// input signals below this threshold are considered zero
-	FloatType autoBlankTimeThreshold;				// number of zero samples before activating blanking
-	const FloatType autoBlankDecayFactor = (FloatType)0.9995;	// dither level will decrease by this factor for each sample when blanking is active
-
-// Constructor:
-
-	Ditherer(unsigned int signalBits, FloatType ditherBits, bool bAutoBlankingEnabled, int seed) : 
+	Ditherer(unsigned int signalBits, FloatType ditherBits, bool bAutoBlankingEnabled, int seed, FilterID filterID = ImpEWeighted44k) :
 		signalBits(signalBits), 
 		ditherBits(ditherBits),
 		bAutoBlankingEnabled(bAutoBlankingEnabled),
+		selectedFilter(filterList[filterID]),
 		seed(seed),
 		Z1(0),
 		Z2(0)
@@ -91,8 +184,14 @@ public:
 		
 #else 
 		// FIR-related stuff:
-		currentIndex = FIR_NOISE_SHAPING_FILTER_SIZE - 1;
-		memset(noise, 0, FIR_NOISE_SHAPING_FILTER_SIZE * sizeof(FloatType));
+		const FloatType scale = 1.0;
+		FIRLength = selectedFilter.N;
+		for (int n = 0; n < FIRLength; ++n) {
+			FIRCoeffs[n] = scale * selectedFilter.coeffs[n];
+		//	std::cout << FIRCoeffs[n] << std::endl;
+		}
+		currentIndex = FIRLength - 1;
+		memset(noise, 0, MAX_FIR_FILTER_SIZE * sizeof(FloatType));
 
 #endif // USE_IIR	
 		signalMagnitude = static_cast<FloatType>((1 << (signalBits - 1)) - 1); // note the -1 : match 32767 scaling factor for 16 bit !
@@ -155,10 +254,16 @@ FloatType Dither(FloatType inSample) {
 	} // ends auto-blanking
 
 	newRandom = dist(randGenerator);
-	//oldRandom = dist(randGenerator);
+	
 	FloatType tpdfNoise = static_cast<FloatType>(newRandom - oldRandom);
-	oldRandom = newRandom;
-	FloatType preDither = inSample - Z1 + Z2*0.043;
+
+#ifdef USE_IIR
+	oldRandom = newRandom; // 
+#else
+	oldRandom = dist(randGenerator);
+#endif
+
+	FloatType preDither = inSample -Z1 + Z2*0.043;
 
 #ifdef USE_IIR
 	// IIR Noise Shaping:
@@ -169,17 +274,18 @@ FloatType Dither(FloatType inSample) {
 	// put tpdf noise into history buffer (noise goes in "backwards"):
 	noise[currentIndex--] = ditherScaleFactor * tpdfNoise;
 	if (currentIndex < 0) {
-		currentIndex = FIR_NOISE_SHAPING_FILTER_SIZE - 1;
+		currentIndex = FIRLength - 1;
 	}
 
 	// get result from FIR:
 	FloatType shapedNoise = 0.0;
 	int index = currentIndex;
-	for (int i = 0; i < FIR_NOISE_SHAPING_FILTER_SIZE; ++i) {
-		if (++index == FIR_NOISE_SHAPING_FILTER_SIZE) {
+	for (int i = 0; i < FIRLength; ++i) {
+		if (++index == FIRLength) {
 			index = 0;
 		} 
-		shapedNoise += noise[index] * FIRNoiseShapeCoeffs[i];
+		shapedNoise += noise[index] * FIRCoeffs[i];
+		//shapedNoise = (0.5*(fabs(shapedNoise + reciprocalSignalMagnitude) - fabs(shapedNoise - reciprocalSignalMagnitude))); // strict
 	}
 	
 #endif
@@ -264,17 +370,17 @@ FloatType Dither(FloatType inSample) {
 	// put Z1 into history buffer (goes in "backwards"):
 	noise[currentIndex--] = Z1;
 	if (currentIndex < 0) {
-		currentIndex = FIR_NOISE_SHAPING_FILTER_SIZE - 1;
+		currentIndex = FIRLength - 1;
 	}
 
 	// get result from FIR:
 	FloatType filterOutput = 0.0;
 	int index = currentIndex;
-	for (int i = 0; i < FIR_NOISE_SHAPING_FILTER_SIZE; ++i) {
-		if (++index == FIR_NOISE_SHAPING_FILTER_SIZE) {
+	for (int i = 0; i < FIRLength; ++i) {
+		if (++index == FIRLength) {
 			index = 0;
 		}
-		filterOutput += noise[index] * FIRNoiseShapeCoeffs[i];
+		filterOutput += noise[index] * FIRCoeffs[i];
 	}
 
 	#ifdef TEST_FILTER
@@ -282,6 +388,7 @@ FloatType Dither(FloatType inSample) {
 	#endif
 
 	FloatType preDither = inSample - filterOutput;
+	//FloatType preDither = inSample - (0.5*(fabs(filterOutput + reciprocalSignalMagnitude) - fabs(filterOutput - reciprocalSignalMagnitude)));
 
 #endif //!USE_IIR
 
@@ -313,7 +420,16 @@ private:
 	FloatType autoBlankDecayCutoff;	// threshold at which ditherScaleFactor is set to zero during active blanking
 	std::mt19937 randGenerator; // Mersenne Twister - one of the best random number algorithms available
 	std::uniform_int_distribution<int> dist; // random number distribution
-	static const int randMax = 32767; /*16777215; // 2^24 - 1 */
+	static const int randMax = 16777215; // 2^24 - 1 */
+	unsigned int signalBits;
+	FloatType ditherBits;
+	FilterParams selectedFilter;
+
+	// Auto-Blanking parameters:
+	bool bAutoBlankingEnabled;
+	FloatType autoBlankLevelThreshold;				// input signals below this threshold are considered zero
+	FloatType autoBlankTimeThreshold;				// number of zero samples before activating blanking
+	const FloatType autoBlankDecayFactor = (FloatType)0.9995;	// dither level will decrease by this factor for each sample when blanking is active
 	
 #ifdef USE_IIR
 	// IIR Filter-related stuff:
@@ -322,149 +438,20 @@ private:
 #else	
 	// FIR Filter-related stuff:
 	int currentIndex;
-	FloatType noise[FIR_NOISE_SHAPING_FILTER_SIZE]; // (circular) buffer for noise history
+	FloatType FIRCoeffs[MAX_FIR_FILTER_SIZE];
+	int FIRLength;
+	FloatType noise[MAX_FIR_FILTER_SIZE]; // (circular) buffer for noise history
 #endif
-};
-
-typedef enum {
-	iir,
-	fir
-} FilterType;
-
-typedef struct {
-	const char* name;
-	FilterType type;
-	int intendedSampleRate;
-	int N;
-	const double* coeffs;
-} FilterParams;
-
-//////////////////////////
-//
-// Filter Coefficients
-//
-//////////////////////////
-
-// Psychoacoustically Optimal Noise Shaping:
-// this filter is the "F-Weighted" noise filter described by Wannamaker(*).
-// It is designed to produce minimum audibility:
-
-const double wan3[3] = {
-	/*
-	1.623,
-	-0.982,
-	0.109
-	*/
-
-	0.916014598760224, -0.554236805904214,  0.061519156663502
-
-};
-
-const double wan9[9] = {
-	// 9-tap:
-	/*
-	2.412,
-	-3.370,
-	3.937,
-	-4.174,
-	3.353,
-	-2.205,
-	1.281,
-	-0.569,
-	0.0847
-	*/
-
-	//normalized
-	0.481319388145356, -0.672490189904582,  0.785636165476065,
-	-0.832929985953034,  0.669097806157289, -0.440012127222434,
-	0.255626092957795, -0.113545079541753,  0.016902053140925
-};
-
-const double wan24[24] = {
-
-	0.514957949278981, -0.707231224942256,  0.792298950922098,
-	-0.782725058134344,  0.543526529766033, -0.246916297818599,
-	0.024838892281917,  0.110623443620278, -0.161339968204987,
-	0.110330813502457, -0.040696257820323, -0.009410889845009,
-	0.032265323579584, -0.032554508456871,  0.01642992144958 ,
-	-0.00259900332752 , -0.00454922479706 ,  0.005433144321457,
-	-0.003471295165116,  0.000958853506002,  0.000188626919214,
-	-0.000387374232494,  0.000166663510812, -0.000027561924269
-
-	//24-tap (needs normalization):
-	/*
-	2.391510,
-	-3.284444,
-	3.679506,
-	-3.635044,
-	2.524185,
-	-1.146701,
-	0.115354,
-	0.513745,
-	-0.749277,
-	0.512386,
-	-0.188997,
-	-0.043705,
-	0.149843,
-	-0.151186,
-	0.076302,
-	-0.012070,
-	-0.021127,
-	0.025232,
-	-0.016121,
-	0.004453,
-	0.000876,
-	-0.001799,
-	0.000774,
-	-0.000128
-	*/
-
-
-
-};
-
-const double highShib44[20] = { // High-Shibata 44k (20 taps)
-	/*
-	3.0259189605712890625, -6.0268716812133789062,   9.195003509521484375,
-	-11.824929237365722656, 12.767142295837402344, -11.917946815490722656,
-	9.1739168167114257812,  -5.3712320327758789062, 1.1393624544143676758,
-	2.4484779834747314453,  -4.9719839096069335938,   6.0392003059387207031,
-	-5.9359521865844726562,  4.903278350830078125,   -3.5527443885803222656,
-	2.1909697055816650391, -1.1672389507293701172,  0.4903914332389831543,
-	-0.16519790887832641602,  0.023217858746647834778
-	*/
-
-	0.210994777646055, -0.420248680433543,  0.64115984143207 ,
-	-0.824542344864141,  0.890242066951182, -0.83102838215377 ,
-	0.639689484122861, -0.374531480587619,  0.07944678322847 ,
-	0.170730305215106, -0.346692245607667,  0.421108345040065,
-	-0.41390894073698 ,  0.341901464927132, -0.247729870518492,
-	0.15277447013028 , -0.081390587810871,  0.034194581138503,
-	-0.011519110890133,  0.001618961712954
-	
-
-};
-
-FilterParams filterList[] = {
-	{"Wannamaker 3-tap", fir, 44100, 3, wan3},
-	{"Wannamaker 9-tap", fir, 44100, 9, wan9},
-	{"Wannamaker 24-tap", fir, 44100, 24, wan24},
-	{"High Shibata 44k", fir, 44100, 20, highShib44}
-};
-
-const double FIRNoiseShapeCoeffs[FIR_NOISE_SHAPING_FILTER_SIZE] = { // * 0.199551985135
-
-	0.210994777646055, -0.420248680433543,  0.64115984143207 ,
-	-0.824542344864141,  0.890242066951182, -0.83102838215377 ,
-	0.639689484122861, -0.374531480587619,  0.07944678322847 ,
-	0.170730305215106, -0.346692245607667,  0.421108345040065,
-	-0.41390894073698 ,  0.341901464927132, -0.247729870518492,
-	0.15277447013028 , -0.081390587810871,  0.034194581138503,
-	-0.011519110890133,  0.001618961712954
 };
 
 // *Psychoacoustically Optimal Noise Shaping
 // Robert. A. Wannamaker
 // Journal of the Audio Engineering Society 40(7 / 8) : 611 - 620 · July 1992
+
+// **Minimally Audible Noise Shaping
+// STANLEY P. LIPSHITZ,JOHN VANDERKOOY, ROBERT A. WANNAMAKER
+// J.AudioEng.Soc.,Vol.39,No.11,1991November
+
+
 
 #endif // !DITHERER_H
