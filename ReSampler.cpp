@@ -691,12 +691,15 @@ bool Convert(const conversionInfo<FloatType>& ci)
 	}
 
 	FloatType PeakOutputSample;
+	bool bClippingDetected;
 	SndfileHandle* pOutFile;
-	//
+
 	START_TIMER();
 
 	do { // clipping detection loop (repeat if clipping detected)
-
+		
+		bClippingDetected = false;
+		
 		try { // Open output file:
 
 			  // pOutFile needs to be dynamically allocated, because the only way to close file is to go out of scope 
@@ -935,19 +938,32 @@ bool Convert(const conversionInfo<FloatType>& ci)
 		delete pOutFile; // Close output file
 
 		// Test for clipping:
-		if (PeakOutputSample > ci.Limit) { // Clipping !
 
-			FloatType GainAdjustment;
-
-			if (ci.bDither) {
-				FloatType DitherLevel = pow(2, ci.DitherAmount - 1) / pow(2, signalBits - 1);
-				// take Ditherlevel out of calculations, as dither is NOT subject to gain control:
-				GainAdjustment = (ci.Limit - DitherLevel) / (PeakOutputSample - DitherLevel);
+		FloatType GainAdjustment;
+		
+		if (ci.bDither) {
+			
+			FloatType peakPreDitherLevel = 0.0;
+			for (auto& ditherer : Ditherers) {
+				peakPreDitherLevel = 
+					fmax(ditherer.getPeakInputLevel(), 
+					peakPreDitherLevel); // peak signal level presented to input of Ditherers
+				ditherer.reset();
 			}
 
-			else
+			if (peakPreDitherLevel > ci.Limit) {
+				bClippingDetected = true;
+				GainAdjustment = ci.Limit / peakPreDitherLevel;
+			}
+		}
+		else {
+			if (PeakOutputSample > ci.Limit) {
+				bClippingDetected = true;
 				GainAdjustment = ci.Limit / PeakOutputSample;
+			}
+		}
 
+		if (bClippingDetected) {
 			Gain *= GainAdjustment;
 			std::cout << "\nClipping detected !" << std::endl;
 			if (!ci.disableClippingProtection) {
@@ -956,7 +972,7 @@ bool Convert(const conversionInfo<FloatType>& ci)
 			}
 		}
 
-	} while ((PeakOutputSample > ci.Limit) && !ci.disableClippingProtection);
+	} while (!ci.disableClippingProtection && bClippingDetected);
 
 	STOP_TIMER();
 	return true;

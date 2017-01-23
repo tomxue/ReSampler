@@ -226,6 +226,7 @@
       <AdditionalOptions>/favor:INTEL64 %(AdditionalOptions)</AdditionalOptions>
       <CompileAs>CompileAsCpp</CompileAs>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <AssemblerOutput>AssemblyAndSourceCode</AssemblerOutput>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

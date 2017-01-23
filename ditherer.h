@@ -13,7 +13,7 @@
 #define USE_IIR // if defined, use IIR Filter for noise shaping, otherwise use FIR. 
 #define DITHER_TOPOLOGY 1
 //#define TEST_FILTER // if defined, this will result in ditherer outputing the tpdf noise only. (Used for evaluating filters.)
-#define DITHER_USE_SATURATION  // restrict output amplitude to +/- 0.999 (guards against excessive dither levels causing clipping)
+#define DITHER_USE_SATURATION  // restrict output amplitude to +/- 1.0 (guards against excessive dither levels causing clipping)
 // --- //
 
 #define MAX_FIR_FILTER_SIZE 24
@@ -135,15 +135,16 @@ public:
 	// input and output samples are of type FloatType
 
 	Ditherer(unsigned int signalBits, FloatType ditherBits, bool bAutoBlankingEnabled, int seed, FilterID filterID = ImpEWeighted44k) :
-		signalBits(signalBits), 
+		signalBits(signalBits),
 		ditherBits(ditherBits),
 		bAutoBlankingEnabled(bAutoBlankingEnabled),
 		selectedFilter(filterList[filterID]),
 		seed(seed),
 		Z1(0),
-		Z2(0)
-		,randGenerator(seed)		// initialize (seed) RNG
-		,dist(0,randMax)		// set the range of the random number distribution
+		Z2(0),
+		randGenerator(seed),		// initialize (seed) RNG
+		dist(0, randMax),		// set the range of the random number distribution
+		peakInputLevel(0.0)
 	{
 
 #ifdef USE_IIR
@@ -196,6 +197,7 @@ public:
 #endif // USE_IIR	
 		signalMagnitude = static_cast<FloatType>((1 << (signalBits - 1)) - 1); // note the -1 : match 32767 scaling factor for 16 bit !
 		reciprocalSignalMagnitude = 1.0 / signalMagnitude; // value of LSB in target format
+		outputLimit = 1.0;
 		maxDitherScaleFactor = (pow(2,ditherBits-1) * reciprocalSignalMagnitude) / randMax;
 		oldRandom = newRandom = 0;
 
@@ -212,6 +214,26 @@ public:
 		zeroCount = 0;
 		
 	} // Ends Constructor 
+
+	void reset() {
+		randGenerator.seed(seed);
+		peakInputLevel = 0.0;
+		oldRandom = 0;
+		newRandom = 0;
+		Z1 = 0;
+		Z2 = 0;
+		zeroCount = 0;
+		if (bAutoBlankingEnabled) {	// initial state: silence
+			ditherScaleFactor = 0.0;
+		}
+		else {	// initial state: dithering
+			ditherScaleFactor = maxDitherScaleFactor;
+		}
+	}
+
+	FloatType getPeakInputLevel() const {
+		return peakInputLevel;
+	}
 
 #if (DITHER_TOPOLOGY == 1)
 
@@ -236,6 +258,8 @@ public:
 
 
 FloatType Dither(FloatType inSample) {
+
+	peakInputLevel = fmax(fabs(inSample), peakInputLevel);
 
 	// Auto-Blanking
 	if (bAutoBlankingEnabled) {
@@ -303,7 +327,7 @@ FloatType Dither(FloatType inSample) {
 	
 
 #ifdef DITHER_USE_SATURATION
-	return 0.5*(fabs(postQuantize + 1.0) - fabs(postQuantize - 1.0)); // branchless clipping - restrict to +/- 1.0 (0.0000 dB)
+	return 0.5*(fabs(postQuantize + outputLimit) - fabs(postQuantize - outputLimit)); // branchless min()
 #endif
 	return postQuantize;
 } // ends function: Dither()
@@ -331,6 +355,8 @@ FloatType Dither(FloatType inSample) {
 //
 
 FloatType Dither(FloatType inSample) {
+
+	peakInputLevel = fmax(fabs(inSample), peakInputLevel);
 
 	// Auto-Blanking
 	if (bAutoBlankingEnabled) {
@@ -424,6 +450,8 @@ private:
 	unsigned int signalBits;
 	FloatType ditherBits;
 	FilterParams selectedFilter;
+	FloatType peakInputLevel;
+	FloatType outputLimit;
 
 	// Auto-Blanking parameters:
 	bool bAutoBlankingEnabled;
@@ -451,7 +479,5 @@ private:
 // **Minimally Audible Noise Shaping
 // STANLEY P. LIPSHITZ,JOHN VANDERKOOY, ROBERT A. WANNAMAKER
 // J.AudioEng.Soc.,Vol.39,No.11,1991November
-
-
 
 #endif // !DITHERER_H
