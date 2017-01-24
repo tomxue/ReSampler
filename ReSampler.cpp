@@ -937,38 +937,23 @@ bool Convert(const conversionInfo<FloatType>& ci)
 
 		delete pOutFile; // Close output file
 
-		// Test for clipping:
-
-		FloatType GainAdjustment;
-		
-		if (ci.bDither) {
+		// Test for clipping:	
+		if (PeakOutputSample > ci.Limit) {
+			bClippingDetected = true;
+			FloatType GainAdjustment = ci.Limit / PeakOutputSample;
 			
-			FloatType peakPreDitherLevel = 0.0;
-			for (auto& ditherer : Ditherers) {
-				peakPreDitherLevel = 
-					fmax(ditherer.getPeakInputLevel(), 
-					peakPreDitherLevel); // peak signal level presented to input of Ditherers
-				ditherer.reset();
-			}
-
-			if (peakPreDitherLevel > ci.Limit) {
-				bClippingDetected = true;
-				GainAdjustment = ci.Limit / peakPreDitherLevel;
-			}
-		}
-		else {
-			if (PeakOutputSample > ci.Limit) {
-				bClippingDetected = true;
-				GainAdjustment = ci.Limit / PeakOutputSample;
-			}
-		}
-
-		if (bClippingDetected) {
 			Gain *= GainAdjustment;
 			std::cout << "\nClipping detected !" << std::endl;
 			if (!ci.disableClippingProtection) {
 				std::cout << "Re-doing with " << 20 * log10(GainAdjustment) << " dB gain adjustment" << std::endl;
 				infile.seek(0i64, SEEK_SET);
+			}
+
+			if (ci.bDither) {
+				for (auto& ditherer : Ditherers) {
+					ditherer.adjustGain(GainAdjustment);
+					ditherer.reset();
+				}
 			}
 		}
 

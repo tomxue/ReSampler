@@ -13,7 +13,7 @@
 #define USE_IIR // if defined, use IIR Filter for noise shaping, otherwise use FIR. 
 #define DITHER_TOPOLOGY 1
 //#define TEST_FILTER // if defined, this will result in ditherer outputing the tpdf noise only. (Used for evaluating filters.)
-#define DITHER_USE_SATURATION  // restrict output amplitude to +/- 1.0 (guards against excessive dither levels causing clipping)
+//#define DITHER_USE_SATURATION  // restrict output amplitude to +/- 1.0 (guards against excessive dither levels causing clipping)
 // --- //
 
 #define MAX_FIR_FILTER_SIZE 24
@@ -144,7 +144,7 @@ public:
 		Z2(0),
 		randGenerator(seed),		// initialize (seed) RNG
 		dist(0, randMax),		// set the range of the random number distribution
-		peakInputLevel(0.0)
+		gain(1.0)
 	{
 
 #ifdef USE_IIR
@@ -215,9 +215,13 @@ public:
 		
 	} // Ends Constructor 
 
+	void adjustGain(FloatType factor) {
+		gain *= factor;
+		maxDitherScaleFactor = gain * (pow(2, ditherBits - 1) * reciprocalSignalMagnitude) / randMax;
+	}
+
 	void reset() {
 		randGenerator.seed(seed);
-		peakInputLevel = 0.0;
 		oldRandom = 0;
 		newRandom = 0;
 		Z1 = 0;
@@ -231,17 +235,13 @@ public:
 		}
 	}
 
-	FloatType getPeakInputLevel() const {
-		return peakInputLevel;
-	}
-
 #if (DITHER_TOPOLOGY == 1)
 
 // The Dither function ///////////////////////////////////////////////////////
 
 // 1. Ditherer Topology:
 //
-//          tpdfNoise ------>[filter]
+//          tpdfNoise --[G]-->[filter]
 //                               |
 //                    preDither  |    +-----> preQuantize
 //                        ^      v    |
@@ -258,8 +258,6 @@ public:
 
 
 FloatType Dither(FloatType inSample) {
-
-	peakInputLevel = fmax(fabs(inSample), peakInputLevel);
 
 	// Auto-Blanking
 	if (bAutoBlankingEnabled) {
@@ -342,7 +340,7 @@ FloatType Dither(FloatType inSample) {
 //
 //							 tpdfNoise
 //                               |
-//                    preDither  |
+//                    preDither [G]
 //                         ^     |   +----------> preQuantize
 //                         |     v   |               
 //   inSample ----->+( )---+--->(+)--+->[Q]-->--+------> postQuantize
@@ -355,8 +353,6 @@ FloatType Dither(FloatType inSample) {
 //
 
 FloatType Dither(FloatType inSample) {
-
-	peakInputLevel = fmax(fabs(inSample), peakInputLevel);
 
 	// Auto-Blanking
 	if (bAutoBlankingEnabled) {
@@ -450,7 +446,7 @@ private:
 	unsigned int signalBits;
 	FloatType ditherBits;
 	FilterParams selectedFilter;
-	FloatType peakInputLevel;
+	FloatType gain;
 	FloatType outputLimit;
 
 	// Auto-Blanking parameters:
