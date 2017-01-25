@@ -305,7 +305,6 @@ FloatType Dither(FloatType inSample) {
 			index = 0;
 		} 
 		shapedNoise += noise[index] * FIRCoeffs[i];
-		//shapedNoise = (0.5*(fabs(shapedNoise + reciprocalSignalMagnitude) - fabs(shapedNoise - reciprocalSignalMagnitude))); // strict
 	}
 	
 #endif
@@ -408,7 +407,6 @@ FloatType Dither(FloatType inSample) {
 	#endif
 
 	FloatType preDither = inSample - filterOutput;
-	//FloatType preDither = inSample - (0.5*(fabs(filterOutput + reciprocalSignalMagnitude) - fabs(filterOutput - reciprocalSignalMagnitude)));
 
 #endif //!USE_IIR
 
