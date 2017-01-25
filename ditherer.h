@@ -130,9 +130,11 @@ class Ditherer
 {
 public:
 	// Constructor:
-	// signalBits is the number of bits of the target bitformat
-	// ditherBits is the number of bits of dither to add, and doesn't have to be an integer
-	// input and output samples are of type FloatType
+	// signalBits: number of bits of the target bitformat
+	// ditherBits: number of bits of dither to add, and doesn't have to be an integer
+	// bAutoBlankingEnabled: if true, enable auto-blanking of dither (on Silence)
+	// seed: seed for PRNG
+	// filterID: noise-shaping filter to use
 
 	Ditherer(unsigned int signalBits, FloatType ditherBits, bool bAutoBlankingEnabled, int seed, FilterID filterID = ImpEWeighted44k) :
 		signalBits(signalBits),
@@ -179,10 +181,6 @@ public:
 				-1.2511963408503206,
 				0.5328999999999999);
 		}
-
-		// super-slick HPF (1 biquad):
-		// f1.setCoeffs(0.008978326844454853, -0.017956653688909707, 0.008978326844454853, 1.6865949922346122, 0.7224999999999999);
-		
 #else 
 		// FIR-related stuff:
 		const FloatType scale = 1.0;
