@@ -89,6 +89,7 @@ template<typename FloatType> struct conversionInfo
 	int OutputFormat;
 	bool bDither;
 	FloatType DitherAmount;
+	int ditherProfileID;
 	bool bAutoBlankingEnabled;
 	bool bMinPhase;
 	bool bSetFlacCompression;

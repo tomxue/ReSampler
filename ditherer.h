@@ -62,7 +62,6 @@ typedef struct {
 //
 //////////////////////////
 
-
 const double noiseShaperPassThrough[1] = {
 	1
 };
@@ -127,12 +126,12 @@ DitherProfile ditherProfileList[] = {
 
 	{flat, "flat tpdf", flatTPDF, bypass, 44100, 1, noiseShaperPassThrough, false},
 	{sloped,"sloped tpdf", slopedTPDF, bypass, 44100, 1, noiseShaperPassThrough, true },
-	{standard, "Standard", slopedTPDF, cascadedBiquad, 44100, 1, noiseShaperPassThrough, true},
-	{Wannamaker3tap, "Wannamaker 3-tap",slopedTPDF, fir, 44100, 3, wan3, true},
-	{Wannamaker9tap, "Wannamaker 9-tap",slopedTPDF, fir, 44100, 9, wan9, true},
-	{Wannamaker24tap, "Wannamaker 24-tap",slopedTPDF, fir, 44100, 24, wan24, true},
+	{standard, "standard", slopedTPDF, cascadedBiquad, 44100, 1, noiseShaperPassThrough, true},
+	{Wannamaker3tap, "Wannamaker 3-tap",flatTPDF, fir, 44100, 3, wan3, true},
+	{Wannamaker9tap, "Wannamaker 9-tap",flatTPDF, fir, 44100, 9, wan9, true},
+	{Wannamaker24tap, "Wannamaker 24-tap",flatTPDF, fir, 44100, 24, wan24, true},
 	{HighShibata44k, "High Shibata 44k",flatTPDF, fir, 44100, 20, highShib44, true},
-	{ModEWeighted44k, "Modified E-Weighted",slopedTPDF, fir, 44100, 9, modew44, true},
+	{ModEWeighted44k, "Modified E-Weighted",flatTPDF, fir, 44100, 9, modew44, true},
 	{Lipshitz44k, "Lipshitz",flatTPDF, fir, 44100, 5, lips44, true},
 	{ImpEWeighted44k, "Improved E-Weighted",flatTPDF, fir, 44100, 9, impew44, true},
 	{rpdf,"flat rectangular pdf", RPDF, bypass, 44100, 1, noiseShaperPassThrough, false}

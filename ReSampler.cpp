@@ -95,6 +95,11 @@ int main(int argc, char * argv[])
 			DitherAmount = 1.0;
 	}
 
+	// parse --flat-tpdf option
+	DitherProfileID ditherProfileID = findCmdlineOption(argv, argv + argc, "--flat-tpdf") ? 
+		flat:
+		standard;
+
 	// parse auto-blanking option (for dithering):
 	bool bAutoBlankingEnabled = findCmdlineOption(argv, argv + argc, "--autoblank");
 
@@ -284,6 +289,7 @@ int main(int argc, char * argv[])
 		ci.OutputFormat = outFileFormat;
 		ci.bDither = bDither;
 		ci.DitherAmount = DitherAmount;
+		ci.ditherProfileID = ditherProfileID;
 		ci.bAutoBlankingEnabled = bAutoBlankingEnabled;
 		ci.bMinPhase = bMinPhase;
 		ci.bSetFlacCompression = bSetFlacCompression;
@@ -314,6 +320,7 @@ int main(int argc, char * argv[])
 		ci.OutputFormat = outFileFormat;
 		ci.bDither = bDither;
 		ci.DitherAmount = DitherAmount;
+		ci.ditherProfileID = ditherProfileID;
 		ci.bAutoBlankingEnabled = bAutoBlankingEnabled;
 		ci.bMinPhase = bMinPhase;
 		ci.bSetFlacCompression = bSetFlacCompression;
@@ -663,7 +670,7 @@ bool Convert(const conversionInfo<FloatType>& ci)
 	// confirm dithering options for user:
 	if (ci.bDither) {
 		auto prec = std::cout.precision();
-		std::cout << "Generating " << std::setprecision(2) << ci.DitherAmount << " bits of dither for " << signalBits << "-bit output format";
+		std::cout << "Generating " << std::setprecision(2) << ci.DitherAmount << " bits of " << ditherProfileList[ci.ditherProfileID].name << " dither for " << signalBits << "-bit output format";
 		std::cout.precision(prec);
 		if (ci.bAutoBlankingEnabled)
 			std::cout << ", with auto-blanking";
@@ -678,7 +685,7 @@ bool Convert(const conversionInfo<FloatType>& ci)
 		// to-do: explore other seed-generation options (remote possibility of overlap)
 		// maybe use a single global RNG ? 
 		// or use discard/jump-ahead ... to ensure parallel streams are sufficiently "far away" from each other ?
-		Ditherers.emplace_back(signalBits, ci.DitherAmount, ci.bAutoBlankingEnabled, n + seed );
+		Ditherers.emplace_back(signalBits, ci.DitherAmount, ci.bAutoBlankingEnabled, n + seed, static_cast<DitherProfileID>(ci.ditherProfileID));
 	}
 
 	// Calculate initial gain:
@@ -910,8 +917,6 @@ bool Convert(const conversionInfo<FloatType>& ci)
 						DecimationIndex++;
 						if (DecimationIndex == F.denominator)
 							DecimationIndex = 0;
-
-						// To-do: showProgress();
 					} // ends loop over ii
 				} // ends loop over s
 
