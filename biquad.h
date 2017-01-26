@@ -34,7 +34,11 @@ public:
 		Biquad::b2 = b2;
 	}
 
-    
+	void reset() {
+		z1 = 0.0; 
+		z2 = 0.0;
+	}
+
 protected:
     FloatType a0, a1, a2, b1, b2;
     double z1, z2;

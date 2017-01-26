@@ -10,12 +10,8 @@
 #define DITHERER_H 1
 
 // configuration:
-#define USE_IIR // if defined, use IIR Filter for noise shaping, otherwise use FIR. 
 #define DITHER_TOPOLOGY 1
 //#define TEST_FILTER // if defined, this will result in ditherer outputing the tpdf noise only. (Used for evaluating filters.)
-//#define DITHER_USE_SATURATION  // restrict output amplitude to +/- 1.0 (guards against excessive dither levels causing clipping)
-// --- //
-
 #define MAX_FIR_FILTER_SIZE 24
 
 #include <cmath>
@@ -23,29 +19,42 @@
 #include <random>
 
 typedef enum {
-	iir,
+	bypass,
+	cascadedBiquad,
 	fir
 } FilterType;
 
 typedef enum {
+	flatTPDF,
+	slopedTPDF,
+	RPDF,
+	GPDF
+} NoiseGeneratorType;
+
+typedef enum {
 	flat,
+	sloped,
+	standard,
 	Wannamaker3tap,
 	Wannamaker9tap,
 	Wannamaker24tap,
 	HighShibata44k,
 	ModEWeighted44k,
 	Lipshitz44k,
-	ImpEWeighted44k
-} FilterID;
+	ImpEWeighted44k,
+	rpdf
+} DitherProfileID;
 
 typedef struct {
-	FilterID id;
+	DitherProfileID id;
 	const char* name;
-	FilterType type;
+	NoiseGeneratorType noiseGeneratorType;
+	FilterType filterType;
 	int intendedSampleRate;
 	int N;
 	const double* coeffs;
-} FilterParams;
+	bool bUseFeedback;
+} DitherProfile;
 
 //////////////////////////
 //
@@ -54,7 +63,7 @@ typedef struct {
 //////////////////////////
 
 
-const double passthrough[1] = {
+const double noiseShaperPassThrough[1] = {
 	1
 };
 
@@ -114,15 +123,19 @@ const double highShib44[20] = { // High-Shibata 44k (20 taps)
 	-0.011519110890133,  0.001618961712954
 };
 
-FilterParams filterList[] = {
-	{flat, "flat tpdf", fir, 44100, 1, passthrough},
-	{Wannamaker3tap, "Wannamaker 3-tap", fir, 44100, 3, wan3},
-	{Wannamaker9tap, "Wannamaker 9-tap", fir, 44100, 9, wan9},
-	{Wannamaker24tap, "Wannamaker 24-tap", fir, 44100, 24, wan24},
-	{HighShibata44k, "High Shibata 44k", fir, 44100, 20, highShib44},
-	{ModEWeighted44k, "Modified E-Weighted", fir, 44100, 9, modew44},
-	{Lipshitz44k, "Lipshitz", fir, 44100, 5, lips44},
-	{ImpEWeighted44k, "Improved E-Weighted", fir, 44100, 9, impew44}
+DitherProfile ditherProfileList[] = {
+
+	{flat, "flat tpdf", flatTPDF, bypass, 44100, 1, noiseShaperPassThrough, false},
+	{sloped,"sloped tpdf", slopedTPDF, bypass, 44100, 1, noiseShaperPassThrough, true },
+	{standard, "Standard", slopedTPDF, cascadedBiquad, 44100, 1, noiseShaperPassThrough, true},
+	{Wannamaker3tap, "Wannamaker 3-tap",slopedTPDF, fir, 44100, 3, wan3, true},
+	{Wannamaker9tap, "Wannamaker 9-tap",slopedTPDF, fir, 44100, 9, wan9, true},
+	{Wannamaker24tap, "Wannamaker 24-tap",slopedTPDF, fir, 44100, 24, wan24, true},
+	{HighShibata44k, "High Shibata 44k",flatTPDF, fir, 44100, 20, highShib44, true},
+	{ModEWeighted44k, "Modified E-Weighted",slopedTPDF, fir, 44100, 9, modew44, true},
+	{Lipshitz44k, "Lipshitz",flatTPDF, fir, 44100, 5, lips44, true},
+	{ImpEWeighted44k, "Improved E-Weighted",flatTPDF, fir, 44100, 9, impew44, true},
+	{rpdf,"flat rectangular pdf", RPDF, bypass, 44100, 1, noiseShaperPassThrough, false}
 };
 
 template<typename FloatType>
@@ -136,21 +149,55 @@ public:
 	// seed: seed for PRNG
 	// filterID: noise-shaping filter to use
 
-	Ditherer(unsigned int signalBits, FloatType ditherBits, bool bAutoBlankingEnabled, int seed, FilterID filterID = ImpEWeighted44k) :
+	Ditherer(unsigned int signalBits, FloatType ditherBits, bool bAutoBlankingEnabled, int seed, DitherProfileID ditherProfileID = standard) :
 		signalBits(signalBits),
 		ditherBits(ditherBits),
 		bAutoBlankingEnabled(bAutoBlankingEnabled),
-		selectedFilter(filterList[filterID]),
+		selectedDitherProfile(ditherProfileList[ditherProfileID]),
 		seed(seed),
 		Z1(0),
-		Z2(0),
 		randGenerator(seed),		// initialize (seed) RNG
 		dist(0, randMax),		// set the range of the random number distribution
-		gain(1.0)
+		gain(1.0),
+		bUseErrorFeedback(ditherProfileList[ditherProfileID].bUseFeedback)
 	{
+		// general parameters:
+		signalMagnitude = static_cast<FloatType>((1 << (signalBits - 1)) - 1); // note the -1 : match 32767 scaling factor for 16 bit !
+		reciprocalSignalMagnitude = 1.0 / signalMagnitude; // value of LSB in target format
+		outputLimit = 1.0;
+		maxDitherScaleFactor = (pow(2, ditherBits - 1) * reciprocalSignalMagnitude) / randMax;
+		oldRandom = 0;
 
-#ifdef USE_IIR
-		//// IIR-related stuff:
+		// set-up noise generator:
+		switch (selectedDitherProfile.noiseGeneratorType) {
+		case flatTPDF:
+			noiseGenerator = &Ditherer::noiseGeneratorFlatTPDF;
+			break;
+		case RPDF:
+			noiseGenerator = &Ditherer::noiseGeneratorRPDF;
+			break;
+		case GPDF:
+			noiseGenerator = &Ditherer::noiseGeneratorGPDF;
+			break;
+		case slopedTPDF:
+		default:
+			noiseGenerator = &Ditherer::noiseGeneratorSlopedTPDF;
+		}
+
+		// set-up filter type:
+		switch (selectedDitherProfile.filterType) {
+		case bypass:
+			noiseShapingFilter = &Ditherer::noiseShaperPassThrough;
+			break;
+		case fir:
+			noiseShapingFilter = &Ditherer::noiseShaperFIR;
+			break;
+		case cascadedBiquad:
+		default:
+			noiseShapingFilter = &Ditherer::noiseShaperCascadedBiquad;
+		}
+
+		//// IIR-specific stuff:
 		if (ditherBits < 1.5)
 		{
 			// IIR noise-shaping filter (2 biquads) - flatter response; more energy in spectrum
@@ -181,24 +228,17 @@ public:
 				-1.2511963408503206,
 				0.5328999999999999);
 		}
-#else 
-		// FIR-related stuff:
+
+		// FIR-specific stuff:
 		const FloatType scale = 1.0;
-		FIRLength = selectedFilter.N;
+		FIRLength = selectedDitherProfile.N;
 		for (int n = 0; n < FIRLength; ++n) {
-			FIRCoeffs[n] = scale * selectedFilter.coeffs[n];
-		//	std::cout << FIRCoeffs[n] << std::endl;
+			FIRCoeffs[n] = scale * selectedDitherProfile.coeffs[n];
 		}
 		currentIndex = FIRLength - 1;
 		memset(noise, 0, MAX_FIR_FILTER_SIZE * sizeof(FloatType));
 
-#endif // USE_IIR	
-		signalMagnitude = static_cast<FloatType>((1 << (signalBits - 1)) - 1); // note the -1 : match 32767 scaling factor for 16 bit !
-		reciprocalSignalMagnitude = 1.0 / signalMagnitude; // value of LSB in target format
-		outputLimit = 1.0;
-		maxDitherScaleFactor = (pow(2,ditherBits-1) * reciprocalSignalMagnitude) / randMax;
-		oldRandom = newRandom = 0;
-
+		// set-up Auto-blanking:
 		if (bAutoBlankingEnabled) {	// initial state: silence
 			ditherScaleFactor = 0.0;
 		}
@@ -219,11 +259,15 @@ public:
 	}
 
 	void reset() {
+		// reset filters
+		f1.reset();
+		f2.reset();
+		currentIndex = FIRLength - 1;
+		memset(noise, 0, MAX_FIR_FILTER_SIZE * sizeof(FloatType));
+		// re-seed PRNG
 		randGenerator.seed(seed);
 		oldRandom = 0;
-		newRandom = 0;
 		Z1 = 0;
-		Z2 = 0;
 		zeroCount = 0;
 		if (bAutoBlankingEnabled) {	// initial state: silence
 			ditherScaleFactor = 0.0;
@@ -248,12 +292,8 @@ public:
 //                    ^   +-------------->-( )+<--+
 //                    |                     |
 //                    +-------[z^-1]---<----+
-//                    |  1.00               |
-//                    +-------[z^-2]---<----+
-//                      -0.043
-//
-//
-
+//                      1.00               
+//                   
 
 FloatType Dither(FloatType inSample) {
 
@@ -273,57 +313,18 @@ FloatType Dither(FloatType inSample) {
 		}
 	} // ends auto-blanking
 
-	newRandom = dist(randGenerator);
-	
-	FloatType tpdfNoise = static_cast<FloatType>(newRandom - oldRandom);
-
-#ifdef USE_IIR
-	oldRandom = newRandom; // 
-#else
-	oldRandom = dist(randGenerator);
-#endif
-
-	FloatType preDither = inSample -Z1 + Z2*0.043;
-
-#ifdef USE_IIR
-	// IIR Noise Shaping:
-	FloatType shapedNoise = ditherScaleFactor * f2.filter(f1.filter(tpdfNoise)); // filter the triangular noise with two cascaded biQuads 																				 
-#else
-	// FIR Noise Shaping:
-	
-	// put tpdf noise into history buffer (noise goes in "backwards"):
-	noise[currentIndex--] = ditherScaleFactor * tpdfNoise;
-	if (currentIndex < 0) {
-		currentIndex = FIRLength - 1;
-	}
-
-	// get result from FIR:
-	FloatType shapedNoise = 0.0;
-	int index = currentIndex;
-	for (int i = 0; i < FIRLength; ++i) {
-		if (++index == FIRLength) {
-			index = 0;
-		} 
-		shapedNoise += noise[index] * FIRCoeffs[i];
-	}
-	
-#endif
+	FloatType tpdfNoise = (this->*noiseGenerator)() * ditherScaleFactor;
+	FloatType preDither = bUseErrorFeedback ? inSample - Z1 : inSample;
+	FloatType shapedNoise = (this->*noiseShapingFilter)(tpdfNoise) ;
 
 #ifdef TEST_FILTER
 	return shapedNoise; // (Output Only Filtered Noise - discard signal)
 #endif
 
-	// Calculate the quantization error. This needs to exactly model the behavior of the I/O library writing samples to outfile, 
-	// otherwise nasty quantization distortion will result.
 	FloatType preQuantize = preDither + shapedNoise;
 	FloatType postQuantize = reciprocalSignalMagnitude * round(signalMagnitude * preQuantize); // quantize
-	Z2 = Z1;
-	Z1 = postQuantize - preDither; // calculate error 
 	
-
-#ifdef DITHER_USE_SATURATION
-	return 0.5*(fabs(postQuantize + outputLimit) - fabs(postQuantize - outputLimit)); // branchless min()
-#endif
+	Z1 = postQuantize - preDither; // calculate error 
 	return postQuantize;
 } // ends function: Dither()
 
@@ -367,60 +368,18 @@ FloatType Dither(FloatType inSample) {
 		}
 	} // ends auto-blanking
 
-	newRandom = dist(randGenerator);
-	FloatType tpdfNoise = ditherScaleFactor * static_cast<FloatType>(newRandom - oldRandom);
-	oldRandom = newRandom;
+	FloatType tpdfNoise = (this->*noiseGenerator)() * ditherScaleFactor;
+	
+#ifdef TEST_FILTER
+	return (this->*noiseShapingFilter)(tpdfNoise); // (Output Only Filtered Noise - discard signal)
+#endif
 
-#ifdef USE_IIR
-	// IIR Filter:
-
-	#ifdef TEST_FILTER
-	return f2.filter(f1.filter(tpdfNoise)); // (Output Only Filtered Noise - discard signal)
-	#endif
-
-	FloatType preDither = inSample - f2.filter(f1.filter(Z1));
-#else
-	// FIR Filter:
-
-	#ifdef TEST_FILTER
-		Z1 = tpdfNoise;
-	#endif
-
-	// put Z1 into history buffer (goes in "backwards"):
-	noise[currentIndex--] = Z1;
-	if (currentIndex < 0) {
-		currentIndex = FIRLength - 1;
-	}
-
-	// get result from FIR:
-	FloatType filterOutput = 0.0;
-	int index = currentIndex;
-	for (int i = 0; i < FIRLength; ++i) {
-		if (++index == FIRLength) {
-			index = 0;
-		}
-		filterOutput += noise[index] * FIRCoeffs[i];
-	}
-
-	#ifdef TEST_FILTER
-		return filterOutput;
-	#endif
-
-	FloatType preDither = inSample - filterOutput;
-
-#endif //!USE_IIR
-
+	FloatType preDither = inSample - (this->*noiseShapingFilter)(Z1);
 	FloatType preQuantize, postQuantize;
 	preQuantize = preDither + tpdfNoise;
 	postQuantize = reciprocalSignalMagnitude * round(signalMagnitude * preQuantize); // quantize
 	Z1 = postQuantize - preDither;		
-
-#ifdef DITHER_USE_SATURATION
-	return (0.5*(fabs(postQuantize + 1.0) - fabs(postQuantize - 1.0))); // branchless clipping (restrict to +/- 1.0)
-#else
 	return postQuantize;
-#endif
-
 } // ends function: Dither()
 
 #endif //(DITHER_TOPOLOGY == 2)
@@ -428,9 +387,9 @@ FloatType Dither(FloatType inSample) {
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 private:
-	int oldRandom, newRandom;
+	int oldRandom;
 	int seed;
-	FloatType Z1,Z2;				// last Quantization error
+	FloatType Z1;				// last Quantization error
 	FloatType signalMagnitude;	// maximum integral value for signal target bit depth (for quantizing) 
 	FloatType reciprocalSignalMagnitude; // for normalizing quantized signal back to +/- 1.0 
 	FloatType maxDitherScaleFactor, ditherScaleFactor;	// maximum integral value for dither target bit depth
@@ -441,9 +400,12 @@ private:
 	static const int randMax = 16777215; // 2^24 - 1 */
 	unsigned int signalBits;
 	FloatType ditherBits;
-	FilterParams selectedFilter;
+	DitherProfile selectedDitherProfile;
 	FloatType gain;
+	bool bUseErrorFeedback;
 	FloatType outputLimit;
+	FloatType(Ditherer::*noiseShapingFilter)(FloatType); // function pointer to noise-shaping filter
+	FloatType(Ditherer::*noiseGenerator)(); // function pointer to noise-generator
 
 	// Auto-Blanking parameters:
 	bool bAutoBlankingEnabled;
@@ -451,17 +413,79 @@ private:
 	FloatType autoBlankTimeThreshold;				// number of zero samples before activating blanking
 	const FloatType autoBlankDecayFactor = (FloatType)0.9995;	// dither level will decrease by this factor for each sample when blanking is active
 	
-#ifdef USE_IIR
 	// IIR Filter-related stuff:
 	Biquad<double> f1;
 	Biquad<double> f2;
-#else	
+
 	// FIR Filter-related stuff:
 	int currentIndex;
 	FloatType FIRCoeffs[MAX_FIR_FILTER_SIZE];
 	int FIRLength;
 	FloatType noise[MAX_FIR_FILTER_SIZE]; // (circular) buffer for noise history
-#endif
+
+	// --- Noise-generating functions ---
+
+	// pure flat tpdf generator
+	FloatType noiseGeneratorFlatTPDF() {
+		int a = dist(randGenerator);
+		int b = dist(randGenerator);
+		return static_cast<FloatType>(a - b);
+	}
+
+	// the sloped TPDF generator re-uses the previous random number, giving it a "memory", 
+	// which is equivalent to applying a single-pole HPF with 6dB / octave response
+	// the slope is useful for providing more high-frequency emphasis (in addition to noise-shaping filter)
+	FloatType noiseGeneratorSlopedTPDF() {
+		int newRandom = dist(randGenerator);
+		FloatType tpdfNoise = static_cast<FloatType>(newRandom - oldRandom);
+		oldRandom = newRandom;
+		return tpdfNoise;
+	}
+
+	FloatType noiseGeneratorRPDF() { // rectangular PDF (single PRNG)
+		static constexpr int halfRand = (randMax + 1) >> 1;
+		return static_cast<FloatType>(halfRand - dist(randGenerator));
+	}
+
+	FloatType noiseGeneratorGPDF() { // Gaussian PDF (n PRNGs)
+		static constexpr int halfRand = (randMax + 1) >> 1;
+		const int n = 3;
+		FloatType r = 0;
+		for (int i = 0; i < n; ++i) {
+			r += dist(randGenerator);
+		}
+		
+		return static_cast<FloatType>(halfRand - r/n);
+	}
+
+	// --- Noise-shaping functions ---
+
+	FloatType noiseShaperPassThrough(FloatType x) {
+		return x;
+	}
+
+	FloatType noiseShaperCascadedBiquad(FloatType x) {
+		return f2.filter(f1.filter(x));
+	}
+
+	FloatType noiseShaperFIR(FloatType x) {
+		// put x into history buffer (goes in "backwards"):
+		noise[currentIndex--] = x;
+		if (currentIndex < 0) {
+			currentIndex = FIRLength - 1;
+		}
+
+		// get result from FIR:
+		FloatType filterOutput = 0.0;
+		int index = currentIndex;
+		for (int i = 0; i < FIRLength; ++i) {
+			if (++index == FIRLength) {
+				index = 0;
+			}
+			filterOutput += noise[index] * FIRCoeffs[i];
+		}
+		return filterOutput;
+	}
 };
 
 // *Psychoacoustically Optimal Noise Shaping

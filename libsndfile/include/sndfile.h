@@ -387,7 +387,7 @@ enum
 } ;
 
 typedef struct
-{	int			type ;
+{	int			filterType ;
 	double		level ;
 	const char	*name ;
 } SF_DITHER_INFO ;
