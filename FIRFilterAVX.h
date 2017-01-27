@@ -1,6 +1,8 @@
 #ifndef FIRFFILTER_AVX_H_
 #define FIRFFILTER_AVX_H_
 
+// FIRFilterAVX.h : AVX-specific code for FIR filtering
+
 #include <immintrin.h>
 #include <typeinfo>
 #include <cstdint>
@@ -13,8 +15,6 @@ static inline float sum8floats(__m256 x);
 static inline double sum4doubles(__m256d x);
 
 //#define USE_FMA 1
-
-// FIRFilterAVX.h : AVX-specific code for FIR filtering
 
 template <typename FloatType>
 class FIRFilter {
@@ -430,10 +430,16 @@ double FIRFilter<double>::get() {
 	for (int i = 4; i < sizeRounded4; i += 4) {
 		signal = _mm256_load_pd(Signal + Index);
 		kernel = _mm256_load_pd(Kernel + i);
+
+#ifdef USE_FMA
+		accumulator = _mm256_fmadd_pd(signal, kernel, accumulator);
+#else
 		product = _mm256_mul_pd(signal, kernel);
 		accumulator = _mm256_add_pd(product, accumulator);
+#endif
 		Index += 4;
 	}
+	
 	/*
 	output +=
 		accumulator.m256d_f64[0] +

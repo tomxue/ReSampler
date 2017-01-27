@@ -181,6 +181,7 @@ int main(int argc, char * argv[])
 
 #ifdef USE_AVX
 	std::cout << " AVX build ... ";
+
 #if defined (_MSC_VER) || defined (__INTEL_COMPILER)
 	// Verify CPU capabilities:
 	bool bAVXok = false;
@@ -203,6 +204,11 @@ int main(int argc, char * argv[])
 	}
 
 #endif // defined (_MSC_VER) || defined (__INTEL_COMPILER)
+
+#ifdef USE_FMA
+	std::cout << "\nusing FMA (Fused Multiply-Add) instruction ... ";
+#endif
+
 #endif // USE_AVX	
 
 	std::cout << std::endl;
