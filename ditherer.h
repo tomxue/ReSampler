@@ -42,6 +42,8 @@ typedef enum {
 	ModEWeighted44k,
 	Lipshitz44k,
 	ImpEWeighted44k,
+	Experimental1,
+	Experimental2,
 	rpdf
 } DitherProfileID;
 
@@ -122,6 +124,51 @@ const double highShib44[20] = { // High-Shibata 44k (20 taps)
 	-0.011519110890133,  0.001618961712954
 };
 
+const double experimental1[] = {
+	0.028745003564836, -0.075090008890252,  0.193254173536814,
+	-0.404962386520082,  0.647462529770936, -0.817964064209564,
+	0.789543428217277, -0.543123896114409,  0.127792565113188,
+	0.288920282305045, -0.586693858174364,  0.677365569962496,
+	-0.600226811847569,  0.421995454718511, -0.243835392469087,
+	0.111111065840466, -0.03997384353328 ,  0.010306705271183,
+	-0.002058234039559,  0.000220560246701
+};
+
+const double experimental2[] = {
+	/*
+	-0.156273992376491,
+	0.288411025954531,
+	-0.197304884034655,
+	0.129645690377117,
+	-0.070106447409447,
+	-0.041085952214833,
+	0.050192058358397,
+	0.012898104533912,
+	0.015359661780711,
+	0.020719908866823,
+	-0.011813660625704,
+	0.007166224946099,
+	-0.005038759518396,
+	-0.006848775277087,
+	0.004246829537086,
+	0.003585617408335
+	*/
+
+	- 0.113267579111506,
+	0.215432144212954,
+	-0.206263340877997,
+	0.246064185480709,
+	-0.054824084366412,
+	0.179481292975895,
+	-0.002556243072638,
+	0.013174521887528,
+	-0.000238789304217,
+	0.122047711532922,
+	0.088340424932406,
+	0.032665078075013
+
+};
+
 DitherProfile ditherProfileList[] = {
 
 	{flat, "flat tpdf", flatTPDF, bypass, 44100, 1, noiseShaperPassThrough, false},
@@ -134,6 +181,8 @@ DitherProfile ditherProfileList[] = {
 	{ModEWeighted44k, "Modified E-Weighted",flatTPDF, fir, 44100, 9, modew44, true},
 	{Lipshitz44k, "Lipshitz",flatTPDF, fir, 44100, 5, lips44, true},
 	{ImpEWeighted44k, "Improved E-Weighted",flatTPDF, fir, 44100, 9, impew44, true},
+	{Experimental1, "Experimental 1",flatTPDF, fir, 44100, 20, experimental1, true },
+	{Experimental2, "Experimental 2",flatTPDF, fir, 44100, 12, experimental2, true },
 	{rpdf,"flat rectangular pdf", RPDF, bypass, 44100, 1, noiseShaperPassThrough, false}
 };
 
@@ -161,10 +210,9 @@ public:
 		bUseErrorFeedback(ditherProfileList[ditherProfileID].bUseFeedback)
 	{
 		// general parameters:
-		signalMagnitude = static_cast<FloatType>((1 << (signalBits - 1)) - 1); // note the -1 : match 32767 scaling factor for 16 bit !
-		reciprocalSignalMagnitude = 1.0 / signalMagnitude; // value of LSB in target format
-		outputLimit = 1.0;
-		maxDitherScaleFactor = (pow(2, ditherBits - 1) * reciprocalSignalMagnitude) / randMax;
+		maxSignalMagnitude = static_cast<FloatType>((1 << (signalBits - 1)) - 1); // note the -1 : match 32767 scaling factor for 16 bit !
+		reciprocalSignalMagnitude = 1.0 / maxSignalMagnitude; // value of LSB in target format
+		maxDitherScaleFactor = (FloatType)pow(2, ditherBits - 1) / maxSignalMagnitude / (FloatType)randMax;
 		oldRandom = 0;
 
 		// set-up noise generator:
@@ -254,7 +302,7 @@ public:
 
 	void adjustGain(FloatType factor) {
 		gain *= factor;
-		maxDitherScaleFactor = gain * (pow(2, ditherBits - 1) * reciprocalSignalMagnitude) / randMax;
+		maxDitherScaleFactor = gain * pow(2, ditherBits - 1) / maxSignalMagnitude / randMax;
 	}
 
 	void reset() {
@@ -312,16 +360,16 @@ FloatType Dither(FloatType inSample) {
 		}
 	} // ends auto-blanking
 
-	FloatType tpdfNoise = (this->*noiseGenerator)() * ditherScaleFactor;
+	FloatType tpdfNoise = (this->*noiseGenerator)();
 	FloatType preDither = bUseErrorFeedback ? inSample - Z1 : inSample;
-	FloatType shapedNoise = (this->*noiseShapingFilter)(tpdfNoise) ;
+	FloatType shapedNoise = (this->*noiseShapingFilter)(tpdfNoise) * ditherScaleFactor;
 
 #ifdef TEST_FILTER
 	return shapedNoise; // (Output Only Filtered Noise - discard signal)
 #endif
 
 	FloatType preQuantize = preDither + shapedNoise;
-	FloatType postQuantize = reciprocalSignalMagnitude * round(signalMagnitude * preQuantize); // quantize
+	FloatType postQuantize = reciprocalSignalMagnitude * round(maxSignalMagnitude * preQuantize); // quantize
 	
 	Z1 = postQuantize - preDither; // calculate error 
 	return postQuantize;
@@ -376,8 +424,8 @@ FloatType Dither(FloatType inSample) {
 	FloatType preDither = inSample - (this->*noiseShapingFilter)(Z1);
 	FloatType preQuantize, postQuantize;
 	preQuantize = preDither + tpdfNoise;
-	postQuantize = reciprocalSignalMagnitude * round(signalMagnitude * preQuantize); // quantize
-	Z1 = postQuantize - preDither;		
+	postQuantize = reciprocalSignalMagnitude * round(maxSignalMagnitude * preQuantize); // quantize
+	Z1 = (postQuantize - preDither);		
 	return postQuantize;
 } // ends function: Dither()
 
@@ -389,7 +437,7 @@ private:
 	int oldRandom;
 	int seed;
 	FloatType Z1;				// last Quantization error
-	FloatType signalMagnitude;	// maximum integral value for signal target bit depth (for quantizing) 
+	FloatType maxSignalMagnitude;	// maximum integral value for signal target bit depth (for quantizing) 
 	FloatType reciprocalSignalMagnitude; // for normalizing quantized signal back to +/- 1.0 
 	FloatType maxDitherScaleFactor, ditherScaleFactor;	// maximum integral value for dither target bit depth
 	__int64 zeroCount; // number of consecutive zeroes in input;
