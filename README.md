@@ -77,6 +77,11 @@ The effect of dithering is most noticable during extremely quiet passages (typic
 
 **--autoblank** when specified in conjuction with **--dither** , mute the dithering after 30,000 consecutive input samples of *silence* (< -193dB is considered silence). Dithering is re-enabled immediately upon a non-zero input sample being detected.
 
+**--seed &lt;n&gt;** (since v1.1.5) when specified in conjuction with **--dither** , causes the pseudo-random number generator used to generate dither noise to generate a specific sequence of noise associated with the number n.
+Using the same value of n on subsequent conversions should reproduce precisely the same result. n is a signed integer in the range -2,147,483,648 through 2,147,483,647.  
+
+**--flat-tpdf** (since v1.1.6) when specified in conjuction with **--dither** , causes the dithering to use flat tpdf noise with no noise-shaping.
+
 **--listsubformats &lt;filetype&gt;** will list all valid subformats for a given *filetype*
 
 **--version** will display the version number of the program
@@ -84,7 +89,8 @@ The effect of dithering is most noticable during extremely quiet passages (typic
 **--minphase** use a minimum-phase FIR filter, instead of Linear-Phase
 
 **--relaxedLPF** (since v1.1.4) causes the lowpass filter to use a wider transition band (ie. gentler cutoff), which is roughly double the width of the standard setting.
-This results in less ringing, but may also theoretically allow a small amount of aliasing, if the source material contains a lot of High-Frequency content just above the target Nyquist Frequency.
+This results in less ringing, but may also theoretically allow a small amount of aliasing, particularly if the source material contains a lot of High-Frequency content just above the target Nyquist Frequency. 
+(In practice, this is unlikely to be a real issue with most music).
 
 **--flacCompression  &lt;compressionlevel&gt;** sets the compression level for flac output files (between 0 and 8)
 
