@@ -83,6 +83,9 @@ The effect of dithering is most noticable during extremely quiet passages (typic
 
 **--minphase** use a minimum-phase FIR filter, instead of Linear-Phase
 
+**--relaxedLPF** (since v1.1.4) causes the lowpass filter to use a wider transition band (ie. gentler cutoff), which is roughly double the width of the standard setting.
+This results in less ringing, but may also theoretically allow a small amount of aliasing, if the source material contains a lot of High-Frequency content just above the target Nyquist Frequency.
+
 **--flacCompression  &lt;compressionlevel&gt;** sets the compression level for flac output files (between 0 and 8)
 
 **--vorbisQuality &lt;quality&gt;** sets the quality level for ogg vorbis output files (between -1 and 10)
