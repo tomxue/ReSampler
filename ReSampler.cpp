@@ -614,10 +614,11 @@ bool Convert(const conversionInfo<FloatType>& ci)
 	// Medium filters used for simple ratios (ie 1 in numerator or denominator)
 
 	// determine best filter size
+		
 	int BaseFilterSize = ((FOriginal.numerator == 1) || (FOriginal.denominator == 1)) ?
-		(ci.bMinPhase ? 4 * FILTERSIZE_MEDIUM : FILTERSIZE_MEDIUM) : // for minphase, make filter 4x larger 
-		FILTERSIZE_HUGE;
-
+		(ci.bMinPhase ? 8 * FILTERSIZE_MEDIUM : FILTERSIZE_MEDIUM) : // for minphase, make filter 8x larger 
+		FILTERSIZE_HUGE /** FOriginal.denominator / 320*/;
+	
 	// scale the filter size, according to selected options:
 	int FilterSize = 
 		(BaseFilterSize /
@@ -629,7 +630,7 @@ bool Convert(const conversionInfo<FloatType>& ci)
 		195 :
 		140;
 	
-	// std::cout << "Using FIR Filter size of " << FilterSize << " taps" << std::endl;
+	 //std::cout << "Using FIR Filter size of " << FilterSize << " taps" << std::endl;
 	
 	FloatType* FilterTaps = new FloatType[FilterSize];
 	makeLPF<FloatType>(FilterTaps, FilterSize, ft, OverSampFreq);
