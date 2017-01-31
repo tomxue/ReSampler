@@ -547,25 +547,11 @@ bool Convert(const conversionInfo<FloatType>& ci)
 	}
 
 	if (bFloat)
-		std::cout << " (float)" << std::endl;
+		std::cout << " (float)";
 	if (bDouble)
-		std::cout << " (double precision)" << std::endl;
+		std::cout << " (double precision)";
 
-	Fraction FOriginal = GetSimplifiedFraction(InputSampleRate, ci.OutputSampleRate);
-	Fraction F = FOriginal;
-	
-	if (ci.bMinPhase) {
-		if (F.numerator <= 4 && F.denominator <= 4) {
-			if (F.numerator != F.denominator) { // oversample to improve filter performance
-				F.numerator *= 8;	// 8x oversampling
-				F.denominator *= 8;
-			}
-		}
-	}
-	
-	FloatType ResamplingFactor = static_cast<FloatType>(ci.OutputSampleRate) / InputSampleRate;
-	std::cout << "\nConversion ratio: " << ResamplingFactor
-		<< " (" << F.numerator << ":" << F.denominator << ")" << std::endl;
+	std::cout << std::endl;
 	
 	size_t BufferSize = (BUFFERSIZE / nChannels) * nChannels; // round down to integer multiple of nChannels (file may have odd number of channels!)
 	assert(BUFFERSIZE >= BufferSize);
@@ -598,29 +584,29 @@ bool Convert(const conversionInfo<FloatType>& ci)
 		std::cout.precision(prec);
 	}
 
-	// Calculate filter parameters:
-	int OverSampFreq = InputSampleRate * F.numerator; // eg 44100 * 160
-	double targetNyquist = min(InputSampleRate, ci.OutputSampleRate) / 2.0;
-	double ft = 0.909091 * targetNyquist; // 0.090991 is 10/11 (take an 11th off the end)
-	int TransitionWidth = targetNyquist - ft;
-
-	// echo cutoff frequency to user:
-	auto prec = std::cout.precision();
-	std::cout << "LPF ft: " << std::setprecision(2) << ft << " Hz, transition band: " << TransitionWidth << " Hz" << std::endl;
-	std::cout.precision(prec);
-
-	// Make some filters: 
-	// Huge Filters are used for complex ratios.
-	// Medium filters used for simple ratios (ie 1 in numerator or denominator)
-
-	// determine best filter size
-		
-	int BaseFilterSize = ((FOriginal.numerator == 1) || (FOriginal.denominator == 1)) ?
-		(ci.bMinPhase ? 8 * FILTERSIZE_MEDIUM : FILTERSIZE_MEDIUM) : // for minphase, make filter 8x larger 
-		FILTERSIZE_HUGE /** FOriginal.denominator / 320*/;
+	Fraction FOriginal = GetSimplifiedFraction(InputSampleRate, ci.OutputSampleRate);
+	Fraction F = FOriginal;
 	
-	// scale the filter size, according to selected options:
-	int FilterSize = 
+	// determine best filter size
+
+	int BaseFilterSize;
+	int overSamplingFactor = 1;
+
+	if ((FOriginal.numerator != FOriginal.denominator) && (FOriginal.numerator <= 4 || FOriginal.denominator <= 4)) { // simple ratios
+		BaseFilterSize = FILTERSIZE_MEDIUM * max(FOriginal.denominator, FOriginal.numerator) / 2;
+		if (ci.bMinPhase) { // oversample to improve filter performance
+			overSamplingFactor = 8;
+			F.numerator *= overSamplingFactor;
+			F.denominator *= overSamplingFactor;
+		}
+	}
+	else { // complex ratios
+		BaseFilterSize = FILTERSIZE_HUGE * max(FOriginal.denominator, FOriginal.numerator) / 320;
+	}
+
+	// scale the base filter size, according to selected options:
+	int FilterSize =
+		overSamplingFactor *
 		(BaseFilterSize /
 		(ci.relaxedLPF ? 2 : 1))	// for relaxed, make filter half as large
 		| (int)(1);					// ensure that filter length is always odd
@@ -629,13 +615,31 @@ bool Convert(const conversionInfo<FloatType>& ci)
 	int SidelobeAtten = ((FOriginal.numerator == 1) || (FOriginal.denominator == 1)) ?
 		195 :
 		140;
+
+	// Calculate filter parameters:
+	int OverSampFreq = InputSampleRate * F.numerator; // eg 44100 * 160
+	double targetNyquist = min(InputSampleRate, ci.OutputSampleRate) / 2.0;
+	double ft = 0.909091 * targetNyquist; // 0.090991 is 10/11 (take an 11th off the end)
+	int TransitionWidth = targetNyquist - ft;
 	
-	 //std::cout << "Using FIR Filter size of " << FilterSize << " taps" << std::endl;
+	// echo conversion ratio to user:
+	FloatType ResamplingFactor = static_cast<FloatType>(ci.OutputSampleRate) / InputSampleRate;
+	std::cout << "\nConversion ratio: " << ResamplingFactor
+		<< " (" << F.numerator << ":" << F.denominator << ")" << std::endl;
+
+	// echo cutoff frequency to user:
+	auto prec = std::cout.precision();
+	std::cout << "LPF ft: " << std::setprecision(2) << ft << " Hz, transition band: " << TransitionWidth << " Hz" << std::endl;
+	std::cout.precision(prec);
 	
+	//std::cout << "Using FIR Filter size of " << FilterSize << " taps" << std::endl;
+	
+	// Make some filter coefficients:
 	FloatType* FilterTaps = new FloatType[FilterSize];
 	makeLPF<FloatType>(FilterTaps, FilterSize, ft, OverSampFreq);
 	applyKaiserWindow<FloatType>(FilterTaps, FilterSize, calcKaiserBeta(SidelobeAtten));
 
+	// conditionally convert filter coefficients to minimum-phase:
 	if (ci.bMinPhase) {
 		std::cout << "Using Minimum-Phase LPF" << std::endl;
 		makeMinPhase<FloatType>(FilterTaps, FilterSize);
@@ -647,7 +651,7 @@ bool Convert(const conversionInfo<FloatType>& ci)
 		Filters.emplace_back(FilterTaps, FilterSize);
 	}
 
-	// filter taps no longer required - deallocate:
+	// deallocate filter taps (no longer required)
 	delete[] FilterTaps;
 	FilterTaps = nullptr;
 
