@@ -79,16 +79,16 @@ const std::map<std::string, std::string> defaultSubFormats = {
 };
 
 // structure for holding all the parameters required for a conversion job:
-template<typename FloatType> struct conversionInfo
+struct conversionInfo
 {
 	std::string InputFilename;
 	std::string OutputFilename;
 	unsigned int OutputSampleRate;
-	FloatType Limit;
+	double Limit;
 	bool bNormalize;
 	int OutputFormat;
 	bool bDither;
-	FloatType DitherAmount;
+	double DitherAmount;
 	int ditherProfileID;
 	bool bAutoBlankingEnabled;
 	bool bMinPhase;
@@ -112,7 +112,7 @@ void getCmdlineParam(char ** begin, char ** end, const std::string & OptionName,
 void getCmdlineParam(char ** begin, char ** end, const std::string & OptionName, int & nParameter);
 void getCmdlineParam(char ** begin, char ** end, const std::string & OptionName, double & Parameter);
 bool findCmdlineOption(char ** begin, char ** end, const std::string & option);
-template<typename FloatType> bool Convert(const conversionInfo<FloatType>& ci);
+template<typename FloatType> bool Convert(const conversionInfo& ci);
 
 // Timer macros:
 #define START_TIMER() LARGE_INTEGER starttime,finishtime,elapsed,frequency,timetaken; \

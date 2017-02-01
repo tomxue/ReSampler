@@ -283,68 +283,40 @@ int main(int argc, char * argv[])
 			std::cout << "Warning: NOT Changing output file format ! (extension different, but format will remain the same)" << std::endl;
 		}
 	}
-	if (bUseDoublePrecision) {
-		std::cout << "Using double precision for calculations." << std::endl;
-		using floattype = double;
-		conversionInfo<double> ci;
-		ci.InputFilename = sourceFilename;
-		ci.OutputFilename = destFilename;
-		ci.OutputSampleRate = OutputSampleRate;
-		ci.Limit = Limit;
-		ci.bNormalize = bNormalize;
-		ci.OutputFormat = outFileFormat;
-		ci.bDither = bDither;
-		ci.DitherAmount = DitherAmount;
-		ci.ditherProfileID = ditherProfileID;
-		ci.bAutoBlankingEnabled = bAutoBlankingEnabled;
-		ci.bMinPhase = bMinPhase;
-		ci.bSetFlacCompression = bSetFlacCompression;
-		ci.flacCompressionLevel = flacCompressionLevel;
-		ci.bSetVorbisQuality = bSetVobisQuality;
-		ci.vorbisQuality = vorbisQuality;
-		ci.disableClippingProtection = disableClippingProtection;
-		ci.relaxedLPF = relaxedLPF;
-		ci.bUseSeed = bUseSeed;
-		ci.seed = seed;
+	
+	conversionInfo ci;
+	ci.InputFilename = sourceFilename;
+	ci.OutputFilename = destFilename;
+	ci.OutputSampleRate = OutputSampleRate;
+	ci.Limit = Limit;
+	ci.bNormalize = bNormalize;
+	ci.OutputFormat = outFileFormat;
+	ci.bDither = bDither;
+	ci.DitherAmount = DitherAmount;
+	ci.ditherProfileID = ditherProfileID;
+	ci.bAutoBlankingEnabled = bAutoBlankingEnabled;
+	ci.bMinPhase = bMinPhase;
+	ci.bSetFlacCompression = bSetFlacCompression;
+	ci.flacCompressionLevel = flacCompressionLevel;
+	ci.bSetVorbisQuality = bSetVobisQuality;
+	ci.vorbisQuality = vorbisQuality;
+	ci.disableClippingProtection = disableClippingProtection;
+	ci.relaxedLPF = relaxedLPF;
+	ci.bUseSeed = bUseSeed;
+	ci.seed = seed;
 
-		try {
+	try {
+		if (bUseDoublePrecision) {
+			std::cout << "Using double precision for calculations." << std::endl;
 			return Convert<double>(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
 		}
-		catch (const std::exception& e) {
-			std::cerr << "fatal error: " << e.what();
-			return EXIT_FAILURE;
-		}
-	}
-
-	else {
-		conversionInfo<float> ci;
-		ci.InputFilename = sourceFilename;
-		ci.OutputFilename = destFilename;
-		ci.OutputSampleRate = OutputSampleRate;
-		ci.Limit = Limit;
-		ci.bNormalize = bNormalize;
-		ci.OutputFormat = outFileFormat;
-		ci.bDither = bDither;
-		ci.DitherAmount = DitherAmount;
-		ci.ditherProfileID = ditherProfileID;
-		ci.bAutoBlankingEnabled = bAutoBlankingEnabled;
-		ci.bMinPhase = bMinPhase;
-		ci.bSetFlacCompression = bSetFlacCompression;
-		ci.flacCompressionLevel = flacCompressionLevel;
-		ci.bSetVorbisQuality = bSetVobisQuality;
-		ci.vorbisQuality = vorbisQuality;
-		ci.disableClippingProtection = disableClippingProtection;
-		ci.relaxedLPF = relaxedLPF;
-		ci.bUseSeed = bUseSeed;
-		ci.seed = seed;
-
-		try {
+		else {
 			return Convert<float>(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
-		}
-		catch (const std::exception& e) {
-			std::cerr << "fatal error: " << e.what();
-			return EXIT_FAILURE;
-		}
+		}		
+	}
+	catch (const std::exception& e) {
+		std::cerr << "fatal error: " << e.what();
+		return EXIT_FAILURE;
 	}
 }
 
@@ -507,7 +479,7 @@ void listSubFormats(const std::string& f)
 }
 
 template<typename FloatType>
-bool Convert(const conversionInfo<FloatType>& ci)
+bool Convert(const conversionInfo& ci)
 {
 	// Open input file:
 	SndfileHandle infile(ci.InputFilename, SFM_READ);
