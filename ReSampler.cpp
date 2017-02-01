@@ -130,7 +130,14 @@ int main(int argc, char * argv[])
 	bool disableClippingProtection = findCmdlineOption(argv, argv + argc, "--noClippingProtection");
 
 	// parse relaxedLPF option:
-	bool relaxedLPF = findCmdlineOption(argv, argv + argc, "--relaxedLPF");
+	LPFMode lpfMode = findCmdlineOption(argv, argv + argc, "--relaxedLPF") ?
+		relaxed :
+		normal;
+
+	// parse steepLPF option:
+	lpfMode = findCmdlineOption(argv, argv + argc, "--steepLPF") ?
+		steep :
+		lpfMode;
 
 	// parse seed option and parameter:
 	bool bUseSeed = findCmdlineOption(argv, argv + argc, "--seed");
@@ -301,7 +308,7 @@ int main(int argc, char * argv[])
 	ci.bSetVorbisQuality = bSetVobisQuality;
 	ci.vorbisQuality = vorbisQuality;
 	ci.disableClippingProtection = disableClippingProtection;
-	ci.relaxedLPF = relaxedLPF;
+	ci.lpfMode = lpfMode;
 	ci.bUseSeed = bUseSeed;
 	ci.seed = seed;
 
@@ -577,27 +584,29 @@ bool Convert(const conversionInfo& ci)
 	}
 
 	// scale the base filter size, according to selected options:
-	int FilterSize =
-		(overSamplingFactor *
-		BaseFilterSize) 
+	int FilterSize =(overSamplingFactor * BaseFilterSize * ((ci.lpfMode == steep) ? 2 : 1))
 		| (int)(1);					// ensure that filter length is always odd
 
+	// determine cutoff frequency
+	int OverSampFreq = InputSampleRate * F.numerator;
+	double targetNyquist = min(InputSampleRate, ci.OutputSampleRate) / 2.0;
+	double ft;
+	switch (ci.lpfMode) {
+	case relaxed:
+		ft = 21 * targetNyquist / 22; // late cutoff
+		break;
+	case steep:
+		ft = 21 * targetNyquist / 22; // late cutoff & steep
+		break;
+	default:
+		ft = 10 * targetNyquist / 11;
+	}
+	
 	// determine sidelobe attenuation
 	int SidelobeAtten = ((FOriginal.numerator == 1) || (FOriginal.denominator == 1)) ?
 		195 :
 		140;
 
-	// Calculate filter parameters:
-	int OverSampFreq = InputSampleRate * F.numerator; // eg 44100 * 160
-	double targetNyquist = min(InputSampleRate, ci.OutputSampleRate) / 2.0;
-
-	// determine cutoff frequency
-	double ft = ci.relaxedLPF ? 
-		21 * targetNyquist / 22 : 
-		10 * targetNyquist / 11;
-	
-	int TransitionWidth = targetNyquist - ft;
-	
 	// echo conversion ratio to user:
 	FloatType ResamplingFactor = static_cast<FloatType>(ci.OutputSampleRate) / InputSampleRate;
 	std::cout << "\nConversion ratio: " << ResamplingFactor

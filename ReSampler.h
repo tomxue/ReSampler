@@ -78,6 +78,12 @@ const std::map<std::string, std::string> defaultSubFormats = {
 	{"xi","dpcm16"}
 };
 
+typedef enum {
+	relaxed,
+	normal,
+	steep
+} LPFMode;
+
 // structure for holding all the parameters required for a conversion job:
 struct conversionInfo
 {
@@ -97,7 +103,7 @@ struct conversionInfo
 	bool bSetVorbisQuality;
 	double vorbisQuality;
 	bool disableClippingProtection;
-	bool relaxedLPF;
+	LPFMode lpfMode;
 	bool bUseSeed;
 	int seed; // seed for RNG
 };
