@@ -584,7 +584,8 @@ bool Convert(const conversionInfo& ci)
 	}
 
 	// scale the base filter size, according to selected options:
-	int FilterSize =(overSamplingFactor * BaseFilterSize * ((ci.lpfMode == steep) ? 2 : 1))
+	int FilterSize = min(FILTERSIZE_LIMIT,
+		(overSamplingFactor * BaseFilterSize * ((ci.lpfMode == steep) ? 2 : 1)))
 		| (int)(1);					// ensure that filter length is always odd
 
 	// determine cutoff frequency

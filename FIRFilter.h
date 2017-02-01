@@ -16,6 +16,7 @@
 	#define NULL 0
 #endif
 
+#define FILTERSIZE_LIMIT 92681
 #define FILTERSIZE_HUGE 32767
 #define FILTERSIZE_MEDIUM 255
 
@@ -441,7 +442,6 @@ template<typename FloatType> bool applyKaiserWindow(FloatType* filter, int Lengt
 	
 	//// diagnostic to check accuracy of I0():
 	//	std::cout << "I0( " << maxA << " ) ==" << I0(maxA) << std::endl;
-	//	getchar();
 	
 	return true;
 }
