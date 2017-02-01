@@ -606,9 +606,8 @@ bool Convert(const conversionInfo<FloatType>& ci)
 
 	// scale the base filter size, according to selected options:
 	int FilterSize =
-		overSamplingFactor *
-		(BaseFilterSize /
-		(ci.relaxedLPF ? 2 : 1))	// for relaxed, make filter half as large
+		(overSamplingFactor *
+		BaseFilterSize) 
 		| (int)(1);					// ensure that filter length is always odd
 
 	// determine sidelobe attenuation
@@ -619,7 +618,12 @@ bool Convert(const conversionInfo<FloatType>& ci)
 	// Calculate filter parameters:
 	int OverSampFreq = InputSampleRate * F.numerator; // eg 44100 * 160
 	double targetNyquist = min(InputSampleRate, ci.OutputSampleRate) / 2.0;
-	double ft = 0.909091 * targetNyquist; // 0.090991 is 10/11 (take an 11th off the end)
+
+	// determine cutoff frequency
+	double ft = ci.relaxedLPF ? 
+		21 * targetNyquist / 22 : 
+		10 * targetNyquist / 11;
+	
 	int TransitionWidth = targetNyquist - ft;
 	
 	// echo conversion ratio to user:
@@ -629,7 +633,7 @@ bool Convert(const conversionInfo<FloatType>& ci)
 
 	// echo cutoff frequency to user:
 	auto prec = std::cout.precision();
-	std::cout << "LPF ft: " << std::setprecision(2) << ft << " Hz, transition band: " << TransitionWidth << " Hz" << std::endl;
+	std::cout << "LPF transition frequency: " << std::setprecision(2) << ft << " Hz (" << 100 * ft/targetNyquist << " %)" << std::endl;
 	std::cout.precision(prec);
 	
 	//std::cout << "Using FIR Filter size of " << FilterSize << " taps" << std::endl;

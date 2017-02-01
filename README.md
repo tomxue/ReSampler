@@ -88,9 +88,7 @@ Using the same value of n on subsequent conversions should reproduce precisely t
 
 **--minphase** use a minimum-phase FIR filter, instead of Linear-Phase
 
-**--relaxedLPF** (since v1.1.4) causes the lowpass filter to use a wider transition band (ie. gentler cutoff), which is roughly double the width of the standard setting.
-This results in less ringing, but may also theoretically allow a small amount of aliasing, particularly if the source material contains a lot of High-Frequency content just above the target Nyquist Frequency. 
-(In practice, this is unlikely to be a real issue with most music).
+**--relaxedLPF** (since v1.1.4) causes the lowpass filter to allow a small amount of aliasing, but at the same time, keep ringing to a minimum.
 
 **--flacCompression  &lt;compressionlevel&gt;** sets the compression level for flac output files (between 0 and 8)
 
