@@ -430,7 +430,7 @@ double I0(double z)
 template<typename FloatType> bool applyKaiserWindow(FloatType* filter, int Length, FloatType Beta)
 {
 	// Note: sometimes, the Kaiser Window formula is defined in terms of Alpha (instead of Beta), 
-	// in which case, Alpha def= pi * Beta
+	// in which case, Alpha def= Beta / pi
 
 	if (Length < 1)
 		return false;
