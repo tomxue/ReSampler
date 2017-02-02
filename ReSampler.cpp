@@ -624,7 +624,7 @@ bool Convert(const conversionInfo& ci)
 	FloatType* FilterTaps = new FloatType[FilterSize];
 	makeLPF<FloatType>(FilterTaps, FilterSize, ft, OverSampFreq);
 	applyKaiserWindow<FloatType>(FilterTaps, FilterSize, calcKaiserBeta(SidelobeAtten));
-
+	
 	// conditionally convert filter coefficients to minimum-phase:
 	if (ci.bMinPhase) {
 		std::cout << "Using Minimum-Phase LPF" << std::endl;
