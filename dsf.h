@@ -65,19 +65,24 @@ public:
 		case dsf_read:
 			try {
 				file.open(path, std::ios::in | std::ios::binary);
-				readHeaders();
-				for (int n = 0; n < 6; ++n) {
-					channelBuffer[n] = new uint8_t[blockSize];
-				}
-				bufferIndex = blockSize; // initial state: empty (zero == full)
-				currentBit = 0;
-				currentChannel = 0;
-			}
-			catch (std::ios_base::failure& e) {
-				std::cerr << e.what() << '\n';
+				err = false;
 			}
 
+			catch (std::ios_base::failure& e) {
+				err = true;
+				std::cerr << e.what() << '\n';
+				return;
+			}
+
+			readHeaders();
+			for (int n = 0; n < 6; ++n) {
+				channelBuffer[n] = new uint8_t[blockSize];
+			}
+			bufferIndex = blockSize; // initial state: empty (zero == full)
+			currentBit = 0;
+			currentChannel = 0;
 			break;
+
 		case dsf_write:
 			break;
 		}
@@ -92,23 +97,23 @@ public:
 
 	// API:
 
-	unsigned int channels() {
+	bool error() const {
+		return err;
+	}
+
+	unsigned int channels() const {
 		return numChannels;
 	};
 
-	unsigned int sampleRate() {
+	unsigned int sampleRate() const {
 		return _sampleRate;
 	};
 
-	int format() {
-		return 0;
-	};
-
-	uint64_t frames() {
+	uint64_t frames() const {
 		return numFrames;
 	};
 
-	uint64_t samples() {
+	uint64_t samples() const {
 		return numSamples;
 	};
 
@@ -125,13 +130,13 @@ public:
 		for (uint64_t i = 0; i < count; ++i) {
 
 			if (bufferIndex == blockSize) { // end of buffer ; fetch more data from file
-				if (readBlocks() == 0) { // no more data
-					break;
+				if (readBlocks() == 0) { 
+					break; // no more data
 				}
 				bufferIndex = 0;
 			}
 
-			buffer[i] = (channelBuffer[currentChannel][bufferIndex] & (1 << currentBit)) ? 1.0 : 0.0;
+			buffer[i] = (channelBuffer[currentChannel][bufferIndex] & (1 << currentBit)) ? 1.0 : -1.0;
 			++samplesRead;
 
 			// cycle through channels, then bits, then bufferIndex
@@ -162,6 +167,9 @@ public:
 		std::cout << "total samples retrieved: " << totalSamplesRead << std::endl;
 	}
 
+	void seekStart() {
+		file.seekg(startOfData);
+	}
 private:
 	DsfDSDChunk dsfDSDChunk;
 	DsfFmtChunk dsfFmtChunk;
@@ -169,7 +177,7 @@ private:
 	std::string path;
 	OpenMode mode;
 	std::fstream file;
-
+	bool err;
 	uint32_t blockSize;
 	uint32_t numChannels;
 	uint32_t _sampleRate;
@@ -179,6 +187,7 @@ private:
 	uint64_t bufferIndex;
 	uint32_t currentChannel;
 	uint32_t currentBit;
+	uint64_t startOfData;
 	uint64_t endOfData;
 	
 	void checkSizes() {
@@ -197,8 +206,8 @@ private:
 		_sampleRate = dsfFmtChunk.sampleRate;
 		numFrames = dsfFmtChunk.numSamples;
 		numSamples = numFrames * numChannels;
+		startOfData = file.tellg();
 		endOfData = dsfDSDChunk.length + dsfFmtChunk.length + dsfDataChunk.length;
-
 		assert( // metadata tag either non-existent or at end of data
 			(dsfDSDChunk.metadataPtr == 0) ||
 			(dsfDSDChunk.metadataPtr == endOfData)
@@ -214,23 +223,7 @@ private:
 		}
 		return blockSize;
 	}
-
 };
 
-
-/*
-
-// how it's used in main():
-unsigned int nChannels = infile.channels();
-unsigned int InputSampleRate = infile.samplerate();
-int InputFileFormat = infile.format();
-sf_count_t InputSampleCount = infile.frames() * nChannels;
-
-count = infile.read(inbuffer, BufferSize);
-
-infile.seek(0i64, SEEK_SET); // rewind back to start of file
-
-*/
-
-#endif
+#endif // DSF_H_
 
