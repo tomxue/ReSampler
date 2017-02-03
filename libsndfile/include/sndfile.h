@@ -345,7 +345,7 @@ typedef __int64	sf_count_t ;
 
 struct SF_INFO
 {	sf_count_t	frames ;		/* Used to be called samples.  Changed to avoid confusion. */
-	int			samplerate ;
+	int			sampleRate ;
 	int			channels ;
 	int			format ;
 	int			sections ;

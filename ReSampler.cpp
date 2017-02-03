@@ -15,6 +15,7 @@
 #include "FIRFilter.h"
 #include "ditherer.h"
 #include "biquad.h"
+#include "dsf.h"
 
 ////////////////////////////////////////////////////////////////////////////////////////
 // This program uses the following libraries:
@@ -498,7 +499,7 @@ bool Convert(const conversionInfo& ci)
 
 	// read file properties:
 	unsigned int nChannels = infile.channels();
-	unsigned int InputSampleRate = infile.samplerate();
+	unsigned int InputSampleRate = infile.sampleRate();
 	int InputFileFormat = infile.format();
 	sf_count_t InputSampleCount = infile.frames() * nChannels;
 	sf_count_t IncrementalProgressThreshold = InputSampleCount / 10;
