@@ -113,7 +113,6 @@ public:
 	};
 
 	uint64_t read(float* buffer, uint64_t count) {
-		float outSample;
 
 		// Interleaving in a dsf file is done at the block level.
 		// This means that we read from file like this:
@@ -132,7 +131,7 @@ public:
 				bufferIndex = 0;
 			}
 
-			buffer[i] = (channelBuffer[bufferIndex][currentChannel] & (1 << currentBit)) ? 1.0 : 0.0;
+			buffer[i] = (channelBuffer[currentChannel][bufferIndex] & (1 << currentBit)) ? 1.0 : 0.0;
 			++samplesRead;
 
 			// cycle through channels, then bits, then bufferIndex
@@ -148,9 +147,20 @@ public:
 		return samplesRead;
 	};
 
-	uint64_t read(double* buffer, uint64_t count) {
-		return 0i64;
-	};
+	// testRead() : reads the entire file 
+	// and confirms number of samples read equals number of samples expected:
+
+	void testRead() {
+		float sampleBuffer[8192];
+		uint64_t totalSamplesRead = 0i64;
+		uint64_t samplesRead = 0i64;
+
+		while ((samplesRead = read(sampleBuffer, 8192)) != 0) {
+			totalSamplesRead += samplesRead;
+		}
+		std::cout << "samples expected: " << numSamples << std::endl;
+		std::cout << "total samples retrieved: " << totalSamplesRead << std::endl;
+	}
 
 private:
 	DsfDSDChunk dsfDSDChunk;
