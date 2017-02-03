@@ -74,17 +74,17 @@ class SndfileHandle
 			/* Default constructor */
 			SndfileHandle (void) : p (NULL) {} ;
 			SndfileHandle (const char *path, int mode = SFM_READ,
-							int format = 0, int channels = 0, int sampleRate = 0) ;
+							int format = 0, int channels = 0, int samplerate = 0) ;
 			SndfileHandle (std::string const & path, int mode = SFM_READ,
-							int format = 0, int channels = 0, int sampleRate = 0) ;
+							int format = 0, int channels = 0, int samplerate = 0) ;
 			SndfileHandle (int fd, bool close_desc, int mode = SFM_READ,
-							int format = 0, int channels = 0, int sampleRate = 0) ;
+							int format = 0, int channels = 0, int samplerate = 0) ;
 			SndfileHandle (SF_VIRTUAL_IO &sfvirtual, void *user_data, int mode = SFM_READ,
-							int format = 0, int channels = 0, int sampleRate = 0) ;
+							int format = 0, int channels = 0, int samplerate = 0) ;
 
 #ifdef ENABLE_SNDFILE_WINDOWS_PROTOTYPES
 			SndfileHandle (LPCWSTR wpath, int mode = SFM_READ,
-							int format = 0, int channels = 0, int sampleRate = 0) ;
+							int format = 0, int channels = 0, int samplerate = 0) ;
 #endif
 
 			~SndfileHandle (void) ;
@@ -102,7 +102,7 @@ class SndfileHandle
 		sf_count_t	frames (void) const		{ return p ? p->sfinfo.frames : 0 ; }
 		int			format (void) const		{ return p ? p->sfinfo.format : 0 ; }
 		int			channels (void) const	{ return p ? p->sfinfo.channels : 0 ; }
-		int			sampleRate (void) const { return p ? p->sfinfo.sampleRate : 0 ; }
+		int			samplerate (void) const { return p ? p->sfinfo.samplerate : 0 ; }
 
 		int error (void) const ;
 		const char * strError (void) const ;
@@ -117,7 +117,7 @@ class SndfileHandle
 
 		const char* getString (int str_type) const ;
 
-		static int formatCheck (int format, int channels, int sampleRate) ;
+		static int formatCheck (int format, int channels, int samplerate) ;
 
 		sf_count_t read (short *ptr, sf_count_t items) ;
 		sf_count_t read (int *ptr, sf_count_t items) ;
@@ -174,7 +174,7 @@ SndfileHandle::SndfileHandle (const char *path, int mode, int fmt, int chans, in
 		p->sfinfo.frames = 0 ;
 		p->sfinfo.channels = chans ;
 		p->sfinfo.format = fmt ;
-		p->sfinfo.sampleRate = srate ;
+		p->sfinfo.samplerate = srate ;
 		p->sfinfo.sections = 0 ;
 		p->sfinfo.seekable = 0 ;
 
@@ -196,7 +196,7 @@ SndfileHandle::SndfileHandle (std::string const & path, int mode, int fmt, int c
 		p->sfinfo.frames = 0 ;
 		p->sfinfo.channels = chans ;
 		p->sfinfo.format = fmt ;
-		p->sfinfo.sampleRate = srate ;
+		p->sfinfo.samplerate = srate ;
 		p->sfinfo.sections = 0 ;
 		p->sfinfo.seekable = 0 ;
 
@@ -221,7 +221,7 @@ SndfileHandle::SndfileHandle (int fd, bool close_desc, int mode, int fmt, int ch
 		p->sfinfo.frames = 0 ;
 		p->sfinfo.channels = chans ;
 		p->sfinfo.format = fmt ;
-		p->sfinfo.sampleRate = srate ;
+		p->sfinfo.samplerate = srate ;
 		p->sfinfo.sections = 0 ;
 		p->sfinfo.seekable = 0 ;
 
@@ -243,7 +243,7 @@ SndfileHandle::SndfileHandle (SF_VIRTUAL_IO &sfvirtual, void *user_data, int mod
 		p->sfinfo.frames = 0 ;
 		p->sfinfo.channels = chans ;
 		p->sfinfo.format = fmt ;
-		p->sfinfo.sampleRate = srate ;
+		p->sfinfo.samplerate = srate ;
 		p->sfinfo.sections = 0 ;
 		p->sfinfo.seekable = 0 ;
 
@@ -318,7 +318,7 @@ SndfileHandle::formatCheck (int fmt, int chans, int srate)
 	sfinfo.frames = 0 ;
 	sfinfo.channels = chans ;
 	sfinfo.format = fmt ;
-	sfinfo.sampleRate = srate ;
+	sfinfo.samplerate = srate ;
 	sfinfo.sections = 0 ;
 	sfinfo.seekable = 0 ;
 
@@ -430,7 +430,7 @@ SndfileHandle::SndfileHandle (LPCWSTR wpath, int mode, int fmt, int chans, int s
 		p->sfinfo.frames = 0 ;
 		p->sfinfo.channels = chans ;
 		p->sfinfo.format = fmt ;
-		p->sfinfo.sampleRate = srate ;
+		p->sfinfo.samplerate = srate ;
 		p->sfinfo.sections = 0 ;
 		p->sfinfo.seekable = 0 ;
 

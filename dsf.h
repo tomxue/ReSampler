@@ -70,7 +70,6 @@ public:
 
 			catch (std::ios_base::failure& e) {
 				err = true;
-				std::cerr << e.what() << '\n';
 				return;
 			}
 
@@ -78,7 +77,7 @@ public:
 			for (int n = 0; n < 6; ++n) {
 				channelBuffer[n] = new uint8_t[blockSize];
 			}
-			bufferIndex = blockSize; // initial state: empty (zero == full)
+			bufferIndex = blockSize; // empty (zero -> full)
 			currentBit = 0;
 			currentChannel = 0;
 			break;
@@ -89,7 +88,8 @@ public:
 	};
 
 	~DsfFile() {
-		file.close();
+		if(file.is_open())
+			file.close();
 		for (int n = 0; n < 6; ++n) {
 			delete[] channelBuffer[n];
 		}
@@ -117,7 +117,8 @@ public:
 		return numSamples;
 	};
 
-	uint64_t read(float* buffer, uint64_t count) {
+	template<typename FloatType>
+	uint64_t read(FloatType* buffer, uint64_t count) {
 
 		// Interleaving in a dsf file is done at the block level.
 		// This means that we read from file like this:

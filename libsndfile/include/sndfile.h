@@ -345,7 +345,7 @@ typedef __int64	sf_count_t ;
 
 struct SF_INFO
 {	sf_count_t	frames ;		/* Used to be called samples.  Changed to avoid confusion. */
-	int			sampleRate ;
+	int			samplerate ;
 	int			channels ;
 	int			format ;
 	int			sections ;
@@ -387,7 +387,7 @@ enum
 } ;
 
 typedef struct
-{	int			filterType ;
+{	int			type ;
 	double		level ;
 	const char	*name ;
 } SF_DITHER_INFO ;

@@ -321,9 +321,7 @@ int main(int argc, char * argv[])
 		if (bUseDoublePrecision) {
 			std::cout << "Using double precision for calculations." << std::endl;
 			if (ci.dsfInput) {
-				std::cout << "dsf with double precision not implemented yet" << std::endl;
-				return EXIT_FAILURE;
-				// return dsfConvert<double>(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
+				 return dsfConvert<double>(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
 			}
 			else {
 				return Convert<double>(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
@@ -529,7 +527,7 @@ bool Convert(const conversionInfo& ci)
 
 	// read file properties:
 	unsigned int nChannels = infile.channels();
-	unsigned int InputSampleRate = infile.sampleRate();
+	unsigned int InputSampleRate = infile.samplerate();
 	int InputFileFormat = infile.format();
 	sf_count_t InputSampleCount = infile.frames() * nChannels;
 	sf_count_t IncrementalProgressThreshold = InputSampleCount / 10;
