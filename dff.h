@@ -122,7 +122,6 @@ public:
 	// Construction / destruction
 	DffFile(const std::string& path, dffOpenMode mode = dff_read) : path(path), mode(mode)
 	{
-		checkSizes();
 		file.exceptions(std::ifstream::failbit | std::ifstream::badbit);
 
 		switch (mode) {
@@ -265,10 +264,6 @@ private:
 	uint64_t endOfData;
 	double samplTbl[256][8];
 
-	void checkSizes() {
-
-	}
-
 	void getChunkHeader(dffChunkHeader* chunkHeader) {
 		chunkHeader->ckID = bigEndianRead32();
 		chunkHeader->ckDataSize = bigEndianRead64();
@@ -377,7 +372,7 @@ private:
 			case CKID_FS:
 				formDSDChunk.propertyChunk.sampleRateChunk.ckID = nextChunkHeader.ckID;
 				formDSDChunk.propertyChunk.sampleRateChunk.ckDataSize = dataSize;
-				formDSDChunk.propertyChunk.sampleRateChunk.sampleRate = bigEndianRead32();
+				_sampleRate = formDSDChunk.propertyChunk.sampleRateChunk.sampleRate = bigEndianRead32();
 				std::cout << "Samplerate: " << formDSDChunk.propertyChunk.sampleRateChunk.sampleRate << std::endl;
 				break;
 			case CKID_CHNL:
@@ -397,6 +392,9 @@ private:
 				file.read(formDSDChunk.propertyChunk.compressionTypeChunk.compressionName, formDSDChunk.propertyChunk.compressionTypeChunk.Count+1);
 				formDSDChunk.propertyChunk.compressionTypeChunk.compressionName[formDSDChunk.propertyChunk.compressionTypeChunk.Count] = 0; // null terminator
 				std::cout << formDSDChunk.propertyChunk.compressionTypeChunk.compressionName << std::endl;
+				if (formDSDChunk.propertyChunk.compressionTypeChunk.compressionType != CKID_DSD) {
+					err = true; // can't handle compressed data
+				}
 				break;
 			case CKID_ABSS:
 				formDSDChunk.propertyChunk.absoluteStartTimeChunk.ckID = nextChunkHeader.ckID;
