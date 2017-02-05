@@ -271,6 +271,7 @@
   <ItemGroup>
     <ClInclude Include="alignedmalloc.h" />
     <ClInclude Include="biquad.h" />
+    <ClInclude Include="dff.h" />
     <ClInclude Include="ditherer.h" />
     <ClInclude Include="dsf.h" />
     <ClInclude Include="FIRFilter.h" />

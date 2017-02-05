@@ -16,6 +16,7 @@
 #include "ditherer.h"
 #include "biquad.h"
 #include "dsf.h"
+#include "dff.h"
 
 ////////////////////////////////////////////////////////////////////////////////////////
 // This program uses the following libraries:
