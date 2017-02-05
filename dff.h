@@ -280,7 +280,7 @@ private:
 				uint8_t a;
 				uint8_t b;
 			};
-			uint32_t n;
+			uint16_t n;
 		} y, z;
 
 		y.n = x;
