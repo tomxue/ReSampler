@@ -69,10 +69,11 @@ public:
 			}
 
 			catch (std::ios_base::failure& e) {
-				err = true;
+				err = true; 
 				return;
 			}
 
+			makeTbl();
 			readHeaders();
 			for (int n = 0; n < 6; ++n) {
 				channelBuffer[n] = new uint8_t[blockSize];
@@ -120,10 +121,17 @@ public:
 	template<typename FloatType>
 	uint64_t read(FloatType* buffer, uint64_t count) {
 
-		// Interleaving in a dsf file is done at the block level.
-		// This means that we read from file like this:
-		// blockSize bytes of channel 0, blockSize bytes of channel 1 ... blockSize bytes of channel n 
+		/*
 		
+		In a 1-bit dsf file, 
+		
+		Channel interleaving is done at the block level. 
+		{4096 bytes} -> Channel 0, {4096 bytes} -> channel 1, ... {4096 bytes} -> channel n
+		 
+		In each byte, the LSB is played first; the MSB is played last.
+		                
+		*/
+
 		// However, caller expects interleaving to be done at the _sample_ level 
 
 		uint64_t samplesRead = 0i64;
@@ -137,7 +145,8 @@ public:
 				bufferIndex = 0;
 			}
 
-			buffer[i] = (channelBuffer[currentChannel][bufferIndex] & (1 << currentBit)) ? 1.0 : -1.0;
+			buffer[i] = samplTbl[channelBuffer[currentChannel][bufferIndex]][currentBit];
+		
 			++samplesRead;
 
 			// cycle through channels, then bits, then bufferIndex
@@ -190,6 +199,7 @@ private:
 	uint32_t currentBit;
 	uint64_t startOfData;
 	uint64_t endOfData;
+	double samplTbl[256][8];
 	
 	void checkSizes() {
 		assert(sizeof(dsfDSDChunk) == 28);
@@ -209,10 +219,17 @@ private:
 		numSamples = numFrames * numChannels;
 		startOfData = file.tellg();
 		endOfData = dsfDSDChunk.length + dsfFmtChunk.length + dsfDataChunk.length;
+		
 		assert( // metadata tag either non-existent or at end of data
 			(dsfDSDChunk.metadataPtr == 0) ||
 			(dsfDSDChunk.metadataPtr == endOfData)
 			);
+
+		if (dsfFmtChunk.bitDepth != 1) {
+			std::cout << "sorry, can't read 8-bit DSF files!" << std::endl;
+			err = true;
+		}
+
 	}
 
 	uint32_t readBlocks() {
@@ -223,6 +240,15 @@ private:
 			file.read((char*)channelBuffer[ch], blockSize);
 		}
 		return blockSize;
+	}
+
+	void makeTbl() { // generate sample translation table
+		for (int i = 0; i < 256; ++i) {
+			for (int j = 0; j < 8; ++j) {
+				samplTbl[i][j] = (i & (1 << j)) ? 1.0 : -1.0;
+			}
+		}
+		// to-do: sample translation table for 8-bit files ?
 	}
 };
 
