@@ -188,6 +188,7 @@ private:
 	DsfDSDChunk dsfDSDChunk;
 	DsfFmtChunk dsfFmtChunk;
 	DsfDataChunk dsfDataChunk;
+	DsfChannelType dsfChannelType;
 	std::string path;
 	OpenMode mode;
 	std::fstream file;
@@ -221,6 +222,7 @@ private:
 		_sampleRate = dsfFmtChunk.sampleRate;
 		numFrames = dsfFmtChunk.numSamples;
 		numSamples = numFrames * numChannels;
+		dsfChannelType = (DsfChannelType)dsfFmtChunk.channelType;
 		startOfData = file.tellg();
 		endOfData = dsfDSDChunk.length + dsfFmtChunk.length + dsfDataChunk.length;
 		
