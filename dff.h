@@ -113,7 +113,6 @@ typedef enum {
 	dff_write
 } dffOpenMode;
 
-
 // DffFile interface:
 
 class DffFile
@@ -138,6 +137,10 @@ public:
 
 			makeTbl();
 			readHeaders();
+
+			if (err)
+				return;
+
 			bufferSize = blockSize * numChannels;
 			inputBuffer = new uint8_t[bufferSize];
 			totalBytesRead = 0i64;
