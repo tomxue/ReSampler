@@ -32,7 +32,7 @@ typedef struct {
 	uint32_t channelType;
 	uint32_t numChannels;
 	uint32_t sampleRate;	// expected: 2822400 or 5644800
-	uint32_t bitDepth;		// expected: 1 or 8
+	uint32_t bitDepth;		// Note: apparently, this only indicates the bit order (not the actual sample width). 1 -> LSB first, 8 -> MSB First
 	uint64_t numSamples;
 	uint32_t blockSize;	// expected: 4096
 	uint32_t reserved;	// expected: zero
@@ -128,11 +128,15 @@ public:
 		Channel interleaving is done at the block level. 
 		{4096 bytes} -> Channel 0, {4096 bytes} -> channel 1, ... {4096 bytes} -> channel n
 		 
-		In each byte, the LSB is played first; the MSB is played last.
+		In each byte, 
+			if(bitDepth == 1)
+				the LSB is played first; the MSB is played last.
+			if(bitDepth == 8)
+				the MSB is played first; the LSB is played last.
 		                
 		*/
 
-		// However, caller expects interleaving to be done at the _sample_ level 
+		// Caller expects interleaving to be done at the _sample_ level 
 
 		uint64_t samplesRead = 0i64;
 
@@ -225,9 +229,8 @@ private:
 			(dsfDSDChunk.metadataPtr == endOfData)
 			);
 
-		if (dsfFmtChunk.bitDepth != 1) {
-			std::cout << "sorry, can't read 8-bit DSF files!" << std::endl;
-			err = true;
+		if (dsfFmtChunk.bitDepth == 8) {
+			std::cout << "bitstream in MSB-first format" << std::endl;
 		}
 
 	}
@@ -245,10 +248,10 @@ private:
 	void makeTbl() { // generate sample translation table
 		for (int i = 0; i < 256; ++i) {
 			for (int j = 0; j < 8; ++j) {
-				samplTbl[i][j] = (i & (1 << j)) ? 1.0 : -1.0;
+				int mask = 1 << ((dsfFmtChunk.bitDepth == 8) ? 7 - j : j); // reverse bits if 'bitdepth' == 8
+				samplTbl[i][j] = (i & mask) ? 1.0 : -1.0;
 			}
 		}
-		// to-do: sample translation table for 8-bit files ?
 	}
 };
 

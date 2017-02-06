@@ -107,6 +107,7 @@ struct conversionInfo
 	bool bUseSeed;
 	int seed;
 	bool dsfInput;
+	bool dffInput;
 };
 
 bool determineBestBitFormat(std::string & BitFormat, const std::string & inFilename, const std::string & outFilename);
@@ -121,6 +122,9 @@ void getCmdlineParam(char ** begin, char ** end, const std::string & OptionName,
 bool findCmdlineOption(char ** begin, char ** end, const std::string & option);
 template<typename FloatType> bool Convert(const conversionInfo& ci);
 template<typename FloatType> bool dsfConvert(const conversionInfo & ci);
+
+template<typename FloatType>
+bool dffConvert(const conversionInfo & ci);
 
 // Timer macros:
 #define START_TIMER() LARGE_INTEGER starttime,finishtime,elapsed,frequency,timetaken; \

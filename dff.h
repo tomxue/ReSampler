@@ -138,15 +138,15 @@ public:
 
 			makeTbl();
 			readHeaders();
-			/*
-			for (int n = 0; n < 6; ++n) {
-				channelBuffer[n] = new uint8_t[blockSize];
-			}
-			bufferIndex = blockSize; // empty (zero -> full)
+			bufferSize = blockSize * numChannels;
+			inputBuffer = new uint8_t[bufferSize];
+			totalBytesRead = 0i64;
+			endOfBlock = bufferSize;
+			bufferIndex = endOfBlock; // empty (zero -> full)
 			currentBit = 0;
 			currentChannel = 0;
 			break;
-			*/
+			
 		case dff_write:
 			break;
 		}
@@ -155,9 +155,8 @@ public:
 	~DffFile() {
 		if (file.is_open())
 			file.close();
-		for (int n = 0; n < 6; ++n) {
-			delete[] channelBuffer[n];
-		}
+		
+		delete[] inputBuffer;	
 	}
 
 	// API:
@@ -197,21 +196,21 @@ public:
 
 		*/
 
-		// However, caller expects interleaving to be done at the _sample_ level 
+		// Caller expects interleaving to be done at the _sample_ level 
 
 		uint64_t samplesRead = 0i64;
 
 		for (uint64_t i = 0; i < count; ++i) {
 
-			if (bufferIndex == blockSize) { // end of buffer ; fetch more data from file
-				if (readBlocks() == 0) {
+			if (bufferIndex >= endOfBlock) { // end of buffer ; fetch more data from file
+				endOfBlock = readBlocks();
+				if (endOfBlock == 0) {
 					break; // no more data
 				}
 				bufferIndex = 0;
 			}
 
-			buffer[i] = samplTbl[channelBuffer[currentChannel][bufferIndex]][currentBit];
-
+			buffer[i] = samplTbl[inputBuffer[bufferIndex + currentChannel]][currentBit];
 			++samplesRead;
 
 			// cycle through channels, then bits, then bufferIndex
@@ -220,7 +219,7 @@ public:
 				currentChannel = 0;
 				if (++currentBit == 8) {
 					currentBit = 0;
-					++bufferIndex;
+					bufferIndex += numChannels;
 				}
 			}
 		}
@@ -232,9 +231,8 @@ public:
 
 	void testRead() {
 		float sampleBuffer[8192];
-		uint64_t totalSamplesRead = 0i64;
 		uint64_t samplesRead = 0i64;
-
+		uint64_t totalSamplesRead = 0i64;
 		while ((samplesRead = read(sampleBuffer, 8192)) != 0) {
 			totalSamplesRead += samplesRead;
 		}
@@ -251,17 +249,20 @@ private:
 	dffOpenMode mode;
 	std::fstream file;
 	bool err;
-	uint32_t blockSize;
+	const uint32_t blockSize = 4096;
+	uint32_t endOfBlock;
+	uint64_t bufferSize;
+	uint64_t totalSoundDataBytes;
+	uint64_t totalBytesRead;
 	uint32_t numChannels;
 	uint32_t _sampleRate;
 	uint64_t numSamples;
 	uint64_t numFrames;
-	uint8_t* channelBuffer[6];
+	uint8_t* inputBuffer;
 	uint64_t bufferIndex;
 	uint32_t currentChannel;
 	uint32_t currentBit;
 	uint64_t startOfData;
-	uint64_t endOfData;
 	double samplTbl[256][8];
 
 	void getChunkHeader(dffChunkHeader* chunkHeader) {
@@ -361,20 +362,16 @@ private:
 		dffChunkHeader nextChunkHeader;
 		do {
 			getChunkHeader(&nextChunkHeader);
-			char str[5];
-			strncpy_s(str, (char*)&nextChunkHeader.ckID, 4);
-			std::cout << "PROP: " << str << std::endl;
+			
 			int64_t dataSize = nextChunkHeader.ckDataSize;
-			std::cout << std::dec << "datasize " << dataSize << std::endl;
-			std::cout << "remaining " << dataRemaining << std::endl;
-
+			
 			switch (nextChunkHeader.ckID) {
 			case CKID_FS:
 				formDSDChunk.propertyChunk.sampleRateChunk.ckID = nextChunkHeader.ckID;
 				formDSDChunk.propertyChunk.sampleRateChunk.ckDataSize = dataSize;
 				_sampleRate = formDSDChunk.propertyChunk.sampleRateChunk.sampleRate = bigEndianRead32();
-				std::cout << "Samplerate: " << formDSDChunk.propertyChunk.sampleRateChunk.sampleRate << std::endl;
 				break;
+
 			case CKID_CHNL:
 				formDSDChunk.propertyChunk.channelsChunk.ckID = nextChunkHeader.ckID;
 				formDSDChunk.propertyChunk.channelsChunk.ckDataSize = dataSize;
@@ -382,8 +379,13 @@ private:
 				for (int c = 0; c < min(numChannels, DFF_MAX_CHANNELS); ++c) {
 					formDSDChunk.propertyChunk.channelsChunk.channelID[c] = bigEndianRead32();
 				}
-				std::cout << "Number of Channels: " << numChannels << std::endl;
+				if (numChannels > DFF_MAX_CHANNELS) {
+					std::cout << "Too manny Channels: " << numChannels << " (max " << DFF_MAX_CHANNELS << ")" << std::endl;
+					err = true;
+					return;
+				}
 				break;
+
 			case CKID_CMPR:
 				formDSDChunk.propertyChunk.compressionTypeChunk.ckID = nextChunkHeader.ckID;
 				formDSDChunk.propertyChunk.compressionTypeChunk.CkDataSize = dataSize;
@@ -391,11 +393,13 @@ private:
 				formDSDChunk.propertyChunk.compressionTypeChunk.Count = bigEndianRead8();
 				file.read(formDSDChunk.propertyChunk.compressionTypeChunk.compressionName, formDSDChunk.propertyChunk.compressionTypeChunk.Count+1);
 				formDSDChunk.propertyChunk.compressionTypeChunk.compressionName[formDSDChunk.propertyChunk.compressionTypeChunk.Count] = 0; // null terminator
-				std::cout << formDSDChunk.propertyChunk.compressionTypeChunk.compressionName << std::endl;
 				if (formDSDChunk.propertyChunk.compressionTypeChunk.compressionType != CKID_DSD) {
+					std::cout << "Sorry, compression not supported: "  << formDSDChunk.propertyChunk.compressionTypeChunk.compressionName << std::endl;
 					err = true; // can't handle compressed data
+					return;
 				}
 				break;
+
 			case CKID_ABSS:
 				formDSDChunk.propertyChunk.absoluteStartTimeChunk.ckID = nextChunkHeader.ckID;
 				formDSDChunk.propertyChunk.absoluteStartTimeChunk.ckDataSize = dataSize;
@@ -404,11 +408,13 @@ private:
 				formDSDChunk.propertyChunk.absoluteStartTimeChunk.seconds = bigEndianRead8();
 				formDSDChunk.propertyChunk.absoluteStartTimeChunk.samples = bigEndianRead32();
 				break;
+
 			case CKID_LSCO:
 				formDSDChunk.propertyChunk.loudspeakerConfigurationChunk.ckID = nextChunkHeader.ckID;
 				formDSDChunk.propertyChunk.loudspeakerConfigurationChunk.ckDataSize = nextChunkHeader.ckDataSize;
 				formDSDChunk.propertyChunk.loudspeakerConfigurationChunk.lsConfig = bigEndianRead16();
 				break;
+
 			default:
 				file.seekg(dataSize, file.cur); // who cares ? skip to next chunk ...
 			}
@@ -434,52 +440,56 @@ private:
 		// read the chunks we care about ...
 		do {
 			getChunkHeader(&nextChunkHeader);
-			char str[5];
-			strncpy_s(str, (char*)&nextChunkHeader.ckID, 4);
-			std::cout << str << std::endl;
+
 			int64_t dataSize = nextChunkHeader.ckDataSize;
-			std::cout << "datasize " << std::dec << dataSize << std::endl;
+			
 			switch (nextChunkHeader.ckID) {
 			case CKID_FVER:
 				formDSDChunk.formatVersionChunk.ckID = nextChunkHeader.ckID;
 				formDSDChunk.formatVersionChunk.ckDataSize = nextChunkHeader.ckDataSize;
 				formDSDChunk.formatVersionChunk.version = bigEndianRead32();
 				break;
+
 			case CKID_PROP:
 				formDSDChunk.propertyChunk.ckID = nextChunkHeader.ckID;
 				formDSDChunk.propertyChunk.ckDataSize = dataSize;
 				formDSDChunk.propertyChunk.propType = bigEndianRead32();
 				readPropChunks(dataSize - sizeof(formDSDChunk.propertyChunk.propType));
 				break;
+
 			case CKID_DSD:
 				formDSDChunk.dsdSoundDataHeader.ckID = nextChunkHeader.ckID;
 				formDSDChunk.dsdSoundDataHeader.ckDataSize = nextChunkHeader.ckDataSize;
-				endOfData = file.tellg() + (std::streampos)nextChunkHeader.ckDataSize; // to-do ??
+				totalSoundDataBytes = formDSDChunk.dsdSoundDataHeader.ckDataSize;
+				assert(totalSoundDataBytes % numChannels == 0); // must be multiple of numChannels
+				numSamples = 8 * totalSoundDataBytes;
+				numFrames = numSamples / numChannels;
+				startOfData = file.tellg();
 				break;
+
 			default:
 				file.seekg(dataSize, file.cur); // who cares ? skip to next chunk ...
 			} 
 		} while (nextChunkHeader.ckID != CKID_DSD);
-		std::cout << "ready to read data now !" << std::endl;
+
+		// should be ready to read data stream now ...
 	}
 
 	uint32_t readBlocks() {
-		if (file.tellg() >= endOfData)
-			return 0;
-
-		for (int ch = 0; ch < numChannels; ++ch) {
-			file.read((char*)channelBuffer[ch], blockSize);
-		}
-		return blockSize;
+		uint64_t bytesRemaining = totalSoundDataBytes - totalBytesRead;
+		uint64_t bytesToRead = min(bufferSize, bytesRemaining);
+		file.read((char*)inputBuffer, bytesToRead);
+		uint64_t bytesActuallyRead = file.gcount();
+		totalBytesRead += bytesActuallyRead;
+		return bytesActuallyRead;
 	}
 
 	void makeTbl() { // generate sample translation table
 		for (int i = 0; i < 256; ++i) {
 			for (int j = 0; j < 8; ++j) {
-				samplTbl[i][j] = (i & (1 << j)) ? 1.0 : -1.0;
+				samplTbl[i][j] = (i & (1 << (7-j))) ? 1.0 : -1.0; // MSB-first
 			}
 		}
-		// to-do: sample translation table for 8-bit files ?
 	}
 };
 
