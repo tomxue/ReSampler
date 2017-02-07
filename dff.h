@@ -364,6 +364,10 @@ private:
 		int64_t dataRemaining = chunkSize;
 		dffChunkHeader nextChunkHeader;
 		do {
+
+			if (err)
+				break;
+			
 			getChunkHeader(&nextChunkHeader);
 			
 			int64_t dataSize = nextChunkHeader.ckDataSize;

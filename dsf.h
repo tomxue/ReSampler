@@ -1,6 +1,10 @@
 #ifndef DSF_H_
 #define DSF_H_
 
+// dsf.h
+// simple dsf file reader
+// (c) 2017 Judd Niemann
+
 #include <cassert>
 #include <cstdint>
 #include <string>
@@ -32,7 +36,11 @@ typedef struct {
 	uint32_t channelType;
 	uint32_t numChannels;
 	uint32_t sampleRate;	// expected: 2822400 or 5644800
-	uint32_t bitDepth;		// Note: apparently, this only indicates the bit order (not the actual sample width). 1 -> LSB first, 8 -> MSB First
+
+	uint32_t bitOrder;		// Note: in the spec, this field is called 'Bits per sample.'
+							// However, apparently (as stated in Annotation 4), it actually indicates the bit order (not the sample width). 
+							// 1 -> LSB first, 8 -> MSB First
+
 	uint64_t numSamples;
 	uint32_t blockSize;	// expected: 4096
 	uint32_t reserved;	// expected: zero
@@ -49,6 +57,13 @@ typedef enum {
 	dsf_write
 } OpenMode;
 
+#define DSF_ID_DSD 0x20445344
+#define DSF_ID_FMT 0x20746d66
+#define DSF_ID_DATA 0x61746164
+
+#define DSF_STD_BLOCKSIZE 4096
+#define DSF_MAX_BLOCKSIZE 32768
+#define DSF_MAX_FMTCHUNKSIZE 1024
 
 // DsfFile interface:
 
@@ -58,7 +73,7 @@ public:
 	// Construction / destruction
 	DsfFile(const std::string& path, OpenMode mode = dsf_read) : path(path), mode(mode)
 	{
-		checkSizes();
+		assertSizes();
 		file.exceptions(std::ifstream::failbit | std::ifstream::badbit);
 
 		switch (mode) {
@@ -118,22 +133,28 @@ public:
 		return numSamples;
 	};
 
+	// read() : reads count interleaved FloatType samples into buffer
+
 	template<typename FloatType>
 	uint64_t read(FloatType* buffer, uint64_t count) {
 
 		/*
 		
 		In a 1-bit dsf file, 
+
+		Channel interleaving is done at the block level:
 		
-		Channel interleaving is done at the block level. 
-		{4096 bytes} -> Channel 0, {4096 bytes} -> channel 1, ... {4096 bytes} -> channel n
-		 
+		{BLOCKSIZE bytes} -> Channel 0, 
+		{BLOCKSIZE bytes} -> channel 1, 
+		... 
+		{BLOCKSIZE bytes} -> channel n
+		
 		In each byte, 
-			if(bitDepth == 1)
+			if(bitOrder == 1)
 				the LSB is played first; the MSB is played last.
-			if(bitDepth == 8)
+			if(bitOrder == 8)
 				the MSB is played first; the LSB is played last.
-		                
+
 		*/
 
 		// Caller expects interleaving to be done at the _sample_ level 
@@ -170,13 +191,17 @@ public:
 	// and confirms number of samples read equals number of samples expected:
 
 	void testRead() {
-		float sampleBuffer[8192];
+
+		const size_t bufSize = 8192;
+
+		float sampleBuffer[bufSize];
 		uint64_t totalSamplesRead = 0i64;
 		uint64_t samplesRead = 0i64;
 
-		while ((samplesRead = read(sampleBuffer, 8192)) != 0) {
+		while ((samplesRead = read(sampleBuffer, bufSize)) != 0) {
 			totalSamplesRead += samplesRead;
 		}
+
 		std::cout << "samples expected: " << numSamples << std::endl;
 		std::cout << "total samples retrieved: " << totalSamplesRead << std::endl;
 	}
@@ -206,18 +231,77 @@ private:
 	uint64_t endOfData;
 	double samplTbl[256][8];
 	
-	void checkSizes() {
+	void assertSizes() {
 		assert(sizeof(dsfDSDChunk) == 28);
 		assert(sizeof(dsfFmtChunk) == 52);
 		assert(sizeof(dsfDataChunk) == 12);
 	}
 
-	void readHeaders() {
-		file.read((char*)&dsfDSDChunk, sizeof(dsfDSDChunk));
-		file.read((char*)&dsfFmtChunk, sizeof(dsfFmtChunk));
-		file.read((char*)&dsfDataChunk, sizeof(dsfDataChunk));
+	// checkWarnChunkSize() :
+	// Check that chunk is expected size. 
+	// Send warning if not.
+	// Return difference between chunk length and expected chunk length
 
+	template<typename T> int checkWarnChunkSize(size_t statedLength, const char* chunkName) {
+		if (sizeof(T) != statedLength) {
+			std::cout << "warning: '" << chunkName << "' chunk is " << statedLength << " bytes. (" << sizeof(T) << " bytes expected)" << std::endl;
+		}
+		return statedLength - sizeof(T);
+	}
+
+	// warnWrongChunk() : inform user that expected chunk is missing
+	void warnWrongChunk(const char* chunkName) {
+		std::cout << "error: '" << chunkName << "' chunk missing !" << std::endl;
+	}
+
+	// readHeaders() : read and interpret the file header chunks ("DSD", "fmt ", and "data")
+	void readHeaders() {
+
+		// read DSD chunk:
+		file.read((char*)&dsfDSDChunk, sizeof(dsfDSDChunk));
+		if (dsfDSDChunk.header != DSF_ID_DSD) {
+			warnWrongChunk("DSD ");
+			err = true;
+			return;
+		}
+		checkWarnChunkSize<DsfDSDChunk>(dsfDSDChunk.length, "DSD ");
+		
+		// read fmt chunk:
+		file.read((char*)&dsfFmtChunk, sizeof(dsfFmtChunk));
+		if (dsfFmtChunk.header != DSF_ID_FMT) {
+			warnWrongChunk("fmt ");
+			err = true;
+			return;
+		}
+		
+		std::streamoff offset = checkWarnChunkSize<DsfFmtChunk>(dsfFmtChunk.length, "fmt ");
+		if (offset != 0) { // allow for some flexibility in chunk size, since spec says 'usually 52'
+			if (dsfFmtChunk.length > DSF_MAX_FMTCHUNKSIZE) { // ... but not too much flexibility
+				err = true;
+				return;
+			}
+			file.seekg(offset, std::ios_base::cur); // relative seek to next chunk 
+		}
+
+		// read data chunk:
+		file.read((char*)&dsfDataChunk, sizeof(dsfDataChunk));
+		if (dsfDataChunk.header != DSF_ID_DATA) {
+			warnWrongChunk("data");
+			err = true;
+			return;
+		}
+
+		// check block size:
 		blockSize = dsfFmtChunk.blockSize;
+		if (blockSize != DSF_STD_BLOCKSIZE) {
+			std::cout << "Non-standard block size: " << blockSize << std::endl;
+			if (blockSize > DSF_MAX_BLOCKSIZE) {
+				std::cout << "Block size too large!" << std::endl;
+				err = true;
+				return;
+			}
+		}
+
 		numChannels = dsfFmtChunk.numChannels;
 		_sampleRate = dsfFmtChunk.sampleRate;
 		numFrames = dsfFmtChunk.numSamples;
@@ -226,17 +310,19 @@ private:
 		startOfData = file.tellg();
 		endOfData = dsfDSDChunk.length + dsfFmtChunk.length + dsfDataChunk.length;
 		
-		assert( // metadata tag either non-existent or at end of data
-			(dsfDSDChunk.metadataPtr == 0) ||
-			(dsfDSDChunk.metadataPtr == endOfData)
-			);
-
-		if (dsfFmtChunk.bitDepth == 8) {
+		if (dsfFmtChunk.bitOrder == 8) {
 			std::cout << "bitstream in MSB-first format" << std::endl;
 		}
 
+		assert( // metadata tag either non-existent or at end of data
+			(dsfDSDChunk.metadataPtr == 0) ||
+			(dsfDSDChunk.metadataPtr == endOfData)
+		);
+
+		//to-do: read metadata (ID3v2)
 	}
 
+	// readBlocks() : reads blockSize bytes into each channelBuffer for numChannels channels
 	uint32_t readBlocks() {
 		if (file.tellg() >= endOfData)
 			return 0;
@@ -247,10 +333,11 @@ private:
 		return blockSize;
 	}
 
+	// makeTbl() : translates all possible uint8_t values into sets of 8 floating point sample values.
 	void makeTbl() { // generate sample translation table
 		for (int i = 0; i < 256; ++i) {
 			for (int j = 0; j < 8; ++j) {
-				int mask = 1 << ((dsfFmtChunk.bitDepth == 8) ? 7 - j : j); // reverse bits if 'bitdepth' == 8
+				int mask = 1 << ((dsfFmtChunk.bitOrder == 8) ? 7 - j : j); // reverse bits if 'bitOrder' == 8
 				samplTbl[i][j] = (i & mask) ? 1.0 : -1.0;
 			}
 		}
