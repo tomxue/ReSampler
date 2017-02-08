@@ -99,7 +99,7 @@ Using the same value of n on subsequent conversions should reproduce precisely t
 
 ## Supported Formats
 
-Resampler can handle any of the file formats libsndfile can handle.  
+Resampler can handle any of the file formats libsndfile can handle, plus a few extras (notably, the 1-bit DSD formats, dff and dsf).  
 Thus, the following file extensions are supported:  
 ![Supported Formats](https://github.com/jniemann66/ReSampler/blob/master/supported_formats.png)
 
