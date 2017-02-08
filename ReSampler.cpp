@@ -1880,9 +1880,6 @@ bool dffConvert(const conversionInfo& ci)
 	return true;
 } // ends dsfConvert()
 
-
-
-
 // gcd() - greatest common divisor:
 int gcd(int a, int b) {
 	if (a<0) a = -a;
