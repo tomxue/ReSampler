@@ -1019,6 +1019,10 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 				infile.seek(0i64, SEEK_SET);
 			}
 
+			for (auto& filter : Filters) {
+				filter.reset();
+			}
+
 			if (ci.bDither) {
 				for (auto& ditherer : Ditherers) {
 					ditherer.adjustGain(GainAdjustment);
