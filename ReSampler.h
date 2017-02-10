@@ -6,7 +6,7 @@
 #include <sndfile.h>
 #include <sndfile.hh>
 
-const std::string strVersion("1.2.0");
+const std::string strVersion("1.2.1 pre-release");
 const std::string strUsage("usage: resampler.exe -i <inputfile> [-o <outputfile>] -r <samplerate> [-b <bitformat>] [-n [<normalization factor>]]\n");
 const std::string strExtraOptions("--help\n--version\n--doubleprecision\n--listsubformats <ext>\n--dither [<amount>] [--autoblank]\n--minphase\n--flacCompression <compressionlevel>\n--vorbisQuality <quality>\n--noClippingProtection\n");
 
@@ -120,11 +120,7 @@ void getCmdlineParam(char ** begin, char ** end, const std::string & OptionName,
 void getCmdlineParam(char ** begin, char ** end, const std::string & OptionName, int & nParameter);
 void getCmdlineParam(char ** begin, char ** end, const std::string & OptionName, double & Parameter);
 bool findCmdlineOption(char ** begin, char ** end, const std::string & option);
-template<typename FloatType> bool Convert(const conversionInfo& ci);
-template<typename FloatType> bool dsfConvert(const conversionInfo & ci);
-
-template<typename FloatType>
-bool dffConvert(const conversionInfo & ci);
+template<typename FileReader, typename FloatType> bool Convert(const conversionInfo& ci, bool peakDetection = true);
 
 // Timer macros:
 #define START_TIMER() LARGE_INTEGER starttime,finishtime,elapsed,frequency,timetaken; \
