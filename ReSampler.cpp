@@ -619,8 +619,10 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 		std::cout << "Done\n";
 		std::cout << "Peak input sample: " << std::fixed << PeakInputSample << " (" << 20 * log10(PeakInputSample) << " dBFS)" << std::endl;
 	}
-	else {
-		PeakInputSample = 1.0;
+	else { 
+		PeakInputSample = ci.bNormalize ?
+			0.5 /* ... a guess, since we haven't actually measured the peak (in the case of DSD, it is a good guess.) */ :
+			1.0;
 	}
 
 	if (ci.bNormalize) { // echo Normalization settings to user

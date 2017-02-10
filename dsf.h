@@ -213,13 +213,17 @@ public:
 	}
 
 	uint64_t seek(uint64_t pos, int whence) {
+		// reset initial conditions:
+		bufferIndex = blockSize; // empty (zero -> full)
+		currentBit = 0;
+		currentChannel = 0;
+
+		// seek:
+		file.clear();
 		file.seekg(startOfData + pos);
 		return pos;
 	}
 
-	void seekStart() {
-		file.seekg(startOfData);
-	}
 private:
 	DsfDSDChunk dsfDSDChunk;
 	DsfFmtChunk dsfFmtChunk;
