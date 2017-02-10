@@ -307,19 +307,18 @@ private:
 		numFrames = dsfFmtChunk.numSamples;
 		numSamples = numFrames * numChannels;
 		dsfChannelType = (DsfChannelType)dsfFmtChunk.channelType;
-		startOfData = file.tellg();
-		endOfData = dsfDSDChunk.length + dsfFmtChunk.length + dsfDataChunk.length;
 		
 		if (dsfFmtChunk.bitOrder == 8) {
 			std::cout << "bitstream in MSB-first format" << std::endl;
 		}
 
+		startOfData = file.tellg();
+		endOfData = dsfDSDChunk.length + dsfFmtChunk.length + dsfDataChunk.length;
+
 		assert( // metadata tag either non-existent or at end of data
 			(dsfDSDChunk.metadataPtr == 0) ||
 			(dsfDSDChunk.metadataPtr == endOfData)
 		);
-
-		//to-do: read metadata (ID3v2)
 	}
 
 	// readBlocks() : reads blockSize bytes into each channelBuffer for numChannels channels
