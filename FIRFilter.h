@@ -141,6 +141,19 @@ public:
 		return true;
 	}
 
+	void reset() {
+		// reset indexes:
+		CurrentIndex = size - 1;
+		LastPut = 0;
+
+		// clear signal buffer
+		for (unsigned int i = 0; i < size; ++i) {
+			Signal[i] = 0.0;
+			Signal[i + size] = 0.0;
+		}
+
+	}
+
 	void put(FloatType value) { // Put signal in reverse order.
 		Signal[CurrentIndex] = value;
 		LastPut = CurrentIndex;

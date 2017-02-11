@@ -10,6 +10,8 @@
 #include <string>
 #include <fstream>
 
+#define DSF_FORMAT 0x00310000 // note: take care to make sure this doesn't clash with future libsndfile formats (unlikely)
+
 #pragma pack(push, r1, 1)
 typedef struct {
 	uint32_t header;	// expected: "DSD "
@@ -121,7 +123,7 @@ public:
 		return numChannels;
 	};
 
-	unsigned int sampleRate() const {
+	unsigned int samplerate() const {
 		return _sampleRate;
 	};
 
@@ -132,6 +134,10 @@ public:
 	uint64_t samples() const {
 		return numSamples;
 	};
+
+	int format() const {
+		return DSF_FORMAT;
+	}
 
 	// read() : reads count interleaved FloatType samples into buffer
 
@@ -206,9 +212,18 @@ public:
 		std::cout << "total samples retrieved: " << totalSamplesRead << std::endl;
 	}
 
-	void seekStart() {
-		file.seekg(startOfData);
+	uint64_t seek(uint64_t pos, int whence) {
+		// reset initial conditions:
+		bufferIndex = blockSize; // empty (zero -> full)
+		currentBit = 0;
+		currentChannel = 0;
+
+		// seek:
+		file.clear();
+		file.seekg(startOfData + pos);
+		return pos;
 	}
+
 private:
 	DsfDSDChunk dsfDSDChunk;
 	DsfFmtChunk dsfFmtChunk;

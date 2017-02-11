@@ -8,6 +8,7 @@
 #include <fstream>
 
 #define DFF_MAX_CHANNELS 6 
+#define DFF_FORMAT 0x00300000 // note: take care to make sure this doesn't clash with future libsndfile formats (unlikely)
 
 #pragma pack(push, r1, 1)
 
@@ -172,7 +173,7 @@ public:
 		return numChannels;
 	};
 
-	unsigned int sampleRate() const {
+	unsigned int samplerate() const {
 		return _sampleRate;
 	};
 
@@ -183,6 +184,10 @@ public:
 	uint64_t samples() const {
 		return numSamples;
 	};
+
+	int format() const {
+		return DFF_FORMAT;
+	}
 
 	template<typename FloatType>
 	uint64_t read(FloatType* buffer, uint64_t count) {
@@ -243,9 +248,22 @@ public:
 		std::cout << "total samples retrieved: " << totalSamplesRead << std::endl;
 	}
 
-	void seekStart() {
-		file.seekg(startOfData);
+	uint64_t seek(uint64_t pos, int whence) {
+
+		// To-do: allow seeks to positions other than beginning (requires proper calculations)
+		// reset state to initial conditions: 
+		totalBytesRead = 0i64;
+		endOfBlock = bufferSize;
+		bufferIndex = endOfBlock; // empty (zero -> full)
+		currentBit = 0;
+		currentChannel = 0;
+
+		// rewind file pointer
+		file.clear(); // in case of eof
+		file.seekg(startOfData + pos);
+		return pos;
 	}
+
 private:
 	FormDSDChunk formDSDChunk;
 	std::string path;
@@ -471,7 +489,6 @@ private:
 				assert(totalSoundDataBytes % numChannels == 0); // must be multiple of numChannels
 				numSamples = 8 * totalSoundDataBytes;
 				numFrames = numSamples / numChannels;
-				startOfData = file.tellg();
 				break;
 
 			default:
@@ -479,10 +496,14 @@ private:
 			} 
 		} while (nextChunkHeader.ckID != CKID_DSD);
 
-		// should be ready to read data stream now ...
+		startOfData = file.tellg(); // should be ready to read data stream now ...
 	}
 
 	uint32_t readBlocks() {
+		if (file.eof()) {
+			return 0;
+		}
+
 		uint64_t bytesRemaining = totalSoundDataBytes - totalBytesRead;
 		uint64_t bytesToRead = min(bufferSize, bytesRemaining);
 		file.read((char*)inputBuffer, bytesToRead);
