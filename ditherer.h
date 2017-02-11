@@ -311,6 +311,7 @@ public:
 		f2.reset();
 		currentIndex = FIRLength - 1;
 		memset(noise, 0, MAX_FIR_FILTER_SIZE * sizeof(FloatType));
+		
 		// re-seed PRNG
 		randGenerator.seed(seed);
 		oldRandom = 0;
