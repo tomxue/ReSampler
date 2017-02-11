@@ -679,7 +679,7 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 	// echo conversion ratio to user:
 	FloatType ResamplingFactor = static_cast<FloatType>(ci.OutputSampleRate) / InputSampleRate;
 	std::cout << "\nConversion ratio: " << ResamplingFactor
-		<< " (" << F.numerator << ":" << F.denominator << ")" << std::endl;
+		<< " (" << FOriginal.numerator << ":" << FOriginal.denominator << ")" << std::endl;
 
 	// echo cutoff frequency to user:
 	auto prec = std::cout.precision();
