@@ -718,7 +718,7 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 		OutputFileFormat |= (InputFileFormat & SF_FORMAT_SUBMASK); // may not be valid subformat for new file format. 
 	}
 
-	// determine number of bits in output format, for Dithering:
+	// determine number of bits in output format (for Dithering purposes):
 	int signalBits;
 	switch (OutputFileFormat & SF_FORMAT_SUBMASK) {
 	case SF_FORMAT_PCM_24:
@@ -729,7 +729,7 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 		signalBits = 8;
 		break;
 	default:
-		signalBits = 16; // to-do: what should it be for floating-point types ?
+		signalBits = 24; // to-do: what should it be for floating-point types ? (24)
 	}
 
 	// confirm dithering options for user:
@@ -833,7 +833,7 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 							Gain * inbuffer[s + Channel];
 
 						outbuffer[OutBufferIndex + Channel] = OutputSample;
-						PeakOutputSample = max(abs(PeakOutputSample), abs(OutputSample));
+						PeakOutputSample = max(abs(PeakOutputSample), std::abs(OutputSample));
 					}
 
 					OutBufferIndex += nChannels;
@@ -872,7 +872,7 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 								Gain * Filters[Channel].get();
 
 							outbuffer[OutBufferIndex + Channel] = OutputSample;
-							PeakOutputSample = max(abs(PeakOutputSample), abs(OutputSample));
+							PeakOutputSample = max(abs(PeakOutputSample), std::abs(OutputSample));
 						}
 
 						OutBufferIndex += nChannels;
@@ -920,7 +920,7 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 #endif
 
 							outbuffer[OutBufferIndex + Channel] = OutputSample;
-							PeakOutputSample = max(PeakOutputSample, abs(OutputSample));
+							PeakOutputSample = max(PeakOutputSample, std::abs(OutputSample));
 						}
 
 						OutBufferIndex += nChannels;
@@ -969,7 +969,7 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 									Gain * Filters[Channel].LazyGet(F.numerator);
 									
 								outbuffer[OutBufferIndex + Channel] = OutputSample;
-								PeakOutputSample = max(PeakOutputSample, abs(OutputSample));
+								PeakOutputSample = max(PeakOutputSample, std::abs(OutputSample));
 							}
 
 							OutBufferIndex += nChannels;
