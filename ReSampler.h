@@ -11,6 +11,7 @@ const std::string strUsage("usage: resampler.exe -i <inputfile> [-o <outputfile>
 const std::string strExtraOptions("--help\n--version\n--doubleprecision\n--listsubformats <ext>\n--dither [<amount>] [--autoblank]\n--minphase\n--flacCompression <compressionlevel>\n--vorbisQuality <quality>\n--noClippingProtection\n");
 
 #define BUFFERSIZE 8192 // buffer size for file reads
+#define MAXCHANNELS 64
 
 #pragma warning(disable : 4996) // suppress pointless MS "deprecation" warnings
 #pragma warning(disable : 4244) // suppress double-to-float warnings
@@ -121,6 +122,15 @@ void getCmdlineParam(char ** begin, char ** end, const std::string & OptionName,
 void getCmdlineParam(char ** begin, char ** end, const std::string & OptionName, double & Parameter);
 bool findCmdlineOption(char ** begin, char ** end, const std::string & option);
 template<typename FileReader, typename FloatType> bool Convert(const conversionInfo& ci, bool peakDetection = true);
+
+template<typename FileReader, typename FloatType>
+bool parallelConvert(const conversionInfo & ci, bool peakDetection = true);
+
+template<typename FloatType>
+bool deInterleave(FloatType ** channelBuffers, const FloatType * sampleData, uint64_t numFrames, unsigned int numChannels);
+
+template<typename FloatType>
+bool interleave(FloatType * sampleData, const FloatType ** channelBuffers, uint64_t numFrames, unsigned int numChannels);
 
 // Timer macros:
 #define START_TIMER() LARGE_INTEGER starttime,finishtime,elapsed,frequency,timetaken; \
