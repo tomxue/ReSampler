@@ -6,7 +6,7 @@
 #include <sndfile.h>
 #include <sndfile.hh>
 
-const std::string strVersion("1.2.2 pre-release newConvert");
+const std::string strVersion("1.2.2");
 const std::string strUsage("usage: resampler.exe -i <inputfile> [-o <outputfile>] -r <samplerate> [-b <bitformat>] [-n [<normalization factor>]]\n");
 const std::string strExtraOptions("--help\n--version\n--doubleprecision\n--listsubformats <ext>\n--dither [<amount>] [--autoblank]\n--minphase\n--flacCompression <compressionlevel>\n--vorbisQuality <quality>\n--noClippingProtection\n");
 
@@ -122,7 +122,6 @@ void getCmdlineParam(char ** begin, char ** end, const std::string & OptionName,
 void getCmdlineParam(char ** begin, char ** end, const std::string & OptionName, double & Parameter);
 bool findCmdlineOption(char ** begin, char ** end, const std::string & option);
 template<typename FileReader, typename FloatType> bool Convert(const conversionInfo & ci, bool peakDetection = true);
-template<typename FileReader, typename FloatType> bool oldConvert(const conversionInfo& ci, bool peakDetection = true);
 template<typename FloatType> bool deInterleave(FloatType ** channelBuffers, const FloatType * sampleData, uint64_t numFrames, unsigned int numChannels);
 template<typename FloatType> bool interleave(FloatType * sampleData, const FloatType ** channelBuffers, uint64_t numFrames, unsigned int numChannels);
 
