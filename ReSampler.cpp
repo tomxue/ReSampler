@@ -321,28 +321,59 @@ if (outFileExt != inFileExt)
 	ci.dsfInput = dsfInput;
 	ci.dffInput = dffInput;
 
+	// !!!
+	ci.bMultiThreaded = false;
+	// ----
+
 	try {
-		if (bUseDoublePrecision) {
-			std::cout << "Using double precision for calculations." << std::endl;
-			if (ci.dsfInput) {
-				return Convert<DsfFile, double>(ci, /* peakDetection = */ false ) ? EXIT_SUCCESS : EXIT_FAILURE;
-			}
-			else if (ci.dffInput) {
-				return Convert<DffFile, double>(ci, /* peakDetection = */ false) ? EXIT_SUCCESS : EXIT_FAILURE;
+		if (ci.bMultiThreaded) {
+			if (bUseDoublePrecision) {
+				std::cout << "Using double precision for calculations." << std::endl;
+				if (ci.dsfInput) {
+					return ConvertMT<DsfFile, double>(ci, /* peakDetection = */ false) ? EXIT_SUCCESS : EXIT_FAILURE;
+				}
+				else if (ci.dffInput) {
+					return ConvertMT<DffFile, double>(ci, /* peakDetection = */ false) ? EXIT_SUCCESS : EXIT_FAILURE;
+				}
+				else {
+					return ConvertMT<SndfileHandle, double>(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
+				}
 			}
 			else {
-				return Convert<SndfileHandle, double>(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
+				if (ci.dsfInput) {
+					return ConvertMT<DsfFile, float>(ci, /* peakDetection = */ false) ? EXIT_SUCCESS : EXIT_FAILURE;
+				}
+				else if (ci.dffInput) {
+					return ConvertMT<DffFile, float>(ci, /* peakDetection = */ false) ? EXIT_SUCCESS : EXIT_FAILURE;
+				}
+				else {
+					return ConvertMT<SndfileHandle, float>(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
+				}
 			}
 		}
 		else {
-			if (ci.dsfInput) {
-				return Convert<DsfFile, float>(ci, /* peakDetection = */ false) ? EXIT_SUCCESS : EXIT_FAILURE;
-			}
-			else if (ci.dffInput) {
-				return Convert<DffFile, float>(ci, /* peakDetection = */ false) ? EXIT_SUCCESS : EXIT_FAILURE;
+			if (bUseDoublePrecision) {
+				std::cout << "Using double precision for calculations." << std::endl;
+				if (ci.dsfInput) {
+					return Convert<DsfFile, double>(ci, /* peakDetection = */ false) ? EXIT_SUCCESS : EXIT_FAILURE;
+				}
+				else if (ci.dffInput) {
+					return Convert<DffFile, double>(ci, /* peakDetection = */ false) ? EXIT_SUCCESS : EXIT_FAILURE;
+				}
+				else {
+					return Convert<SndfileHandle, double>(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
+				}
 			}
 			else {
-				return Convert<SndfileHandle, float>(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
+				if (ci.dsfInput) {
+					return Convert<DsfFile, float>(ci, /* peakDetection = */ false) ? EXIT_SUCCESS : EXIT_FAILURE;
+				}
+				else if (ci.dffInput) {
+					return Convert<DffFile, float>(ci, /* peakDetection = */ false) ? EXIT_SUCCESS : EXIT_FAILURE;
+				}
+				else {
+					return Convert<SndfileHandle, float>(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
+				}
 			}
 		}
 	}
@@ -1316,25 +1347,34 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 			for (int x = 0; x < MAXCHANNELS; x++) {
 				di[x] = 0;
 			}
+			std::vector<std::future<unsigned int>> r(nChannels);
+			ctpl::thread_pool threadPool(nChannels);
 			do { // Read and process blocks of samples until the end of file is reached
 				count = infile.read(inbuffer, BufferSize);
 				SamplesRead += count;
 				for (int Channel = 0; Channel < nChannels; Channel++) {
-					OutBufferIndex = 0;
-					for (unsigned int s = 0; s < count; s += nChannels) {
-						Filters[Channel].put(inbuffer[s + Channel]); // inject a source sample
-						if (di[Channel] == 0) { // decimate
-							FloatType OutputSample = ci.bDither ?
-								Ditherers[Channel].Dither(Gain * Filters[Channel].get()) :
-								Gain * Filters[Channel].get();
-							OutBuffer[OutBufferIndex + Channel] = OutputSample;
-							PeakOutputSample = max(PeakOutputSample, std::abs(OutputSample));
-							OutBufferIndex += nChannels;
-						}
-						if (++di[Channel] == F.denominator)
-							di[Channel] = 0;
-					} // ends loop over s
+					r[Channel] = threadPool.push([&, Channel](int) {
+						unsigned int localOutBufferIndex = 0;
+						for (unsigned int s = 0; s < count; s += nChannels) {
+							Filters[Channel].put(inbuffer[s + Channel]); // inject a source sample
+							if (di[Channel] == 0) { // decimate
+								FloatType OutputSample = ci.bDither ?
+									Ditherers[Channel].Dither(Gain * Filters[Channel].get()) :
+									Gain * Filters[Channel].get();
+								OutBuffer[localOutBufferIndex + Channel] = OutputSample;
+								PeakOutputSample = max(PeakOutputSample, std::abs(OutputSample));
+								localOutBufferIndex += nChannels;
+							}
+							if (++di[Channel] == F.denominator)
+								di[Channel] = 0;
+						} // ends loop over s
+						return localOutBufferIndex;
+					});
 				} // ends loop over Channel
+
+				for (int Channel = 0; Channel < nChannels; ++Channel) {
+					OutBufferIndex = r[Channel].get();
+				}
 				pOutFile->write(OutBuffer, OutBufferIndex);
 
 				// conditionally send progress update:
@@ -1347,32 +1387,43 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 		} // ends Decimate Only
 
 		else if (F.denominator == 1) { // Interpolate only
+			std::vector<std::future<unsigned int>> r(nChannels);
+			ctpl::thread_pool threadPool(nChannels);
 			do { // Read and process blocks of samples until the end of file is reached
 				count = infile.read(inbuffer, BufferSize);
 				SamplesRead += count;
 				for (int Channel = 0; Channel < nChannels; Channel++) {
-					OutBufferIndex = 0;
-					for (unsigned int s = 0; s < count; s += nChannels) {
-						for (int ii = 0; ii < F.numerator; ++ii) {
-							if (ii == 0)
-								Filters[Channel].put(inbuffer[s + Channel]); // inject a source sample
-							else
-								Filters[Channel].putZero(); // inject a Zero
+					r[Channel] = threadPool.push([&, Channel](int) {
+
+						unsigned int localOutBufferIndex = 0;
+						for (unsigned int s = 0; s < count; s += nChannels) {
+							for (int ii = 0; ii < F.numerator; ++ii) {
+								if (ii == 0)
+									Filters[Channel].put(inbuffer[s + Channel]); // inject a source sample
+								else
+									Filters[Channel].putZero(); // inject a Zero
 #ifdef USE_AVX
-							FloatType OutputSample = ci.bDither ?
-								Ditherers[Channel].Dither(Gain * Filters[Channel].get()) :
-								Gain * Filters[Channel].get();
+								FloatType OutputSample = ci.bDither ?
+									Ditherers[Channel].Dither(Gain * Filters[Channel].get()) :
+									Gain * Filters[Channel].get();
 #else
-							FloatType OutputSample = ci.bDither ?
-								Ditherers[Channel].Dither(Gain * Filters[Channel].LazyGet(F.numerator)) :
-								Gain * Filters[Channel].LazyGet(F.numerator);
+								FloatType OutputSample = ci.bDither ?
+									Ditherers[Channel].Dither(Gain * Filters[Channel].LazyGet(F.numerator)) :
+									Gain * Filters[Channel].LazyGet(F.numerator);
 #endif
-							OutBuffer[OutBufferIndex + Channel] = OutputSample;
-							PeakOutputSample = max(PeakOutputSample, std::abs(OutputSample));
-							OutBufferIndex += nChannels;
-						} // ends loop over ii
-					} // ends loop over s
+								OutBuffer[localOutBufferIndex + Channel] = OutputSample;
+								PeakOutputSample = max(PeakOutputSample, std::abs(OutputSample));
+								localOutBufferIndex += nChannels;
+							} // ends loop over ii
+						} // ends loop over s
+						return localOutBufferIndex;
+					});
+
 				} // ends loop over Channel
+
+				for (int Channel = 0; Channel < nChannels; ++Channel) {
+					OutBufferIndex = r[Channel].get();
+				}
 				pOutFile->write(OutBuffer, OutBufferIndex);
 
 				// conditionally send progress update:
@@ -1396,11 +1447,8 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 				count = infile.read(inbuffer, BufferSize);
 				SamplesRead += count;
 				for (int Channel = 0; Channel < nChannels; ++Channel) {
-					//OutBufferIndex = 0;
-
 					r[Channel] = threadPool.push([&, Channel](int) {
 						unsigned int localOutBufferIndex = 0;
-						//std::cout << Channel << std::endl;
 						for (unsigned int s = 0; s < count; s += nChannels) {
 							for (int ii = 0; ii < F.numerator; ++ii) { // (ii stands for "interpolation index
 								if (ii == 0)
@@ -1421,7 +1469,6 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 						} // ends loop over s
 						return localOutBufferIndex;
 					});
-
 				} // ends loop over Channel
 
 			
