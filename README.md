@@ -64,7 +64,7 @@ from the command line, the main options are as follows:
 ### Additional options: ###
 
 **--mt** Multi-Threading (since v1.2.2). This will cause ReSampler to process each channel in a separate thread. 
-Only a multi-core system, this makes better use of available CPU resources and results in a significant speed improvement.  
+On a multi-core system, this makes better use of available CPU resources and results in a significant speed improvement.  
 
 **--doubleprecision** will force resampler to use double-precision arithmetic for its *internal calculations* and doesn't have anything to do with the file formats, although if you are working with 64-bit double-precision files, it would make sense to use double precision for calculations used in processing.
 
