@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <memory>
 #include <iomanip>
+#include <mutex>
 
 #define _USE_MATH_DEFINES
 #include <math.h>
@@ -148,6 +149,9 @@ int main(int argc, char * argv[])
 	if (bUseSeed) {
 		getCmdlineParam(argv, argv + argc, "--seed", seed);
 	}
+
+	// parse multithreaded option:
+	bool bMultiThreaded = findCmdlineOption(argv, argv + argc, "--mt");
 
 	bool bBadParams = false;
 	if (destFilename.empty()) {
@@ -320,10 +324,7 @@ if (outFileExt != inFileExt)
 	ci.seed = seed;
 	ci.dsfInput = dsfInput;
 	ci.dffInput = dffInput;
-
-	// !!!
-	ci.bMultiThreaded = false;
-	// ----
+	ci.bMultiThreaded = bMultiThreaded;
 
 	try {
 		if (ci.bMultiThreaded) {
@@ -1038,6 +1039,8 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 template<typename FileReader, typename FloatType>
 bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 {
+	//std::mutex mut;
+
 	// Open input file:
 	FileReader infile(ci.InputFilename);
 
@@ -1343,38 +1346,58 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 		} // ends 1:1 conversion
 
 		else if (F.numerator == 1 && F.denominator != 1) { // Decimate Only
+			
 			int di[MAXCHANNELS];
 			for (int x = 0; x < MAXCHANNELS; x++) {
 				di[x] = 0;
 			}
-			std::vector<std::future<unsigned int>> r(nChannels);
+
+			typedef struct {
+				int outputBufferIndex;
+				FloatType peak;
+			} Res;
+
+			std::vector<std::future<Res>> r(nChannels);
 			ctpl::thread_pool threadPool(nChannels);
+
 			do { // Read and process blocks of samples until the end of file is reached
 				count = infile.read(inbuffer, BufferSize);
 				SamplesRead += count;
+
 				for (int Channel = 0; Channel < nChannels; Channel++) {
 					r[Channel] = threadPool.push([&, Channel](int) {
+						int localDecimationIndex = di[Channel];
+						FloatType localPeak = 0;
 						unsigned int localOutBufferIndex = 0;
 						for (unsigned int s = 0; s < count; s += nChannels) {
 							Filters[Channel].put(inbuffer[s + Channel]); // inject a source sample
-							if (di[Channel] == 0) { // decimate
+							if (localDecimationIndex == 0) { // decimate
 								FloatType OutputSample = ci.bDither ?
 									Ditherers[Channel].Dither(Gain * Filters[Channel].get()) :
 									Gain * Filters[Channel].get();
 								OutBuffer[localOutBufferIndex + Channel] = OutputSample;
-								PeakOutputSample = max(PeakOutputSample, std::abs(OutputSample));
+								localPeak = max(localPeak, std::abs(OutputSample));
 								localOutBufferIndex += nChannels;
 							}
-							if (++di[Channel] == F.denominator)
-								di[Channel] = 0;
+							if (++localDecimationIndex == F.denominator)
+								localDecimationIndex = 0;
 						} // ends loop over s
-						return localOutBufferIndex;
+						di[Channel] = localDecimationIndex;
+						Res res;
+						res.outputBufferIndex = localOutBufferIndex;
+						res.peak = localPeak;
+						return res;
 					});
 				} // ends loop over Channel
 
+				// collect results:
 				for (int Channel = 0; Channel < nChannels; ++Channel) {
-					OutBufferIndex = r[Channel].get();
+					Res res = r[Channel].get();
+					OutBufferIndex = res.outputBufferIndex;
+					PeakOutputSample = max(PeakOutputSample, res.peak);
 				}
+
+				// write to file:
 				pOutFile->write(OutBuffer, OutBufferIndex);
 
 				// conditionally send progress update:
@@ -1387,14 +1410,22 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 		} // ends Decimate Only
 
 		else if (F.denominator == 1) { // Interpolate only
-			std::vector<std::future<unsigned int>> r(nChannels);
+
+			typedef struct {
+				int outputBufferIndex;
+				FloatType peak;
+			} Res;
+
+			std::vector<std::future<Res>> r(nChannels);
 			ctpl::thread_pool threadPool(nChannels);
+
 			do { // Read and process blocks of samples until the end of file is reached
 				count = infile.read(inbuffer, BufferSize);
 				SamplesRead += count;
+
 				for (int Channel = 0; Channel < nChannels; Channel++) {
 					r[Channel] = threadPool.push([&, Channel](int) {
-
+						FloatType localPeak = 0;
 						unsigned int localOutBufferIndex = 0;
 						for (unsigned int s = 0; s < count; s += nChannels) {
 							for (int ii = 0; ii < F.numerator; ++ii) {
@@ -1412,18 +1443,27 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 									Gain * Filters[Channel].LazyGet(F.numerator);
 #endif
 								OutBuffer[localOutBufferIndex + Channel] = OutputSample;
-								PeakOutputSample = max(PeakOutputSample, std::abs(OutputSample));
+								localPeak = max(localPeak, std::abs(OutputSample));
 								localOutBufferIndex += nChannels;
 							} // ends loop over ii
 						} // ends loop over s
-						return localOutBufferIndex;
+					
+						Res res;
+						res.outputBufferIndex = localOutBufferIndex;
+						res.peak = localPeak;
+						return res;
 					});
 
 				} // ends loop over Channel
 
+				// collect results:
 				for (int Channel = 0; Channel < nChannels; ++Channel) {
-					OutBufferIndex = r[Channel].get();
+					Res res = r[Channel].get();
+					OutBufferIndex = res.outputBufferIndex;
+					PeakOutputSample = max(PeakOutputSample, res.peak);
 				}
+
+				// write to file:
 				pOutFile->write(OutBuffer, OutBufferIndex);
 
 				// conditionally send progress update:
@@ -1437,45 +1477,64 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 		} // ends Interpolate Only
 
 		else { // Interpolate and Decimate
+
 			int di[MAXCHANNELS];
 			for (int x = 0; x < MAXCHANNELS; x++) {
 				di[x] = 0;
 			}
-			std::vector<std::future<unsigned int>> r(nChannels);
+
+			typedef struct {
+				int outputBufferIndex;
+				FloatType peak;
+			} Res;
+
+			std::vector<std::future<Res>> r(nChannels);
 			ctpl::thread_pool threadPool(nChannels);
+
 			do { // Read and process blocks of samples until the end of file is reached
 				count = infile.read(inbuffer, BufferSize);
 				SamplesRead += count;
+
 				for (int Channel = 0; Channel < nChannels; ++Channel) {
 					r[Channel] = threadPool.push([&, Channel](int) {
+						int localDecimationIndex = di[Channel];
+						FloatType localPeak = 0;
 						unsigned int localOutBufferIndex = 0;
 						for (unsigned int s = 0; s < count; s += nChannels) {
-							for (int ii = 0; ii < F.numerator; ++ii) { // (ii stands for "interpolation index
+							for (int ii = 0; ii < F.numerator; ++ii) {
 								if (ii == 0)
 									Filters[Channel].put(inbuffer[s + Channel]);
 								else
 									Filters[Channel].putZero(); // interpolate		
-								if (di[Channel] == 0) { // decimate
+								if (localDecimationIndex == 0) { // decimate
 									FloatType OutputSample = ci.bDither ?
 										Ditherers[Channel].Dither(Gain * Filters[Channel].LazyGet(F.numerator)) :
 										Gain * Filters[Channel].LazyGet(F.numerator);
 									OutBuffer[localOutBufferIndex + Channel] = OutputSample;
-									PeakOutputSample = max(PeakOutputSample, std::abs(OutputSample));
+									localPeak = max(localPeak, std::abs(OutputSample));
 									localOutBufferIndex += nChannels;
 								}
-								if (++di[Channel] == F.denominator)
-									di[Channel] = 0;
+								if (++localDecimationIndex == F.denominator)
+									localDecimationIndex = 0;
 							} // ends loop over ii
 						} // ends loop over s
-						return localOutBufferIndex;
+
+						di[Channel] = localDecimationIndex;
+						Res res;
+						res.outputBufferIndex = localOutBufferIndex;
+						res.peak = localPeak;
+						return res;
 					});
 				} // ends loop over Channel
 
-			
+				// collect results:
 				for (int Channel = 0; Channel < nChannels; ++Channel) {
-					OutBufferIndex = r[Channel].get();
+					Res res = r[Channel].get();
+					OutBufferIndex = res.outputBufferIndex;
+					PeakOutputSample = max(PeakOutputSample, res.peak);
 				}
 
+				// write to file:
 				pOutFile->write(OutBuffer, OutBufferIndex);
 
 				// conditionally send progress update:
