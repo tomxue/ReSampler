@@ -63,6 +63,9 @@ from the command line, the main options are as follows:
 
 ### Additional options: ###
 
+**--mt** Multi-Threading (since v1.2.2). This will cause ReSampler to process each channel in a separate thread. 
+Only a multi-core system, this makes better use of available CPU resources and results in a significant speed improvement.  
+
 **--doubleprecision** will force resampler to use double-precision arithmetic for its *internal calculations* and doesn't have anything to do with the file formats, although if you are working with 64-bit double-precision files, it would make sense to use double precision for calculations used in processing.
 
 **--dither [&lt;amount&gt;]** adds **+/-amount** *bits* of dither the output file. Dithering deliberately adds a small amount of a particular type of noise (triangular pdf with noise-shaping) prior to quantization to the output file. The goal of dithering is to reduce distortion, and allow extremely quiet passages to be preserved when they would otherwise be below the threshold of the target bit depth. Usually, it only makes sense to add dither when you are converting to a lower bit depth, for example:
