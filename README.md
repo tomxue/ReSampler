@@ -1,5 +1,5 @@
 ## Synopsis
-Resampler is a basic command-line audio sample rate conversion tool for Windows, which can convert audio file formats with a variety of different bit-depths and audio channel configurations. 
+Resampler is a high-performance command-line audio sample rate conversion tool for Windows, which can convert audio file formats with a variety of different bit-depths and audio channel configurations. 
 
 Resampler is intended to produce outstanding quality sound files, keeping aliasing and other unwanted artifacts to a minimum, as the following actual measurement graphs show:
 
@@ -59,7 +59,7 @@ from the command line, the main options are as follows:
 
 *Note: the --listsubformats option will cause the program to display the valid formats for a given file-type*
 
-**Normalization factor** is **> 0.0** and **<= 1.0**, with 1.0 producing the largest possible output level without clipping. Note: resampler will accept normalization values over 1.0, but this will certainly result in clipping, and is therefore only for experimental and testing purposes. Just using **-n** with no parameter is equivalent to **-n 1.0**
+**Normalization factor** is a value between **0.0** and **1.0**, with 1.0 (equivalent to 100 percent) producing the largest possible output level without clipping. Note: resampler will accept normalization values over 1.0, but this will certainly result in clipping, and is therefore only for experimental and testing purposes. Just using **-n** with no parameter is equivalent to **-n 1.0**
 
 ### Additional options: ###
 
@@ -74,11 +74,11 @@ On a multi-core system, this makes better use of available CPU resources and res
 - 24bit -> 16bit
 - 16bit -> 8bit
 
-The *amount* parameter represents the number of *bits* of dither to add. The actual *level* of dithering added is equal to **+/- 2^(amount-1)** *steps* (in other words, 2\* *amount* bits peak-to-peak). The default is for *amount* is 1.0, and it doesn't need to be an integer. Values in the range 1-6 are sensible for most situations. The noise-shaping curve becomes more pronounced at higher dithering amounts.  
+The *amount* parameter represents the number of *bits* of dither to add. The actual *level* of dithering added is equal to **+/- 2^(amount-1)** *steps*. The default is for *amount* is 1.0, and it doesn't need to be an integer. Values in the range 1-6 are sensible for most situations. The noise-shaping curve becomes more pronounced at higher dithering amounts.  
 
 The effect of dithering is most noticable during extremely quiet passages (typically, in fade-outs) of the audio. If you can hear modulation effects, or "tearing" in the quietest passages of your output file, then a greater amount of dither may need to be applied. (note: in many cases, these passages are so quiet, you will need to normalize them just to hear them).
 
-**--autoblank** when specified in conjuction with **--dither** , mute the dithering after 30,000 consecutive input samples of *silence* (< -193dB is considered silence). Dithering is re-enabled immediately upon a non-zero input sample being detected.
+**--autoblank** when specified in conjuction with **--dither** causes dithering to switch-off after 30,000 consecutive input samples of *silence* (< -193dB is considered silence). Dithering is re-enabled immediately upon a non-zero input sample being detected.
 
 **--seed &lt;n&gt;** (since v1.1.5) when specified in conjuction with **--dither** , causes the pseudo-random number generator used to generate dither noise to generate a specific sequence of noise associated with the number n.
 Using the same value of n on subsequent conversions should reproduce precisely the same result. n is a signed integer in the range -2,147,483,648 through 2,147,483,647.  
@@ -91,14 +91,16 @@ Using the same value of n on subsequent conversions should reproduce precisely t
 
 **--minphase** use a minimum-phase FIR filter, instead of Linear-Phase
 
-**--relaxedLPF** (since v1.1.4) causes the lowpass filter to allow a small amount of aliasing, but at the same time, keep ringing to a minimum.
+**--relaxedLPF** (since v1.1.4) causes the lowpass filter to use a "late" cutoff frequency (95.45%), 
+which will (theoretically) allow a small amount of aliasing, but at the same time, keep ringing to a minimum and maintain a good frequency response.
+
+**--steepLPF** (since v1.2.0) causes the lowpass filter to use a steeper cutoff (half the standard transition width). It avoids aliasing, but may result in more ringing.
 
 **--flacCompression  &lt;compressionlevel&gt;** sets the compression level for flac output files (between 0 and 8)
 
 **--vorbisQuality &lt;quality&gt;** sets the quality level for ogg vorbis output files (between -1 and 10)
 
 **--noClippingProtection** diables clipping protection (clipping protection is normally active by default)
-
 
 ## Supported Formats
 
@@ -130,7 +132,7 @@ The FIR filter class written for this project uses SSE SIMD instructions when us
 
 Resampler was developed on Visual C++ 2015, as it uses some C++11 features. (Porting to other environments is intended in the future).
 
-#### explanation of cource code files:
+#### explanation of source code files:
 
 ----------
 
@@ -145,6 +147,12 @@ Resampler was developed on Visual C++ 2015, as it uses some C++11 features. (Por
 **Biquad.h** : IIR Filter (used in dithering)
 
 **Ditherer.h** : defines ditherer class, for adding dither
+
+**dff.h** : module for reading dff files
+
+**dsf.h** : module for reading dsf files
+
+**alignedmalloc.h** : simple function for dynamically allocating aligned memory (AVX requires 32-byte alignment)
 
 *(the class implementations are all inline in the .h files)*
 
