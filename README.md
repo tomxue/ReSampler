@@ -112,11 +112,11 @@ For more information, please refer to the [libsndfile documentation](http://www.
 
 ## Additional Information
 
-####Clipping Protection
+#### Clipping Protection
 
 Resampler employs a multiple-pass approach with regards to clipping detection. If clipping is detected (ie normalized signal level exceeded +/- 1.0) during processing, it will re-do the conversion with the overall gain adjusted appropriately to avoid clipping. (This can be disabled with the **--noClippingProtection** option)
 
-####Conversion to same sampling rate
+#### Conversion to same sampling rate
 
 When the target sampling rate is the same as the input file (ie 1:1 ratio), sample-rate conversion is not actually performed. However, bit-depth / file format conversion and other features such as dithering and normalization are performed when requested.
 
@@ -154,7 +154,7 @@ Resampler was developed on Visual C++ 2015, as it uses some C++11 features. (Por
 
 **alignedmalloc.h** : simple function for dynamically allocating aligned memory (AVX requires 32-byte alignment)
 
-*(the class implementations are all inline in the .h files)*
+*(the class implementations are header-only)*
 
 ----------
 
