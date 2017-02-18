@@ -57,7 +57,7 @@ from the command line, the main options are as follows:
     alac24		Apple Lossless Audio Codec (24 bit)
     alac32		Apple Lossless Audio Codec (32 bit)
 
-*Note: the --listsubformats option will cause the program to display the valid formats for a given file-type*
+*Note: the **--listsubformats** option will cause the program to display the valid formats for a given file-type*
 
 **Normalization factor** is a value between **0.0** and **1.0**, with 1.0 (equivalent to 100 percent) producing the largest possible output level without clipping. Note: resampler will accept normalization values over 1.0, but this will certainly result in clipping, and is therefore only for experimental and testing purposes. Just using **-n** with no parameter is equivalent to **-n 1.0**
 
@@ -66,7 +66,7 @@ from the command line, the main options are as follows:
 **--mt** Multi-Threading (since v1.2.2). This will cause ReSampler to process each channel in a separate thread. 
 On a multi-core system, this makes better use of available CPU resources and results in a significant speed improvement.  
 
-**--doubleprecision** will force resampler to use double-precision arithmetic for its *internal calculations* and doesn't have anything to do with the file formats, although if you are working with 64-bit double-precision files, it would make sense to use double precision for calculations used in processing.
+**--doubleprecision** will force resampler to use double-precision (64-bit floating point) arithmetic for its *internal calculations* and doesn't have anything to do with the file formats, although if you are working with 64-bit double-precision files, it would make sense to use double precision for calculations used in processing.
 
 **--dither [&lt;amount&gt;]** adds **+/-amount** *bits* of dither the output file. Dithering deliberately adds a small amount of a particular type of noise (triangular pdf with noise-shaping) prior to quantization to the output file. The goal of dithering is to reduce distortion, and allow extremely quiet passages to be preserved when they would otherwise be below the threshold of the target bit depth. Usually, it only makes sense to add dither when you are converting to a lower bit depth, for example:
  
