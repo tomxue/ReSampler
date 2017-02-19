@@ -199,7 +199,6 @@ int main(int argc, char * argv[])
 #if defined (_MSC_VER) || defined (__INTEL_COMPILER)
 	// Verify CPU capabilities:
 	bool bAVXok = false;
-//	bool bAVX2ok = false;
 	int cpuInfo[4] = { 0,0,0,0 };
 	__cpuid(cpuInfo, 0);
 	if (cpuInfo[0] != 0) {
@@ -562,14 +561,15 @@ void listSubFormats(const std::string& f)
 }
 
 // convert() : performs the conversion task, given a FileReader, conversionInfo, and a FloatType (either float or double)
+
 	/* Note: type 'FileReader' MUST implement the following methods:
-		constuctor(fileName)
-		bool error()
+		constuctor(const std::string& fileName)
+		bool error() // or int error() 
 		unsigned int channels() 
 		unsigned int samplerate()
 		uint64_t frames()
 		int format()
-		read(inbuffer, BufferSize)
+		read(inbuffer, count)
 		seek(position, whence)
 	*/
 
@@ -585,7 +585,7 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 	}
 
 	// read file properties:
-	unsigned int nChannels = infile.channels();
+	int nChannels = infile.channels();
 	unsigned int InputSampleRate = infile.samplerate();
 	sf_count_t InputSampleCount = infile.frames() * nChannels;
 	sf_count_t IncrementalProgressThreshold = InputSampleCount / 10;
@@ -733,7 +733,7 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 
 	// make a vector of filters (one filter for each channel):
 	std::vector<FIRFilter<FloatType>> Filters;
-	for (unsigned int n = 0; n < nChannels; n++) {
+	for (int n = 0; n < nChannels; n++) {
 		Filters.emplace_back(FilterTaps, FilterSize);
 	}
 
@@ -778,7 +778,7 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 	std::vector<Ditherer<FloatType>> Ditherers;
 	int seed = ci.bUseSeed ? ci.seed : time(0);
 
-	for (unsigned int n = 0; n < nChannels; n++) {
+	for (int n = 0; n < nChannels; n++) {
 		// to-do: explore other seed-generation options (remote possibility of overlap)
 		// maybe use a single global RNG ? 
 		// or use discard/jump-ahead ... to ensure parallel streams are sufficiently "far away" from each other ?
@@ -837,7 +837,7 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 		}
 
 		catch (std::bad_alloc& b) {
-			std::cout << "Error: Couldn't Open Output File (memory allocation problem)" << std::endl;
+			std::cout << "Error: Couldn't Open Output File (memory allocation problem) " << b.what() << std::endl;
 			return false;
 		}
 
@@ -1050,7 +1050,7 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 	}
 
 	// read file properties:
-	unsigned int nChannels = infile.channels();
+	int nChannels = infile.channels();
 	unsigned int InputSampleRate = infile.samplerate();
 	sf_count_t InputSampleCount = infile.frames() * nChannels;
 	sf_count_t IncrementalProgressThreshold = InputSampleCount / 10;
@@ -1199,7 +1199,7 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 
 	// make a vector of filters (one filter for each channel):
 	std::vector<FIRFilter<FloatType>> Filters;
-	for (unsigned int n = 0; n < nChannels; n++) {
+	for (int n = 0; n < nChannels; n++) {
 		Filters.emplace_back(FilterTaps, FilterSize);
 	}
 
@@ -1244,7 +1244,7 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 	std::vector<Ditherer<FloatType>> Ditherers;
 	int seed = ci.bUseSeed ? ci.seed : time(0);
 
-	for (unsigned int n = 0; n < nChannels; n++) {
+	for (int n = 0; n < nChannels; n++) {
 		// to-do: explore other seed-generation options (remote possibility of overlap)
 		// maybe use a single global RNG ? 
 		// or use discard/jump-ahead ... to ensure parallel streams are sufficiently "far away" from each other ?
@@ -1303,7 +1303,7 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 		}
 
 		catch (std::bad_alloc& b) {
-			std::cout << "Error: Couldn't Open Output File (memory allocation problem)" << std::endl;
+			std::cout << "Error: Couldn't Open Output File (memory allocation problem) " << b.what() << std::endl;
 			return false;
 		}
 

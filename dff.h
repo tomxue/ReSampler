@@ -132,6 +132,7 @@ public:
 			}
 
 			catch (std::ios_base::failure& e) {
+				e.what();
 				err = true;
 				return;
 			}
