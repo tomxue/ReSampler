@@ -165,3 +165,42 @@ Resampler was developed on Visual C++ 2015, as it uses some C++11 features. (Por
 **ReSampler/x64/Release/ReSampler.exe** : 64-bit Windows (*uses SSE2, but all 64-bit CPUs should have this*)
 
 **ReSampler/x64/AVX_Release/ReSampler.exe** : 64-bit Windows with **AVX** instruction set (Requires Intel *Sandy Bridge* CPU or higher, AMD *Bulldozer* or higher. Requires Windows 7 SP1 or higher, Windows Server 2008 R2 SP1 or higher OS) 
+
+## Acknowledgements
+
+The following libraries are used in ReSampler:
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Description</th>
+            <th>Reason For Inclusion</th>
+            <th>Link</th>
+            <th>License</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>libsndfile</td>
+            <td>C library for reading and writing files containing sampled sound</td>
+            <td>Core read/write capabilities for common file formats</td>
+            <td><a href="http://www.mega-nerd.com/libsndfile/">libsndfile</a></td>
+            <td>LGPL 2.1</td>
+        </tr>
+        <tr>
+            <td>FFTW</td>
+            <td>C subroutine library for computing the discrete Fourier transform (DFT)</td>
+            <td>used for conversion of linear-phase impulses to minimum-phase</td>
+            <td><a href="http://www.fftw.org/">fftw</a></td>
+            <td>GPL (2?)</td>
+        </tr>
+        <tr>
+            <td>CTPL</td>
+            <td>Modern and efficient C++ Thread Pool Library</td>
+            <td>Used for multi-threaded sample-rate conversion</td>
+            <td><a href="https://github.com/vit-vit/CTPL">CTPL</a></td>
+            <td>Apache 2.0</td>
+        </tr>
+    </tbody>
+</table>
