@@ -585,7 +585,7 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 	}
 
 	// read file properties:
-	int nChannels = infile.channels();
+	unsigned int nChannels = infile.channels();
 	unsigned int InputSampleRate = infile.samplerate();
 	sf_count_t InputSampleCount = infile.frames() * nChannels;
 	sf_count_t IncrementalProgressThreshold = InputSampleCount / 10;
@@ -733,7 +733,7 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 
 	// make a vector of filters (one filter for each channel):
 	std::vector<FIRFilter<FloatType>> Filters;
-	for (int n = 0; n < nChannels; n++) {
+	for (unsigned int n = 0; n < nChannels; n++) {
 		Filters.emplace_back(FilterTaps, FilterSize);
 	}
 
@@ -778,7 +778,7 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 	std::vector<Ditherer<FloatType>> Ditherers;
 	int seed = ci.bUseSeed ? ci.seed : time(0);
 
-	for (int n = 0; n < nChannels; n++) {
+	for (unsigned int n = 0; n < nChannels; n++) {
 		// to-do: explore other seed-generation options (remote possibility of overlap)
 		// maybe use a single global RNG ? 
 		// or use discard/jump-ahead ... to ensure parallel streams are sufficiently "far away" from each other ?
@@ -857,7 +857,7 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 			do { // Read and process blocks of samples until the end of file is reached
 				count = infile.read(inbuffer, BufferSize);
 				SamplesRead += count;
-				for (int Channel = 0; Channel < nChannels; Channel++) {
+				for (unsigned int Channel = 0; Channel < nChannels; Channel++) {
 					OutBufferIndex = 0;
 					for (unsigned int s = 0; s < count; s += nChannels) {
 						FloatType OutputSample = ci.bDither ?
@@ -887,7 +887,7 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 			do { // Read and process blocks of samples until the end of file is reached
 				count = infile.read(inbuffer, BufferSize);
 				SamplesRead += count;
-				for (int Channel = 0; Channel < nChannels; Channel++) {
+				for (unsigned int Channel = 0; Channel < nChannels; Channel++) {
 					OutBufferIndex = 0;
 					for (unsigned int s = 0; s < count; s += nChannels) {
 						Filters[Channel].put(inbuffer[s + Channel]); // inject a source sample
@@ -918,7 +918,7 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 			do { // Read and process blocks of samples until the end of file is reached
 				count = infile.read(inbuffer, BufferSize);
 				SamplesRead += count;
-				for (int Channel = 0; Channel < nChannels; Channel++) {
+				for (unsigned int Channel = 0; Channel < nChannels; Channel++) {
 					OutBufferIndex = 0;
 					for (unsigned int s = 0; s < count; s += nChannels) {
 						for (int ii = 0; ii < F.numerator; ++ii) {
@@ -961,7 +961,7 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 			do { // Read and process blocks of samples until the end of file is reached
 				count = infile.read(inbuffer, BufferSize);
 				SamplesRead += count;
-				for (int Channel = 0; Channel < nChannels; ++Channel) {
+				for (unsigned int Channel = 0; Channel < nChannels; ++Channel) {
 					OutBufferIndex = 0;
 					for (unsigned int s = 0; s < count; s += nChannels) {
 						for (int ii = 0; ii < F.numerator; ++ii) { // (ii stands for "interpolation index

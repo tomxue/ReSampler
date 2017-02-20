@@ -147,7 +147,7 @@ public:
 
 		/*
 		
-		In a 1-bit dsf file, 
+		In a dsf file, 
 
 		Channel interleaving is done at the block level:
 		
@@ -262,7 +262,7 @@ private:
 		if (sizeof(T) != statedLength) {
 			std::cout << "warning: '" << chunkName << "' chunk is " << statedLength << " bytes. (" << sizeof(T) << " bytes expected)" << std::endl;
 		}
-		return statedLength - sizeof(T);
+		return static_cast<int>(statedLength) - static_cast<int>(sizeof(T));
 	}
 
 	// warnWrongChunk() : inform user that expected chunk is missing
@@ -342,7 +342,7 @@ private:
 		if (file.tellg() >= endOfData)
 			return 0;
 
-		for (int ch = 0; ch < numChannels; ++ch) {
+		for (size_t ch = 0; ch < numChannels; ++ch) {
 			file.read((char*)channelBuffer[ch], blockSize);
 		}
 		return blockSize;
@@ -360,4 +360,3 @@ private:
 };
 
 #endif // DSF_H_
-

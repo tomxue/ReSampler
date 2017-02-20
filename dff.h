@@ -402,7 +402,7 @@ private:
 				formDSDChunk.propertyChunk.channelsChunk.ckID = nextChunkHeader.ckID;
 				formDSDChunk.propertyChunk.channelsChunk.ckDataSize = dataSize;
 				numChannels = formDSDChunk.propertyChunk.channelsChunk.numChannels = bigEndianRead16();
-				for (int c = 0; c < min(numChannels, DFF_MAX_CHANNELS); ++c) {
+				for (unsigned int c = 0; c < min(numChannels, DFF_MAX_CHANNELS); ++c) {
 					formDSDChunk.propertyChunk.channelsChunk.channelID[c] = bigEndianRead32();
 				}
 				if (numChannels > DFF_MAX_CHANNELS) {

@@ -549,7 +549,7 @@ fftV(std::vector<std::complex<double>>& input) {
 	std::vector<std::complex<double>> output(input.size(), 0); // output vector
 		
 	// create, execute, destroy plan:
-	fftw_plan p = fftw_plan_dft_1d(input.size(), 
+	fftw_plan p = fftw_plan_dft_1d(static_cast<int>(input.size()), 
 		reinterpret_cast<fftw_complex*>(&input[0]), 
 		reinterpret_cast<fftw_complex*>(&output[0]), 
 		FFTW_FORWARD, 
@@ -568,7 +568,7 @@ ifftV(std::vector<std::complex<double>>& input) {
 	std::vector<std::complex<double>> output(input.size(), 0); // output vector
 
 	// create, execute, destroy plan:
-	fftw_plan p = fftw_plan_dft_1d(input.size(),
+	fftw_plan p = fftw_plan_dft_1d(static_cast<int>(input.size()),
 		reinterpret_cast<fftw_complex*>(&input[0]),
 		reinterpret_cast<fftw_complex*>(&output[0]),
 		FFTW_BACKWARD,
@@ -596,11 +596,11 @@ AnalyticSignalV(std::vector<std::complex<double>>& input) {
 
 	std::vector<std::complex<double>> U = fftV(input);
 
-	int N = input.size();
-	int halfN = N / 2;
+	size_t N = input.size();
+	size_t halfN = N / 2;
 	
 	// Note: U[0], U[halfN] unchanged:
-	for (int n = 1; n < N; ++n) {
+	for (size_t n = 1; n < N; ++n) {
 		if (n > halfN)
 			U[n] = 0;
 		if (n < halfN)
