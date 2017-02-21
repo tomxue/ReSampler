@@ -631,27 +631,27 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 
 	sf_count_t count;
 	sf_count_t SamplesRead = 0i64;
-
 	FloatType PeakInputSample;
+
 	if (peakDetection) {
+
 		PeakInputSample = 0.0;
-
 		std::cout << "Scanning input file for peaks ..."; // to-do: can we read the PEAK chunk in floating-point files ?
-
-		do {
+		
+		do { 
 			count = infile.read(inbuffer, BufferSize);
 			SamplesRead += count;
 			for (unsigned int s = 0; s < count; ++s) { // read all samples, without caring which channel they belong to
 				PeakInputSample = max(PeakInputSample, abs(inbuffer[s]));
 			}
 		} while (count > 0);
-
-		infile.seek(0i64, SEEK_SET); // rewind back to start of file
-
+	
 		std::cout << "Done\n";
 		std::cout << "Peak input sample: " << std::fixed << PeakInputSample << " (" << 20 * log10(PeakInputSample) << " dBFS)" << std::endl;
+		infile.seek(0i64, SEEK_SET); // rewind back to start of file
 	}
-	else {
+
+	else { // no peak detection
 		PeakInputSample = ci.bNormalize ?
 			0.5 /* ... a guess, since we haven't actually measured the peak (in the case of DSD, it is a good guess.) */ :
 			1.0;
@@ -1099,9 +1099,10 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 	sf_count_t SamplesRead = 0i64;
 
 	FloatType PeakInputSample;
-	if (peakDetection) {
-		PeakInputSample = 0.0;
 
+	if (peakDetection) {
+
+		PeakInputSample = 0.0;
 		std::cout << "Scanning input file for peaks ..."; // to-do: can we read the PEAK chunk in floating-point files ?
 
 		do {
@@ -1112,12 +1113,12 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 			}
 		} while (count > 0);
 
-		infile.seek(0i64, SEEK_SET); // rewind back to start of file
-
 		std::cout << "Done\n";
 		std::cout << "Peak input sample: " << std::fixed << PeakInputSample << " (" << 20 * log10(PeakInputSample) << " dBFS)" << std::endl;
+		infile.seek(0i64, SEEK_SET); // rewind back to start of file
 	}
-	else {
+
+	else { // no peak detection
 		PeakInputSample = ci.bNormalize ?
 			0.5 /* ... a guess, since we haven't actually measured the peak (in the case of DSD, it is a good guess.) */ :
 			1.0;
