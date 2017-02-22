@@ -578,7 +578,7 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 {
 	// Open input file:
 	FileReader infile(ci.InputFilename);
-
+	
 	if (int e = infile.error()) {
 		std::cout << "Error: Couldn't Open Input File (" << sf_error_number(e) << ")" << std::endl; // to-do: make this more specific (?)
 		return false;
@@ -994,9 +994,25 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 			} while (count > 0);
 		} // ends Interpolate and Decimate
 		
+	
+
 		// clean-up:
 		delete[] OutBuffer;
 		delete pOutFile;
+
+		/*
+		// !!!!
+		// write metadata
+		SndfileHandle h(ci.OutputFilename);
+		if (testSetMetaData(h)) {
+			std::cout << "metadata written ok" << std::endl;
+		}
+		else {
+			std::cout << "metadata not written" << std::endl;
+		}
+
+		// !!!!
+		*/
 
 		// notify user:
 		std::cout << "Done" << std::endl;
@@ -1034,13 +1050,11 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 	return true;
 } // ends Convert()
 
-// Multi-threaded convert() (experimental):
+// Multi-threaded convert() :
 
 template<typename FileReader, typename FloatType>
 bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 {
-	//std::mutex mut;
-
 	// Open input file:
 	FileReader infile(ci.InputFilename);
 
@@ -1585,11 +1599,78 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 	} while (!ci.disableClippingProtection && bClippingDetected);
 
 	STOP_TIMER();
-	//delete[] inbuffer;
 	return true;
-} // ends Convert()
+} // ends ConvertMT()
 
+// retrieve metadata using libsndfile API :
+bool getMetaData(MetaData& metadata, const SndfileHandle& infile) {
+	const char* empty = "";
+	const char* str;
 
+	metadata.title.assign((str = infile.getString(SF_STR_TITLE)) ? str : empty);
+	metadata.copyright.assign((str = infile.getString(SF_STR_COPYRIGHT)) ? str : empty);
+	metadata.software.assign((str = infile.getString(SF_STR_SOFTWARE)) ? str : empty);
+	metadata.artist.assign((str = infile.getString(SF_STR_ARTIST)) ? str : empty);
+	metadata.comment.assign((str = infile.getString(SF_STR_COMMENT)) ? str : empty);
+	metadata.date.assign((str = infile.getString(SF_STR_DATE)) ? str : empty);
+	metadata.album.assign((str = infile.getString(SF_STR_ALBUM)) ? str : empty);
+	metadata.license.assign((str = infile.getString(SF_STR_LICENSE)) ? str : empty);
+	metadata.trackNumber.assign((str = infile.getString(SF_STR_TRACKNUMBER)) ? str : empty);
+	metadata.genre.assign((str = infile.getString(SF_STR_GENRE)) ? str : empty);
+
+	return true;
+}
+
+// set metadata using libsndfile API :
+bool setMetaData(const MetaData& metadata, SndfileHandle& outfile) {
+
+	outfile.setString(SF_STR_TITLE, metadata.title.c_str());
+	outfile.setString(SF_STR_COPYRIGHT, metadata.copyright.c_str());
+	outfile.setString(SF_STR_SOFTWARE, metadata.software.c_str());
+	outfile.setString(SF_STR_ARTIST, metadata.artist.c_str());
+	outfile.setString(SF_STR_COMMENT, metadata.comment.c_str());
+	outfile.setString(SF_STR_DATE, metadata.date.c_str());
+	outfile.setString(SF_STR_ALBUM, metadata.album.c_str());
+	outfile.setString(SF_STR_LICENSE, metadata.license.c_str());
+	outfile.setString(SF_STR_TRACKNUMBER, metadata.trackNumber.c_str());
+	outfile.setString(SF_STR_GENRE, metadata.genre.c_str());
+	return (outfile.error() == 0);
+}
+
+bool testSetMetaData(SndfileHandle& outfile) {
+	MetaData m;
+	m.title.assign("test title");
+	m.copyright.assign("test copyright");
+	m.software.assign("test software");
+	m.artist.assign("test artist");
+	m.comment.assign("test comment");
+	m.date.assign("test date");
+	m.album.assign("test album");
+	m.license.assign("test license");
+	m.trackNumber.assign("test track number");
+	m.genre.assign("test genre");
+	return setMetaData(m, outfile);
+}
+
+bool testSetMetaData(DsfFile& outfile) {
+	// stub - to-do
+	return true;
+}
+
+bool testSetMetaData(DffFile& outfile) {
+	// stub - to-do
+	return true;
+}
+
+bool getMetaData(MetaData& metadata, const DffFile& f) {
+	// stub - to-do
+	return true;
+}
+
+bool getMetaData(MetaData& metadata, const DsfFile& f) {
+	// stub - to-do
+	return true;
+}
 
 template <typename FloatType> bool deInterleave(FloatType** channelBuffers, const FloatType* sampleData, uint64_t numFrames, unsigned int numChannels) {
 	for (uint64_t f = 0; f < numFrames; ++f) {

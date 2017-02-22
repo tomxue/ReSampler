@@ -112,6 +112,32 @@ struct conversionInfo
 	bool bMultiThreaded;
 };
 
+typedef struct
+{
+	std::string title;
+	std::string copyright;
+	std::string software;
+	std::string artist;
+	std::string comment;
+	std::string date;
+	std::string album;
+	std::string license;
+	std::string trackNumber;
+	std::string genre;
+
+	// The following is only relevant for bext chunks in Broadcast Wave files:
+	int has_bext_fields;
+	int coding_hist_append;
+	std::string description;
+	std::string originator;
+	std::string originator_reference;
+	std::string origination_date;
+	std::string origination_time;
+	std::string umid;
+	std::string coding_history;
+	std::string time_ref;
+} MetaData;
+
 bool determineBestBitFormat(std::string & BitFormat, const std::string & inFilename, const std::string & outFilename);
 int determineOutputFormat(const std::string & outFileExt, const std::string & bitFormat);
 void listSubFormats(const std::string & f);
