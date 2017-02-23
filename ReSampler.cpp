@@ -229,77 +229,77 @@ int main(int argc, char * argv[])
 #else
 	std::cout << "32-bit version";
 #if defined(USE_SSE2)
-std::cout << ", SSE2 build ... ";
+	std::cout << ", SSE2 build ... ";
 
-// Verify processor capabilities:
+	// Verify processor capabilities:
 
 #if defined (_MSC_VER) || defined (__INTEL_COMPILER)
-bool bSSE2ok = false;
-int CPUInfo[4] = { 0,0,0,0 };
-__cpuid(CPUInfo, 0);
-if (CPUInfo[0] != 0) {
-	__cpuid(CPUInfo, 1);
-	if (CPUInfo[3] & (1 << 26))
-		bSSE2ok = true;
-}
-if (bSSE2ok)
-std::cout << "CPU supports SSE2 (ok)";
-else {
-	std::cout << "Your CPU doesn't support SSE2 - please try a non-SSE2 build on this machine" << std::endl;
-	exit(EXIT_FAILURE);
-}
+	bool bSSE2ok = false;
+	int CPUInfo[4] = { 0,0,0,0 };
+	__cpuid(CPUInfo, 0);
+	if (CPUInfo[0] != 0) {
+		__cpuid(CPUInfo, 1);
+		if (CPUInfo[3] & (1 << 26))
+			bSSE2ok = true;
+	}
+	if (bSSE2ok)
+	std::cout << "CPU supports SSE2 (ok)";
+	else {
+		std::cout << "Your CPU doesn't support SSE2 - please try a non-SSE2 build on this machine" << std::endl;
+		exit(EXIT_FAILURE);
+	}
 #endif // defined (_MSC_VER) || defined (__INTEL_COMPILER)
 #endif // defined(USE_SSE2)
-std::cout << "\n" << std::endl;
+	std::cout << "\n" << std::endl;
 #endif 
 
-std::cout << "Input file: " << sourceFilename << std::endl;
-std::cout << "Output file: " << destFilename << std::endl;
+	std::cout << "Input file: " << sourceFilename << std::endl;
+	std::cout << "Output file: " << destFilename << std::endl;
 
-double Limit = bNormalize ? NormalizeAmount : 1.0;
+	double Limit = bNormalize ? NormalizeAmount : 1.0;
 
-// Isolate the file extensions
-std::string inFileExt("");
-std::string outFileExt("");
+	// Isolate the file extensions
+	std::string inFileExt("");
+	std::string outFileExt("");
 
-if (sourceFilename.find_last_of(".") != std::string::npos)
-inFileExt = sourceFilename.substr(sourceFilename.find_last_of(".") + 1);
+	if (sourceFilename.find_last_of(".") != std::string::npos)
+	inFileExt = sourceFilename.substr(sourceFilename.find_last_of(".") + 1);
 
-if (destFilename.find_last_of(".") != std::string::npos)
-outFileExt = destFilename.substr(destFilename.find_last_of(".") + 1);
+	if (destFilename.find_last_of(".") != std::string::npos)
+	outFileExt = destFilename.substr(destFilename.find_last_of(".") + 1);
 
-bool dsfInput = (inFileExt == "dsf");
-bool dffInput = (inFileExt == "dff");
+	bool dsfInput = (inFileExt == "dsf");
+	bool dffInput = (inFileExt == "dff");
 
-if (!outBitFormat.empty()) { // new output bit format requested
-	outFileFormat = determineOutputFormat(outFileExt, outBitFormat);
-	if (outFileFormat)
-		std::cout << "Changing output bit format to " << outBitFormat << std::endl;
-	else { // user-supplied bit format not valid; try choosing appropriate format
-		determineBestBitFormat(outBitFormat, sourceFilename, destFilename);
-		if (outFileFormat = determineOutputFormat(outFileExt, outBitFormat))
+	if (!outBitFormat.empty()) { // new output bit format requested
+		outFileFormat = determineOutputFormat(outFileExt, outBitFormat);
+		if (outFileFormat)
 			std::cout << "Changing output bit format to " << outBitFormat << std::endl;
-		else {
-			std::cout << "Warning: NOT Changing output file bit format !" << std::endl;
-			outFileFormat = 0; // back where it started
+		else { // user-supplied bit format not valid; try choosing appropriate format
+			determineBestBitFormat(outBitFormat, sourceFilename, destFilename);
+			if (outFileFormat = determineOutputFormat(outFileExt, outBitFormat))
+				std::cout << "Changing output bit format to " << outBitFormat << std::endl;
+			else {
+				std::cout << "Warning: NOT Changing output file bit format !" << std::endl;
+				outFileFormat = 0; // back where it started
+			}
 		}
 	}
-}
 
-if (outFileExt != inFileExt)
-{ // file extensions differ, determine new output format: 
+	if (outFileExt != inFileExt)
+	{ // file extensions differ, determine new output format: 
 
-	if (outBitFormat.empty()) { // user changed file extension only. Attempt to choose appropriate output sub format:
-		std::cout << "Output Bit Format not specified" << std::endl;
-		determineBestBitFormat(outBitFormat, sourceFilename, destFilename);
+		if (outBitFormat.empty()) { // user changed file extension only. Attempt to choose appropriate output sub format:
+			std::cout << "Output Bit Format not specified" << std::endl;
+			determineBestBitFormat(outBitFormat, sourceFilename, destFilename);
+		}
+		outFileFormat = determineOutputFormat(outFileExt, outBitFormat);
+		if (outFileFormat)
+			std::cout << "Changing output file format to " << outFileExt << std::endl;
+		else { // cannot determine subformat of output file
+			std::cout << "Warning: NOT Changing output file format ! (extension different, but format will remain the same)" << std::endl;
+		}
 	}
-	outFileFormat = determineOutputFormat(outFileExt, outBitFormat);
-	if (outFileFormat)
-		std::cout << "Changing output file format to " << outFileExt << std::endl;
-	else { // cannot determine subformat of output file
-		std::cout << "Warning: NOT Changing output file format ! (extension different, but format will remain the same)" << std::endl;
-	}
-}
 
 	conversionInfo ci;
 	ci.InputFilename = sourceFilename;
@@ -750,6 +750,15 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 		OutputFileFormat |= (InputFileFormat & SF_FORMAT_SUBMASK); // may not be valid subformat for new file format. 
 	}
 
+	// determine whether the output of conversion will exceed 4GB:
+	if (checkWarnOutputSize(InputSampleCount, getSfBytesPerSample(OutputFileFormat), FOriginal.numerator, FOriginal.denominator)) {
+		if (OutputFileFormat & SF_FORMAT_WAV || OutputFileFormat & SF_FORMAT_WAVEX) {
+			std::cout << "Switching to rf64 format !" << std::endl;
+			OutputFileFormat &= ~SF_FORMAT_TYPEMASK; // clear file type
+			OutputFileFormat |= SF_FORMAT_RF64;
+		}
+	}
+
 	// determine number of bits in output format (for Dithering purposes):
 	int signalBits;
 	switch (OutputFileFormat & SF_FORMAT_SUBMASK) {
@@ -993,8 +1002,6 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 			} while (count > 0);
 		} // ends Interpolate and Decimate
 		
-	
-
 		// clean-up:
 		delete[] OutBuffer;
 		delete pOutFile;
@@ -1214,6 +1221,15 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 	// if the minor (sub) format of OutputFileFormat is not set, attempt to use minor format of input file (as a last resort)
 	if ((OutputFileFormat & SF_FORMAT_SUBMASK) == 0) {
 		OutputFileFormat |= (InputFileFormat & SF_FORMAT_SUBMASK); // may not be valid subformat for new file format. 
+	}
+
+	// determine whether the output of conversion will exceed 4GB:
+	if (checkWarnOutputSize(InputSampleCount, getSfBytesPerSample(OutputFileFormat), FOriginal.numerator, FOriginal.denominator)) {
+		if (OutputFileFormat & SF_FORMAT_WAV || OutputFileFormat & SF_FORMAT_WAVEX) {
+			std::cout << "Switching to rf64 format !" << std::endl;
+			OutputFileFormat &= ~SF_FORMAT_TYPEMASK; // clear file type
+			OutputFileFormat |= SF_FORMAT_RF64;
+		}
 	}
 
 	// determine number of bits in output format (for Dithering purposes):
@@ -1634,6 +1650,50 @@ bool testSetMetaData(SndfileHandle& outfile) {
 	m.trackNumber.assign("test track number");
 	m.genre.assign("test genre");
 	return setMetaData(m, outfile);
+}
+
+int getSfBytesPerSample(int format) {
+	int subformat = format & SF_FORMAT_SUBMASK;
+	switch (subformat) {
+	case SF_FORMAT_PCM_S8:
+		return 1;
+	case SF_FORMAT_PCM_16:
+		return 2;
+	case SF_FORMAT_PCM_24:
+		return 3;
+	case SF_FORMAT_PCM_32:
+		return 4;
+	case SF_FORMAT_PCM_U8:
+		return 1;
+	case SF_FORMAT_FLOAT:
+		return 4;
+	case SF_FORMAT_DOUBLE:
+		return 8;
+	default:
+		return 2; // for safety
+	}
+}
+
+bool checkWarnOutputSize(uint64_t inputSamples, int bytesPerSample, int numerator, int denominator)
+{
+	uint64_t outputDataSize = inputSamples * bytesPerSample * numerator / denominator;
+
+	const uint64_t limit4G = 1ui64 << 32;
+	if (outputDataSize >= limit4G) {
+		std::cout << "Warning: output file ( " << fmtNumberWithCommas(outputDataSize) << " bytes of data ) will exceed 4GB limit"  << std::endl;
+		return true;
+	}
+	return false;
+}
+
+std::string fmtNumberWithCommas(uint64_t n) {
+	std::string s = std::to_string(n);
+	int insertPosition = s.length() - 3;
+	while (insertPosition > 0) {
+		s.insert(insertPosition, ",");
+		insertPosition -= 3;
+	}
+	return s;
 }
 
 bool testSetMetaData(DsfFile& outfile) {
