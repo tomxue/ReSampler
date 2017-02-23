@@ -850,7 +850,6 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 		// Allocate output buffer:
 		size_t OutBufferSize = (2 * nChannels /* padding */ + (BufferSize * F.numerator / F.denominator));
 		FloatType* OutBuffer = new FloatType[OutBufferSize];
-		//std::cout << "Output Buffer Size: " << OutBufferSize << std::endl;
 
 		if (F.numerator == 1 && F.denominator == 1) { // no change to sample rate; format conversion only
 			std::cout << " No change to sample rate" << std::endl;
@@ -999,20 +998,6 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 		// clean-up:
 		delete[] OutBuffer;
 		delete pOutFile;
-
-		/*
-		// !!!!
-		// write metadata
-		SndfileHandle h(ci.OutputFilename);
-		if (testSetMetaData(h)) {
-			std::cout << "metadata written ok" << std::endl;
-		}
-		else {
-			std::cout << "metadata not written" << std::endl;
-		}
-
-		// !!!!
-		*/
 
 		// notify user:
 		std::cout << "Done" << std::endl;
@@ -1331,7 +1316,6 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 		// Allocate output buffer:
 		size_t OutBufferSize = (2 * nChannels /* padding */ + (BufferSize * F.numerator / F.denominator));
 		FloatType* OutBuffer = new FloatType[OutBufferSize];
-		//std::cout << "Output Buffer Size: " << OutBufferSize << std::endl;
 
 		if (F.numerator == 1 && F.denominator == 1) { // no change to sample rate; format conversion only
 			std::cout << " No change to sample rate" << std::endl;

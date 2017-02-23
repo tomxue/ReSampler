@@ -195,7 +195,7 @@ public:
 
 		/*
 
-		In a 1-bit dff file,
+		In a dff file,
 
 		data is big-endian
 		
