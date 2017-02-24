@@ -120,6 +120,14 @@ Resampler employs a multiple-pass approach with regards to clipping detection. I
 
 When the target sampling rate is the same as the input file (ie 1:1 ratio), sample-rate conversion is not actually performed. However, bit-depth / file format conversion and other features such as dithering and normalization are performed when requested.
 
+#### Automatic promotion of **wav** files to **rf64** format
+
+(since v1.2.3) For **wav** file output, if the data contained in the output file will exceed 4 Gigabytes after conversion, ReSampler will automatically "promote" the file format to **rf64** 
+
+*Traditional wav files only have 32-bits to quantify the size of the data they contain, which means that the data size cannot exceed 4 Gigabytes (2^32 bytes). The [rf64 specification](https://tech.ebu.ch/docs/tech/tech3306-2009.pdf) was designed to extend the wav format to remove this limitation.*
+
+Alternatively, other output formats suitable for *large* output files (exceeding 4GB) are: **w64, caf, au** or compressed formats such as **flac** or **oga**
+
 ## Description of code
  
 Sample Rate Conversion is accomplished using the usual interpolation/decimation techniques. However, when using complex conversion ratios (such as 44.1k <--> 48k), a rather large FIR lowpass filter is used to ensure a clean conversion.
