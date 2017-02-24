@@ -383,6 +383,9 @@ int main(int argc, char * argv[])
 	}
 }
 
+
+
+
 // determineBestBitFormat() : determines the most appropriate bit format for the output file, through the following process:
 // 1. Try to use infile's format and if that isn't valid for outfile, then:
 // 2. use the default subformat for outfile.
@@ -752,7 +755,8 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 
 	// determine whether the output of conversion will exceed 4GB:
 	if (checkWarnOutputSize(InputSampleCount, getSfBytesPerSample(OutputFileFormat), FOriginal.numerator, FOriginal.denominator)) {
-		if (OutputFileFormat & SF_FORMAT_WAV || OutputFileFormat & SF_FORMAT_WAVEX) {
+		if ((OutputFileFormat & SF_FORMAT_TYPEMASK == SF_FORMAT_WAV) || 
+			(OutputFileFormat & SF_FORMAT_TYPEMASK == SF_FORMAT_WAVEX)) {
 			std::cout << "Switching to rf64 format !" << std::endl;
 			OutputFileFormat &= ~SF_FORMAT_TYPEMASK; // clear file type
 			OutputFileFormat |= SF_FORMAT_RF64;
@@ -1225,7 +1229,8 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 
 	// determine whether the output of conversion will exceed 4GB:
 	if (checkWarnOutputSize(InputSampleCount, getSfBytesPerSample(OutputFileFormat), FOriginal.numerator, FOriginal.denominator)) {
-		if (OutputFileFormat & SF_FORMAT_WAV || OutputFileFormat & SF_FORMAT_WAVEX) {
+		if ((OutputFileFormat & SF_FORMAT_TYPEMASK == SF_FORMAT_WAV) ||
+			(OutputFileFormat & SF_FORMAT_TYPEMASK == SF_FORMAT_WAVEX)) {
 			std::cout << "Switching to rf64 format !" << std::endl;
 			OutputFileFormat &= ~SF_FORMAT_TYPEMASK; // clear file type
 			OutputFileFormat |= SF_FORMAT_RF64;
