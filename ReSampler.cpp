@@ -581,12 +581,15 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 {
 	// Open input file:
 	FileReader infile(ci.InputFilename);
-	
+
 	if (int e = infile.error()) {
 		std::cout << "Error: Couldn't Open Input File (" << sf_error_number(e) << ")" << std::endl; // to-do: make this more specific (?)
 		return false;
 	}
 
+	MetaData m;
+	getMetaData(m, infile);
+	
 	// read file properties:
 	unsigned int nChannels = infile.channels();
 	unsigned int InputSampleRate = infile.samplerate();
@@ -755,8 +758,8 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 
 	// determine whether the output of conversion will exceed 4GB:
 	if (checkWarnOutputSize(InputSampleCount, getSfBytesPerSample(OutputFileFormat), FOriginal.numerator, FOriginal.denominator)) {
-		if ((OutputFileFormat & SF_FORMAT_TYPEMASK == SF_FORMAT_WAV) || 
-			(OutputFileFormat & SF_FORMAT_TYPEMASK == SF_FORMAT_WAVEX)) {
+		if (((OutputFileFormat & SF_FORMAT_TYPEMASK) == SF_FORMAT_WAV) || 
+			((OutputFileFormat & SF_FORMAT_TYPEMASK) == SF_FORMAT_WAVEX)) {
 			std::cout << "Switching to rf64 format !" << std::endl;
 			OutputFileFormat &= ~SF_FORMAT_TYPEMASK; // clear file type
 			OutputFileFormat |= SF_FORMAT_RF64;
@@ -827,6 +830,14 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 			if (int e = pOutFile->error()) {
 				std::cout << "Error: Couldn't Open Output File (" << sf_error_number(e) << ")" << std::endl;
 				return false;
+			}
+
+			// conditionally write metadata to outfile:
+			if (((OutputFileFormat & SF_FORMAT_TYPEMASK) == SF_FORMAT_WAV) ||
+				((OutputFileFormat & SF_FORMAT_TYPEMASK) == SF_FORMAT_WAVEX)) {
+				if (!setMetaData(m, *pOutFile)) {
+					std::cout << "Warning: problem writing metadata to output file ( " << pOutFile->strError() << " )" << std::endl;
+				}
 			}
 
 			// if the minor (sub) format of OutputFileFormat is flac, and user has requested a specific compression level, set compression level:
@@ -1054,14 +1065,14 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 	// Open input file:
 	FileReader infile(ci.InputFilename);
 
-	MetaData m;
-	getMetaData(m, infile);
-
 	if (int e = infile.error()) {
 		std::cout << "Error: Couldn't Open Input File (" << sf_error_number(e) << ")" << std::endl; // to-do: make this more specific (?)
 		return false;
 	}
 
+	MetaData m;
+	getMetaData(m, infile);
+	
 	// read file properties:
 	int nChannels = infile.channels();
 	unsigned int InputSampleRate = infile.samplerate();
@@ -1106,7 +1117,6 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 	assert(BUFFERSIZE >= BufferSize);
 
 	FloatType inbuffer[BUFFERSIZE];
-	//FloatType* inbuffer = new FloatType[BUFFERSIZE];
 
 	sf_count_t count;
 	sf_count_t SamplesRead = 0i64;
