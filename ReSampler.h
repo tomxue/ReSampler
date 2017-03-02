@@ -112,6 +112,9 @@ struct conversionInfo
 	bool bMultiThreaded;
 };
 
+#define MAX_CART_TAG_TEXT_SIZE 16384
+typedef SF_CART_INFO_VAR(MAX_CART_TAG_TEXT_SIZE) LargeSFCartInfo;
+
 typedef struct
 {
 	std::string title;
@@ -126,16 +129,13 @@ typedef struct
 	std::string genre;
 
 	// The following is only relevant for bext chunks in Broadcast Wave files:
-	int has_bext_fields;
-	int coding_hist_append;
-	std::string description;
-	std::string originator;
-	std::string originator_reference;
-	std::string origination_date;
-	std::string origination_time;
-	std::string umid;
-	std::string coding_history;
-	std::string time_ref;
+	bool has_bext_fields;
+	SF_BROADCAST_INFO broadcastInfo;
+
+	// The following is only relevant for cart chunks:
+	bool has_cart_chunk;
+	LargeSFCartInfo cartInfo;
+
 } MetaData;
 
 bool determineBestBitFormat(std::string & BitFormat, const std::string & inFilename, const std::string & outFilename);

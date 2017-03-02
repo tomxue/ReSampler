@@ -1054,6 +1054,9 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 	// Open input file:
 	FileReader infile(ci.InputFilename);
 
+	MetaData m;
+	getMetaData(m, infile);
+
 	if (int e = infile.error()) {
 		std::cout << "Error: Couldn't Open Input File (" << sf_error_number(e) << ")" << std::endl; // to-do: make this more specific (?)
 		return false;
@@ -1229,8 +1232,8 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 
 	// determine whether the output of conversion will exceed 4GB:
 	if (checkWarnOutputSize(InputSampleCount, getSfBytesPerSample(OutputFileFormat), FOriginal.numerator, FOriginal.denominator)) {
-		if ((OutputFileFormat & SF_FORMAT_TYPEMASK == SF_FORMAT_WAV) ||
-			(OutputFileFormat & SF_FORMAT_TYPEMASK == SF_FORMAT_WAVEX)) {
+		if (((OutputFileFormat & SF_FORMAT_TYPEMASK) == SF_FORMAT_WAV) ||
+			((OutputFileFormat & SF_FORMAT_TYPEMASK) == SF_FORMAT_WAVEX)) {
 			std::cout << "Switching to rf64 format !" << std::endl;
 			OutputFileFormat &= ~SF_FORMAT_TYPEMASK; // clear file type
 			OutputFileFormat |= SF_FORMAT_RF64;
@@ -1303,6 +1306,14 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 				return false;
 			}
 
+			// conditionally write metadata to outfile:
+			if (((OutputFileFormat & SF_FORMAT_TYPEMASK) == SF_FORMAT_WAV) ||
+				((OutputFileFormat & SF_FORMAT_TYPEMASK) == SF_FORMAT_WAVEX)) {
+				if (!setMetaData(m, *pOutFile)) {
+					std::cout << "Warning: problem writing metadata to output file ( " << pOutFile->strError() << " )" << std::endl;
+				}
+			}
+			
 			// if the minor (sub) format of OutputFileFormat is flac, and user has requested a specific compression level, set compression level:
 			if (((OutputFileFormat & SF_FORMAT_FLAC) == SF_FORMAT_FLAC) && ci.bSetFlacCompression) {
 				std::cout << "setting flac compression level to " << ci.flacCompressionLevel << std::endl;
@@ -1608,7 +1619,7 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 } // ends ConvertMT()
 
 // retrieve metadata using libsndfile API :
-bool getMetaData(MetaData& metadata, const SndfileHandle& infile) {
+bool getMetaData(MetaData& metadata, SndfileHandle& infile) {
 	const char* empty = "";
 	const char* str;
 
@@ -1623,22 +1634,51 @@ bool getMetaData(MetaData& metadata, const SndfileHandle& infile) {
 	metadata.trackNumber.assign((str = infile.getString(SF_STR_TRACKNUMBER)) ? str : empty);
 	metadata.genre.assign((str = infile.getString(SF_STR_GENRE)) ? str : empty);
 
+	// retrieve Broadcast Extension (bext) chunk, if it exists:
+	metadata.has_bext_fields = (infile.command(SFC_GET_BROADCAST_INFO, (void*)&metadata.broadcastInfo, sizeof(SF_BROADCAST_INFO)) == SF_TRUE);
+
+	if (metadata.has_bext_fields) {
+		std::cout << "Input file contains a Broadcast Extension (bext) chunk" << std::endl;
+	}
+
+	// retrieve CART chunk, if it exists:
+	metadata.has_cart_chunk = (infile.command(SFC_GET_CART_INFO, (void*)&metadata.cartInfo, sizeof(LargeSFCartInfo)) == SF_TRUE);
+
+	if (metadata.has_cart_chunk) {
+		// Note: size of CART chunk is variable, depending on size of last field (tag_text[]) 
+		if (metadata.cartInfo.tag_text_size > MAX_CART_TAG_TEXT_SIZE) {
+			metadata.cartInfo.tag_text_size = MAX_CART_TAG_TEXT_SIZE; // apply hard limit on number of characters (spec says unlimited ...)
+		}
+		std::cout << "Input file contains a CART chunk" << std::endl;
+	}
 	return true;
 }
 
 // set metadata using libsndfile API :
 bool setMetaData(const MetaData& metadata, SndfileHandle& outfile) {
+	
+	if (!metadata.title.empty()) outfile.setString(SF_STR_TITLE, metadata.title.c_str());
+	if (!metadata.copyright.empty()) outfile.setString(SF_STR_COPYRIGHT, metadata.copyright.c_str());
+	if (!metadata.software.empty()) outfile.setString(SF_STR_SOFTWARE, metadata.software.c_str());
+	if (!metadata.artist.empty()) outfile.setString(SF_STR_ARTIST, metadata.artist.c_str());
+	if (!metadata.comment.empty()) outfile.setString(SF_STR_COMMENT, metadata.comment.c_str());
+	if (!metadata.date.empty()) outfile.setString(SF_STR_DATE, metadata.date.c_str());
+	if (!metadata.album.empty()) outfile.setString(SF_STR_ALBUM, metadata.album.c_str());
+	if (!metadata.license.empty()) outfile.setString(SF_STR_LICENSE, metadata.license.c_str());
+	if (!metadata.trackNumber.empty()) outfile.setString(SF_STR_TRACKNUMBER, metadata.trackNumber.c_str());
+	if (!metadata.genre.empty()) outfile.setString(SF_STR_GENRE, metadata.genre.c_str());
 
-	outfile.setString(SF_STR_TITLE, metadata.title.c_str());
-	outfile.setString(SF_STR_COPYRIGHT, metadata.copyright.c_str());
-	outfile.setString(SF_STR_SOFTWARE, metadata.software.c_str());
-	outfile.setString(SF_STR_ARTIST, metadata.artist.c_str());
-	outfile.setString(SF_STR_COMMENT, metadata.comment.c_str());
-	outfile.setString(SF_STR_DATE, metadata.date.c_str());
-	outfile.setString(SF_STR_ALBUM, metadata.album.c_str());
-	outfile.setString(SF_STR_LICENSE, metadata.license.c_str());
-	outfile.setString(SF_STR_TRACKNUMBER, metadata.trackNumber.c_str());
-	outfile.setString(SF_STR_GENRE, metadata.genre.c_str());
+	if (metadata.has_bext_fields) {
+		outfile.command(SFC_SET_BROADCAST_INFO, (void*)&metadata.broadcastInfo, sizeof(SF_BROADCAST_INFO));
+	}
+
+	if (metadata.has_cart_chunk) {
+		outfile.command(SFC_SET_CART_INFO,
+			(void*)&metadata.cartInfo,
+			sizeof(metadata.cartInfo) - MAX_CART_TAG_TEXT_SIZE + metadata.cartInfo.tag_text_size // (size of cartInfo WITHOUT tag text) + (actual size of tag text) 
+		);
+	}
+
 	return (outfile.error() == 0);
 }
 
