@@ -156,14 +156,4 @@ std::string fmtNumberWithCommas(uint64_t n);
 template<typename FloatType> bool deInterleave(FloatType ** channelBuffers, const FloatType * sampleData, uint64_t numFrames, unsigned int numChannels);
 template<typename FloatType> bool interleave(FloatType * sampleData, const FloatType ** channelBuffers, uint64_t numFrames, unsigned int numChannels);
 
-// Timer macros:
-#define START_TIMER() LARGE_INTEGER starttime,finishtime,elapsed,frequency,timetaken; \
-	QueryPerformanceFrequency(&frequency); \
-	QueryPerformanceCounter(&starttime)
-
-#define STOP_TIMER() QueryPerformanceCounter(&finishtime); \
-	elapsed.QuadPart=finishtime.QuadPart-starttime.QuadPart; \
-	timetaken.QuadPart=((1000*elapsed.QuadPart)/frequency.QuadPart); \
-	std::cout << "Time=" << static_cast<long>(timetaken.QuadPart) << " ms" << std::endl
-
 #endif // !RESAMPLER_H
