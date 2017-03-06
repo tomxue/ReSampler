@@ -11,6 +11,7 @@
 
 #define _USE_MATH_DEFINES
 #include <math.h>
+#include <cstring>
 
 #include "osspecific.h"
 #include "ctpl/ctpl_stl.h"

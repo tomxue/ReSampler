@@ -2,7 +2,7 @@
 #define RESAMPLER_H 1
 
 #include <map>
-#include <Windows.h>
+//#include <Windows.h>
 #include <sndfile.h>
 #include <sndfile.hh>
 

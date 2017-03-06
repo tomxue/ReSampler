@@ -17,14 +17,14 @@
 	std::cout << "Time=" << static_cast<long>(timetaken.QuadPart) << " ms" << std::endl
 
 #else // Non-Windows:
-#define min(x, y) (((x) > (y)) ? (x) : (y))
-#define max(x, y) (((x) < (y)) ? (x) : (y))
+
+typedef uint64_t __int64;
 #define ZERO_64 0LL
 #define stricmp strcasecmp
 // Timer macros:
-#define START_TIMER()
-#define STOP_TIMER()
+#define START_TIMER() std::cout << "(start timer)" << std::endl
+#define STOP_TIMER()  std::cout << "(end timer)" << std::endl
+
 #endif // ends Non-Windows
 
 #endif // !OSSPECIFIC_H
-

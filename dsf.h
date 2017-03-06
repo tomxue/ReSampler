@@ -14,7 +14,7 @@
 
 #define DSF_FORMAT 0x00310000 // note: take care to make sure this doesn't clash with future libsndfile formats (unlikely)
 
-#pragma pack(push, r1, 1)
+#pragma pack(push,r1,1)
 typedef struct {
 	uint32_t header;	// expected: "DSD "
 	uint64_t length;	// expected: 28
