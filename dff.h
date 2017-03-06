@@ -7,6 +7,8 @@
 #include <string>
 #include <fstream>
 
+#include "osspecific.h"
+
 #define DFF_MAX_CHANNELS 6 
 #define DFF_FORMAT 0x00300000 // note: take care to make sure this doesn't clash with future libsndfile formats (unlikely)
 
@@ -145,7 +147,7 @@ public:
 
 			bufferSize = blockSize * numChannels;
 			inputBuffer = new uint8_t[bufferSize];
-			totalBytesRead = 0i64;
+			totalBytesRead = ZERO_64;
 			endOfBlock = bufferSize;
 			bufferIndex = endOfBlock; // empty (zero -> full)
 			currentBit = 0;
@@ -207,7 +209,7 @@ public:
 
 		// Caller expects interleaving to be done at the _sample_ level 
 
-		uint64_t samplesRead = 0i64;
+		uint64_t samplesRead = ZERO_64;
 
 		for (uint64_t i = 0; i < count; ++i) {
 
@@ -240,8 +242,8 @@ public:
 
 	void testRead() {
 		float sampleBuffer[8192];
-		uint64_t samplesRead = 0i64;
-		uint64_t totalSamplesRead = 0i64;
+		uint64_t samplesRead = ZERO_64;
+		uint64_t totalSamplesRead = ZERO_64;
 		while ((samplesRead = read(sampleBuffer, 8192)) != 0) {
 			totalSamplesRead += samplesRead;
 		}
@@ -253,7 +255,7 @@ public:
 
 		// To-do: allow seeks to positions other than beginning (requires proper calculations)
 		// reset state to initial conditions: 
-		totalBytesRead = 0i64;
+		totalBytesRead = ZERO_64;
 		endOfBlock = bufferSize;
 		bufferIndex = endOfBlock; // empty (zero -> full)
 		currentBit = 0;

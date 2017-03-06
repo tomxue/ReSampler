@@ -12,6 +12,7 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 
+#include "osspecific.h"
 #include "ctpl/ctpl_stl.h"
 #include "ReSampler.h"
 #include "FIRFilter.h"
@@ -636,7 +637,7 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 	FloatType inbuffer[BUFFERSIZE];
 
 	sf_count_t count;
-	sf_count_t SamplesRead = 0i64;
+	sf_count_t SamplesRead = ZERO_64;
 	FloatType PeakInputSample;
 
 	if (peakDetection) {
@@ -654,7 +655,7 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 	
 		std::cout << "Done\n";
 		std::cout << "Peak input sample: " << std::fixed << PeakInputSample << " (" << 20 * log10(PeakInputSample) << " dBFS)" << std::endl;
-		infile.seek(0i64, SEEK_SET); // rewind back to start of file
+		infile.seek(ZERO_64, SEEK_SET); // rewind back to start of file
 	}
 
 	else { // no peak detection
@@ -868,7 +869,7 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 		std::cout << "Converting ...";
 		unsigned int OutBufferIndex = 0;
 		PeakOutputSample = 0.0;
-		SamplesRead = 0i64;
+		SamplesRead = ZERO_64;
 		sf_count_t NextProgressThreshold = IncrementalProgressThreshold;
 
 		// Allocate output buffer:
@@ -1036,7 +1037,7 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 			std::cout << "\nClipping detected !" << std::endl;
 			if (!ci.disableClippingProtection) {
 				std::cout << "Re-doing with " << 20 * log10(GainAdjustment) << " dB gain adjustment" << std::endl;
-				infile.seek(0i64, SEEK_SET);
+				infile.seek(ZERO_64, SEEK_SET);
 			}
 
 			for (auto& filter : Filters) {
@@ -1119,7 +1120,7 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 	FloatType inbuffer[BUFFERSIZE];
 
 	sf_count_t count;
-	sf_count_t SamplesRead = 0i64;
+	sf_count_t SamplesRead = ZERO_64;
 
 	FloatType PeakInputSample;
 
@@ -1138,7 +1139,7 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 
 		std::cout << "Done\n";
 		std::cout << "Peak input sample: " << std::fixed << PeakInputSample << " (" << 20 * log10(PeakInputSample) << " dBFS)" << std::endl;
-		infile.seek(0i64, SEEK_SET); // rewind back to start of file
+		infile.seek(ZERO_64, SEEK_SET); // rewind back to start of file
 	}
 
 	else { // no peak detection
@@ -1352,7 +1353,7 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 		std::cout << "Converting (multi-threaded) ...";
 		unsigned int OutBufferIndex = 0;
 		PeakOutputSample = 0.0;
-		SamplesRead = 0i64;
+		SamplesRead = ZERO_64;
 		sf_count_t NextProgressThreshold = IncrementalProgressThreshold;
 
 		// Allocate output buffer:
@@ -1607,7 +1608,7 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 			std::cout << "\nClipping detected !" << std::endl;
 			if (!ci.disableClippingProtection) {
 				std::cout << "Re-doing with " << 20 * log10(GainAdjustment) << " dB gain adjustment" << std::endl;
-				infile.seek(0i64, SEEK_SET);
+				infile.seek(ZERO_64, SEEK_SET);
 			}
 
 			for (auto& filter : Filters) {
@@ -1651,7 +1652,7 @@ bool getMetaData(MetaData& metadata, SndfileHandle& infile) {
 		std::cout << "Input file contains a Broadcast Extension (bext) chunk" << std::endl;
 	}
 
-	// retrieve CART chunk, if it exists:
+	// retrieve cart chunk, if it exists:
 	metadata.has_cart_chunk = (infile.command(SFC_GET_CART_INFO, (void*)&metadata.cartInfo, sizeof(LargeSFCartInfo)) == SF_TRUE);
 
 	if (metadata.has_cart_chunk) {
@@ -1659,7 +1660,7 @@ bool getMetaData(MetaData& metadata, SndfileHandle& infile) {
 		if (metadata.cartInfo.tag_text_size > MAX_CART_TAG_TEXT_SIZE) {
 			metadata.cartInfo.tag_text_size = MAX_CART_TAG_TEXT_SIZE; // apply hard limit on number of characters (spec says unlimited ...)
 		}
-		std::cout << "Input file contains a CART chunk" << std::endl;
+		std::cout << "Input file contains a cart chunk" << std::endl;
 	}
 	return true;
 }

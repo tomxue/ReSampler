@@ -10,6 +10,8 @@
 #include <string>
 #include <fstream>
 
+#include "osspecific.h"
+
 #define DSF_FORMAT 0x00310000 // note: take care to make sure this doesn't clash with future libsndfile formats (unlikely)
 
 #pragma pack(push, r1, 1)
@@ -166,7 +168,7 @@ public:
 
 		// Caller expects interleaving to be done at the _sample_ level 
 
-		uint64_t samplesRead = 0i64;
+		uint64_t samplesRead = ZERO_64;
 
 		for (uint64_t i = 0; i < count; ++i) {
 
@@ -202,8 +204,8 @@ public:
 		const size_t bufSize = 8192;
 
 		float sampleBuffer[bufSize];
-		uint64_t totalSamplesRead = 0i64;
-		uint64_t samplesRead = 0i64;
+		uint64_t totalSamplesRead = ZERO_64;
+		uint64_t samplesRead = ZERO_64;
 
 		while ((samplesRead = read(sampleBuffer, bufSize)) != 0) {
 			totalSamplesRead += samplesRead;

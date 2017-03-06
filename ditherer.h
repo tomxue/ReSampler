@@ -441,7 +441,7 @@ private:
 	FloatType maxSignalMagnitude;	// maximum integral value for signal target bit depth (for quantizing) 
 	FloatType reciprocalSignalMagnitude; // for normalizing quantized signal back to +/- 1.0 
 	FloatType maxDitherScaleFactor, ditherScaleFactor;	// maximum integral value for dither target bit depth
-	__int64 zeroCount; // number of consecutive zeroes in input;
+	int64_t zeroCount; // number of consecutive zeroes in input;
 	FloatType autoBlankDecayCutoff;	// threshold at which ditherScaleFactor is set to zero during active blanking
 	std::mt19937 randGenerator; // Mersenne Twister - one of the best random number algorithms available
 	std::uniform_int_distribution<int> dist; // random number distribution
