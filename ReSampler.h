@@ -12,9 +12,6 @@ const std::string strExtraOptions("--help\n--version\n--doubleprecision\n--lists
 #define BUFFERSIZE 32768 // buffer size for file reads
 #define MAXCHANNELS 64
 
-#pragma warning(disable : 4996) // suppress pointless MS "deprecation" warnings
-#pragma warning(disable : 4244) // suppress double-to-float warnings
-
 typedef struct fraction {
 	int numerator;
 	int denominator;

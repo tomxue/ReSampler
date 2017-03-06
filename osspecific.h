@@ -5,6 +5,8 @@
 
 #ifdef _WIN32
 #include <windows.h>
+#pragma warning(disable : 4996) // suppress pointless MS "deprecation" warnings
+#pragma warning(disable : 4244) // suppress double-to-float warnings
 #define ZERO_64 0i64
 // Timer macros:
 #define START_TIMER() LARGE_INTEGER starttime,finishtime,elapsed,frequency,timetaken; \
