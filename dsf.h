@@ -168,7 +168,7 @@ public:
 
 		// Caller expects interleaving to be done at the _sample_ level 
 
-		uint64_t samplesRead = ZERO_64;
+		uint64_t samplesRead = 0;
 
 		for (uint64_t i = 0; i < count; ++i) {
 
@@ -204,8 +204,8 @@ public:
 		const size_t bufSize = 8192;
 
 		float sampleBuffer[bufSize];
-		uint64_t totalSamplesRead = ZERO_64;
-		uint64_t samplesRead = ZERO_64;
+		uint64_t totalSamplesRead = 0;
+		uint64_t samplesRead = 0;
 
 		while ((samplesRead = read(sampleBuffer, bufSize)) != 0) {
 			totalSamplesRead += samplesRead;

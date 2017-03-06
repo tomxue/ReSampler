@@ -4,6 +4,7 @@
 // FIRFilter.h : simple FIR filter implementation by J.Niemann
 
 #include <typeinfo>
+#include <algorithm>
 #include <complex>
 #include <cstdint>
 #include <cassert>
@@ -464,7 +465,7 @@ template<typename FloatType> bool applyKaiserWindow2(FloatType* filter, int Leng
 
 		 // simplified Kaiser Window Equation:
 		 A = (2.0 * Beta / Length) * sqrt(n*(Length - n - 1));
-		 maxA = max(maxA, A);
+		 maxA = std::max(maxA, A);
 		 filter[n] *= I0(A) / I0(Beta);
 	 }
 	
@@ -494,7 +495,7 @@ limitDynRangeV(const std::vector<std::complex<double>>& input, double dynRangeDB
 	// find peak:
 	double peak=0.0;
 	for (auto &c : input) {
-		peak = max(peak, std::abs(c));
+		peak = std::max(peak, std::abs(c));
 	}
 	
 	// determine low threshold

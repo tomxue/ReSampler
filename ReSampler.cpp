@@ -638,7 +638,7 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 	FloatType inbuffer[BUFFERSIZE];
 
 	sf_count_t count;
-	sf_count_t SamplesRead = ZERO_64;
+	sf_count_t SamplesRead = 0;
 	FloatType PeakInputSample;
 
 	if (peakDetection) {
@@ -650,13 +650,13 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 			count = infile.read(inbuffer, BufferSize);
 			SamplesRead += count;
 			for (unsigned int s = 0; s < count; ++s) { // read all samples, without caring which channel they belong to
-				PeakInputSample = max(PeakInputSample, std::abs(inbuffer[s]));
+				PeakInputSample = std::max(PeakInputSample, std::abs(inbuffer[s]));
 			}
 		} while (count > 0);
 	
 		std::cout << "Done\n";
 		std::cout << "Peak input sample: " << std::fixed << PeakInputSample << " (" << 20 * log10(PeakInputSample) << " dBFS)" << std::endl;
-		infile.seek(ZERO_64, SEEK_SET); // rewind back to start of file
+		infile.seek(0, SEEK_SET); // rewind back to start of file
 	}
 
 	else { // no peak detection
@@ -680,7 +680,7 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 	int overSamplingFactor = 1;
 
 	if ((FOriginal.numerator != FOriginal.denominator) && (FOriginal.numerator <= 4 || FOriginal.denominator <= 4)) { // simple ratios
-		BaseFilterSize = FILTERSIZE_MEDIUM * max(FOriginal.denominator, FOriginal.numerator) / 2;
+		BaseFilterSize = FILTERSIZE_MEDIUM * std::max(FOriginal.denominator, FOriginal.numerator) / 2;
 		if (ci.bMinPhase) { // oversample to improve filter performance
 			overSamplingFactor = 8;
 			F.numerator *= overSamplingFactor;
@@ -688,17 +688,17 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 		}
 	}
 	else { // complex ratios
-		BaseFilterSize = FILTERSIZE_HUGE * max(FOriginal.denominator, FOriginal.numerator) / 320;
+		BaseFilterSize = FILTERSIZE_HUGE * std::max(FOriginal.denominator, FOriginal.numerator) / 320;
 	}
 
 	// scale the base filter size, according to selected options:
-	int FilterSize = min(FILTERSIZE_LIMIT,
+	int FilterSize = std::min(FILTERSIZE_LIMIT,
 		(overSamplingFactor * BaseFilterSize * ((ci.lpfMode == steep) ? 2 : 1)))
 		| (int)(1);					// ensure that filter length is always odd
 
 									// determine cutoff frequency
 	int OverSampFreq = InputSampleRate * F.numerator;
-	double targetNyquist = min(InputSampleRate, ci.OutputSampleRate) / 2.0;
+	double targetNyquist = std::min(InputSampleRate, ci.OutputSampleRate) / 2.0;
 	double ft;
 	switch (ci.lpfMode) {
 	case relaxed:
@@ -870,7 +870,7 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 		std::cout << "Converting ...";
 		unsigned int OutBufferIndex = 0;
 		PeakOutputSample = 0.0;
-		SamplesRead = ZERO_64;
+		SamplesRead = 0;
 		sf_count_t NextProgressThreshold = IncrementalProgressThreshold;
 
 		// Allocate output buffer:
@@ -889,7 +889,7 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 							Ditherers[Channel].Dither(Gain * inbuffer[s + Channel]) :
 							Gain * inbuffer[s + Channel];
 						OutBuffer[OutBufferIndex + Channel] = OutputSample;
-						PeakOutputSample = max(std::abs(PeakOutputSample), std::abs(OutputSample));
+						PeakOutputSample = std::max(std::abs(PeakOutputSample), std::abs(OutputSample));
 						OutBufferIndex += nChannels;
 					} // ends loop over s
 				} // ends loop over channel
@@ -897,7 +897,7 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 
 				// conditionally send progress update:
 				if (SamplesRead > NextProgressThreshold) {
-					int ProgressPercentage = min(99, 100 * SamplesRead / InputSampleCount);
+					int ProgressPercentage = std::min(99, static_cast<int>(100 * SamplesRead / InputSampleCount));
 					std::cout << ProgressPercentage << "%\b\b\b" << std::flush;
 					NextProgressThreshold += IncrementalProgressThreshold;
 				}
@@ -921,7 +921,7 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 								Ditherers[Channel].Dither(Gain * Filters[Channel].get()) :
 								Gain * Filters[Channel].get();
 							OutBuffer[OutBufferIndex + Channel] = OutputSample;
-							PeakOutputSample = max(PeakOutputSample, std::abs(OutputSample));
+							PeakOutputSample = std::max(PeakOutputSample, std::abs(OutputSample));
 							OutBufferIndex += nChannels;
 						}
 						if (++di[Channel] == F.denominator)
@@ -932,7 +932,7 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 
 				// conditionally send progress update:
 				if (SamplesRead > NextProgressThreshold) {
-					int ProgressPercentage = min(99, 100 * SamplesRead / InputSampleCount);
+					int ProgressPercentage = std::min(99, static_cast<int>(100 * SamplesRead / InputSampleCount));
 					std::cout << ProgressPercentage << "%\b\b\b" << std::flush;
 					NextProgressThreshold += IncrementalProgressThreshold;
 				}
@@ -961,7 +961,7 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 								Gain * Filters[Channel].LazyGet(F.numerator);
 #endif
 							OutBuffer[OutBufferIndex + Channel] = OutputSample;
-							PeakOutputSample = max(PeakOutputSample, std::abs(OutputSample));
+							PeakOutputSample = std::max(PeakOutputSample, std::abs(OutputSample));
 							OutBufferIndex += nChannels;
 						} // ends loop over ii
 					} // ends loop over s
@@ -970,7 +970,7 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 
 				 // conditionally send progress update:
 				if (SamplesRead > NextProgressThreshold) {
-					int ProgressPercentage = min(99, 100 * SamplesRead / InputSampleCount);
+					int ProgressPercentage = std::min(99, static_cast<int>(100 * SamplesRead / InputSampleCount));
 					std::cout << ProgressPercentage << "%\b\b\b" << std::flush;
 					NextProgressThreshold += IncrementalProgressThreshold;
 				}
@@ -999,7 +999,7 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 									Ditherers[Channel].Dither(Gain * Filters[Channel].LazyGet(F.numerator)) :
 									Gain * Filters[Channel].LazyGet(F.numerator);
 								OutBuffer[OutBufferIndex + Channel] = OutputSample;
-								PeakOutputSample = max(PeakOutputSample, std::abs(OutputSample));
+								PeakOutputSample = std::max(PeakOutputSample, std::abs(OutputSample));
 								OutBufferIndex += nChannels;
 							}
 							if (++di[Channel] == F.denominator)
@@ -1011,7 +1011,7 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 
 				// conditionally send progress update:
 				if (SamplesRead > NextProgressThreshold) {
-					int ProgressPercentage = min(99, 100 * SamplesRead / InputSampleCount);
+					int ProgressPercentage = std::min(99, static_cast<int>(100 * SamplesRead / InputSampleCount));
 					std::cout << ProgressPercentage << "%\b\b\b" << std::flush;
 					NextProgressThreshold += IncrementalProgressThreshold;
 				}
@@ -1038,7 +1038,7 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 			std::cout << "\nClipping detected !" << std::endl;
 			if (!ci.disableClippingProtection) {
 				std::cout << "Re-doing with " << 20 * log10(GainAdjustment) << " dB gain adjustment" << std::endl;
-				infile.seek(ZERO_64, SEEK_SET);
+				infile.seek(0, SEEK_SET);
 			}
 
 			for (auto& filter : Filters) {
@@ -1121,7 +1121,7 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 	FloatType inbuffer[BUFFERSIZE];
 
 	sf_count_t count;
-	sf_count_t SamplesRead = ZERO_64;
+	sf_count_t SamplesRead = 0;
 
 	FloatType PeakInputSample;
 
@@ -1134,13 +1134,13 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 			count = infile.read(inbuffer, BufferSize);
 			SamplesRead += count;
 			for (unsigned int s = 0; s < count; ++s) { // read all samples, without caring which channel they belong to
-				PeakInputSample = max(PeakInputSample, std::abs(inbuffer[s]));
+				PeakInputSample = std::max(PeakInputSample, std::abs(inbuffer[s]));
 			}
 		} while (count > 0);
 
 		std::cout << "Done\n";
 		std::cout << "Peak input sample: " << std::fixed << PeakInputSample << " (" << 20 * log10(PeakInputSample) << " dBFS)" << std::endl;
-		infile.seek(ZERO_64, SEEK_SET); // rewind back to start of file
+		infile.seek(0, SEEK_SET); // rewind back to start of file
 	}
 
 	else { // no peak detection
@@ -1164,7 +1164,7 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 	int overSamplingFactor = 1;
 
 	if ((FOriginal.numerator != FOriginal.denominator) && (FOriginal.numerator <= 4 || FOriginal.denominator <= 4)) { // simple ratios
-		BaseFilterSize = FILTERSIZE_MEDIUM * max(FOriginal.denominator, FOriginal.numerator) / 2;
+		BaseFilterSize = FILTERSIZE_MEDIUM * std::max(FOriginal.denominator, FOriginal.numerator) / 2;
 		if (ci.bMinPhase) { // oversample to improve filter performance
 			overSamplingFactor = 8;
 			F.numerator *= overSamplingFactor;
@@ -1172,17 +1172,17 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 		}
 	}
 	else { // complex ratios
-		BaseFilterSize = FILTERSIZE_HUGE * max(FOriginal.denominator, FOriginal.numerator) / 320;
+		BaseFilterSize = FILTERSIZE_HUGE * std::max(FOriginal.denominator, FOriginal.numerator) / 320;
 	}
 
 	// scale the base filter size, according to selected options:
-	int FilterSize = min(FILTERSIZE_LIMIT,
+	int FilterSize = std::min(FILTERSIZE_LIMIT,
 		(overSamplingFactor * BaseFilterSize * ((ci.lpfMode == steep) ? 2 : 1)))
 		| (int)(1);					// ensure that filter length is always odd
 
 									// determine cutoff frequency
 	int OverSampFreq = InputSampleRate * F.numerator;
-	double targetNyquist = min(InputSampleRate, ci.OutputSampleRate) / 2.0;
+	double targetNyquist = std::min(InputSampleRate, ci.OutputSampleRate) / 2.0;
 	double ft;
 	switch (ci.lpfMode) {
 	case relaxed:
@@ -1354,7 +1354,7 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 		std::cout << "Converting (multi-threaded) ...";
 		unsigned int OutBufferIndex = 0;
 		PeakOutputSample = 0.0;
-		SamplesRead = ZERO_64;
+		SamplesRead = 0;
 		sf_count_t NextProgressThreshold = IncrementalProgressThreshold;
 
 		// Allocate output buffer:
@@ -1373,7 +1373,7 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 							Ditherers[Channel].Dither(Gain * inbuffer[s + Channel]) :
 							Gain * inbuffer[s + Channel];
 						OutBuffer[OutBufferIndex + Channel] = OutputSample;
-						PeakOutputSample = max(std::abs(PeakOutputSample), std::abs(OutputSample));
+						PeakOutputSample = std::max(std::abs(PeakOutputSample), std::abs(OutputSample));
 						OutBufferIndex += nChannels;
 					} // ends loop over s
 				} // ends loop over channel
@@ -1381,7 +1381,7 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 
 				// conditionally send progress update:
 				if (SamplesRead > NextProgressThreshold) {
-					int ProgressPercentage = min(99, 100 * SamplesRead / InputSampleCount);
+					int ProgressPercentage = std::min(static_cast<int>(99), static_cast<int>(100 * SamplesRead / InputSampleCount));
 					std::cout << ProgressPercentage << "%\b\b\b" << std::flush;
 					NextProgressThreshold += IncrementalProgressThreshold;
 				}
@@ -1419,7 +1419,7 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 									Ditherers[Channel].Dither(Gain * Filters[Channel].get()) :
 									Gain * Filters[Channel].get();
 								OutBuffer[localOutBufferIndex + Channel] = OutputSample;
-								localPeak = max(localPeak, std::abs(OutputSample));
+								localPeak = std::max(localPeak, std::abs(OutputSample));
 								localOutBufferIndex += nChannels;
 							}
 							if (++localDecimationIndex == F.denominator)
@@ -1437,7 +1437,7 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 				for (int Channel = 0; Channel < nChannels; ++Channel) {
 					Res res = r[Channel].get();
 					OutBufferIndex = res.outputBufferIndex;
-					PeakOutputSample = max(PeakOutputSample, res.peak);
+					PeakOutputSample = std::max(PeakOutputSample, res.peak);
 				}
 
 				// write to file:
@@ -1445,7 +1445,7 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 
 				// conditionally send progress update:
 				if (SamplesRead > NextProgressThreshold) {
-					int ProgressPercentage = min(99, 100 * SamplesRead / InputSampleCount);
+					int ProgressPercentage = std::min(99, static_cast<int>(100 * SamplesRead / InputSampleCount));
 					std::cout << ProgressPercentage << "%\b\b\b" << std::flush;
 					NextProgressThreshold += IncrementalProgressThreshold;
 				}
@@ -1486,7 +1486,7 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 									Gain * Filters[Channel].LazyGet(F.numerator);
 #endif
 								OutBuffer[localOutBufferIndex + Channel] = OutputSample;
-								localPeak = max(localPeak, std::abs(OutputSample));
+								localPeak = std::max(localPeak, std::abs(OutputSample));
 								localOutBufferIndex += nChannels;
 							} // ends loop over ii
 						} // ends loop over s
@@ -1503,7 +1503,7 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 				for (int Channel = 0; Channel < nChannels; ++Channel) {
 					Res res = r[Channel].get();
 					OutBufferIndex = res.outputBufferIndex;
-					PeakOutputSample = max(PeakOutputSample, res.peak);
+					PeakOutputSample = std::max(PeakOutputSample, res.peak);
 				}
 
 				// write to file:
@@ -1511,7 +1511,7 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 
 				// conditionally send progress update:
 				if (SamplesRead > NextProgressThreshold) {
-					int ProgressPercentage = min(99, 100 * SamplesRead / InputSampleCount);
+					int ProgressPercentage = std::min(99, static_cast<int>(100 * SamplesRead / InputSampleCount));
 					std::cout << ProgressPercentage << "%\b\b\b" << std::flush;
 					NextProgressThreshold += IncrementalProgressThreshold;
 				}
@@ -1554,7 +1554,7 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 										Ditherers[Channel].Dither(Gain * Filters[Channel].LazyGet(F.numerator)) :
 										Gain * Filters[Channel].LazyGet(F.numerator);
 									OutBuffer[localOutBufferIndex + Channel] = OutputSample;
-									localPeak = max(localPeak, std::abs(OutputSample));
+									localPeak = std::max(localPeak, std::abs(OutputSample));
 									localOutBufferIndex += nChannels;
 								}
 								if (++localDecimationIndex == F.denominator)
@@ -1574,7 +1574,7 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 				for (int Channel = 0; Channel < nChannels; ++Channel) {
 					Res res = r[Channel].get();
 					OutBufferIndex = res.outputBufferIndex;
-					PeakOutputSample = max(PeakOutputSample, res.peak);
+					PeakOutputSample = std::max(PeakOutputSample, res.peak);
 				}
 
 				// write to file:
@@ -1582,7 +1582,7 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 
 				// conditionally send progress update:
 				if (SamplesRead > NextProgressThreshold) {
-					int ProgressPercentage = min(99, 100 * SamplesRead / InputSampleCount);
+					int ProgressPercentage = std::min(99, static_cast<int>(100 * SamplesRead / InputSampleCount));
 					std::cout << ProgressPercentage << "%\b\b\b" << std::flush;
 					NextProgressThreshold += IncrementalProgressThreshold;
 				}
@@ -1609,7 +1609,7 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 			std::cout << "\nClipping detected !" << std::endl;
 			if (!ci.disableClippingProtection) {
 				std::cout << "Re-doing with " << 20 * log10(GainAdjustment) << " dB gain adjustment" << std::endl;
-				infile.seek(ZERO_64, SEEK_SET);
+				infile.seek(0, SEEK_SET);
 			}
 
 			for (auto& filter : Filters) {
@@ -1735,7 +1735,7 @@ bool checkWarnOutputSize(uint64_t inputSamples, int bytesPerSample, int numerato
 {
 	uint64_t outputDataSize = inputSamples * bytesPerSample * numerator / denominator;
 
-	const uint64_t limit4G = 1ui64 << 32;
+	const uint64_t limit4G = 1ULL << 32;
 	if (outputDataSize >= limit4G) {
 		std::cout << "Warning: output file ( " << fmtNumberWithCommas(outputDataSize) << " bytes of data ) will exceed 4GB limit"  << std::endl;
 		return true;

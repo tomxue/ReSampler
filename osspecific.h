@@ -4,10 +4,10 @@
 // macros which address differences between operating systems go here
 
 #ifdef _WIN32
+#define NOMINMAX // don't use min() max() macros; use std:: library instead
 #include <windows.h>
 #pragma warning(disable : 4996) // suppress pointless MS "deprecation" warnings
 #pragma warning(disable : 4244) // suppress double-to-float warnings
-#define ZERO_64 0i64
 // Timer macros:
 #define START_TIMER() LARGE_INTEGER starttime,finishtime,elapsed,frequency,timetaken; \
 	QueryPerformanceFrequency(&frequency); \
@@ -21,7 +21,6 @@
 #else // Non-Windows:
 
 typedef uint64_t __int64;
-#define ZERO_64 0LL
 #define stricmp strcasecmp
 // Timer macros:
 #define START_TIMER() std::cout << "(start timer)" << std::endl

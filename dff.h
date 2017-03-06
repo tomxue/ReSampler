@@ -147,7 +147,7 @@ public:
 
 			bufferSize = blockSize * numChannels;
 			inputBuffer = new uint8_t[bufferSize];
-			totalBytesRead = ZERO_64;
+			totalBytesRead = 0;
 			endOfBlock = bufferSize;
 			bufferIndex = endOfBlock; // empty (zero -> full)
 			currentBit = 0;
@@ -209,7 +209,7 @@ public:
 
 		// Caller expects interleaving to be done at the _sample_ level 
 
-		uint64_t samplesRead = ZERO_64;
+		uint64_t samplesRead = 0;
 
 		for (uint64_t i = 0; i < count; ++i) {
 
@@ -242,8 +242,8 @@ public:
 
 	void testRead() {
 		float sampleBuffer[8192];
-		uint64_t samplesRead = ZERO_64;
-		uint64_t totalSamplesRead = ZERO_64;
+		uint64_t samplesRead = 0;
+		uint64_t totalSamplesRead = 0;
 		while ((samplesRead = read(sampleBuffer, 8192)) != 0) {
 			totalSamplesRead += samplesRead;
 		}
@@ -255,7 +255,7 @@ public:
 
 		// To-do: allow seeks to positions other than beginning (requires proper calculations)
 		// reset state to initial conditions: 
-		totalBytesRead = ZERO_64;
+		totalBytesRead = 0;
 		endOfBlock = bufferSize;
 		bufferIndex = endOfBlock; // empty (zero -> full)
 		currentBit = 0;
@@ -404,7 +404,7 @@ private:
 				formDSDChunk.propertyChunk.channelsChunk.ckID = nextChunkHeader.ckID;
 				formDSDChunk.propertyChunk.channelsChunk.ckDataSize = dataSize;
 				numChannels = formDSDChunk.propertyChunk.channelsChunk.numChannels = bigEndianRead16();
-				for (unsigned int c = 0; c < min(numChannels, DFF_MAX_CHANNELS); ++c) {
+				for (unsigned int c = 0; c < std::min(numChannels, (uint32_t)DFF_MAX_CHANNELS); ++c) {
 					formDSDChunk.propertyChunk.channelsChunk.channelID[c] = bigEndianRead32();
 				}
 				if (numChannels > DFF_MAX_CHANNELS) {
@@ -508,7 +508,7 @@ private:
 		}
 
 		uint64_t bytesRemaining = totalSoundDataBytes - totalBytesRead;
-		uint64_t bytesToRead = min(bufferSize, bytesRemaining);
+		uint64_t bytesToRead = std::min(bufferSize, bytesRemaining);
 		file.read((char*)inputBuffer, bytesToRead);
 		uint64_t bytesActuallyRead = file.gcount();
 		totalBytesRead += bytesActuallyRead;
