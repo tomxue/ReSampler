@@ -347,7 +347,7 @@ FloatType Dither(FloatType inSample) {
 
 	// Auto-Blanking
 	if (bAutoBlankingEnabled) {
-		if (abs(inSample) < autoBlankLevelThreshold) {
+		if (std::abs(inSample) < autoBlankLevelThreshold) {
 			++zeroCount;
 			if (zeroCount > autoBlankTimeThreshold) {
 				ditherScaleFactor *= autoBlankDecayFactor; // decay
@@ -402,7 +402,7 @@ FloatType Dither(FloatType inSample) {
 
 	// Auto-Blanking
 	if (bAutoBlankingEnabled) {
-		if (abs(inSample) < autoBlankLevelThreshold) {
+		if (std::abs(inSample) < autoBlankLevelThreshold) {
 			++zeroCount;
 			if (zeroCount > autoBlankTimeThreshold) {
 				ditherScaleFactor *= autoBlankDecayFactor; // decay

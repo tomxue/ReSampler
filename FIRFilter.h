@@ -494,7 +494,7 @@ limitDynRangeV(const std::vector<std::complex<double>>& input, double dynRangeDB
 	// find peak:
 	double peak=0.0;
 	for (auto &c : input) {
-		peak = max(peak, abs(c));
+		peak = max(peak, std::abs(c));
 	}
 	
 	// determine low threshold
@@ -505,7 +505,7 @@ limitDynRangeV(const std::vector<std::complex<double>>& input, double dynRangeDB
 	std::transform(input.begin(), input.end(), output.begin(),
 		[lowThresh](std::complex<double> x) -> std::complex<double> {
 		
-		double level = abs(x);
+		double level = std::abs(x);
 		if (level < lowThresh)
 			x *= lowThresh / level;
 
@@ -736,7 +736,7 @@ void dumpFFT(FloatType* data, size_t length)
 	std::setprecision(17);
 	std::cout << "real,imag,mag,phase" << std::endl;
 	for (auto &c : complexOutput) {
-		std::cout << c.real() << "," << c.imag() << "," << abs(c) << "," << arg(c) << std::endl;
+		std::cout << c.real() << "," << c.imag() << "," << std::abs(c) << "," << arg(c) << std::endl;
 	}
 }
 

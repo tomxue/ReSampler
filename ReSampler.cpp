@@ -649,7 +649,7 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 			count = infile.read(inbuffer, BufferSize);
 			SamplesRead += count;
 			for (unsigned int s = 0; s < count; ++s) { // read all samples, without caring which channel they belong to
-				PeakInputSample = max(PeakInputSample, abs(inbuffer[s]));
+				PeakInputSample = max(PeakInputSample, std::abs(inbuffer[s]));
 			}
 		} while (count > 0);
 	
@@ -888,7 +888,7 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 							Ditherers[Channel].Dither(Gain * inbuffer[s + Channel]) :
 							Gain * inbuffer[s + Channel];
 						OutBuffer[OutBufferIndex + Channel] = OutputSample;
-						PeakOutputSample = max(abs(PeakOutputSample), std::abs(OutputSample));
+						PeakOutputSample = max(std::abs(PeakOutputSample), std::abs(OutputSample));
 						OutBufferIndex += nChannels;
 					} // ends loop over s
 				} // ends loop over channel
@@ -1133,7 +1133,7 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 			count = infile.read(inbuffer, BufferSize);
 			SamplesRead += count;
 			for (unsigned int s = 0; s < count; ++s) { // read all samples, without caring which channel they belong to
-				PeakInputSample = max(PeakInputSample, abs(inbuffer[s]));
+				PeakInputSample = max(PeakInputSample, std::abs(inbuffer[s]));
 			}
 		} while (count > 0);
 
@@ -1372,7 +1372,7 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 							Ditherers[Channel].Dither(Gain * inbuffer[s + Channel]) :
 							Gain * inbuffer[s + Channel];
 						OutBuffer[OutBufferIndex + Channel] = OutputSample;
-						PeakOutputSample = max(abs(PeakOutputSample), std::abs(OutputSample));
+						PeakOutputSample = max(std::abs(PeakOutputSample), std::abs(OutputSample));
 						OutBufferIndex += nChannels;
 					} // ends loop over s
 				} // ends loop over channel
