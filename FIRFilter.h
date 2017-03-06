@@ -544,7 +544,7 @@ expV(const std::vector<std::complex<double>>& input) {
 
 // fftV() : FFT of vector of Complex doubles
 std::vector<std::complex<double>>
-fftV(std::vector<std::complex<double>>& input) {
+fftV(std::vector<std::complex<double>> input) {
 	
 	std::vector<std::complex<double>> output(input.size(), 0); // output vector
 		
@@ -563,7 +563,7 @@ fftV(std::vector<std::complex<double>>& input) {
 
 // ifftV() : Inverse FFT of vector of Complex doubles
 std::vector<std::complex<double>>
-ifftV(std::vector<std::complex<double>>& input) {
+ifftV(std::vector<std::complex<double>> input) {
 
 	std::vector<std::complex<double>> output(input.size(), 0); // output vector
 
@@ -592,7 +592,7 @@ ifftV(std::vector<std::complex<double>>& input) {
 // See Footnote* below for more information on algorithm ...
 
 std::vector<std::complex<double>>
-AnalyticSignalV(std::vector<std::complex<double>>& input) {
+AnalyticSignalV(const std::vector<std::complex<double>>& input) {
 
 	std::vector<std::complex<double>> U = fftV(input);
 
