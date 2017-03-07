@@ -44,4 +44,4 @@ protected:
     double z1, z2;
 };
 
-#endif biquad_H
+#endif // biquad_H

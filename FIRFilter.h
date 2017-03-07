@@ -9,7 +9,7 @@
 #include <cstdint>
 #include <cassert>
 
-#include "fftw3.h"
+#include <fftw3.h>
 #include "alignedmalloc.h"
 
 // ensure C-style NULL pointer is defined (used for aligned_malloc)
@@ -741,6 +741,6 @@ void dumpFFT(FloatType* data, size_t length)
 	}
 }
 
-// *Marple, S. L. "Computing the Discrete-Time Analytic Signal via FFT." IEEE Transactions on Signal Processing. Vol. 47, 1999, pp. 2600–2603
+// *Marple, S. L. "Computing the Discrete-Time Analytic Signal via FFT." IEEE Transactions on Signal Processing. Vol. 47, 1999, pp. 2600ï¿½2603
 
 #endif // FIRFFILTER_H_

@@ -2,8 +2,8 @@
 #define RESAMPLER_H 1
 
 #include <map>
-#include <sndfile.h>
-#include <sndfile.hh>
+#include "sndfile.h"
+#include "sndfile.hh"
 
 const std::string strVersion("1.2.5 pre-release");
 const std::string strUsage("usage: resampler.exe -i <inputfile> [-o <outputfile>] -r <samplerate> [-b <bitformat>] [-n [<normalization factor>]]\n");
@@ -151,5 +151,6 @@ bool checkWarnOutputSize(uint64_t inputSamples, int bytesPerSample, int numerato
 std::string fmtNumberWithCommas(uint64_t n);
 template<typename FloatType> bool deInterleave(FloatType ** channelBuffers, const FloatType * sampleData, uint64_t numFrames, unsigned int numChannels);
 template<typename FloatType> bool interleave(FloatType * sampleData, const FloatType ** channelBuffers, uint64_t numFrames, unsigned int numChannels);
-
+bool getMetaData(MetaData& metadata, SndfileHandle& infile);
+bool setMetaData(const MetaData& metadata, SndfileHandle& outfile);
 #endif // !RESAMPLER_H
