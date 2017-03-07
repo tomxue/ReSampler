@@ -5,10 +5,6 @@
     "showOutput": "always",
     "args": [
         "-std=c++11",
-        "-I",
-        "/usr/local/include",
-        "-L",
-        "/usr/local/lib",
         "-l",
         "fftw3",
         "-l",
