@@ -155,6 +155,9 @@ int main(int argc, char * argv[])
 	// parse multithreaded option:
 	bool bMultiThreaded = findCmdlineOption(argv, argv + argc, "--mt");
 
+	// parse rf64 option:
+	bool bRf64 = findCmdlineOption(argv, argv + argc, "--rf64");
+	
 	bool bBadParams = false;
 	if (destFilename.empty()) {
 		if (sourceFilename.empty()) {
@@ -175,6 +178,8 @@ int main(int argc, char * argv[])
 		}
 	}
 	
+
+
 	else if (destFilename == sourceFilename) {
 		std::cout << "\nError: Input and Output filenames cannot be the same" << std::endl;
 		bBadParams = true;
@@ -326,6 +331,7 @@ int main(int argc, char * argv[])
 	ci.dsfInput = dsfInput;
 	ci.dffInput = dffInput;
 	ci.bMultiThreaded = bMultiThreaded;
+	ci.bRf64 = bRf64;
 
 	try {
 		if (ci.bMultiThreaded) {
@@ -757,11 +763,24 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 	if ((OutputFileFormat & SF_FORMAT_SUBMASK) == 0) {
 		OutputFileFormat |= (InputFileFormat & SF_FORMAT_SUBMASK); // may not be valid subformat for new file format. 
 	}
-
+	// !!
+	/*
 	// determine whether the output of conversion will exceed 4GB:
 	if (checkWarnOutputSize(InputSampleCount, getSfBytesPerSample(OutputFileFormat), FOriginal.numerator, FOriginal.denominator)) {
 		if (((OutputFileFormat & SF_FORMAT_TYPEMASK) == SF_FORMAT_WAV) || 
 			((OutputFileFormat & SF_FORMAT_TYPEMASK) == SF_FORMAT_WAVEX)) {
+			std::cout << "Switching to rf64 format !" << std::endl;
+			OutputFileFormat &= ~SF_FORMAT_TYPEMASK; // clear file type
+			OutputFileFormat |= SF_FORMAT_RF64;
+		}
+	}
+	*/
+
+	// for wav files, determine whether to switch to rf64 mode:
+	if (((OutputFileFormat & SF_FORMAT_TYPEMASK) == SF_FORMAT_WAV) ||
+		((OutputFileFormat & SF_FORMAT_TYPEMASK) == SF_FORMAT_WAVEX)) {
+		if (ci.bRf64 || 
+			checkWarnOutputSize(InputSampleCount, getSfBytesPerSample(OutputFileFormat), FOriginal.numerator, FOriginal.denominator)) {
 			std::cout << "Switching to rf64 format !" << std::endl;
 			OutputFileFormat &= ~SF_FORMAT_TYPEMASK; // clear file type
 			OutputFileFormat |= SF_FORMAT_RF64;
@@ -1242,10 +1261,11 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 		OutputFileFormat |= (InputFileFormat & SF_FORMAT_SUBMASK); // may not be valid subformat for new file format. 
 	}
 
-	// determine whether the output of conversion will exceed 4GB:
-	if (checkWarnOutputSize(InputSampleCount, getSfBytesPerSample(OutputFileFormat), FOriginal.numerator, FOriginal.denominator)) {
-		if (((OutputFileFormat & SF_FORMAT_TYPEMASK) == SF_FORMAT_WAV) ||
-			((OutputFileFormat & SF_FORMAT_TYPEMASK) == SF_FORMAT_WAVEX)) {
+	// for wav files, determine whether to switch to rf64 mode:
+	if (((OutputFileFormat & SF_FORMAT_TYPEMASK) == SF_FORMAT_WAV) ||
+		((OutputFileFormat & SF_FORMAT_TYPEMASK) == SF_FORMAT_WAVEX)) {
+		if (ci.bRf64 ||
+			checkWarnOutputSize(InputSampleCount, getSfBytesPerSample(OutputFileFormat), FOriginal.numerator, FOriginal.denominator)) {
 			std::cout << "Switching to rf64 format !" << std::endl;
 			OutputFileFormat &= ~SF_FORMAT_TYPEMASK; // clear file type
 			OutputFileFormat |= SF_FORMAT_RF64;

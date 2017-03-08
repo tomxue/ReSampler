@@ -106,6 +106,7 @@ struct conversionInfo
 	bool dsfInput;
 	bool dffInput;
 	bool bMultiThreaded;
+	bool bRf64;
 };
 
 #define MAX_CART_TAG_TEXT_SIZE 16384

@@ -621,13 +621,35 @@ void makeMinPhase(FloatType* pFIRcoeffs, size_t length)
 	std::vector <std::complex<double>> complexInput;
 	std::vector <std::complex<double>> complexOutput;
 
+	// Pad zeros on either side of FIR:
+	
+	size_t frontPaddingLength = (fftLength - length) / 2;
+	size_t backPaddingLength = fftLength - frontPaddingLength - length;
+	
+	for (size_t n = 0; n < frontPaddingLength; ++n) {
+		complexInput.push_back({ 0, 0 });
+	}
+
+	for (size_t n = 0; n < length; ++n) {
+		complexInput.push_back({ pFIRcoeffs[n], 0 });
+	}
+
+	for (size_t n = 0; n < backPaddingLength; ++n) {
+		complexInput.push_back({ 0, 0 });
+	}
+
+	assert(complexInput.size() == fftLength);
+	
+	/*
+	// pad with trailing zeros
 	for (int n = 0; n < fftLength; ++n) {
 		if (n<length)
 			complexInput.push_back({ pFIRcoeffs[n], 0 });
 		else
 			complexInput.push_back({ 0, 0 }); // pad remainder with zeros
 	}
-
+	*/
+	
 	// Formula is as follows:
 
 	// take the reversed array of

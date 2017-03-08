@@ -100,7 +100,9 @@ which will (theoretically) allow a small amount of aliasing, but at the same tim
 
 **--vorbisQuality &lt;quality&gt;** sets the quality level for ogg vorbis output files (between -1 and 10)
 
-**--noClippingProtection** diables clipping protection (clipping protection is normally active by default)
+**--noClippingProtection** disables clipping protection (clipping protection is normally active by default)
+
+**--rf64** (since v1.2.6) forces output .wav file to be in rf64 format. Has no effect if output file is not a .wav file.
 
 ## Supported Formats
 
@@ -127,6 +129,8 @@ When the target sampling rate is the same as the input file (ie 1:1 ratio), samp
 *Traditional wav files only have 32-bits to quantify the size of the data they contain, which means that the data size cannot exceed 4 Gigabytes (2^32 bytes). The [rf64 specification](https://tech.ebu.ch/docs/tech/tech3306-2009.pdf) was designed to extend the wav format to remove this limitation.*
 
 Alternatively, other output formats suitable for *large* output files (exceeding 4GB) are: **w64, caf, au** or compressed formats such as **flac** or **oga**
+
+Note: the **--rf64** option will force output .wav files to be in rf64 format.   
 
 ## Description of code
  
