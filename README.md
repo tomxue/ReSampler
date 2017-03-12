@@ -166,6 +166,8 @@ Resampler was developed on Visual C++ 2015, as it uses some C++11 features. (Por
 
 **alignedmalloc.h** : simple function for dynamically allocating aligned memory (AVX requires 32-byte alignment)
 
+**osspecific.h** : contains macro definitions for specific target operating systems
+
 *(the class implementations are header-only)*
 
 ----------
