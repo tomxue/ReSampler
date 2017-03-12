@@ -16,7 +16,14 @@ This project arose out of:
 * a requirement to have a simple command-line tool to be used in a script to convert a large collection of audio files
 * a need for a *quality* SRC tool, as the quality of other offerings (both commercial and free) varies wildly from terrific to appalling
 
-Future versions of this project are anticipated to receive a dramatic speed improvement through the use of multithreading, and more efficient FIR filter designs. 
+## Design Philosophy
+
+* ReSampler is first and foremost a converter. Other functionality (for example, generation of synthesised waveforms or spectrograms) is considered outside the scope of the project.
+* Output file quality takes precedence over all other considerations, such as processing speed (although efforts to improve the latter will certainly be explored, they cannot be at the expense of the former)
+* Command-line options selected by the user should be echoed to the user in the converter's console output, to confirm the acceptance and application of the options
+* The introduction of new features to the converter should not change the basic behaviour of the converter, or the sound of files produced by the converter, UNLESS the user explicitly invokes the new features.
+
+Future versions of this project are anticipated to receive a dramatic speed improvement through the discovery of new optimizations, but as stated above, never at the expense of output file quality. 
 
 ## Usage
 
@@ -59,14 +66,14 @@ from the command line, the main options are as follows:
 
 *Note: the **--listsubformats** option will cause the program to display the valid formats for a given file-type*
 
-**Normalization factor** is a value between **0.0** and **1.0**, with 1.0 (equivalent to 100 percent) producing the largest possible output level without clipping. Note: resampler will accept normalization values over 1.0, but this will certainly result in clipping, and is therefore only for experimental and testing purposes. Just using **-n** with no parameter is equivalent to **-n 1.0**
+**Normalization factor** is a value between **0.0** and **1.0**, with 1.0 (equivalent to 100 percent) producing the largest possible output level without clipping. Note: ReSampler will accept normalization values over 1.0, but this will certainly result in clipping, and is therefore only for experimental and testing purposes. Just using **-n** with no parameter is equivalent to **-n 1.0**
 
 ### Additional options: ###
 
 **--mt** Multi-Threading (since v1.2.2). This will cause ReSampler to process each channel in a separate thread. 
 On a multi-core system, this makes better use of available CPU resources and results in a significant speed improvement.  
 
-**--doubleprecision** will force resampler to use double-precision (64-bit floating point) arithmetic for its *internal calculations* and doesn't have anything to do with the file formats, although if you are working with 64-bit double-precision files, it would make sense to use double precision for calculations used in processing.
+**--doubleprecision** will force ReSampler to use double-precision (64-bit floating point) arithmetic for its *internal calculations* and doesn't have anything to do with the file formats, although if you are working with 64-bit double-precision files, it would make sense to use double precision for calculations used in processing.
 
 **--dither [&lt;amount&gt;]** adds **+/-amount** *bits* of dither the output file. Dithering deliberately adds a small amount of a particular type of noise (triangular pdf with noise-shaping) prior to quantization to the output file. The goal of dithering is to reduce distortion, and allow extremely quiet passages to be preserved when they would otherwise be below the threshold of the target bit depth. Usually, it only makes sense to add dither when you are converting to a lower bit depth, for example:
  
