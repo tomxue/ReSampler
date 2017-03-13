@@ -1676,7 +1676,7 @@ bool getMetaData(MetaData& metadata, SndfileHandle& infile) {
 
 // set metadata using libsndfile API :
 bool setMetaData(const MetaData& metadata, SndfileHandle& outfile) {
-	
+
 	std::cout << "Writing Metadata" << std::endl;
 	if (!metadata.title.empty()) outfile.setString(SF_STR_TITLE, metadata.title.c_str());
 	if (!metadata.copyright.empty()) outfile.setString(SF_STR_COPYRIGHT, metadata.copyright.c_str());
@@ -1689,15 +1689,21 @@ bool setMetaData(const MetaData& metadata, SndfileHandle& outfile) {
 	if (!metadata.trackNumber.empty()) outfile.setString(SF_STR_TRACKNUMBER, metadata.trackNumber.c_str());
 	if (!metadata.genre.empty()) outfile.setString(SF_STR_GENRE, metadata.genre.c_str());
 
-	if (metadata.has_bext_fields) {
-		outfile.command(SFC_SET_BROADCAST_INFO, (void*)&metadata.broadcastInfo, sizeof(SF_BROADCAST_INFO));
-	}
+	if (((outfile.format() &  SF_FORMAT_TYPEMASK) == SF_FORMAT_WAV) ||
+		((outfile.format() &  SF_FORMAT_TYPEMASK) == SF_FORMAT_WAVEX) ||
+		((outfile.format() &  SF_FORMAT_TYPEMASK) == SF_FORMAT_RF64)) { /* some sort of wav file */
 
-	if (metadata.has_cart_chunk) {
-		outfile.command(SFC_SET_CART_INFO,
-			(void*)&metadata.cartInfo,
-			sizeof(metadata.cartInfo) - MAX_CART_TAG_TEXT_SIZE + metadata.cartInfo.tag_text_size // (size of cartInfo WITHOUT tag text) + (actual size of tag text) 
-		);
+		// attempt to write bext / cart chunks:
+		if (metadata.has_bext_fields) {
+			outfile.command(SFC_SET_BROADCAST_INFO, (void*)&metadata.broadcastInfo, sizeof(SF_BROADCAST_INFO));
+		}
+
+		if (metadata.has_cart_chunk) {
+			outfile.command(SFC_SET_CART_INFO,
+				(void*)&metadata.cartInfo,
+				sizeof(metadata.cartInfo) - MAX_CART_TAG_TEXT_SIZE + metadata.cartInfo.tag_text_size // (size of cartInfo WITHOUT tag text) + (actual size of tag text) 
+			);
+		}
 	}
 
 	return (outfile.error() == 0);
