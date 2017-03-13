@@ -157,6 +157,9 @@ int main(int argc, char * argv[])
 
 	// parse rf64 option:
 	bool bRf64 = findCmdlineOption(argv, argv + argc, "--rf64");
+
+	// parse noMetadata option:
+	bool bNoMetaData = !findCmdlineOption(argv, argv + argc, "--noMetadata");
 	
 	bool bBadParams = false;
 	if (destFilename.empty()) {
@@ -332,6 +335,7 @@ int main(int argc, char * argv[])
 	ci.dffInput = dffInput;
 	ci.bMultiThreaded = bMultiThreaded;
 	ci.bRf64 = bRf64;
+	ci.bWriteMetaData = bNoMetaData;
 
 	try {
 		if (ci.bMultiThreaded) {
@@ -763,18 +767,6 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 	if ((OutputFileFormat & SF_FORMAT_SUBMASK) == 0) {
 		OutputFileFormat |= (InputFileFormat & SF_FORMAT_SUBMASK); // may not be valid subformat for new file format. 
 	}
-	// !!
-	/*
-	// determine whether the output of conversion will exceed 4GB:
-	if (checkWarnOutputSize(InputSampleCount, getSfBytesPerSample(OutputFileFormat), FOriginal.numerator, FOriginal.denominator)) {
-		if (((OutputFileFormat & SF_FORMAT_TYPEMASK) == SF_FORMAT_WAV) || 
-			((OutputFileFormat & SF_FORMAT_TYPEMASK) == SF_FORMAT_WAVEX)) {
-			std::cout << "Switching to rf64 format !" << std::endl;
-			OutputFileFormat &= ~SF_FORMAT_TYPEMASK; // clear file type
-			OutputFileFormat |= SF_FORMAT_RF64;
-		}
-	}
-	*/
 
 	// for wav files, determine whether to switch to rf64 mode:
 	if (((OutputFileFormat & SF_FORMAT_TYPEMASK) == SF_FORMAT_WAV) ||
@@ -853,9 +845,7 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 				return false;
 			}
 
-			// conditionally write metadata to outfile:
-			if (((OutputFileFormat & SF_FORMAT_TYPEMASK) == SF_FORMAT_WAV) ||
-				((OutputFileFormat & SF_FORMAT_TYPEMASK) == SF_FORMAT_WAVEX)) {
+			if (ci.bWriteMetaData) {
 				if (!setMetaData(m, *pOutFile)) {
 					std::cout << "Warning: problem writing metadata to output file ( " << pOutFile->strError() << " )" << std::endl;
 				}
@@ -1338,14 +1328,12 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 				return false;
 			}
 
-			// conditionally write metadata to outfile:
-			if (((OutputFileFormat & SF_FORMAT_TYPEMASK) == SF_FORMAT_WAV) ||
-				((OutputFileFormat & SF_FORMAT_TYPEMASK) == SF_FORMAT_WAVEX)) {
+			if (ci.bWriteMetaData) {
 				if (!setMetaData(m, *pOutFile)) {
 					std::cout << "Warning: problem writing metadata to output file ( " << pOutFile->strError() << " )" << std::endl;
 				}
 			}
-			
+
 			// if the minor (sub) format of OutputFileFormat is flac, and user has requested a specific compression level, set compression level:
 			if (((OutputFileFormat & SF_FORMAT_FLAC) == SF_FORMAT_FLAC) && ci.bSetFlacCompression) {
 				std::cout << "setting flac compression level to " << ci.flacCompressionLevel << std::endl;
@@ -1689,6 +1677,7 @@ bool getMetaData(MetaData& metadata, SndfileHandle& infile) {
 // set metadata using libsndfile API :
 bool setMetaData(const MetaData& metadata, SndfileHandle& outfile) {
 	
+	std::cout << "Writing Metadata" << std::endl;
 	if (!metadata.title.empty()) outfile.setString(SF_STR_TITLE, metadata.title.c_str());
 	if (!metadata.copyright.empty()) outfile.setString(SF_STR_COPYRIGHT, metadata.copyright.c_str());
 	if (!metadata.software.empty()) outfile.setString(SF_STR_SOFTWARE, metadata.software.c_str());
