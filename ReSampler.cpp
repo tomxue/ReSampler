@@ -779,24 +779,24 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 		}
 	}
 
-	// determine number of bits in output format (for Dithering purposes):
-	int signalBits;
+	// determine number of bits in output format (for normalisation and dithering purposes):
+	int outputSignalBits;
 	switch (OutputFileFormat & SF_FORMAT_SUBMASK) {
 	case SF_FORMAT_PCM_24:
-		signalBits = 24;
+		outputSignalBits = 24;
 		break;
 	case SF_FORMAT_PCM_S8:
 	case SF_FORMAT_PCM_U8:
-		signalBits = 8;
+		outputSignalBits = 8;
 		break;
 	default:
-		signalBits = 16; // to-do: what should it be for floating-point types ?
+		outputSignalBits = 16; // to-do: what should it be for floating-point types ?
 	}
 
 	// confirm dithering options for user:
 	if (ci.bDither) {
 		auto prec = std::cout.precision();
-		std::cout << "Generating " << std::setprecision(2) << ci.DitherAmount << " bits of " << ditherProfileList[ci.ditherProfileID].name << " dither for " << signalBits << "-bit output format";
+		std::cout << "Generating " << std::setprecision(2) << ci.DitherAmount << " bits of " << ditherProfileList[ci.ditherProfileID].name << " dither for " << outputSignalBits << "-bit output format";
 		std::cout.precision(prec);
 		if (ci.bAutoBlankingEnabled)
 			std::cout << ", with auto-blanking";
@@ -811,7 +811,7 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 		// to-do: explore other seed-generation options (remote possibility of overlap)
 		// maybe use a single global RNG ? 
 		// or use discard/jump-ahead ... to ensure parallel streams are sufficiently "far away" from each other ?
-		Ditherers.emplace_back(signalBits, ci.DitherAmount, ci.bAutoBlankingEnabled, n + seed, static_cast<DitherProfileID>(ci.ditherProfileID));
+		Ditherers.emplace_back(outputSignalBits, ci.DitherAmount, ci.bAutoBlankingEnabled, n + seed, static_cast<DitherProfileID>(ci.ditherProfileID));
 	}
 
 	// Calculate initial gain:
@@ -819,7 +819,7 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 
 	if (ci.bDither) { // allow headroom for dithering:
 		FloatType DitherCompensation =
-			(pow(2, signalBits - 1) - pow(2, ci.DitherAmount - 1)) / pow(2, signalBits - 1); // eg 32767/32768 = 0.999969 (-0.00027 dB)
+			(pow(2, outputSignalBits - 1) - pow(2, ci.DitherAmount - 1)) / pow(2, outputSignalBits - 1); // eg 32767/32768 = 0.999969 (-0.00027 dB)
 		Gain *= DitherCompensation;
 	}
 
@@ -1041,7 +1041,8 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 		// Test for clipping:	
 		if (PeakOutputSample > ci.Limit) {
 			bClippingDetected = true;
-			FloatType GainAdjustment = ci.Limit / PeakOutputSample;
+			FloatType lsbTrim = static_cast<FloatType>(((1 << outputSignalBits) - 1)) / (1 << outputSignalBits);
+			FloatType GainAdjustment = lsbTrim * ci.Limit / PeakOutputSample;
 
 			Gain *= GainAdjustment;
 			std::cout << "\nClipping detected !" << std::endl;
@@ -1262,24 +1263,24 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 		}
 	}
 
-	// determine number of bits in output format (for Dithering purposes):
-	int signalBits;
+	// determine number of bits in output format (for Normalisation and Dithering purposes):
+	int outputSignalBits;
 	switch (OutputFileFormat & SF_FORMAT_SUBMASK) {
 	case SF_FORMAT_PCM_24:
-		signalBits = 24;
+		outputSignalBits = 24;
 		break;
 	case SF_FORMAT_PCM_S8:
 	case SF_FORMAT_PCM_U8:
-		signalBits = 8;
+		outputSignalBits = 8;
 		break;
 	default:
-		signalBits = 16; // to-do: what should it be for floating-point types ?
+		outputSignalBits = 16; // to-do: what should it be for floating-point types ?
 	}
 
 	// confirm dithering options for user:
 	if (ci.bDither) {
 		auto prec = std::cout.precision();
-		std::cout << "Generating " << std::setprecision(2) << ci.DitherAmount << " bits of " << ditherProfileList[ci.ditherProfileID].name << " dither for " << signalBits << "-bit output format";
+		std::cout << "Generating " << std::setprecision(2) << ci.DitherAmount << " bits of " << ditherProfileList[ci.ditherProfileID].name << " dither for " << outputSignalBits << "-bit output format";
 		std::cout.precision(prec);
 		if (ci.bAutoBlankingEnabled)
 			std::cout << ", with auto-blanking";
@@ -1294,7 +1295,7 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 		// to-do: explore other seed-generation options (remote possibility of overlap)
 		// maybe use a single global RNG ? 
 		// or use discard/jump-ahead ... to ensure parallel streams are sufficiently "far away" from each other ?
-		Ditherers.emplace_back(signalBits, ci.DitherAmount, ci.bAutoBlankingEnabled, n + seed, static_cast<DitherProfileID>(ci.ditherProfileID));
+		Ditherers.emplace_back(outputSignalBits, ci.DitherAmount, ci.bAutoBlankingEnabled, n + seed, static_cast<DitherProfileID>(ci.ditherProfileID));
 	}
 
 	// Calculate initial gain:
@@ -1302,7 +1303,7 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 
 	if (ci.bDither) { // allow headroom for dithering:
 		FloatType DitherCompensation =
-			(pow(2, signalBits - 1) - pow(2, ci.DitherAmount - 1)) / pow(2, signalBits - 1); // eg 32767/32768 = 0.999969 (-0.00027 dB)
+			(pow(2, outputSignalBits - 1) - pow(2, ci.DitherAmount - 1)) / pow(2, outputSignalBits - 1); // eg 32767/32768 = 0.999969 (-0.00027 dB)
 		Gain *= DitherCompensation;
 	}
 
@@ -1611,7 +1612,8 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 		// Test for clipping:	
 		if (PeakOutputSample > ci.Limit) {
 			bClippingDetected = true;
-			FloatType GainAdjustment = ci.Limit / PeakOutputSample;
+			FloatType lsbTrim = static_cast<FloatType>(((1 << outputSignalBits) - 1)) / (1 << outputSignalBits);
+			FloatType GainAdjustment = lsbTrim * ci.Limit / PeakOutputSample;
 
 			Gain *= GainAdjustment;
 			std::cout << "\nClipping detected !" << std::endl;
