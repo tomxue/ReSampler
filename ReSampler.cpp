@@ -779,7 +779,7 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 		}
 	}
 
-	// determine number of bits in output format (for normalisation and dithering purposes):
+	// determine number of bits in output format (used for dithering purposes):
 	int outputSignalBits;
 	switch (OutputFileFormat & SF_FORMAT_SUBMASK) {
 	case SF_FORMAT_PCM_24:
@@ -1041,8 +1041,7 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 		// Test for clipping:	
 		if (PeakOutputSample > ci.Limit) {
 			bClippingDetected = true;
-			FloatType lsbTrim = static_cast<FloatType>(((1 << outputSignalBits) - 1)) / (1 << outputSignalBits);
-			FloatType GainAdjustment = lsbTrim * ci.Limit / PeakOutputSample;
+			FloatType GainAdjustment = static_cast<FloatType>(lsbTrim) * ci.Limit / PeakOutputSample;
 
 			Gain *= GainAdjustment;
 			std::cout << "\nClipping detected !" << std::endl;
@@ -1263,7 +1262,7 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 		}
 	}
 
-	// determine number of bits in output format (for Normalisation and Dithering purposes):
+	// determine number of bits in output format (used for Dithering purposes):
 	int outputSignalBits;
 	switch (OutputFileFormat & SF_FORMAT_SUBMASK) {
 	case SF_FORMAT_PCM_24:
@@ -1612,8 +1611,7 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 		// Test for clipping:	
 		if (PeakOutputSample > ci.Limit) {
 			bClippingDetected = true;
-			FloatType lsbTrim = static_cast<FloatType>(((1 << outputSignalBits) - 1)) / (1 << outputSignalBits);
-			FloatType GainAdjustment = lsbTrim * ci.Limit / PeakOutputSample;
+			FloatType GainAdjustment = static_cast<FloatType>(lsbTrim) * ci.Limit / PeakOutputSample;
 
 			Gain *= GainAdjustment;
 			std::cout << "\nClipping detected !" << std::endl;
