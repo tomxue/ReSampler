@@ -1041,7 +1041,7 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 		// Test for clipping:	
 		if (PeakOutputSample > ci.Limit) {
 			bClippingDetected = true;
-			FloatType GainAdjustment = static_cast<FloatType>(lsbTrim) * ci.Limit / PeakOutputSample;
+			FloatType GainAdjustment = static_cast<FloatType>(clippingTrim) * ci.Limit / PeakOutputSample;
 
 			Gain *= GainAdjustment;
 			std::cout << "\nClipping detected !" << std::endl;
@@ -1611,7 +1611,7 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 		// Test for clipping:	
 		if (PeakOutputSample > ci.Limit) {
 			bClippingDetected = true;
-			FloatType GainAdjustment = static_cast<FloatType>(lsbTrim) * ci.Limit / PeakOutputSample;
+			FloatType GainAdjustment = static_cast<FloatType>(clippingTrim) * ci.Limit / PeakOutputSample;
 
 			Gain *= GainAdjustment;
 			std::cout << "\nClipping detected !" << std::endl;
