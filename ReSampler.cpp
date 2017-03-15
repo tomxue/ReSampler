@@ -1,3 +1,12 @@
+/*
+* Copyright (C) 2016 - 2017 Judd Niemann - All Rights Reserved
+* You may use, distribute and modify this code under the
+* terms of the GNU Lesser General Public License, version 2.1
+*
+* You should have received a copy of GNU Lesser General Public License v2.1
+* with this file. If not, please refer to: https://github.com/jniemann66/ReSampler
+*/
+
 // ReSampler.cpp : Audio Sample Rate Converter by Judd Niemann
 
 #include <iostream>
@@ -736,8 +745,6 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 	std::cout << "LPF transition frequency: " << std::fixed << std::setprecision(2) << ft << " Hz (" << 100 * ft / targetNyquist << " %)" << std::endl;
 	std::cout.precision(prec);
 
-	//std::cout << "Using FIR Filter size of " << FilterSize << " taps" << std::endl;
-
 	// Make some filter coefficients:
 	FloatType* FilterTaps = new FloatType[FilterSize];
 	makeLPF<FloatType>(FilterTaps, FilterSize, ft, OverSampFreq);
@@ -1218,8 +1225,6 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 	auto prec = std::cout.precision();
 	std::cout << "LPF transition frequency: " << std::fixed << std::setprecision(2) << ft << " Hz (" << 100 * ft / targetNyquist << " %)" << std::endl;
 	std::cout.precision(prec);
-
-	//std::cout << "Using FIR Filter size of " << FilterSize << " taps" << std::endl;
 
 	// Make some filter coefficients:
 	FloatType* FilterTaps = new FloatType[FilterSize];

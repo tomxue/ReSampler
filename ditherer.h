@@ -1,13 +1,17 @@
-// Ditherer.h
-//
-// (C) J.Niemann, 2016, 2017
-//
-// defines Ditherer class, for adding tpdf dither to input samples
-//
-//
+/*
+* Copyright (C) 2016 - 2017 Judd Niemann - All Rights Reserved
+* You may use, distribute and modify this code under the
+* terms of the GNU Lesser General Public License, version 2.1
+*
+* You should have received a copy of GNU Lesser General Public License v2.1
+* with this file. If not, please refer to: https://github.com/jniemann66/ReSampler
+*/
 
 #ifndef DITHERER_H
 #define DITHERER_H 1
+
+// Ditherer.h
+// defines Ditherer class, for adding tpdf dither to input samples
 
 // configuration:
 #define DITHER_TOPOLOGY 1

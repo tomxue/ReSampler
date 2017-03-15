@@ -1,9 +1,17 @@
+/* 
+* Copyright (C) 2016 - 2017 Judd Niemann - All Rights Reserved
+* You may use, distribute and modify this code under the
+* terms of the GNU Lesser General Public License, version 2.1
+*
+* You should have received a copy of GNU Lesser General Public License v2.1
+* with this file. If not, please refer to: https://github.com/jniemann66/ReSampler
+*/
+
 #ifndef DSF_H_
 #define DSF_H_
 
 // dsf.h
 // simple dsf file reader
-// (c) 2017 Judd Niemann
 
 #include <cassert>
 #include <cstdint>
@@ -14,7 +22,7 @@
 
 #define DSF_FORMAT 0x00310000 // note: take care to make sure this doesn't clash with future libsndfile formats (unlikely)
 
-#pragma pack(push,r1,1)
+#pragma pack(push, r1, 1)
 typedef struct {
 	uint32_t header;	// expected: "DSD "
 	uint64_t length;	// expected: 28
