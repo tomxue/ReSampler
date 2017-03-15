@@ -111,6 +111,13 @@ which will (theoretically) allow a small amount of aliasing, but at the same tim
 
 **--rf64** (since v1.2.6) forces output .wav file to be in rf64 format. Has no effect if output file is not a .wav file.
 
+*Note: If your output file has an .rf64 extension, it will automatically be in rf64 format*
+
+**--noMetadata** (since v1.2.6) prevents copying of metadata from input file to output file. 
+
+*By default, ReSampler will attempt to copy native metadata from the input file to the output file, provided the input and output file types support metadata 
+(ie: wav, caf, flac, oga, rf64)*
+
 ## Supported Formats
 
 Resampler can handle any of the file formats libsndfile can handle, plus a few extras (notably, the 1-bit DSD formats, dff and dsf - as of v1.2.0).  
