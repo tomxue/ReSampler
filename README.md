@@ -116,7 +116,7 @@ which will (theoretically) allow a small amount of aliasing, but at the same tim
 **--noMetadata** (since v1.2.6) prevents copying of metadata from input file to output file. 
 
 *By default, ReSampler will attempt to copy native metadata from the input file to the output file, provided the input and output file types support metadata 
-(ie: wav, caf, flac, oga, rf64)*
+(ie: wav, aiff, caf, flac, oga, rf64)*
 
 ## Supported Formats
 
