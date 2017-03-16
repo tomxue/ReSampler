@@ -189,8 +189,6 @@ int main(int argc, char * argv[])
 			std::cout << "defaulting to: " << destFilename << "\n" << std::endl;
 		}
 	}
-	
-
 
 	else if (destFilename == sourceFilename) {
 		std::cout << "\nError: Input and Output filenames cannot be the same" << std::endl;
