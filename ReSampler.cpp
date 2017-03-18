@@ -795,7 +795,7 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 		outputSignalBits = 8;
 		break;
 	default:
-		outputSignalBits = 16; // to-do: what should it be for floating-point types ?
+		outputSignalBits = 16;
 	}
 
 	// confirm dithering options for user:
@@ -1276,7 +1276,7 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 		outputSignalBits = 8;
 		break;
 	default:
-		outputSignalBits = 16; // to-do: what should it be for floating-point types ?
+		outputSignalBits = 16;
 	}
 
 	// confirm dithering options for user:
