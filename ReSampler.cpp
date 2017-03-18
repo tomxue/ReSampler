@@ -731,7 +731,7 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 	// determine sidelobe attenuation
 	int SidelobeAtten = ((FOriginal.numerator == 1) || (FOriginal.denominator == 1)) ?
 		195 :
-		140;
+		160;
 
 	// echo conversion ratio to user:
 	FloatType ResamplingFactor = static_cast<FloatType>(ci.OutputSampleRate) / InputSampleRate;
@@ -1212,7 +1212,7 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 	// determine sidelobe attenuation
 	int SidelobeAtten = ((FOriginal.numerator == 1) || (FOriginal.denominator == 1)) ?
 		195 :
-		140;
+		160;
 
 	// echo conversion ratio to user:
 	FloatType ResamplingFactor = static_cast<FloatType>(ci.OutputSampleRate) / InputSampleRate;
