@@ -34,7 +34,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 // This program uses the following libraries:
 // 1:
-// libsndfile                                          
+// libsndfile
 // available at http://www.mega-nerd.com/libsndfile/
 //
 // (copy of entire package included in $(ProjectDir)\libsbdfile)
@@ -401,9 +401,6 @@ int main(int argc, char * argv[])
 		return EXIT_FAILURE;
 	}
 }
-
-
-
 
 // determineBestBitFormat() : determines the most appropriate bit format for the output file, through the following process:
 // 1. Try to use infile's format and if that isn't valid for outfile, then:

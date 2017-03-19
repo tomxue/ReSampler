@@ -18,7 +18,7 @@ public:
 	// Naming conventions for coefficients are as follows:
 	// numerator/input coeffs:			a0,a1,a2
 	// denominator/feedback coeffs:		b1,b2
-	
+
 	Biquad() 
 		: z1(0.0),z2(0.0){};
 
@@ -49,8 +49,8 @@ public:
 	}
 
 protected:
-    FloatType a0, a1, a2, b1, b2;
-    double z1, z2;
+	FloatType a0, a1, a2, b1, b2;
+	double z1, z2;
 };
 
 #endif // biquad_H
