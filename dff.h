@@ -207,13 +207,10 @@ public:
 		/*
 
 		In a dff file,
-
-		data is big-endian
+			* data is big-endian
+			* Channel interleaving is done at the byte level.
+			* In each byte, the MSB is played first; the LSB is played last.
 		
-		Channel interleaving is done at the byte level.
-
-		In each byte, the MSB is played first; the LSB is played last.
-
 		*/
 
 		// Caller expects interleaving to be done at the _sample_ level 
