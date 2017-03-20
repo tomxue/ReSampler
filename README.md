@@ -134,7 +134,7 @@ Resampler employs a multiple-pass approach with regards to clipping detection. I
 
 #### Double Precision vs Single Precision
 
-When *Double Precision* is engaged (using the **--doubleprecision** option), all calculations inside the conversion will be done using double-precision (64-bit) floating-point instead of single-precision (32-bit). Typically, the most noticable effect of this is that quantization noise (due to rounding errors) is significantly reduced. This can be observed in spectrograms of frequency sweeps, which were converted from 96khz to 44.1khz:
+When *Double Precision* is engaged (using the **--doubleprecision** option), all calculations inside the conversion will be done using double-precision (64-bit) floating-point instead of single-precision (32-bit). Typically, the most noticable effect of this is that the noise floor is significantly reduced. This can be observed in spectrograms of frequency sweeps, which were converted from 96khz to 44.1khz:
 
 <table>
     <thead>
