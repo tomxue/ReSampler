@@ -17,6 +17,7 @@
 #include <memory>
 #include <iomanip>
 #include <mutex>
+#include <cstdio>
 
 #define _USE_MATH_DEFINES
 #include <math.h>
@@ -1869,3 +1870,4 @@ void getCmdlineParam(char** begin, char** end, const std::string& OptionName, do
 bool findCmdlineOption(char** begin, char** end, const std::string& option) {
 	return (std::find(begin, end, option) != end);
 }
+

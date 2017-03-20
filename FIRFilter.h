@@ -772,6 +772,31 @@ void dumpFFT(FloatType* data, size_t length)
 	}
 }
 
+void testSinAccuracy() {
+	
+	const int numSteps = 10000000;
+	const double inc = M_PI / numSteps;
+	double t = M_PI / -2.0;
+	double maxError = 0.0;
+	double worstT = 0.0;
+
+	for (int i = 0; i < numSteps; ++i, t += inc) {
+
+		// calc relative error of
+		// |(sin 2t - 2 * sint * cost) / sin 2t|
+		// (double-angle identity)
+		
+		double e = std::abs((std::sin(2.0 * t) - 2.0 * std::sin(t) * std::cos(t)) / std::sin(2.0 * t));
+		//double e = std::abs((sin(2.0 * t) - 2.0 * sin(t) * cos(t)) / sin(2.0 * t));
+		if (e > maxError) {
+			worstT = t;
+			maxError = e;
+		}
+	}
+	std::cout << "maxError: " << std::setprecision(33) << maxError << std::endl;
+	std::cout << "worstT: " << worstT << std::endl;
+}
+
 // *Marple, S. L. "Computing the Discrete-Time Analytic Signal via FFT." IEEE Transactions on Signal Processing. Vol. 47, 1999, pp. 2600�2603
 
 #endif // FIRFFILTER_H_
