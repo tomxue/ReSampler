@@ -123,7 +123,7 @@ which will (theoretically) allow a small amount of aliasing, but at the same tim
 
 Resampler can handle any of the file formats libsndfile can handle, plus a few extras (notably, the 1-bit DSD formats, dff and dsf - as of v1.2.0).  
 Thus, the following file extensions are supported:  
-![Supported Formats](https://github.com/jniemann66/ReSampler/blob/master/supported_formats.png)
+![Supported Formats](supported_formats.png)
 
 For more information, please refer to the [libsndfile documentation](http://www.mega-nerd.com/libsndfile/)
 
