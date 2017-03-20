@@ -84,14 +84,14 @@ On a multi-core system, this makes better use of available CPU resources and res
 
 The *amount* parameter represents the number of *bits* of dither to add. The actual *level* of dithering added is equal to **+/- 2^(amount-1)** *steps*. The default is for *amount* is 1.0, and it doesn't need to be an integer. Values in the range 1-6 are sensible for most situations. The noise-shaping curve becomes more pronounced at higher dithering amounts.  
 
-The effect of dithering is most noticable during extremely quiet passages (typically, in fade-outs) of the audio. If you can hear modulation effects, or "tearing" in the quietest passages of your output file, then a greater amount of dither may need to be applied. (note: in many cases, these passages are so quiet, you will need to normalize them just to hear them).
+The effect of dithering is most noticeable during extremely quiet passages (typically, in fade-outs) of the audio. If you can hear modulation effects, or "tearing" in the quietest passages of your output file, then a greater amount of dither may need to be applied. (note: in many cases, these passages are so quiet, you will need to normalize them just to hear them).
 
-**--autoblank** when specified in conjuction with **--dither** causes dithering to switch-off after 30,000 consecutive input samples of *silence* (< -193dB is considered silence). Dithering is re-enabled immediately upon a non-zero input sample being detected.
+**--autoblank** when specified in conjunction with **--dither** causes dithering to switch-off after 30,000 consecutive input samples of *silence* (< -193dB is considered silence). Dithering is re-enabled immediately upon a non-zero input sample being detected.
 
-**--seed &lt;n&gt;** (since v1.1.5) when specified in conjuction with **--dither** , causes the pseudo-random number generator used to generate dither noise to generate a specific sequence of noise associated with the number n.
+**--seed &lt;n&gt;** (since v1.1.5) when specified in conjunction with **--dither** , causes the pseudo-random number generator used to generate dither noise to generate a specific sequence of noise associated with the number n.
 Using the same value of n on subsequent conversions should reproduce precisely the same result. n is a signed integer in the range -2,147,483,648 through 2,147,483,647.  
 
-**--flat-tpdf** (since v1.1.6) when specified in conjuction with **--dither** , causes the dithering to use flat tpdf noise with no noise-shaping.
+**--flat-tpdf** (since v1.1.6) when specified in conjunction with **--dither** , causes the dithering to use flat tpdf noise with no noise-shaping.
 
 **--listsubformats &lt;filetype&gt;** will list all valid subformats for a given *filetype*
 
@@ -135,7 +135,7 @@ Resampler employs a multiple-pass approach with regards to clipping detection. I
 
 #### Double Precision vs Single Precision
 
-When *Double Precision* is engaged (using the **--doubleprecision** option), all calculations inside the conversion will be done using double-precision (64-bit) floating-point instead of single-precision (32-bit). Typically, the most noticable effect of this is that the noise floor is significantly reduced. This can be observed in spectrograms of frequency sweeps, which were converted from 96khz to 44.1khz:
+When *Double Precision* is engaged (using the **--doubleprecision** option), all calculations inside the conversion will be done using double-precision (64-bit) floating-point instead of single-precision (32-bit). Typically, the most noticeable effect of this is that the noise floor is significantly reduced. This can be observed in spectrograms of frequency sweeps, which were converted from 96khz to 44.1khz:
 
 <table>
     <thead>
@@ -152,7 +152,7 @@ When *Double Precision* is engaged (using the **--doubleprecision** option), all
     </tbody>
 </table>
 
-*In the above comparision, the "blue haze" seen in the single-precision conversion is the result of quantization noise from rounding errors in single-precision arithmetic. The double-precision conversion is noticably "cleaner". Please note, however, that even with single precision, the noise is sitting about 150dB down, and will not be reproduced by any real-world DAC, and therefore will not be audible.*
+*In the above comparison, the "blue haze" seen in the single-precision conversion is the result of quantization noise from rounding errors in single-precision arithmetic. The double-precision conversion is noticeably "cleaner". Please note, however, that even with single precision, the noise is sitting about 150dB down, and will not be reproduced by any real-world DAC, and therefore will not be audible.*
 
 There is a penalty in processing speed for converting using double precision, and it is to be expected that double-precision conversions take longer to process.  
 
