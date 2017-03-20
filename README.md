@@ -132,6 +132,29 @@ For more information, please refer to the [libsndfile documentation](http://www.
 
 Resampler employs a multiple-pass approach with regards to clipping detection. If clipping is detected (ie normalized signal level exceeded +/- 1.0) during processing, it will re-do the conversion with the overall gain adjusted appropriately to avoid clipping. (This can be disabled with the **--noClippingProtection** option)
 
+#### Double Precision vs Single Precision
+
+When *Double Precision* is engaged (using the **--doubleprecision** option), all calculations inside the conversion will be done using double-precision (64-bit) floating-point instead of single-precision (32-bit). Typically, the most noticable effect of this is that quantization noise (due to rounding errors) is significantly reduced. This can be observed in spectrograms of frequency sweeps, which were converted from 96khz to 44.1khz:
+
+<table>
+    <thead>
+        <tr>
+            <th>Single Precision:</th>
+            <th>Double Precision:</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><img src="./96khz_sweep-3dBFS_32f(to44k).png" alt="96khz sweep to 44.1khz - single precision"></img></td>
+            <td><img src="./96khz_sweep-3dBFS_32f(to44k)-dp.png" alt="96khz sweep to 44.1khz - double precision"></img></td>
+        </tr>
+    </tbody>
+</table>
+
+*In the above comparision, the "blue haze" seen in the single-precision conversion is the result of quantization noise from rounding errors in single-precision arithmetic. The double-precision conversion is noticably "cleaner". Please note, however, that even with single precision, the noise is sitting about 150dB down, and will not be reproduced by any real-world DAC, and therefore will not be audible.*
+
+There is a penalty in processing speed for converting using double precision, and it is to be expected that double-precision conversions take longer to process.  
+
 #### Conversion to same sampling rate
 
 When the target sampling rate is the same as the input file (ie 1:1 ratio), sample-rate conversion is not actually performed. However, bit-depth / file format conversion and other features such as dithering and normalization are performed when requested.
