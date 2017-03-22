@@ -14,7 +14,7 @@
 // defines Ditherer class, for adding tpdf dither to input samples
 
 // configuration:
-#define DITHER_TOPOLOGY 1
+#define DITHER_TOPOLOGY 2
 //#define TEST_FILTER // if defined, this will result in ditherer outputing the tpdf noise only. (Used for evaluating filters.)
 #define MAX_FIR_FILTER_SIZE 24
 
@@ -32,7 +32,8 @@ typedef enum {
 	flatTPDF,
 	slopedTPDF,
 	RPDF,
-	GPDF
+	GPDF,
+	impulse
 } NoiseGeneratorType;
 
 typedef enum {
@@ -119,13 +120,21 @@ const double impew44[] = { // improved E-weighted 9 coeff (appendix: 6)
 };
 
 const double highShib44[20] = { // High-Shibata 44k (20 taps)
-	0.210994777646055, -0.420248680433543,  0.64115984143207 ,
+	/*0.210994777646055, -0.420248680433543,  0.64115984143207 ,
 	-0.824542344864141,  0.890242066951182, -0.83102838215377 ,
 	0.639689484122861, -0.374531480587619,  0.07944678322847 ,
 	0.170730305215106, -0.346692245607667,  0.421108345040065,
 	-0.41390894073698 ,  0.341901464927132, -0.247729870518492,
 	0.15277447013028 , -0.081390587810871,  0.034194581138503,
 	-0.011519110890133,  0.001618961712954
+	*/
+	3.0259189605712890625, -6.0268716812133789062,   9.195003509521484375,
+	-11.824929237365722656, 12.767142295837402344, -11.917946815490722656,
+	9.1739168167114257812,  -5.3712320327758789062, 1.1393624544143676758,
+	2.4484779834747314453,  -4.9719839096069335938,   6.0392003059387207031,
+	-5.9359521865844726562,  4.903278350830078125,   -3.5527443885803222656,
+	2.1909697055816650391, -1.1672389507293701172,  0.4903914332389831543,
+	-0.16519790887832641602,  0.023217858746647834778
 };
 
 const double experimental1[] = {
@@ -175,13 +184,15 @@ const double experimental2[] = {
 
 DitherProfile ditherProfileList[] = {
 
+	// id, name, noiseGeneratorType, filterType, intendedSampleRate, N, coeffs, bUseFeedback
+
 	{flat, "flat tpdf", flatTPDF, bypass, 44100, 1, noiseShaperPassThrough, false},
 	{sloped,"sloped tpdf", slopedTPDF, bypass, 44100, 1, noiseShaperPassThrough, true },
 	{standard, "standard", slopedTPDF, cascadedBiquad, 44100, 1, noiseShaperPassThrough, true},
 	{Wannamaker3tap, "Wannamaker 3-tap",flatTPDF, fir, 44100, 3, wan3, true},
 	{Wannamaker9tap, "Wannamaker 9-tap",flatTPDF, fir, 44100, 9, wan9, true},
 	{Wannamaker24tap, "Wannamaker 24-tap",flatTPDF, fir, 44100, 24, wan24, true},
-	{HighShibata44k, "High Shibata 44k",flatTPDF, fir, 44100, 20, highShib44, true},
+	{HighShibata44k, "High Shibata 44k",slopedTPDF, fir, 44100, 20, highShib44, true},
 	{ModEWeighted44k, "Modified E-Weighted",flatTPDF, fir, 44100, 9, modew44, true},
 	{Lipshitz44k, "Lipshitz",flatTPDF, fir, 44100, 5, lips44, true},
 	{ImpEWeighted44k, "Improved E-Weighted",flatTPDF, fir, 44100, 9, impew44, true},
@@ -211,7 +222,8 @@ public:
 		randGenerator(seed),		// initialize (seed) RNG
 		dist(0, randMax),		// set the range of the random number distribution
 		gain(1.0),
-		bUseErrorFeedback(ditherProfileList[ditherProfileID].bUseFeedback)
+		bUseErrorFeedback(ditherProfileList[ditherProfileID].bUseFeedback),
+		bPulseEmitted(false)
 	{
 		// general parameters:
 		maxSignalMagnitude = static_cast<FloatType>((1 << (signalBits - 1)) - 1); // note the -1 : match 32767 scaling factor for 16 bit !
@@ -229,6 +241,9 @@ public:
 			break;
 		case GPDF:
 			noiseGenerator = &Ditherer::noiseGeneratorGPDF;
+			break;
+		case impulse:
+			noiseGenerator = &Ditherer::noiseGeneratorImpulse;
 			break;
 		case slopedTPDF:
 		default:
@@ -281,6 +296,7 @@ public:
 		}
 
 		// FIR-specific stuff:
+		
 		const FloatType scale = 1.0;
 		FIRLength = selectedDitherProfile.N;
 		for (int n = 0; n < FIRLength; ++n) {
@@ -367,9 +383,10 @@ FloatType Dither(FloatType inSample) {
 
 	FloatType tpdfNoise = (this->*noiseGenerator)();
 	FloatType preDither = bUseErrorFeedback ? inSample - Z1 : inSample;
-	FloatType shapedNoise = (this->*noiseShapingFilter)(tpdfNoise) * ditherScaleFactor;
+	FloatType shapedNoise = (this->*noiseShapingFilter)(tpdfNoise * ditherScaleFactor);
 
 #ifdef TEST_FILTER
+	//return tpdfNoise * ditherScaleFactor;
 	return shapedNoise; // (Output Only Filtered Noise - discard signal)
 #endif
 
@@ -439,6 +456,7 @@ FloatType Dither(FloatType inSample) {
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 private:
+
 	int oldRandom;
 	int seed;
 	FloatType Z1;				// last Quantization error
@@ -458,6 +476,7 @@ private:
 	FloatType outputLimit;
 	FloatType(Ditherer::*noiseShapingFilter)(FloatType); // function pointer to noise-shaping filter
 	FloatType(Ditherer::*noiseGenerator)(); // function pointer to noise-generator
+	bool bPulseEmitted;
 
 	// Auto-Blanking parameters:
 	bool bAutoBlankingEnabled;
@@ -510,6 +529,16 @@ private:
 		return static_cast<FloatType>(halfRand - r/n);
 	}
 
+	FloatType noiseGeneratorImpulse() {
+		
+		if (!bPulseEmitted) {
+			bPulseEmitted = true;
+			return static_cast<FloatType>(randMax);
+		}
+		
+		return 0.0;
+	}
+
 	// --- Noise-shaping functions ---
 
 	FloatType noiseShaperPassThrough(FloatType x) {
@@ -521,6 +550,8 @@ private:
 	}
 
 	FloatType noiseShaperFIR(FloatType x) {
+
+		/*
 		// put x into history buffer (goes in "backwards"):
 		noise[currentIndex--] = x;
 		if (currentIndex < 0) {
@@ -536,6 +567,24 @@ private:
 			}
 			filterOutput += noise[index] * FIRCoeffs[i];
 		}
+		return filterOutput;
+		*/
+
+		// put sample at end of buffer:
+		FloatType* noiseptr = &noise[FIRLength - 1];
+		*noiseptr = x;
+		
+		FloatType filterOutput = 0.0;
+		
+		// macc with coefficients:
+		for (size_t k = 0; k < FIRLength; k++) {
+			filterOutput += *noiseptr-- * FIRCoeffs[k];
+		}
+
+		// shift buffer backwards for next time:
+		memmove(noise, &noise[1],
+			(FIRLength - 1) * sizeof(FloatType));
+
 		return filterOutput;
 	}
 };

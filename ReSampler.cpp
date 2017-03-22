@@ -112,9 +112,12 @@ int main(int argc, char * argv[])
 	}
 
 	// parse --flat-tpdf option
-	DitherProfileID ditherProfileID = findCmdlineOption(argv, argv + argc, "--flat-tpdf") ? 
-		flat:
-		standard;
+	DitherProfileID ditherProfileID = findCmdlineOption(argv, argv + argc, "--flat-tpdf") ?
+		flat :
+		//ModEWeighted44k;
+		HighShibata44k;
+		//standard;
+		//flat;
 
 	// parse auto-blanking option (for dithering):
 	bool bAutoBlankingEnabled = findCmdlineOption(argv, argv + argc, "--autoblank");
@@ -1870,4 +1873,3 @@ void getCmdlineParam(char** begin, char** end, const std::string& OptionName, do
 bool findCmdlineOption(char** begin, char** end, const std::string& option) {
 	return (std::find(begin, end, option) != end);
 }
-
