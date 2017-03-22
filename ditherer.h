@@ -11,10 +11,9 @@
 #define DITHERER_H 1
 
 // Ditherer.h
-// defines Ditherer class, for adding tpdf dither to input samples
+// defines Ditherer class, for adding dither and noise-shaping to input samples
 
 // configuration:
-#define DITHER_TOPOLOGY 2
 //#define TEST_FILTER // if defined, this will result in ditherer outputing the tpdf noise only. (Used for evaluating filters.)
 #define MAX_FIR_FILTER_SIZE 24
 
@@ -73,61 +72,54 @@ const double noiseShaperPassThrough[1] = {
 	1
 };
 
-// filters based on F-weighted curves
-// from 'Psychoacoustically Optimal Noise Shaping' (*)
-// this filter is the "F-Weighted" noise filter described by Wannamaker
-// It is designed to produce minimum audibility:
-
-const double wan3[] = {
-	0.916014598760224, -0.554236805904214,  0.061519156663502
-};
-
-const double wan9[] = { // f-weighted used in SoX
-	0.481319388145356, -0.672490189904582,  0.785636165476065,
-	-0.832929985953034,  0.669097806157289, -0.440012127222434,
-	0.255626092957795, -0.113545079541753,  0.016902053140925
-};
-
-const double wan24[] = {
-	0.514957949278981, -0.707231224942256,  0.792298950922098,
-	-0.782725058134344,  0.543526529766033, -0.246916297818599,
-	0.024838892281917,  0.110623443620278, -0.161339968204987,
-	0.110330813502457, -0.040696257820323, -0.009410889845009,
-	0.032265323579584, -0.032554508456871,  0.01642992144958 ,
-	-0.00259900332752 , -0.00454922479706 ,  0.005433144321457,
-	-0.003471295165116,  0.000958853506002,  0.000188626919214,
-	-0.000387374232494,  0.000166663510812, -0.000027561924269
-};
-
 // filters based on E-weighted curves
-// from 'Minimally Audible Noise Shaping' (**)
+// from 'Minimally Audible Noise Shaping' (*)
 
 const double modew44[] = { // Modified E-weighted (appendix: 2)
-	0.866358574385245, -0.658369963567126,  0.251619304365678,
-	-0.151847324138641,  0.066097633713628, -0.058591277834477,
-	0.016951853693747, -0.006594125129948, -0.018369720915365
+	1.6620, -1.2630, 0.4827,
+	-0.2913, 0.1268,-0.1124,
+	0.03252, -0.01265, -0.03524
 };
 
 const double lips44[] = { // improved E-weighted (appendix: 5)
-	0.690593301813357, -0.735432611129325,  0.665456113257436,
-	-0.54010986221507 ,  0.208876449230218
+	2.033, -2.165, 1.959,
+	-1.590, 0.6149
 };
 
 const double impew44[] = { // improved E-weighted 9 coeff (appendix: 6)
-	0.357422249248531, -0.588171140754959,  0.780127101099534,
-	-0.901904263646452,  0.8334830743804  , -0.631734723645454,
-	0.409648331330508, -0.204886937398526,  0.052615266828261
+	2.847, -4.685,  6.214,
+	-7.184, 6.639, -5.032,
+	3.263, -1.632, 0.4191
+};
+
+// filters based on F-weighted curves
+// from 'Psychoacoustically Optimal Noise Shaping' (**)
+// this filter is the "F-Weighted" noise filter described by Wannamaker
+// It is designed to produce minimum audibility:
+
+const double wan3[] = { // Table 3; 3 Coefficients
+	1.623, -0.982, 0.109
+};
+
+const double wan9[] = { // Table 3; 9 Coefficients ('f-weighted' in SoX)
+	2.4120002321781  , -3.370000324394779,  3.937000378973959,
+	-4.174000401787478,  3.353000322758366, -2.205000212252369,
+	1.281000123308519, -0.569000054771701,  0.084700008153185
+};
+
+const double wan24[] = { // Table 4; 24 Coefficients
+	2.391510032751124, -3.284444044979632,  3.679506050389904,
+	-3.635044049781009,  2.524185034568077, -1.146701015703782,
+	0.115354001579743,  0.51374500703561 , -0.749277010261162,
+	0.512386007016999, -0.188997002588268, -0.043705000598528,
+	0.149843002052063, -0.151186002070453,  0.076302001044937,
+	-0.012070000165296, -0.021127000289329,  0.025232000345547,
+	-0.016121000220773,  0.004453000060982,  0.000876000011999,
+	-0.001799000024635,  0.0007740000106  , -0.000128000001755
 };
 
 const double highShib44[20] = { // High-Shibata 44k (20 taps)
-	/*0.210994777646055, -0.420248680433543,  0.64115984143207 ,
-	-0.824542344864141,  0.890242066951182, -0.83102838215377 ,
-	0.639689484122861, -0.374531480587619,  0.07944678322847 ,
-	0.170730305215106, -0.346692245607667,  0.421108345040065,
-	-0.41390894073698 ,  0.341901464927132, -0.247729870518492,
-	0.15277447013028 , -0.081390587810871,  0.034194581138503,
-	-0.011519110890133,  0.001618961712954
-	*/
+	
 	3.0259189605712890625, -6.0268716812133789062,   9.195003509521484375,
 	-11.824929237365722656, 12.767142295837402344, -11.917946815490722656,
 	9.1739168167114257812,  -5.3712320327758789062, 1.1393624544143676758,
@@ -135,6 +127,7 @@ const double highShib44[20] = { // High-Shibata 44k (20 taps)
 	-5.9359521865844726562,  4.903278350830078125,   -3.5527443885803222656,
 	2.1909697055816650391, -1.1672389507293701172,  0.4903914332389831543,
 	-0.16519790887832641602,  0.023217858746647834778
+	
 };
 
 const double experimental1[] = {
@@ -302,8 +295,8 @@ public:
 		for (int n = 0; n < FIRLength; ++n) {
 			FIRCoeffs[n] = scale * selectedDitherProfile.coeffs[n];
 		}
-		currentIndex = FIRLength - 1;
-		memset(noise, 0, MAX_FIR_FILTER_SIZE * sizeof(FloatType));
+
+		memset(FIRHistory, 0, MAX_FIR_FILTER_SIZE * sizeof(FloatType));
 
 		// set-up Auto-blanking:
 		if (bAutoBlankingEnabled) {	// initial state: silence
@@ -329,8 +322,7 @@ public:
 		// reset filters
 		f1.reset();
 		f2.reset();
-		currentIndex = FIRLength - 1;
-		memset(noise, 0, MAX_FIR_FILTER_SIZE * sizeof(FloatType));
+		memset(FIRHistory, 0, MAX_FIR_FILTER_SIZE * sizeof(FloatType));
 		
 		// re-seed PRNG
 		randGenerator.seed(seed);
@@ -345,65 +337,9 @@ public:
 		}
 	}
 
-#if (DITHER_TOPOLOGY == 1)
-
 // The Dither function ///////////////////////////////////////////////////////
-
-// 1. Ditherer Topology:
 //
-//          tpdfNoise --[G]-->[filter]
-//                               |
-//                    preDither  |    +-----> preQuantize
-//                        ^      v    |
-//   inSample ----->+( )--+---->(+)---+--->[Q]-->-+--> postQuantize
-//                    -   |                       |
-//                    ^   +-------------->-( )+<--+
-//                    |                     |
-//                    +-------[z^-1]---<----+
-//                      1.00               
-//                   
-
-FloatType Dither(FloatType inSample) {
-
-	// Auto-Blanking
-	if (bAutoBlankingEnabled) {
-		if (std::abs(inSample) < autoBlankLevelThreshold) {
-			++zeroCount;
-			if (zeroCount > autoBlankTimeThreshold) {
-				ditherScaleFactor *= autoBlankDecayFactor; // decay
-				if (ditherScaleFactor < autoBlankDecayCutoff)
-					ditherScaleFactor = 0.0; // decay cutoff
-			}
-		}
-		else {
-			zeroCount = 0; // reset
-			ditherScaleFactor = maxDitherScaleFactor; // restore
-		}
-	} // ends auto-blanking
-
-	FloatType tpdfNoise = (this->*noiseGenerator)();
-	FloatType preDither = bUseErrorFeedback ? inSample - Z1 : inSample;
-	FloatType shapedNoise = (this->*noiseShapingFilter)(tpdfNoise * ditherScaleFactor);
-
-#ifdef TEST_FILTER
-	//return tpdfNoise * ditherScaleFactor;
-	return shapedNoise; // (Output Only Filtered Noise - discard signal)
-#endif
-
-	FloatType preQuantize = preDither + shapedNoise;
-	FloatType postQuantize = reciprocalSignalMagnitude * round(maxSignalMagnitude * preQuantize); // quantize
-	
-	Z1 = postQuantize - preDither; // calculate error 
-	return postQuantize;
-} // ends function: Dither()
-
-#endif //(DITHER_TOPOLOGY == 1)
-
-#if (DITHER_TOPOLOGY == 2)
-
-// The Dither function  - Topology #2 ///////////////////////////////////////////////////////
-
-// 2. Ditherer Topology:
+// Ditherer Topology:
 //
 //							 tpdfNoise
 //                               |
@@ -451,12 +387,9 @@ FloatType Dither(FloatType inSample) {
 	return postQuantize;
 } // ends function: Dither()
 
-#endif //(DITHER_TOPOLOGY == 2)
-
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 private:
-
 	int oldRandom;
 	int seed;
 	FloatType Z1;				// last Quantization error
@@ -489,10 +422,9 @@ private:
 	Biquad<double> f2;
 
 	// FIR Filter-related stuff:
-	int currentIndex;
-	FloatType FIRCoeffs[MAX_FIR_FILTER_SIZE];
 	int FIRLength;
-	FloatType noise[MAX_FIR_FILTER_SIZE]; // (circular) buffer for noise history
+	FloatType FIRCoeffs[MAX_FIR_FILTER_SIZE];
+	FloatType FIRHistory[MAX_FIR_FILTER_SIZE]; // (circular) buffer for noise history
 
 	// --- Noise-generating functions ---
 
@@ -529,7 +461,7 @@ private:
 		return static_cast<FloatType>(halfRand - r/n);
 	}
 
-	FloatType noiseGeneratorImpulse() {
+	FloatType noiseGeneratorImpulse() { // impulse - emits a single pulse at the begininng, followed by zeroes (for testing only)
 		
 		if (!bPulseEmitted) {
 			bPulseEmitted = true;
@@ -549,52 +481,33 @@ private:
 		return f2.filter(f1.filter(x));
 	}
 
-	FloatType noiseShaperFIR(FloatType x) {
-
-		/*
-		// put x into history buffer (goes in "backwards"):
-		noise[currentIndex--] = x;
-		if (currentIndex < 0) {
-			currentIndex = FIRLength - 1;
-		}
-
-		// get result from FIR:
-		FloatType filterOutput = 0.0;
-		int index = currentIndex;
-		for (int i = 0; i < FIRLength; ++i) {
-			if (++index == FIRLength) {
-				index = 0;
-			}
-			filterOutput += noise[index] * FIRCoeffs[i];
-		}
-		return filterOutput;
-		*/
+	FloatType noiseShaperFIR(FloatType x) { // very simple FIR ...
 
 		// put sample at end of buffer:
-		FloatType* noiseptr = &noise[FIRLength - 1];
-		*noiseptr = x;
+		FloatType* historyPtr = &FIRHistory[FIRLength - 1];
+		*historyPtr = x;
 		
 		FloatType filterOutput = 0.0;
 		
 		// macc with coefficients:
 		for (size_t k = 0; k < FIRLength; k++) {
-			filterOutput += *noiseptr-- * FIRCoeffs[k];
+			filterOutput += *historyPtr-- * FIRCoeffs[k];
 		}
 
 		// shift buffer backwards for next time:
-		memmove(noise, &noise[1],
+		memmove(FIRHistory, &FIRHistory[1],
 			(FIRLength - 1) * sizeof(FloatType));
 
 		return filterOutput;
 	}
 };
 
-// *Psychoacoustically Optimal Noise Shaping
-// Robert. A. Wannamaker
-// Journal of the Audio Engineering Society 40(7 / 8) : 611 - 620 · July 1992
-
-// **Minimally Audible Noise Shaping
+// *Minimally Audible Noise Shaping
 // STANLEY P. LIPSHITZ,JOHN VANDERKOOY, ROBERT A. WANNAMAKER
 // J.AudioEng.Soc.,Vol.39,No.11,1991November
+
+// **Psychoacoustically Optimal Noise Shaping
+// Robert. A. Wannamaker
+// Journal of the Audio Engineering Society 40(7 / 8) : 611 - 620 · July 1992
 
 #endif // !DITHERER_H
