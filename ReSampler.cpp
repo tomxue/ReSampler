@@ -61,6 +61,7 @@ int main(int argc, char * argv[])
 	double DitherAmount = 1.0;
 	int flacCompressionLevel = 5;
 	double vorbisQuality = 3;
+	int noiseShape = DitherProfileID::standard;
 
 	// parse core parameters:
 	getCmdlineParam(argv, argv + argc, "-i", sourceFilename);
@@ -110,18 +111,6 @@ int main(int argc, char * argv[])
 		if (DitherAmount <= 0.0)
 			DitherAmount = 1.0;
 	}
-
-	// parse --flat-tpdf option
-	DitherProfileID ditherProfileID = findCmdlineOption(argv, argv + argc, "--flat-tpdf") ?
-		flat :
-		//Experimental2;
-		//ModEWeighted44k;
-		//Lipshitz44k;
-		//ImpEWeighted44k;
-		//Wannamaker3tap;
-		HighShibata44k;
-		standard;
-		//flat;
 
 	// parse auto-blanking option (for dithering):
 	bool bAutoBlankingEnabled = findCmdlineOption(argv, argv + argc, "--autoblank");
@@ -178,6 +167,19 @@ int main(int argc, char * argv[])
 	// parse noMetadata option:
 	bool bNoMetaData = !findCmdlineOption(argv, argv + argc, "--noMetadata");
 	
+	// parse --ns option to determine Noise Shaping Profile:
+	bool bSetNoiseShape = findCmdlineOption(argv, argv + argc, "--ns");
+	if (bSetNoiseShape) {
+		getCmdlineParam(argv, argv + argc, "--ns", noiseShape);
+		if (noiseShape < 0)
+			noiseShape = 0;
+		if (noiseShape >= DitherProfileID::end)
+			noiseShape = DitherProfileID::standard;
+	}
+
+	// parse --flat-tpdf option
+	DitherProfileID ditherProfileID = static_cast<DitherProfileID>(findCmdlineOption(argv, argv + argc, "--flat-tpdf") ? DitherProfileID::flat : noiseShape);
+
 	bool bBadParams = false;
 	if (destFilename.empty()) {
 		if (sourceFilename.empty()) {

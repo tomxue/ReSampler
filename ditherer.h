@@ -37,7 +37,6 @@ typedef enum {
 
 typedef enum {
 	flat,
-	sloped,
 	standard,
 	Wannamaker3tap,
 	Wannamaker9tap,
@@ -48,7 +47,8 @@ typedef enum {
 	ImpEWeighted44k,
 	Experimental1,
 	Experimental2,
-	rpdf
+	rpdf,
+	end
 } DitherProfileID;
 
 typedef struct {
@@ -190,12 +190,12 @@ DitherProfile ditherProfileList[] = {
 	// id, name, noiseGeneratorType, filterType, intendedSampleRate, N, coeffs, bUseFeedback
 
 	{flat, "flat tpdf", flatTPDF, bypass, 44100, 1, noiseShaperPassThrough, false},
-	{sloped,"sloped tpdf", slopedTPDF, bypass, 44100, 1, noiseShaperPassThrough, true },
-	{standard, "standard", slopedTPDF, cascadedBiquad, 44100, 1, noiseShaperPassThrough, true},
+//	{standard, "standard", slopedTPDF, cascadedBiquad, 44100, 1, noiseShaperPassThrough, true},
+	{standard, "standard", slopedTPDF, fir, 44100, 9, modew44, true },
 	{Wannamaker3tap, "Wannamaker 3-tap",flatTPDF, fir, 44100, 3, wan3, true},
 	{Wannamaker9tap, "Wannamaker 9-tap",flatTPDF, fir, 44100, 9, wan9, true},
 	{Wannamaker24tap, "Wannamaker 24-tap",flatTPDF, fir, 44100, 24, wan24, true},
-	{HighShibata44k, "High Shibata 44k",slopedTPDF, fir, 44100, 20, highShib44, true},
+	{HighShibata44k, "High Shibata 44k",flatTPDF, fir, 44100, 20, highShib44, true},
 	{ModEWeighted44k, "Modified E-Weighted",flatTPDF, fir, 44100, 9, modew44, true},
 	{Lipshitz44k, "Lipshitz",flatTPDF, fir, 44100, 5, lips44, true},
 	{ImpEWeighted44k, "Improved E-Weighted",flatTPDF, fir, 44100, 9, impew44, true},
@@ -286,42 +286,6 @@ public:
 			6.903896840936654e-01,  6.221635814920810e-01,  1.353784987738887e+00,  6.659957897439557e-01
 		);
 
-		/*
-
-		//// IIR-specific stuff:
-		if (ditherBits < 1.5)
-		{
-			// IIR noise-shaping filter (2 biquads) - flatter response; more energy in spectrum
-			f1.setCoeffs(0.798141839881378,
-				-0.7040563852194521,
-				0.15341541599754416,
-				0.3060312586301247,
-				0.02511886431509577);
-
-			f2.setCoeffs(0.5,
-				-0.7215722413008345,
-				0.23235922079486643,
-				-1.5531272249269004,
-				0.7943282347242815);
-		}
-		else
-		{	
-			// IIR noise-shaping filter (2 biquads)
-			f1.setCoeffs(0.1872346691747817,
-				-0.1651633303505913,
-				0.03598944852318585,
-				1.2861600144545022,
-				0.49000000000000016);
-
-			f2.setCoeffs(0.5,
-				-0.7215722413008345,
-				0.23235922079486643,
-				-1.2511963408503206,
-				0.5328999999999999);
-		}
-
-		*/
-
 		// FIR-specific stuff:
 		
 		const FloatType scale = 1.0;
@@ -376,9 +340,9 @@ public:
 // The Dither function ///////////////////////////////////////////////////////
 //
 // Ditherer Topology:
-//
-//							 tpdfNoise
-//                               |
+//                              Noise
+//							     |
+//                               v
 //                    preDither [G]
 //                         ^     |   +----------> preQuantize
 //                         |     v   |               
