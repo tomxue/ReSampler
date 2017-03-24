@@ -114,13 +114,13 @@ int main(int argc, char * argv[])
 	// parse --flat-tpdf option
 	DitherProfileID ditherProfileID = findCmdlineOption(argv, argv + argc, "--flat-tpdf") ?
 		flat :
-		Experimental2;
+		//Experimental2;
 		//ModEWeighted44k;
 		//Lipshitz44k;
 		//ImpEWeighted44k;
 		//Wannamaker3tap;
-		//HighShibata44k;
-		//standard;
+		HighShibata44k;
+		standard;
 		//flat;
 
 	// parse auto-blanking option (for dithering):

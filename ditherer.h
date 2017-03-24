@@ -14,7 +14,7 @@
 // defines Ditherer class, for adding dither and noise-shaping to input samples
 
 // configuration:
-//#define TEST_FILTER // if defined, this will result in ditherer outputing the tpdf noise only. (Used for evaluating filters.)
+//#define TEST_FILTER // if defined, this will result in the input signal being ignored; output the noise only. (Used for evaluating filters.)
 #define MAX_FIR_FILTER_SIZE 24
 
 #include <cmath>
@@ -267,6 +267,28 @@ public:
 		}
 
 		//// IIR-specific stuff:
+
+		f1.setCoeffs(
+			1,
+			-1.584512777183064e+00,
+			7.706380573200580e-01,
+			0,
+			0
+		);
+
+		f2.setCoeffs(
+			1,
+			6.656411088446591e-02,  3.092585934772854e-01,  7.551346335428704e-01,  1.491544856915262e-01
+		);
+
+		f3.setCoeffs(
+			1,
+			6.903896840936654e-01,  6.221635814920810e-01,  1.353784987738887e+00,  6.659957897439557e-01
+		);
+
+		/*
+
+		//// IIR-specific stuff:
 		if (ditherBits < 1.5)
 		{
 			// IIR noise-shaping filter (2 biquads) - flatter response; more energy in spectrum
@@ -297,6 +319,8 @@ public:
 				-1.2511963408503206,
 				0.5328999999999999);
 		}
+
+		*/
 
 		// FIR-specific stuff:
 		
@@ -332,6 +356,8 @@ public:
 		// reset filters
 		f1.reset();
 		f2.reset();
+		f3.reset();
+
 		memset(FIRHistory, 0, MAX_FIR_FILTER_SIZE * sizeof(FloatType));
 		
 		// re-seed PRNG
@@ -386,10 +412,11 @@ FloatType Dither(FloatType inSample) {
 	FloatType tpdfNoise = (this->*noiseGenerator)() * ditherScaleFactor;
 	
 #ifdef TEST_FILTER
-	return (this->*noiseShapingFilter)(tpdfNoise); // (Output Only Filtered Noise - discard signal)
-#endif
-
+	//return (this->*noiseShapingFilter)(tpdfNoise); // (Output Only Filtered Noise - discard signal)
+	FloatType preDither = - (this->*noiseShapingFilter)(Z1);
+#else
 	FloatType preDither = inSample - (this->*noiseShapingFilter)(Z1);
+#endif
 	FloatType preQuantize, postQuantize;
 	preQuantize = preDither + tpdfNoise;
 	postQuantize = reciprocalSignalMagnitude * round(maxSignalMagnitude * preQuantize); // quantize
@@ -430,6 +457,8 @@ private:
 	// IIR Filter-related stuff:
 	Biquad<double> f1;
 	Biquad<double> f2;
+	Biquad<double> f3;
+	Biquad<double> f4;
 
 	// FIR Filter-related stuff:
 	int FIRLength;
@@ -488,7 +517,7 @@ private:
 	}
 
 	FloatType noiseShaperCascadedBiquad(FloatType x) {
-		return f2.filter(f1.filter(x));
+		return f3.filter(f2.filter(f1.filter(x)));
 	}
 
 	FloatType noiseShaperFIR(FloatType x) { // very simple FIR ...
