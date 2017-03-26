@@ -174,6 +174,12 @@ const double experimental2[] = {
 	0.032665078075013
 	*/
 
+	2.443547641112401, -2.7695227909179  ,
+	2.1723584724558  , -1.853027710857   ,  0.83518645478592 ,
+	-0.22331085560097 ,  0.086416523201232, -0.037087490647368,
+	-0.029912769413115, -0.069178326196128, -0.000737963518864
+
+	/*
 	3.528870344161987,  -7.397897720336914,  11.062552452087402,
 	-12.915676116943359,  12.005429267883301,  -8.976534843444824,
 	5.175451755523682,  -2.103446006774902,   0.348601877689362,
@@ -182,16 +188,17 @@ const double experimental2[] = {
 	0.004375995136797,   0.004815561696887,  -0.00556468218565 ,
 	0.001390703488141,   0.002223829738796,  -0.000689988140948,
 	-0.000269168231171,   0.000755135435611,  -0.
-
+	*/
 };
 
 DitherProfile ditherProfileList[] = {
 
 	// id, name, noiseGeneratorType, filterType, intendedSampleRate, N, coeffs, bUseFeedback
 
+
+
 	{flat, "flat tpdf", flatTPDF, bypass, 44100, 1, noiseShaperPassThrough, false},
-//	{standard, "standard", slopedTPDF, cascadedBiquad, 44100, 1, noiseShaperPassThrough, true},
-	{standard, "standard", slopedTPDF, fir, 44100, 9, modew44, true },
+	{standard, "standard", slopedTPDF, fir, 44100, 9, impew44, true },
 	{Wannamaker3tap, "Wannamaker 3-tap",flatTPDF, fir, 44100, 3, wan3, true},
 	{Wannamaker9tap, "Wannamaker 9-tap",flatTPDF, fir, 44100, 9, wan9, true},
 	{Wannamaker24tap, "Wannamaker 24-tap",flatTPDF, fir, 44100, 24, wan24, true},
@@ -200,7 +207,7 @@ DitherProfile ditherProfileList[] = {
 	{Lipshitz44k, "Lipshitz",flatTPDF, fir, 44100, 5, lips44, true},
 	{ImpEWeighted44k, "Improved E-Weighted",flatTPDF, fir, 44100, 9, impew44, true},
 	{Experimental1, "Experimental 1",flatTPDF, fir, 44100, 20, experimental1, true },
-	{Experimental2, "Experimental 2",flatTPDF, fir, 44100, 20, experimental2, true },
+	{Experimental2, "Experimental 2",slopedTPDF, fir, 44100, 11, experimental2, true },
 	{rpdf,"flat rectangular pdf", RPDF, bypass, 44100, 1, noiseShaperPassThrough, false}
 };
 
