@@ -97,6 +97,8 @@ Using the same value of n on subsequent conversions should reproduce precisely t
 
 **--version** will display the version number of the program
 
+**--sndfile-version** will display the version of libsndfile
+
 **--minphase** use a minimum-phase FIR filter, instead of Linear-Phase
 
 **--relaxedLPF** (since v1.1.4) causes the lowpass filter to use a "late" cutoff frequency (95.45%), 
