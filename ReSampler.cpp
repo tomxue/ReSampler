@@ -75,6 +75,14 @@ int main(int argc, char * argv[])
 		exit(EXIT_SUCCESS);
 	}
 
+	// parse sndfile-version switch:
+	if (findCmdlineOption(argv, argv + argc, "--sndfile-version")) {
+		char s[128];
+		sf_command(nullptr, SFC_GET_LIB_VERSION, s, sizeof(s));
+		std::cout << s << std::endl;
+		exit(EXIT_SUCCESS);
+	}
+
 	// parse help switch:
 	if (findCmdlineOption(argv, argv + argc, "--help") || findCmdlineOption(argv, argv + argc, "-h")) {
 		std::cout << strUsage << std::endl;
