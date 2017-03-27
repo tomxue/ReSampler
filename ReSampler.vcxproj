@@ -281,6 +281,7 @@
     <ClInclude Include="dsf.h" />
     <ClInclude Include="FIRFilter.h" />
     <ClInclude Include="FIRFilterAVX.h" />
+    <ClInclude Include="noiseshape.h" />
     <ClInclude Include="osspecific.h" />
     <ClInclude Include="ReSampler.h" />
   </ItemGroup>
