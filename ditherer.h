@@ -103,7 +103,8 @@ public:
 		dist(0, randMax),		// set the range of the random number distribution
 		gain(1.0),
 		bUseErrorFeedback(ditherProfileList[ditherProfileID].bUseFeedback),
-		bPulseEmitted(false)
+		bPulseEmitted(false),
+		masterVolume(1.0)
 	{
 		// general parameters:
 		maxSignalMagnitude = static_cast<FloatType>((1 << (signalBits - 1)) - 1); // note the -1 : match 32767 scaling factor for 16 bit !
@@ -183,7 +184,7 @@ public:
 
 		autoBlankLevelThreshold = 1.0 / pow(2, 32); // 1 LSB of 32-bit digital
 		autoBlankTimeThreshold = 30000; // number of zero samples before activating autoblank
-		autoBlankDecayCutoff = 0.7 * reciprocalSignalMagnitude / randMax;
+		autoBlankDecayCutoff = 0.25 * reciprocalSignalMagnitude / randMax;
 		zeroCount = 0;
 		
 	} // Ends Constructor 
@@ -206,6 +207,7 @@ public:
 		oldRandom = 0;
 		Z1 = 0;
 		zeroCount = 0;
+		masterVolume = 1.0;
 		if (bAutoBlankingEnabled) {	// initial state: silence
 			ditherScaleFactor = 0.0;
 		}
@@ -220,16 +222,20 @@ public:
 //                              Noise
 //							     |
 //                               v
-//                    preDither [G]
+//                    preDither [G1]
 //                         ^     |   +----------> preQuantize
 //                         |     v   |               
-//   inSample ----->+( )---+--->(+)--+->[Q]-->--+------> postQuantize
-//                    -    |                    |
-//                    ^    +---------->-( )+<---+
+//   inSample ----->+( )---+--->(+)--+--[G2]-->[Q]-->--+------> postQuantize
+//                    -    |                           |
+//                    ^    +---------->-( )+<----------+
 //                    |                  |               
 //                 [filter]              | 
 //                    |                  v
 //                    +---<---[z^-1]-----+
+//
+//  Gain Stages:
+//	G1 = ditherScaleFactor
+//  G2 = masterVolume
 //
 
 FloatType Dither(FloatType inSample) {
@@ -240,13 +246,16 @@ FloatType Dither(FloatType inSample) {
 			++zeroCount;
 			if (zeroCount > autoBlankTimeThreshold) {
 				ditherScaleFactor *= autoBlankDecayFactor; // decay
-				if (ditherScaleFactor < autoBlankDecayCutoff)
+				if (ditherScaleFactor < autoBlankDecayCutoff) {
 					ditherScaleFactor = 0.0; // decay cutoff
+					masterVolume = 0.0; // mute
+				}
 			}
 		}
 		else {
 			zeroCount = 0; // reset
 			ditherScaleFactor = maxDitherScaleFactor; // restore
+			masterVolume = 1.0;
 		}
 	} // ends auto-blanking
 
@@ -259,7 +268,7 @@ FloatType Dither(FloatType inSample) {
 	FloatType preDither = inSample - (this->*noiseShapingFilter)(Z1);
 #endif
 	FloatType preQuantize, postQuantize;
-	preQuantize = preDither + tpdfNoise;
+	preQuantize = masterVolume * (preDither + tpdfNoise);
 	postQuantize = reciprocalSignalMagnitude * round(maxSignalMagnitude * preQuantize); // quantize
 	Z1 = (postQuantize - preDither);		
 	return postQuantize;
@@ -274,6 +283,7 @@ private:
 	FloatType maxSignalMagnitude;	// maximum integral value for signal target bit depth (for quantizing) 
 	FloatType reciprocalSignalMagnitude; // for normalizing quantized signal back to +/- 1.0 
 	FloatType maxDitherScaleFactor, ditherScaleFactor;	// maximum integral value for dither target bit depth
+	FloatType masterVolume;
 	int64_t zeroCount; // number of consecutive zeroes in input;
 	FloatType autoBlankDecayCutoff;	// threshold at which ditherScaleFactor is set to zero during active blanking
 	std::mt19937 randGenerator; // Mersenne Twister - one of the best random number algorithms available
