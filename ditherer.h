@@ -68,7 +68,7 @@ DitherProfile ditherProfileList[] = {
 	// id, name, noiseGeneratorType, filterType, intendedSampleRate, N, coeffs, bUseFeedback
 
 	{flat, "flat tpdf", flatTPDF, bypass, 44100, 1, noiseShaperPassThrough, false},
-	{standard, "standard", slopedTPDF, fir, 44100, 9, impew44, true },
+	{standard, "standard", slopedTPDF, fir, 44100, 10, std_44, true },
 	{Wannamaker3tap, "Wannamaker 3-tap",flatTPDF, fir, 44100, 3, wan3, true},
 	{Wannamaker9tap, "Wannamaker 9-tap",flatTPDF, fir, 44100, 9, wan9, true},
 	{Wannamaker24tap, "Wannamaker 24-tap",flatTPDF, fir, 44100, 24, wan24, true},
