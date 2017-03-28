@@ -39,6 +39,7 @@ typedef enum {
 typedef enum {
 	flat,
 	standard,
+	smooth,
 	Wannamaker3tap,
 	Wannamaker9tap,
 	Wannamaker24tap,
@@ -66,9 +67,10 @@ typedef struct {
 DitherProfile ditherProfileList[] = {
 
 	// id, name, noiseGeneratorType, filterType, intendedSampleRate, N, coeffs, bUseFeedback
-
+	
 	{flat, "flat tpdf", flatTPDF, bypass, 44100, 1, noiseShaperPassThrough, false},
 	{standard, "standard", slopedTPDF, fir, 44100, 10, std_44, true },
+	{smooth, "smooth", slopedTPDF, fir, 44100, 10, smooth_44, true}, 
 	{Wannamaker3tap, "Wannamaker 3-tap",flatTPDF, fir, 44100, 3, wan3, true},
 	{Wannamaker9tap, "Wannamaker 9-tap",flatTPDF, fir, 44100, 9, wan9, true},
 	{Wannamaker24tap, "Wannamaker 24-tap",flatTPDF, fir, 44100, 24, wan24, true},
@@ -76,7 +78,7 @@ DitherProfile ditherProfileList[] = {
 	{ModEWeighted44k, "Modified E-Weighted",flatTPDF, fir, 44100, 9, modew44, true},
 	{Lipshitz44k, "Lipshitz",flatTPDF, fir, 44100, 5, lips44, true},
 	{ImpEWeighted44k, "Improved E-Weighted",flatTPDF, fir, 44100, 9, impew44, true},
-	{Experimental1, "Experimental 1",flatTPDF, fir, 44100, 20, experimental1, true },
+	{Experimental1, "Experimental 1",slopedTPDF, fir, 44100, 10, experimental1, true },
 	{Experimental2, "Experimental 2",slopedTPDF, fir, 44100, 11, experimental2, true },
 	{rpdf,"flat rectangular pdf", RPDF, bypass, 44100, 1, noiseShaperPassThrough, false}
 };
