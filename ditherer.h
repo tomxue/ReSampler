@@ -78,8 +78,8 @@ DitherProfile ditherProfileList[] = {
 	{ModEWeighted44k, "Modified E-Weighted",flatTPDF, fir, 44100, 9, modew44, true},
 	{Lipshitz44k, "Lipshitz",flatTPDF, fir, 44100, 5, lips44, true},
 	{ImpEWeighted44k, "Improved E-Weighted",flatTPDF, fir, 44100, 9, impew44, true},
-	{Experimental1, "Experimental 1",slopedTPDF, fir, 44100, 10, experimental1, true },
-	{Experimental2, "Experimental 2",slopedTPDF, fir, 44100, 11, experimental2, true },
+	{Experimental1, "Experimental 1",flatTPDF, fir, 44100, 12, experimental1, true },
+	{Experimental2, "Experimental 2",flatTPDF, fir, 44100, 12, experimental2, true },
 	{rpdf,"flat rectangular pdf", RPDF, bypass, 44100, 1, noiseShaperPassThrough, false}
 };
 
