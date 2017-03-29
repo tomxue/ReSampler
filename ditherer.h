@@ -14,7 +14,6 @@
 // defines Ditherer class, for adding dither and noise-shaping to input samples
 
 // configuration:
-//#define TEST_FILTER // if defined, this will result in the input signal being ignored; output the noise only. (Used for evaluating filters.)
 #define MAX_FIR_FILTER_SIZE 24
 
 #include <cmath>
@@ -33,12 +32,14 @@ typedef enum {
 	slopedTPDF,
 	RPDF,
 	GPDF,
-	impulse
+	impulse,
+	legacyTPDF
 } NoiseGeneratorType;
 
 typedef enum {
 	flat,
 	standard,
+	legacy,
 	smooth,
 	Wannamaker3tap,
 	Wannamaker9tap,
@@ -70,6 +71,7 @@ DitherProfile ditherProfileList[] = {
 	
 	{flat, "flat tpdf", flatTPDF, bypass, 44100, 1, noiseShaperPassThrough, false},
 	{standard, "standard", slopedTPDF, fir, 44100, 10, std_44, true },
+	{legacy, "classic", legacyTPDF, bypass, 44100, 10, noiseShaperPassThrough, true },
 	{smooth, "smooth", slopedTPDF, fir, 44100, 10, smooth_44, true}, 
 	{Wannamaker3tap, "Wannamaker 3-tap",flatTPDF, fir, 44100, 3, wan3, true},
 	{Wannamaker9tap, "Wannamaker 9-tap",flatTPDF, fir, 44100, 9, wan9, true},
@@ -128,6 +130,9 @@ public:
 		case impulse:
 			noiseGenerator = &Ditherer::noiseGeneratorImpulse;
 			break;
+		case legacyTPDF:
+			noiseGenerator = &Ditherer::noiseGeneratorLegacy;
+			break;
 		case slopedTPDF:
 		default:
 			noiseGenerator = &Ditherer::noiseGeneratorSlopedTPDF;
@@ -147,24 +152,36 @@ public:
 		}
 
 		//// IIR-specific stuff:
+		if (ditherBits < 1.5)
+		{
+			// IIR noise-shaping filter (2 biquads) - flatter response; more energy in spectrum
+			f1.setCoeffs(0.798141839881378,
+				-0.7040563852194521,
+				0.15341541599754416,
+				0.3060312586301247,
+				0.02511886431509577);
 
-		f1.setCoeffs(
-			1,
-			-1.584512777183064e+00,
-			7.706380573200580e-01,
-			0,
-			0
-		);
+			f2.setCoeffs(0.5,
+				-0.7215722413008345,
+				0.23235922079486643,
+				-1.5531272249269004,
+				0.7943282347242815);
+		}
+		else
+		{
+			// IIR noise-shaping filter (2 biquads)
+			f1.setCoeffs(0.1872346691747817,
+				-0.1651633303505913,
+				0.03598944852318585,
+				1.2861600144545022,
+				0.49000000000000016);
 
-		f2.setCoeffs(
-			1,
-			6.656411088446591e-02,  3.092585934772854e-01,  7.551346335428704e-01,  1.491544856915262e-01
-		);
-
-		f3.setCoeffs(
-			1,
-			6.903896840936654e-01,  6.221635814920810e-01,  1.353784987738887e+00,  6.659957897439557e-01
-		);
+			f2.setCoeffs(0.5,
+				-0.7215722413008345,
+				0.23235922079486643,
+				-1.2511963408503206,
+				0.5328999999999999);
+		}
 
 		// FIR-specific stuff:
 		
@@ -262,13 +279,7 @@ FloatType Dither(FloatType inSample) {
 	} // ends auto-blanking
 
 	FloatType tpdfNoise = (this->*noiseGenerator)() * ditherScaleFactor;
-	
-#ifdef TEST_FILTER
-	//return (this->*noiseShapingFilter)(tpdfNoise); // (Output Only Filtered Noise - discard signal)
-	FloatType preDither = - (this->*noiseShapingFilter)(Z1);
-#else
 	FloatType preDither = inSample - (this->*noiseShapingFilter)(Z1);
-#endif
 	FloatType preQuantize, postQuantize;
 	preQuantize = masterVolume * (preDither + tpdfNoise);
 	postQuantize = reciprocalSignalMagnitude * round(maxSignalMagnitude * preQuantize); // quantize
@@ -344,7 +355,7 @@ private:
 
 	FloatType noiseGeneratorGPDF() { // Gaussian PDF (n PRNGs)
 		static constexpr int halfRand = (randMax + 1) >> 1;
-		const int n = 3;
+		const int n = 5;
 		FloatType r = 0;
 		for (int i = 0; i < n; ++i) {
 			r += dist(randGenerator);
@@ -361,6 +372,13 @@ private:
 		}
 		
 		return 0.0;
+	}
+
+	FloatType noiseGeneratorLegacy() { // legacy noise generator (from previous version of ReSampler) - applies filter to noise _before_ injection into dither engine
+		int newRandom = dist(randGenerator);
+		FloatType tpdfNoise = static_cast<FloatType>(newRandom - oldRandom); // sloped TDPF
+		oldRandom = newRandom;
+		return f2.filter(f1.filter(tpdfNoise));
 	}
 
 	// --- Noise-shaping functions ---
