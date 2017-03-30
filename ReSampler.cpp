@@ -182,7 +182,10 @@ int main(int argc, char * argv[])
 		if (noiseShape < 0)
 			noiseShape = 0;
 		if (noiseShape >= DitherProfileID::end)
-			noiseShape = DitherProfileID::standard;
+			noiseShape = getDefaultNoiseShape(OutputSampleRate);
+	}
+	else {
+		noiseShape = getDefaultNoiseShape(OutputSampleRate);
 	}
 
 	// parse --flat-tpdf option
@@ -1740,6 +1743,27 @@ bool testSetMetaData(SndfileHandle& outfile) {
 	m.trackNumber.assign("test track number");
 	m.genre.assign("test genre");
 	return setMetaData(m, outfile);
+}
+
+int getDefaultNoiseShape(int sampleRate) {
+	if (sampleRate <= 44100) {
+		return DitherProfileID::standard;
+	}
+	else if (sampleRate <= 48000) {
+		return DitherProfileID::standard;
+	}
+	else if (sampleRate <= 88200) {
+		return DitherProfileID::standard88;
+	}
+	else if (sampleRate <= 96000) {
+		return DitherProfileID::standard96;
+	}
+	else if (sampleRate <= 176400) {
+		return DitherProfileID::standard176;
+	}
+	else {
+		return DitherProfileID::standard192;
+	}
 }
 
 int getSfBytesPerSample(int format) {
