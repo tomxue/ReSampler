@@ -1753,16 +1753,16 @@ int getDefaultNoiseShape(int sampleRate) {
 		return DitherProfileID::standard;
 	}
 	else if (sampleRate <= 88200) {
-		return DitherProfileID::standard88;
+		return DitherProfileID::flat_f;
 	}
 	else if (sampleRate <= 96000) {
-		return DitherProfileID::standard96;
+		return DitherProfileID::flat_f;
 	}
 	else if (sampleRate <= 176400) {
-		return DitherProfileID::standard176;
+		return DitherProfileID::flat_f;
 	}
 	else {
-		return DitherProfileID::standard192;
+		return DitherProfileID::flat_f;
 	}
 }
 

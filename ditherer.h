@@ -14,7 +14,7 @@
 // defines Ditherer class, for adding dither and noise-shaping to input samples
 
 // configuration:
-#define MAX_FIR_FILTER_SIZE 24
+#define MAX_FIR_FILTER_SIZE 41
 
 #include <cmath>
 #include <random>
@@ -41,17 +41,14 @@ typedef enum {
 	legacy,
 	flat_f,
 	ModEWeighted44k,
+	Wannamaker3tap,
 	Lipshitz44k,
 	standard,
-	standard88,
-	standard96,
-	standard176,
-	standard192,
 	Wannamaker24tap,
 	Wannamaker9tap,
 	smooth,
-	slick,
 	ImpEWeighted44k,
+	slick,
 	HighShibata44k,
 	Experimental1,
 	Experimental2,
@@ -78,45 +75,18 @@ DitherProfile ditherProfileList[] = {
 	{ legacy, "classic", legacyTPDF, bypass, 44100, 10, noiseShaperPassThrough, true },
 	{ flat_f, "flat tpdf (with error-correction feedback)", flatTPDF, fir, 44100, 1, noiseShaperPassThrough, true },
 	{ ModEWeighted44k, "Modified E-Weighted",flatTPDF, fir, 44100, 9, modew44, true },
+	{ Wannamaker3tap, "Wannamaker 3-tap", slopedTPDF, fir, 44100, 3, wan3, true },
 	{ Lipshitz44k, "Lipshitz",flatTPDF, fir, 44100, 5, lips44, true },
 	{ standard, "standard", slopedTPDF, fir, 44100, 10, std_44, true },
-	{ standard88, "standard (88k)", slopedTPDF, fir, 44100, 12, standard_88, true },
-	{ standard96, "standard (96k)", slopedTPDF, fir, 44100, 12, standard_96, true },
-	{ standard176, "standard (176k)", slopedTPDF, fir, 44100, 10, standard_176, true },
-	{ standard192, "standard (192k)", slopedTPDF, fir, 44100, 10, standard_192, true },
 	{ Wannamaker24tap, "Wannamaker 24-tap",flatTPDF, fir, 44100, 24, wan24, true },
 	{ Wannamaker9tap, "Wannamaker 9-tap",flatTPDF, fir, 44100, 9, wan9, true },
 	{ smooth, "smooth", slopedTPDF, fir, 44100, 10, smooth_44, true },
-	{ slick, "slick", slopedTPDF, fir, 44100, 10, notch12250_2_44, true },
 	{ ImpEWeighted44k, "Improved E-Weighted",flatTPDF, fir, 44100, 9, impew44, true },
+	{ slick, "slick", slopedTPDF, fir, 44100, 10, notch12250_2_44, true },
 	{ HighShibata44k, "High Shibata 44k",flatTPDF, fir, 44100, 20, highShib44, true },
 	{ Experimental1, "Experimental 1",slopedTPDF, fir, 44100, 12, standard_88, true },
-	{ Experimental2, "Experimental 2",slopedTPDF, fir, 44100, 6, standard_96, true },
+	{ Experimental2, "Experimental 2",flatTPDF, fir, 44100, 35, experimental2, true },
 	{ rpdf,"flat rectangular pdf", RPDF, bypass, 44100, 1, noiseShaperPassThrough, false }
-	
-
-	/*
-	{ flat, "flat tpdf", impulse, bypass, 44100, 1, noiseShaperPassThrough, false },
-	{ legacy, "classic", impulse, bypass, 44100, 10, noiseShaperPassThrough, true },
-	{ Wannamaker3tap, "Wannamaker 3-tap",impulse, fir, 44100, 3, wan3, true },
-	{ ModEWeighted44k, "Modified E-Weighted",impulse, fir, 44100, 9, modew44, true },
-	{ Lipshitz44k, "Lipshitz",impulse, fir, 44100, 5, lips44, true },
-	{ standard, "standard", impulse, fir, 44100, 10, std_44, true },
-	{ standard88, "standard (88k)", impulse, fir, 44100, 12, standard_88, true },
-	{ standard96, "standard (96k)", impulse, fir, 44100, 12, standard_96, true },
-	{ standard176, "standard (176k)", impulse, fir, 44100, 10, standard_176, true },
-	{ standard192, "standard (192k)", impulse, fir, 44100, 10, standard_192, true },
-	{ Wannamaker24tap, "Wannamaker 24-tap",impulse, fir, 44100, 24, wan24, true },
-	{ Wannamaker9tap, "Wannamaker 9-tap",impulse, fir, 44100, 9, wan9, true },
-	{ smooth, "smooth", impulse, fir, 44100, 10, smooth_44, true },
-	{ slick, "slick", impulse, fir, 44100, 10, notch12250_2_44, true },
-	{ ImpEWeighted44k, "Improved E-Weighted",impulse, fir, 44100, 9, impew44, true },
-	{ HighShibata44k, "High Shibata 44k",impulse, fir, 44100, 20, highShib44, true },
-	{ Experimental1, "Experimental 1",impulse, fir, 44100, 12, standard_88, true },
-	{ Experimental2, "Experimental 2",impulse, fir, 44100, 6, standard_96, true },
-	{ rpdf,"flat rectangular pdf", impulse, bypass, 44100, 1, noiseShaperPassThrough, false }
-	*/
-
 
 };
 
