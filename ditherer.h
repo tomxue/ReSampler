@@ -337,15 +337,17 @@ private:
 	// --- Noise-generating functions ---
 
 	// pure flat tpdf generator
+	// calculate two random numbers and subtracts them, yielding a triangular distribution (which is 'fattest' at zero).
 	FloatType noiseGeneratorFlatTPDF() {
 		int a = dist(randGenerator);
 		int b = dist(randGenerator);
 		return static_cast<FloatType>(a - b);
 	}
 
-	// the sloped TPDF generator re-uses the previous random number, giving it a "memory", 
-	// which is equivalent to applying a single-pole HPF with 6dB / octave response
-	// the slope is useful for providing more high-frequency emphasis (in addition to noise-shaping filter)
+	// the sloped TPDF generator remembers and subtracts the previous random number from the new random number, 
+	// which is equivalent to applying a [1,-1] 2-tap FIR, which yields a single-pole 6dB/octave (20dB/decade) highpass response.
+	// The slope is useful for providing extra high-frequency emphasis.
+	// It also has the advantage of only calcluating one random number on each iteration, instead of two.
 	FloatType noiseGeneratorSlopedTPDF() {
 		int newRandom = dist(randGenerator);
 		FloatType tpdfNoise = static_cast<FloatType>(newRandom - oldRandom);
@@ -359,23 +361,21 @@ private:
 	}
 
 	FloatType noiseGeneratorGPDF() { // Gaussian PDF (n PRNGs)
+		// calculate n random numbers and average them
 		static constexpr int halfRand = (randMax + 1) >> 1;
 		const int n = 5;
 		FloatType r = 0;
 		for (int i = 0; i < n; ++i) {
 			r += dist(randGenerator);
 		}
-		
 		return static_cast<FloatType>(halfRand - r/n);
 	}
 
 	FloatType noiseGeneratorImpulse() { // impulse - emits a single pulse at the begininng, followed by zeroes (for testing only)
-		
 		if (!bPulseEmitted) {
 			bPulseEmitted = true;
 			return static_cast<FloatType>(randMax);
 		}
-		
 		return 0.0;
 	}
 

@@ -188,6 +188,12 @@ int main(int argc, char * argv[])
 		noiseShape = getDefaultNoiseShape(OutputSampleRate);
 	}
 
+	// parse --showDitherProfiles
+	if (findCmdlineOption(argv, argv + argc, "--showDitherProfiles")) {
+		showDitherProfiles();
+		exit(EXIT_SUCCESS);
+	}
+
 	// parse --flat-tpdf option
 	DitherProfileID ditherProfileID = static_cast<DitherProfileID>(findCmdlineOption(argv, argv + argc, "--flat-tpdf") ? DitherProfileID::flat : noiseShape);
 
@@ -1763,6 +1769,12 @@ int getDefaultNoiseShape(int sampleRate) {
 	}
 	else {
 		return DitherProfileID::flat_f;
+	}
+}
+
+void showDitherProfiles() {
+	for (int d = DitherProfileID::flat; d != DitherProfileID::end; ++d) {
+		std::cout << ditherProfileList[d].id << " : " << ditherProfileList[d].name << std::endl;
 	}
 }
 
