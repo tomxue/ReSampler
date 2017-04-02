@@ -80,12 +80,12 @@ DitherProfile ditherProfileList[] = {
 	{ standard, "standard", slopedTPDF, fir, 44100, 10, std_44, true },
 	{ Wannamaker24tap, "Wannamaker 24-tap",flatTPDF, fir, 44100, 24, wan24, true },
 	{ Wannamaker9tap, "Wannamaker 9-tap",flatTPDF, fir, 44100, 9, wan9, true },
-	{ smooth, "smooth", slopedTPDF, fir, 44100, 10, smooth_44, true },
+	{ smooth, "smooth", flatTPDF, fir, 44100, 10, smooth_44, true },
 	{ ImpEWeighted44k, "Improved E-Weighted",flatTPDF, fir, 44100, 9, impew44, true },
 	{ slick, "slick", slopedTPDF, fir, 44100, 10, notch12250_2_44, true },
 	{ HighShibata44k, "High Shibata 44k",flatTPDF, fir, 44100, 20, highShib44, true },
-	{ Experimental1, "Experimental 1",slopedTPDF, fir, 44100, 12, standard_88, true },
-	{ Experimental2, "Experimental 2",flatTPDF, fir, 44100, 35, experimental2, true },
+	{ Experimental1, "Experimental 1",slopedTPDF, fir, 44100, 12, experimental1, true },
+	{ Experimental2, "Experimental 2",slopedTPDF, fir, 44100, 11, experimental2, true },
 	{ rpdf,"flat rectangular pdf", RPDF, bypass, 44100, 1, noiseShaperPassThrough, false }
 
 };
