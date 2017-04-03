@@ -46,10 +46,10 @@ typedef enum {
 	standard,
 	Wannamaker24tap,
 	Wannamaker9tap,
-	smooth,
+	High28,
 	ImpEWeighted44k,
-	slick,
 	High30,
+	High32,
 	end
 } DitherProfileID;
 
@@ -77,10 +77,10 @@ DitherProfile ditherProfileList[] = {
 	{ standard, "standard", slopedTPDF, fir, 44100, 10, std_44, true },
 	{ Wannamaker24tap, "Wannamaker 24-tap",flatTPDF, fir, 44100, 24, wan24, true },
 	{ Wannamaker9tap, "Wannamaker 9-tap",flatTPDF, fir, 44100, 9, wan9, true },
-	{ smooth, "smooth", slopedTPDF, fir, 44100, 13, smooth_44, true },
+	{ High28, "High28", slopedTPDF, fir, 44100, 13, high28, true },
 	{ ImpEWeighted44k, "Improved E-Weighted",flatTPDF, fir, 44100, 9, impew44, true },
-	{ slick, "slick", slopedTPDF, fir, 44100, 10, notch12250_2_44, true },
-	{ High30, "High 30 44k",slopedTPDF, fir, 44100, 12, high30_44, true },
+	{ High30, "High30", slopedTPDF, fir, 44100, 10, high30, true },
+	{ High32, "High32",slopedTPDF, fir, 44100, 12, high32, true },
 };
 
 template<typename FloatType>
