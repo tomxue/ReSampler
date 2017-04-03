@@ -93,7 +93,7 @@ Using the same value of n on subsequent conversions should reproduce precisely t
 
 **--ns &lt;n&gt;** (since 1.3.1) select dither profile from 0-12. Generally speaking, as the dither profile number increases, the noise-shaping curve gets  progressively more "intense" (higher amplitude). Dither profile 0 is completely flat (no noise shaping), and is equivalent to **--flat-tpdf**. The default dither profile (if no profile is specified) is #6 (standard), which has a moderate noise-shaping curve.
 
-**--showDitherProfiles** (since 1.3.1) shows a list of all available dither profiles
+**--showDitherProfiles** (since 1.3.1) shows a list of all available dither profiles.
 
 **--flat-tpdf** (since v1.1.6) when specified in conjunction with **--dither** , causes the dithering to use flat tpdf noise with no noise-shaping.
 
