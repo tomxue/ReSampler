@@ -76,26 +76,49 @@ const double std_44[10] = {
 };
 
 const double smooth_44[13] = {
-	2.669515030552269, -4.611433627036229,
-	5.553683187474162, -5.131323713251633,  3.433819528157691,
-	-1.653305160414548,  0.371229110458052,  0.05145445300671 ,
-	-0.127107070478664,  0.061701440817659, -0.05840987108654 ,
-	0.028532248319127, -0.010425978385254
+	2.669515030552269, -4.611433627036229,  5.553683187474162,
+	-5.131323713251633,  3.433819528157691, -1.653305160414548,
+	0.371229110458052,  0.05145445300671 , -0.127107070478664,
+	0.061701440817659, -0.05840987108654 ,  0.028532248319127,
+	-0.010425978385254
 };
 
-const double notch12250_2_44[10] = { // 11.25khz deep notch, 32dB top-end (works well with flatTDPF)
-	2.805430627176799, -4.940936304404892,
-	6.221826870052102, -6.086670498094316,  4.486608520827646,
-	-2.519447169758117,  0.941337610113574, -0.21595651823809 ,
-	-0.005781498274259,  0.002596637355373					
+const double notch12250_2_44[10] = { // 11.25khz notch, 32dB top-end (works well with flatTPDF)
+	2.805430627176799, -4.940936304404892,  6.221826870052102,
+	-6.086670498094316,  4.486608520827646, -2.519447169758117,
+	0.941337610113574, -0.21595651823809 , -0.005781498274259,
+	0.002596637355373
 };
 
 const double high30_44[12] = {
-	3.165340739587537, -6.204765443967887,
-	8.711133333140808, -9.594907683918725,  8.359115029982675,
-	-5.938493225620955,  3.403895161842914, -1.681740133694475,
-	0.727810978096891, -0.308763921621752,  0.098112460564138,
-	-0.020921651243242
+	3.165340739587537, -6.204765443967887,  8.711133333140808,
+	-9.594907683918725,  8.359115029982675, -5.938493225620955,
+	3.403895161842914, -1.681740133694475,  0.727810978096891,
+	-0.308763921621752,  0.098112460564138, -0.020921651243242
 };
+
+/*
+*	Note on deriving FIR coefficients to achieve a desired noise-shaping response:
+*	The dithering topology includes a delay (Z^-1) in the feedback loop, 
+*	and this needs to be factored into the design.
+*	To use an externally-designed FIR filter with a given response,
+*	normalize the FIR coefficients so that the first coefficient becomes -1.
+*	Discard the first ( = -1) coefficient, and use the remaining coefficients.
+*	Example:
+*	from filter designer: 1.0148382 , -1.4075289 ,  1.136079  , -0.92514559,  0.52843289
+*	Dividing by -1.0148382 and discarding the first coefficient, this becomes:
+*	1.386949072275758, -1.119468108315197, 0.911618807806013, -0.52070654218574
+*	(of course, when using coeffs intended for a  noise-shaper with similar topology, 
+*	just use the coeffs as-is ...)
+*	The FIR filter should be minimum-phase.
+*/
+
+// *Minimally Audible Noise Shaping
+// STANLEY P. LIPSHITZ,JOHN VANDERKOOY, ROBERT A. WANNAMAKER
+// J.AudioEng.Soc.,Vol.39,No.11,1991November
+
+// **Psychoacoustically Optimal Noise Shaping
+// Robert. A. Wannamaker
+// Journal of the Audio Engineering Society 40(7 / 8) : 611 - 620 · July 1992
 
 #endif

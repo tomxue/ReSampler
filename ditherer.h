@@ -410,12 +410,4 @@ private:
 	}
 };
 
-// *Minimally Audible Noise Shaping
-// STANLEY P. LIPSHITZ,JOHN VANDERKOOY, ROBERT A. WANNAMAKER
-// J.AudioEng.Soc.,Vol.39,No.11,1991November
-
-// **Psychoacoustically Optimal Noise Shaping
-// Robert. A. Wannamaker
-// Journal of the Audio Engineering Society 40(7 / 8) : 611 - 620 · July 1992
-
 #endif // !DITHERER_H
