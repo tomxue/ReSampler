@@ -25,5 +25,8 @@
     </tbody>
 </table>
 
+## References
 
+[[1] Lipshitz, Stanley P. and Vanderkooy, John and Wannamaker, Robert A. “Minimally Audible Noise Shaping" J. Audio Eng. Soc., vol. 39(11), pp. 836-852 (1991.).](http://www.aes.org/e-lib/browse.cfm?elib=5956)
 
+[[2] Wannamaker, Robert A. "Psychoacoustically Optimal Noise Shaping" J. Audio Eng. Soc., vol. 40(7/8), pp. 611-620 (1992.).](http://www.aes.org/e-lib/browse.cfm?elib=7039)
