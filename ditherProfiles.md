@@ -25,7 +25,7 @@ The noise source for all dither profiles is TPDF noise (Triangular Probability D
         <tr><td>3</td><td>Modified E-Weighted</td><td>notch in 3-4kHz range (which our ears are sensitive to)</td><td>from the paper "Minimally Audible Noise Shaping"</td></tr>
         <tr><td>4</td><td>Wannamaker 3-tap</td><td>simple f-weighted curve, with notch around 4kHz</td><td>from the paper "Psychoacoustically Optimal Noise Shaping"</td></tr>
         <tr><td>5</td><td>Lipshitz</td><td>e-weighted curve with notches around 4k and 12k</td><td>from the paper "Minimally Audible Noise Shaping"</td></tr>
-        <tr><td><b>6</b></td><td><b>standard</b></td><td><b>Smooth curve with notches at 3150 and 11250Hz, and extreme HF emphasis</b></td><td><b>default noise shape. Good balance between low noise audibility and low noise amplitude (Works well for most material)</b></td></tr>
+        <tr><td><b>6</b></td><td><b>standard</b></td><td><b>Smooth curve with notches at 3150 and 11250Hz, and HF emphasis</b></td><td><b>default noise shape. Good balance between low noise <i>audibility</i> and low noise <i>amplitude</i> (Works well for most material)</b></td></tr>
         <tr><td>7</td><td>Wannamaker 24-tap</td><td>notches around 3.5kHz and 12kHz</td><td>from the paper "Psychoacoustically Optimal Noise Shaping"</td></tr>
         <tr><td>8</td><td>Wannamaker 9-tap</td><td>notches around 3.5kHz and 12kHz</td><td>from the paper "Psychoacoustically Optimal Noise Shaping"</td></tr>
         <tr><td>9</td><td>High28</td><td>notches at 3150Hz and 11.25kHz with 28dB high shelf</td><td></td></tr>
