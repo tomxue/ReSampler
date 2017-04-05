@@ -1,11 +1,13 @@
 ## Summary of Dithering / Noise - Shaping Profiles used in ReSampler
 
 Generally, the noise shaping becomes more intense (has higher amplitude) as the Dither Profile ID increases,
-with the ID of 0 corresponding to *flat* (no noise shaping, which is also equivalent to using the **--flat-tpdf** switch).
+with the ID of 0 corresponding to *flat* (no noise shaping; which is also equivalent to using the **--flat-tpdf** switch).
 
-With increasing noise profile ID, the noise shapes are designed to have progressively less *perceived noise* (despite actually having *more* noise added to the output). 
+As the dither profile ID increases, the noise shapes are designed to have progressively less *perceived noise* (despite actually having *more* noise added to the output). 
 
 The noise source for all dither profiles is TPDF noise (Triangular Probability Density Function).
+
+*Note: At normal listening levels, the effects of dithering are very subtle with 16-bit audio.* 
 
 <table>
     <thead>
