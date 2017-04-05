@@ -35,6 +35,8 @@ The noise source for all dither profiles is TPDF noise (Triangular Probability D
     </tbody>
 </table>
 
+A list of dither profiles can be obtained by using the **--showDitherProfiles** option.
+
 ### References
 
 [[1] Lipshitz, Stanley P. and Vanderkooy, John and Wannamaker, Robert A. “Minimally Audible Noise Shaping" J. Audio Eng. Soc., vol. 39(11), pp. 836-852 (1991.).](http://www.aes.org/e-lib/browse.cfm?elib=5956)
