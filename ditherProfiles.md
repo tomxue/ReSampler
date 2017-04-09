@@ -37,6 +37,10 @@ with the ID of 0 corresponding to *flat* (no noise shaping; which is also equiva
     </tbody>
 </table>
 
+### Frequency Response Plots
+
+![Frequency Response Plots](/NoiseShapingPlots/ns.png)
+
 A list of dither profiles can be obtained by using the **--showDitherProfiles** option.
 
 ### References
