@@ -7,9 +7,12 @@ with the ID of 0 corresponding to *flat* (no noise shaping; which is also equiva
 
 - The noise source for all dither profiles is TPDF noise (Triangular Probability Density Function).
 
-- Most of these noise-shaping curves are designed for 44.1kHz playback. Curves for other samplerates may be provided in future versions. *For very high sample rates (88.2kHz+), ID 1 or ID 2 work well in practice*
+- Most of these noise-shaping curves are designed for 44.1kHz playback. Curves for other samplerates may be provided in future versions.
 
-*Note: At normal listening levels, the effects of dithering are very subtle with 16-bit audio.* 
+- Although the noise-shaping curves are primarily designed for 44.1kHz, you can use any dither profile with any sampling rate, with the result being that the curve will be 'stretched' to scale with the sampling rate, which means that the notches and bumps may no longer be in their optimal positions.
+*Nevertheless, for very high sample rates (88.2kHz+), ID 1 or ID 2 work well in practice*
+
+*Final Note: At normal listening levels, the effects of dithering are quite noticeable with 8-bit audio, very subtle with 16-bit, and most likely completely insignificant for 24-bit* 
 
 <table>
     <thead>
