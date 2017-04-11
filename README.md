@@ -36,7 +36,7 @@ from the command line, the main options are as follows:
 
 **bitformat** is the bit representation (sub format) of the data in the output file. If this option is omitted, resampler will try to deduce the intended bit format automatically. Not all bit formats are valid for a given output file type. For more details, refer to the [libsndfile](http://www.mega-nerd.com/libsndfile/) documentation. Here is a list of all subformats: 
 
-    8           8-bit (signed or unsigned automatic, based on file type)
+    8           8-bit (signed or unsigned - automatic, based on file type)
     s8          Signed 8 bit data
     16          Signed 16 bit data
     24          Signed 24 bit data
@@ -125,6 +125,16 @@ which will (theoretically) allow a small amount of aliasing, but at the same tim
 *By default, ReSampler will attempt to copy native metadata from the input file to the output file, provided the input and output file types support metadata 
 (ie: wav, aiff, caf, flac, oga, rf64)*
 
+#### Example
+
+To convert 24-bit, 96kHz .wav input file to 16-bit, 44.1kHz .flac output file, with steep lowpass filter and dithering:
+
+~~~
+ReSampler.exe -i c:\pathto\somefile.wav -o c:\pathto\convertedfile.flac -r 44100 -b 16 --steepLPF --dither
+~~~
+
+*note: command-line options can be supplied in any order. The -i inputfile and -r samplerate options are mandatory in order to perform a conversion.*
+
 ## Supported Formats
 
 Resampler can handle any of the file formats libsndfile can handle, plus a few extras (notably, the 1-bit DSD formats, dff and dsf - as of v1.2.0).  
@@ -178,9 +188,9 @@ Note: the **--rf64** option will force output .wav files to be in rf64 format.
 
 ## Description of code
  
-Sample Rate Conversion is accomplished using the usual interpolation/decimation techniques. However, when using complex conversion ratios (such as 44.1k <--> 48k), a rather large FIR lowpass filter is used to ensure a clean conversion.
+Sample Rate Conversion is accomplished using the usual interpolation/decimation techniques. When using complex conversion ratios (such as 44.1k <--> 48k), a larger FIR lowpass filter is used to ensure a clean conversion.
 
-Resampler uses the C++ wrapper of the outstanding [libsndfile](http://www.mega-nerd.com/libsndfile/) library for sound file I/O operations. (I originally embarked upon writing my own sound-file I/O library, but quickly realised the enormity of such an undertaking, and subsequently adopted libsndfile)
+Resampler uses the C++ wrapper of the [libsndfile](http://www.mega-nerd.com/libsndfile/) library for sound file I/O operations.
 
 The FIR filter class written for this project uses SSE SIMD instructions when using single-precision floating-point to perform 4 multiply/accumulate operations simultaneously. This has been found to yield a speed improvement of approximately 3x. Some experimentation was also done with 2x double-precision SSE2 SIMD, but was found to be no faster than the basic scalar implementation, and has thus been commented-out (but not deleted) from the source.
 
