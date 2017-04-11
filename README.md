@@ -36,34 +36,34 @@ from the command line, the main options are as follows:
 
 **bitformat** is the bit representation (sub format) of the data in the output file. If this option is omitted, resampler will try to deduce the intended bit format automatically. Not all bit formats are valid for a given output file type. For more details, refer to the [libsndfile](http://www.mega-nerd.com/libsndfile/) documentation. Here is a list of all subformats: 
 
-    8			8-bit (signed or unsigned automatic, based on file type)
-    s8			Signed 8 bit data
-    16			Signed 16 bit data
-    24			Signed 24 bit data
-    32			Signed 32 bit data
-    u8			Unsigned 8 bit data
-    32f			32 bit float data
-    64f			64 bit float data
-    ulaw		U-Law encoded
-    alaw		A-Law encoded
-    ima-adpcm	IMA ADPCM
-    ms-adpcm	Microsoft ADPCM
-    gsm610		GSM 6.10 encoding
-    vox-adpcm	OKI Dialogix ADPCM
-    g721-32		32kbs G721 ADPCM encoding
-    g723-24		24kbs G723 ADPCM encoding
-    g723-40		40kbs G723 ADPCM encoding
-    dwvw12		12 bit Delta Width Variable Word encoding
-    dwvw16		16 bit Delta Width Variable Word encoding
-    dwvw24		24 bit Delta Width Variable Word encoding
-    dwvwn		N bit Delta Width Variable Word encoding
-    dpcm8		8 bit differential PCM (XI only)
-    dpcm16		16 bit differential PCM (XI only)
-    vorbis		Xiph Vorbis encoding
-    alac16		Apple Lossless Audio Codec (16 bit)
-    alac20		Apple Lossless Audio Codec (20 bit)
-    alac24		Apple Lossless Audio Codec (24 bit)
-    alac32		Apple Lossless Audio Codec (32 bit)
+    8           8-bit (signed or unsigned automatic, based on file type)
+    s8          Signed 8 bit data
+    16          Signed 16 bit data
+    24          Signed 24 bit data
+    32          Signed 32 bit data
+    u8          Unsigned 8 bit data
+    32f         32 bit float data
+    64f         64 bit float data
+    ulaw        mu-Law encoded
+    alaw        A-Law encoded
+    ima-adpcm   IMA ADPCM
+    ms-adpcm    Microsoft ADPCM
+    gsm610      GSM 6.10 encoding
+    vox-adpcm   OKI Dialogix ADPCM
+    g721-32     32kbs G721 ADPCM encoding
+    g723-24     24kbs G723 ADPCM encoding
+    g723-40     40kbs G723 ADPCM encoding
+    dwvw12      12 bit Delta Width Variable Word encoding
+    dwvw16      16 bit Delta Width Variable Word encoding
+    dwvw24      24 bit Delta Width Variable Word encoding
+    dwvwn       N bit Delta Width Variable Word encoding
+    dpcm8       8 bit differential PCM (XI only)
+    dpcm16      16 bit differential PCM (XI only)
+    vorbis      Xiph Vorbis encoding
+    alac16      Apple Lossless Audio Codec (16 bit)
+    alac20      Apple Lossless Audio Codec (20 bit)
+    alac24      Apple Lossless Audio Codec (24 bit)
+    alac32      Apple Lossless Audio Codec (32 bit)
 
 *Note: the **--listsubformats** option will cause the program to display the valid formats for a given file-type*
 
