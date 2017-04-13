@@ -21,7 +21,8 @@ This project arose out of:
 
 * ReSampler is first and foremost a converter. Other functionality (for example, generation of synthesised waveforms or spectrograms) is considered outside the scope of the project.
 * Output file quality takes precedence over all other considerations, such as processing speed (although efforts to improve the latter will certainly be explored, they cannot be at the expense of the former)
-* command-line options follow the GNU getopt style, in which short options have a single hyphen and a single letter (eg **-r 44100**) and long options have two hyphens and a word (eg **--dither**)
+* Core command-line options (the ones that are fundamental to performing a conversion) have a single hyphen and a single letter (eg **-r 44100**). 
+* Additional options (those that *tweak* or *tune* the behavior of the program in some way) follow the GNU long option style with two hyphens and a keyword (eg **--dither**)
 * Command-line options selected by the user should be echoed to the user in the converter's console output, to confirm the acceptance and application of the options
 * The introduction of new features to the converter should not change the basic behaviour of the converter, or the sound of files produced by the converter, UNLESS the user explicitly invokes the new features.
 
