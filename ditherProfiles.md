@@ -26,7 +26,7 @@ with the ID of 0 corresponding to *flat* (no noise shaping; which is also equiva
     <tbody>
         <tr><td>0</td><td>flat tpdf</td><td>no noise shaping</td><td>no error correction feedback</td></tr>
         <tr><td>1</td><td>classic</td><td>subtle noise shaping (HF emphasis)</td><td>original noise shaping from older versions of ReSampler</td></tr>
-        <tr><td>2</td><td>flat tpdf (with error-correction feedback)</td><td>blue TPDF noise</td><td>error correction feedback loop results in low frequency attenuation, and high frequency emphasis, with first-order (6dB/oct) magnitude response (ie <i>blue noise</i>)</td></tr>
+        <tr><td>2</td><td>flat tpdf (with error-correction feedback)</td><td>makes blue/violet TPDF noise</td><td>error correction feedback loop results in low frequency attenuation, and high frequency emphasis, with first-order (6dB/oct) magnitude response</td></tr>
         <tr><td>3</td><td>Modified E-Weighted</td><td>notch in 3-4kHz range (which our ears are sensitive to)</td><td>from the paper "Minimally Audible Noise Shaping"</td></tr>
         <tr><td>4</td><td>Wannamaker 3-tap</td><td>simple f-weighted curve, with notch around 4kHz</td><td>from the paper "Psychoacoustically Optimal Noise Shaping"</td></tr>
         <tr><td>5</td><td>Lipshitz</td><td>e-weighted curve with notches around 4k and 12k</td><td>from the paper "Minimally Audible Noise Shaping"</td></tr>

@@ -339,8 +339,8 @@ private:
 
 	// The sloped TPDF generator remembers and subtracts the previous random number from the new random number,
 	// which is equivalent to applying a [1,-1] 2-tap FIR (also known as the first-difference operator), 
-	// This yields a first-order 6dB/octave (20dB/decade) highpass magnitude response (3dB/octave, 10dB/decade power response).
-	// Thus, the resulting noise is blue noise instead of white, which is quite effective for dithering purposes. 
+	// This yields a first-order 6dB/octave (20dB/decade) highpass magnitude response.
+	// Thus, the resulting noise is blue (or violet ?) noise instead of white, which is quite effective for dithering purposes. 
 	// It also has the advantage of only calcluating one random number on each iteration, instead of two.
 	FloatType noiseGeneratorSlopedTPDF() {
 		int newRandom = dist(randGenerator);
