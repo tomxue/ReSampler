@@ -50,6 +50,7 @@ typedef enum {
 	ImpEWeighted44k,
 	High30,
 	High32,
+	Blue,
 	end
 } DitherProfileID;
 
@@ -81,6 +82,7 @@ DitherProfile ditherProfileList[] = {
 	{ ImpEWeighted44k, "Improved E-Weighted",flatTPDF, fir, 44100, 9, impew44, true },
 	{ High30, "High30", slopedTPDF, fir, 44100, 10, high30, true },
 	{ High32, "High32",slopedTPDF, fir, 44100, 12, high32, true },
+	{ Blue, "blue noise", flatTPDF, fir, 44100, 23, blue, true}
 };
 
 template<typename FloatType>
