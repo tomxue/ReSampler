@@ -531,5 +531,3 @@ private:
 };
 
 #endif // DFF_H_
-
-

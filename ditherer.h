@@ -86,7 +86,7 @@ DitherProfile ditherProfileList[] = {
 };
 
 template<typename FloatType>
-class Ditherer  
+class Ditherer
 {
 public:
 	// Constructor:
@@ -154,7 +154,7 @@ public:
 		//// IIR-specific stuff:
 		if (ditherBits < 1.5)
 		{
-			// IIR noise-shaping filter (2 biquads) - flatter response; more energy in spectrum
+			// IIR noise-shaping filter (2 biquads) - flatter response
 			f1.setCoeffs(0.798141839881378,
 				-0.7040563852194521,
 				0.15341541599754416,
@@ -239,7 +239,7 @@ public:
 //
 // Ditherer Topology:
 //                              Noise
-//							     |
+//                               |
 //                               v
 //                    preDither [G1]
 //                         ^     |   +----------> preQuantize
