@@ -54,31 +54,8 @@ int main(int argc, char * argv[])
 	if (!parseParameters(ci, argc, argv))
 		exit(EXIT_SUCCESS); // todo: EXIT_FAILURE on bad parameter
 
-	// show software version: 
-	// todo: make this a function ...
-	std::cout << strVersion << " ";
-#ifdef _M_X64
-	std::cout << "64-bit version";
-#ifdef USE_AVX
-	std::cout << " AVX build ... ";
-	if (!checkAVX())
+	if (!showBuildVersion())
 		exit(EXIT_FAILURE);
-#ifdef USE_FMA
-	std::cout << "\nusing FMA (Fused Multiply-Add) instruction ... ";
-#endif
-#endif // USE_AVX	
-	std::cout << std::endl;
-#else
-	std::cout << "32-bit version";
-#if defined(USE_SSE2)
-	std::cout << ", SSE2 build ... ";
-	// Verify processor capabilities:
-	if (!checkSSE2())
-		exit(EXIT_FAILURE);
-#endif // defined(USE_SSE2)
-	std::cout << "\n" << std::endl;
-#endif
-	////
 
 	std::cout << "Input file: " << ci.InputFilename << std::endl;
 	std::cout << "Output file: " << ci.OutputFilename << std::endl;
@@ -1914,4 +1891,30 @@ bool checkAVX() {
 		return false;
 	}
 #endif // defined (_MSC_VER) || defined (__INTEL_COMPILER)
+}
+
+bool showBuildVersion() {
+	std::cout << strVersion << " ";
+#ifdef _M_X64
+	std::cout << "64-bit version";
+#ifdef USE_AVX
+	std::cout << " AVX build ... ";
+	if (!checkAVX())
+		return false;
+#ifdef USE_FMA
+	std::cout << "\nusing FMA (Fused Multiply-Add) instruction ... ";
+#endif
+#endif // USE_AVX	
+	std::cout << std::endl;
+#else
+	std::cout << "32-bit version";
+#if defined(USE_SSE2)
+	std::cout << ", SSE2 build ... ";
+	// Verify processor capabilities:
+	if (!checkSSE2())
+		return false;
+#endif // defined(USE_SSE2)
+	std::cout << "\n" << std::endl;
+#endif
+	return true;
 }
