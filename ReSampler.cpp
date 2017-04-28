@@ -44,288 +44,69 @@
 // fftw
 // http://www.fftw.org/
 // 
-
 #include "sndfile.hh"
-
 //                                                                                    //
 ////////////////////////////////////////////////////////////////////////////////////////
 
 int main(int argc, char * argv[])
 {
-	std::string sourceFilename("");
-	std::string destFilename("");
-	std::string outBitFormat("");
-	int outFileFormat = 0;
-	unsigned int OutputSampleRate = 44100;
-	double NormalizeAmount = 1.0;
-	double DitherAmount = 1.0;
-	int flacCompressionLevel = 5;
-	double vorbisQuality = 3;
-	int noiseShape = DitherProfileID::standard;
+	conversionInfo ci;
+	if (!parseParameters(ci, argc, argv))
+		exit(EXIT_SUCCESS); // todo: EXIT_FAILURE on bad parameter
 
-	// parse core parameters:
-	getCmdlineParam(argv, argv + argc, "-i", sourceFilename);
-	getCmdlineParam(argv, argv + argc, "-o", destFilename);
-	getCmdlineParam(argv, argv + argc, "-r", OutputSampleRate);
-	getCmdlineParam(argv, argv + argc, "-b", outBitFormat);
-
-	// parse version switch:
-	if (findCmdlineOption(argv, argv + argc, "--version")) {
-		std::cout << strVersion << std::endl;
-		exit(EXIT_SUCCESS);
-	}
-
-	// parse sndfile-version switch:
-	if (findCmdlineOption(argv, argv + argc, "--sndfile-version")) {
-		char s[128];
-		sf_command(nullptr, SFC_GET_LIB_VERSION, s, sizeof(s));
-		std::cout << s << std::endl;
-		exit(EXIT_SUCCESS);
-	}
-
-	// parse help switch:
-	if (findCmdlineOption(argv, argv + argc, "--help") || findCmdlineOption(argv, argv + argc, "-h")) {
-		std::cout << strUsage << std::endl;
-		std::cout << "Additional options:\n\n" << strExtraOptions << std::endl;
-		exit(EXIT_SUCCESS);
-	}
-
-	// parse double precision switch:
-	bool bUseDoublePrecision = findCmdlineOption(argv, argv + argc, "--doubleprecision");
-
-	// parse bit format (sub format) parameter
-	bool bListSubFormats = findCmdlineOption(argv, argv + argc, "--listsubformats");
-	if (bListSubFormats) {
-		std::string filetype;
-		getCmdlineParam(argv, argv + argc, "--listsubformats", filetype);
-		listSubFormats(filetype);
-		exit(EXIT_SUCCESS);
-	}
-
-	// parse normalize option and parameter:
-	bool bNormalize = findCmdlineOption(argv, argv + argc, "-n");
-	if (bNormalize) {
-		getCmdlineParam(argv, argv + argc, "-n", NormalizeAmount);
-		if (NormalizeAmount <= 0.0)
-			NormalizeAmount = 1.0;
-		if (NormalizeAmount > 1.0)
-			std::cout << "\nWarning: Normalization factor greater than 1.0 - THIS WILL CAUSE CLIPPING !!\n" << std::endl;
-	}
-
-	// parse dither option and parameter:
-	bool bDither = findCmdlineOption(argv, argv + argc, "--dither");
-	if (bDither) {
-		getCmdlineParam(argv, argv + argc, "--dither", DitherAmount);
-		if (DitherAmount <= 0.0)
-			DitherAmount = 1.0;
-	}
-
-	// parse auto-blanking option (for dithering):
-	bool bAutoBlankingEnabled = findCmdlineOption(argv, argv + argc, "--autoblank");
-
-	// parse minimum-phase option:
-	bool bMinPhase = findCmdlineOption(argv, argv + argc, "--minphase");
-
-	// parse flacCompression option and parameter:
-	bool bSetFlacCompression = findCmdlineOption(argv, argv + argc, "--flacCompression");
-	if (bSetFlacCompression) {
-		getCmdlineParam(argv, argv + argc, "--flacCompression",flacCompressionLevel);
-		if (flacCompressionLevel < 0)
-			flacCompressionLevel = 0;
-		if (flacCompressionLevel > 8)
-			flacCompressionLevel = 8;
-	}
-
-	// parse vorbisQuality option and parameter:
-	bool bSetVobisQuality = findCmdlineOption(argv, argv + argc, "--vorbisQuality");
-	if (bSetVobisQuality) {
-		getCmdlineParam(argv, argv + argc, "--vorbisQuality", vorbisQuality);
-		if (vorbisQuality < -1)
-			vorbisQuality = -1;
-		if (vorbisQuality > 10)
-			vorbisQuality = 10;
-	}
-
-	// parse noClippingProtection option:
-	bool disableClippingProtection = findCmdlineOption(argv, argv + argc, "--noClippingProtection");
-
-	// parse relaxedLPF option:
-	LPFMode lpfMode = findCmdlineOption(argv, argv + argc, "--relaxedLPF") ?
-		relaxed :
-		normal;
-
-	// parse steepLPF option:
-	lpfMode = findCmdlineOption(argv, argv + argc, "--steepLPF") ?
-		steep :
-		lpfMode;
-
-	// parse seed option and parameter:
-	bool bUseSeed = findCmdlineOption(argv, argv + argc, "--seed");
-	int seed = 0;
-	if (bUseSeed) {
-		getCmdlineParam(argv, argv + argc, "--seed", seed);
-	}
-
-	// parse multithreaded option:
-	bool bMultiThreaded = findCmdlineOption(argv, argv + argc, "--mt");
-
-	// parse rf64 option:
-	bool bRf64 = findCmdlineOption(argv, argv + argc, "--rf64");
-
-	// parse noMetadata option:
-	bool bNoMetaData = !findCmdlineOption(argv, argv + argc, "--noMetadata");
-	
-	// parse --ns option to determine Noise Shaping Profile:
-	bool bSetNoiseShape = findCmdlineOption(argv, argv + argc, "--ns");
-	if (bSetNoiseShape) {
-		getCmdlineParam(argv, argv + argc, "--ns", noiseShape);
-		if (noiseShape < 0)
-			noiseShape = 0;
-		if (noiseShape >= DitherProfileID::end)
-			noiseShape = getDefaultNoiseShape(OutputSampleRate);
-	}
-	else {
-		noiseShape = getDefaultNoiseShape(OutputSampleRate);
-	}
-
-	// parse --showDitherProfiles
-	if (findCmdlineOption(argv, argv + argc, "--showDitherProfiles")) {
-		showDitherProfiles();
-		exit(EXIT_SUCCESS);
-	}
-
-	// parse --flat-tpdf option
-	DitherProfileID ditherProfileID = static_cast<DitherProfileID>(findCmdlineOption(argv, argv + argc, "--flat-tpdf") ? DitherProfileID::flat : noiseShape);
-
-	bool bBadParams = false;
-	if (destFilename.empty()) {
-		if (sourceFilename.empty()) {
-			std::cout << "Error: Input filename not specified" << std::endl;
-			bBadParams = true;
-		}
-		else {
-			std::cout << "Output filename not specified" << std::endl;
-			destFilename = sourceFilename;
-			if (destFilename.find(".") != std::string::npos) {
-				auto dot = destFilename.find_last_of(".");
-				destFilename.insert(dot, "(converted)");
-			}
-			else {
-				destFilename.append("(converted)");
-			}
-			std::cout << "defaulting to: " << destFilename << "\n" << std::endl;
-		}
-	}
-
-	else if (destFilename == sourceFilename) {
-		std::cout << "\nError: Input and Output filenames cannot be the same" << std::endl;
-		bBadParams = true;
-	}
-
-	if (OutputSampleRate == 0) {
-		std::cout << "Error: Target sample rate not specified" << std::endl;
-		bBadParams = true;
-	}
-
-	if (bBadParams) {
-		std::cout << strUsage << std::endl;
-		exit(EXIT_FAILURE);
-	}
-
+	// show software version: 
+	// todo: make this a function ...
 	std::cout << strVersion << " ";
-
 #ifdef _M_X64
 	std::cout << "64-bit version";
-
 #ifdef USE_AVX
 	std::cout << " AVX build ... ";
-
-#if defined (_MSC_VER) || defined (__INTEL_COMPILER)
-	// Verify CPU capabilities:
-	bool bAVXok = false;
-	int cpuInfo[4] = { 0,0,0,0 };
-	__cpuid(cpuInfo, 0);
-	if (cpuInfo[0] != 0) {
-		__cpuid(cpuInfo, 1);
-		if (cpuInfo[2] & (1 << 28)) {
-			bAVXok = true; // Note: this test only confirms CPU AVX capability, and does not check OS capability.
-			// to-do: check for AVX2 ...
-		}
-	}
-
-	if (bAVXok)
-		std::cout << "CPU supports AVX (ok)";
-	else {
-		std::cout << "Your CPU doesn't support AVX - please try a non-AVX build on this machine" << std::endl;
+	if (!checkAVX())
 		exit(EXIT_FAILURE);
-	}
-
-#endif // defined (_MSC_VER) || defined (__INTEL_COMPILER)
-
 #ifdef USE_FMA
 	std::cout << "\nusing FMA (Fused Multiply-Add) instruction ... ";
 #endif
-
 #endif // USE_AVX	
-
 	std::cout << std::endl;
-
 #else
 	std::cout << "32-bit version";
 #if defined(USE_SSE2)
 	std::cout << ", SSE2 build ... ";
-
 	// Verify processor capabilities:
-
-#if defined (_MSC_VER) || defined (__INTEL_COMPILER)
-	bool bSSE2ok = false;
-	int CPUInfo[4] = { 0,0,0,0 };
-	__cpuid(CPUInfo, 0);
-	if (CPUInfo[0] != 0) {
-		__cpuid(CPUInfo, 1);
-		if (CPUInfo[3] & (1 << 26))
-			bSSE2ok = true;
-	}
-	if (bSSE2ok)
-	std::cout << "CPU supports SSE2 (ok)";
-	else {
-		std::cout << "Your CPU doesn't support SSE2 - please try a non-SSE2 build on this machine" << std::endl;
+	if (!checkSSE2())
 		exit(EXIT_FAILURE);
-	}
-#endif // defined (_MSC_VER) || defined (__INTEL_COMPILER)
 #endif // defined(USE_SSE2)
 	std::cout << "\n" << std::endl;
-#endif 
+#endif
+	////
 
-	std::cout << "Input file: " << sourceFilename << std::endl;
-	std::cout << "Output file: " << destFilename << std::endl;
-
-	double Limit = bNormalize ? NormalizeAmount : 1.0;
+	std::cout << "Input file: " << ci.InputFilename << std::endl;
+	std::cout << "Output file: " << ci.OutputFilename << std::endl;
 
 	// Isolate the file extensions
 	std::string inFileExt("");
 	std::string outFileExt("");
 
-	if (sourceFilename.find_last_of(".") != std::string::npos)
-	inFileExt = sourceFilename.substr(sourceFilename.find_last_of(".") + 1);
+	if (ci.InputFilename.find_last_of(".") != std::string::npos)
+		inFileExt = ci.InputFilename.substr(ci.InputFilename.find_last_of(".") + 1);
 
-	if (destFilename.find_last_of(".") != std::string::npos)
-	outFileExt = destFilename.substr(destFilename.find_last_of(".") + 1);
+	if (ci.OutputFilename.find_last_of(".") != std::string::npos)
+		outFileExt = ci.OutputFilename.substr(ci.OutputFilename.find_last_of(".") + 1);
 
-	bool dsfInput = (inFileExt == "dsf");
-	bool dffInput = (inFileExt == "dff");
+	ci.dsfInput = (inFileExt == "dsf");
+	ci.dffInput = (inFileExt == "dff");
 
-	if (!outBitFormat.empty()) { // new output bit format requested
-		outFileFormat = determineOutputFormat(outFileExt, outBitFormat);
-		if (outFileFormat)
-			std::cout << "Changing output bit format to " << outBitFormat << std::endl;
+	if (!ci.outBitFormat.empty()) { // new output bit format requested
+		ci.OutputFormat = determineOutputFormat(outFileExt, ci.outBitFormat);
+		if (ci.OutputFormat)
+			std::cout << "Changing output bit format to " << ci.OutputFormat << std::endl;
 		else { // user-supplied bit format not valid; try choosing appropriate format
-			determineBestBitFormat(outBitFormat, sourceFilename, destFilename);
-			if (outFileFormat = determineOutputFormat(outFileExt, outBitFormat))
-				std::cout << "Changing output bit format to " << outBitFormat << std::endl;
+			determineBestBitFormat(ci.outBitFormat, ci.InputFilename, ci.OutputFilename);
+			if (ci.OutputFormat = determineOutputFormat(outFileExt, ci.outBitFormat))
+				std::cout << "Changing output bit format to " << ci.outBitFormat << std::endl;
 			else {
 				std::cout << "Warning: NOT Changing output file bit format !" << std::endl;
-				outFileFormat = 0; // back where it started
+				ci.OutputFormat = 0; // back where it started
 			}
 		}
 	}
@@ -333,47 +114,21 @@ int main(int argc, char * argv[])
 	if (outFileExt != inFileExt)
 	{ // file extensions differ, determine new output format: 
 
-		if (outBitFormat.empty()) { // user changed file extension only. Attempt to choose appropriate output sub format:
+		if (ci.outBitFormat.empty()) { // user changed file extension only. Attempt to choose appropriate output sub format:
 			std::cout << "Output Bit Format not specified" << std::endl;
-			determineBestBitFormat(outBitFormat, sourceFilename, destFilename);
+			determineBestBitFormat(ci.outBitFormat, ci.InputFilename, ci.OutputFilename);
 		}
-		outFileFormat = determineOutputFormat(outFileExt, outBitFormat);
-		if (outFileFormat)
+		ci.OutputFormat = determineOutputFormat(outFileExt, ci.outBitFormat);
+		if (ci.OutputFormat)
 			std::cout << "Changing output file format to " << outFileExt << std::endl;
 		else { // cannot determine subformat of output file
 			std::cout << "Warning: NOT Changing output file format ! (extension different, but format will remain the same)" << std::endl;
 		}
 	}
 
-	conversionInfo ci;
-	ci.InputFilename = sourceFilename;
-	ci.OutputFilename = destFilename;
-	ci.OutputSampleRate = OutputSampleRate;
-	ci.Limit = Limit;
-	ci.bNormalize = bNormalize;
-	ci.OutputFormat = outFileFormat;
-	ci.bDither = bDither;
-	ci.DitherAmount = DitherAmount;
-	ci.ditherProfileID = ditherProfileID;
-	ci.bAutoBlankingEnabled = bAutoBlankingEnabled;
-	ci.bMinPhase = bMinPhase;
-	ci.bSetFlacCompression = bSetFlacCompression;
-	ci.flacCompressionLevel = flacCompressionLevel;
-	ci.bSetVorbisQuality = bSetVobisQuality;
-	ci.vorbisQuality = vorbisQuality;
-	ci.disableClippingProtection = disableClippingProtection;
-	ci.lpfMode = lpfMode;
-	ci.bUseSeed = bUseSeed;
-	ci.seed = seed;
-	ci.dsfInput = dsfInput;
-	ci.dffInput = dffInput;
-	ci.bMultiThreaded = bMultiThreaded;
-	ci.bRf64 = bRf64;
-	ci.bWriteMetaData = bNoMetaData;
-
 	try {
 		if (ci.bMultiThreaded) {
-			if (bUseDoublePrecision) {
+			if (ci.bUseDoublePrecision) {
 				std::cout << "Using double precision for calculations." << std::endl;
 				if (ci.dsfInput) {
 					return ConvertMT<DsfFile, double>(ci, /* peakDetection = */ false) ? EXIT_SUCCESS : EXIT_FAILURE;
@@ -398,7 +153,7 @@ int main(int argc, char * argv[])
 			}
 		}
 		else {
-			if (bUseDoublePrecision) {
+			if (ci.bUseDoublePrecision) {
 				std::cout << "Using double precision for calculations." << std::endl;
 				if (ci.dsfInput) {
 					return Convert<DsfFile, double>(ci, /* peakDetection = */ false) ? EXIT_SUCCESS : EXIT_FAILURE;
@@ -427,6 +182,199 @@ int main(int argc, char * argv[])
 		std::cerr << "fatal error: " << e.what();
 		return EXIT_FAILURE;
 	}
+}
+
+bool parseParameters(conversionInfo& ci, int argc, char* argv[]) {
+
+	// initialize defaults:
+	ci.InputFilename.clear();
+	ci.OutputFilename.clear();
+	ci.outBitFormat.clear();
+	ci.OutputFormat = 0;
+	ci.OutputSampleRate = 44100;
+	ci.normalizeAmount = 1.0;
+	ci.DitherAmount = 1.0;
+	ci.flacCompressionLevel = 5;
+	ci.vorbisQuality = 3;
+	ci.ditherProfileID = DitherProfileID::standard;
+
+	//////////////////////////////////////////////////////////////
+	// terminating switch options: // 
+
+	// version switch:
+	if (findCmdlineOption(argv, argv + argc, "--version")) {
+		std::cout << strVersion << std::endl;
+		return false;
+	}
+
+	// sndfile-version switch:
+	if (findCmdlineOption(argv, argv + argc, "--sndfile-version")) {
+		char s[128];
+		sf_command(nullptr, SFC_GET_LIB_VERSION, s, sizeof(s));
+		std::cout << s << std::endl;
+		return false;
+	}
+
+	// help switch:
+	if (findCmdlineOption(argv, argv + argc, "--help") || findCmdlineOption(argv, argv + argc, "-h")) {
+		std::cout << strUsage << std::endl;
+		std::cout << "Additional options:\n\n" << strExtraOptions << std::endl;
+		return false;
+	}
+
+	// listsubformats
+	if (findCmdlineOption(argv, argv + argc, "--listsubformats")) {
+		std::string filetype;
+		getCmdlineParam(argv, argv + argc, "--listsubformats", filetype);
+		listSubFormats(filetype);
+		return false;
+	}
+
+	// showDitherProfiles
+	if (findCmdlineOption(argv, argv + argc, "--showDitherProfiles")) {
+		showDitherProfiles();
+		return false;
+	}
+
+	////
+
+	// core parameters:
+	getCmdlineParam(argv, argv + argc, "-i", ci.InputFilename);
+	getCmdlineParam(argv, argv + argc, "-o", ci.OutputFilename);
+	getCmdlineParam(argv, argv + argc, "-r", ci.OutputSampleRate);
+	getCmdlineParam(argv, argv + argc, "-b", ci.outBitFormat);
+
+	// double precision switch:
+	ci.bUseDoublePrecision = findCmdlineOption(argv, argv + argc, "--doubleprecision");
+
+	// normalize option and parameter:
+	ci.bNormalize = findCmdlineOption(argv, argv + argc, "-n");
+	if (ci.bNormalize) {
+		getCmdlineParam(argv, argv + argc, "-n", ci.normalizeAmount);
+		if (ci.normalizeAmount <= 0.0)
+			ci.normalizeAmount = 1.0;
+		if (ci.normalizeAmount > 1.0)
+			std::cout << "\nWarning: Normalization factor greater than 1.0 - THIS WILL CAUSE CLIPPING !!\n" << std::endl;
+	}
+
+	ci.Limit = ci.bNormalize ? ci.normalizeAmount : 1.0;
+
+	// dither option and parameter:
+	ci.bDither = findCmdlineOption(argv, argv + argc, "--dither");
+	if (ci.bDither) {
+		getCmdlineParam(argv, argv + argc, "--dither", ci.DitherAmount);
+		if (ci.DitherAmount <= 0.0)
+			ci.DitherAmount = 1.0;
+	}
+
+	// auto-blanking option (for dithering):
+	ci.bAutoBlankingEnabled = findCmdlineOption(argv, argv + argc, "--autoblank");
+
+	// ns option to determine Noise Shaping Profile:
+	if (findCmdlineOption(argv, argv + argc, "--ns")) {
+		getCmdlineParam(argv, argv + argc, "--ns", ci.ditherProfileID);
+		if (ci.ditherProfileID < 0)
+			ci.ditherProfileID = 0;
+		if (ci.ditherProfileID >= DitherProfileID::end)
+			ci.ditherProfileID = getDefaultNoiseShape(ci.OutputSampleRate);
+	}
+	else {
+		ci.ditherProfileID = getDefaultNoiseShape(ci.OutputSampleRate);
+	}
+
+	// --flat-tpdf option
+	if (findCmdlineOption(argv, argv + argc, "--flat-tpdf")) {
+		ci.ditherProfileID = DitherProfileID::flat;
+	}
+
+	// seed option and parameter:
+	ci.bUseSeed = findCmdlineOption(argv, argv + argc, "--seed");
+	ci.seed = 0;
+	if (ci.bUseSeed) {
+		getCmdlineParam(argv, argv + argc, "--seed", ci.seed);
+	}
+
+	// minimum-phase option:
+	ci.bMinPhase = findCmdlineOption(argv, argv + argc, "--minphase");
+
+	// flacCompression option and parameter:
+	ci.bSetFlacCompression = findCmdlineOption(argv, argv + argc, "--flacCompression");
+	if (ci.bSetFlacCompression) {
+		getCmdlineParam(argv, argv + argc, "--flacCompression", ci.flacCompressionLevel);
+		if (ci.flacCompressionLevel < 0)
+			ci.flacCompressionLevel = 0;
+		if (ci.flacCompressionLevel > 8)
+			ci.flacCompressionLevel = 8;
+	}
+
+	// vorbisQuality option and parameter:
+	ci.bSetVorbisQuality = findCmdlineOption(argv, argv + argc, "--vorbisQuality");
+	if (ci.bSetVorbisQuality) {
+		getCmdlineParam(argv, argv + argc, "--vorbisQuality", ci.vorbisQuality);
+		if (ci.vorbisQuality < -1)
+			ci.vorbisQuality = -1;
+		if (ci.vorbisQuality > 10)
+			ci.vorbisQuality = 10;
+	}
+
+	// noClippingProtection option:
+	ci.disableClippingProtection = findCmdlineOption(argv, argv + argc, "--noClippingProtection");
+
+	// relaxedLPF option:
+	ci.lpfMode = findCmdlineOption(argv, argv + argc, "--relaxedLPF") ?
+		relaxed :
+		normal;
+
+	// steepLPF option:
+	ci.lpfMode = findCmdlineOption(argv, argv + argc, "--steepLPF") ?
+		steep :
+		ci.lpfMode;
+
+	// multithreaded option:
+	ci.bMultiThreaded = findCmdlineOption(argv, argv + argc, "--mt");
+
+	// rf64 option:
+	ci.bRf64 = findCmdlineOption(argv, argv + argc, "--rf64");
+
+	// noMetadata option:
+	ci.bWriteMetaData = !findCmdlineOption(argv, argv + argc, "--noMetadata");
+
+	// test for bad parameters:
+	bool bBadParams = false;
+	if (ci.OutputFilename.empty()) {
+		if (ci.InputFilename.empty()) {
+			std::cout << "Error: Input filename not specified" << std::endl;
+			bBadParams = true;
+		}
+		else {
+			std::cout << "Output filename not specified" << std::endl;
+			ci.OutputFilename = ci.InputFilename;
+			if (ci.OutputFilename.find(".") != std::string::npos) {
+				auto dot = ci.OutputFilename.find_last_of(".");
+				ci.OutputFilename.insert(dot, "(converted)");
+			}
+			else {
+				ci.OutputFilename.append("(converted)");
+			}
+			std::cout << "defaulting to: " << ci.OutputFilename << "\n" << std::endl;
+		}
+	}
+
+	else if (ci.OutputFilename == ci.InputFilename) {
+		std::cout << "\nError: Input and Output filenames cannot be the same" << std::endl;
+		bBadParams = true;
+	}
+
+	if (ci.OutputSampleRate == 0) {
+		std::cout << "Error: Target sample rate not specified" << std::endl;
+		bBadParams = true;
+	}
+
+	if (bBadParams) {
+		std::cout << strUsage << std::endl;
+		return false;
+	}
+	return true;
 }
 
 // determineBestBitFormat() : determines the most appropriate bit format for the output file, through the following process:
@@ -1157,14 +1105,11 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 	assert(BUFFERSIZE >= BufferSize);
 
 	FloatType inbuffer[BUFFERSIZE];
-
 	sf_count_t count;
 	sf_count_t SamplesRead = 0;
-
 	FloatType PeakInputSample;
 
 	if (peakDetection) {
-
 		PeakInputSample = 0.0;
 		std::cout << "Scanning input file for peaks ..."; // to-do: can we read the PEAK chunk in floating-point files ?
 
@@ -1822,6 +1767,8 @@ std::string fmtNumberWithCommas(uint64_t n) {
 	return s;
 }
 
+
+
 bool testSetMetaData(DsfFile& outfile) {
 	// stub - to-do
 	return true;
@@ -1922,4 +1869,49 @@ void getCmdlineParam(char** begin, char** end, const std::string& OptionName, do
 
 bool findCmdlineOption(char** begin, char** end, const std::string& option) {
 	return (std::find(begin, end, option) != end);
+}
+
+bool checkSSE2() {
+#if defined (_MSC_VER) || defined (__INTEL_COMPILER)
+	bool bSSE2ok = false;
+	int CPUInfo[4] = { 0,0,0,0 };
+	__cpuid(CPUInfo, 0);
+	if (CPUInfo[0] != 0) {
+		__cpuid(CPUInfo, 1);
+		if (CPUInfo[3] & (1 << 26))
+			bSSE2ok = true;
+	}
+	if (bSSE2ok) {
+		std::cout << "CPU supports SSE2 (ok)";
+		return true;
+	}
+	else {
+		std::cout << "Your CPU doesn't support SSE2 - please try a non-SSE2 build on this machine" << std::endl;
+		return false;
+	}
+#endif // defined (_MSC_VER) || defined (__INTEL_COMPILER)
+}
+
+bool checkAVX() {
+#if defined (_MSC_VER) || defined (__INTEL_COMPILER)
+	// Verify CPU capabilities:
+	bool bAVXok = false;
+	int cpuInfo[4] = { 0,0,0,0 };
+	__cpuid(cpuInfo, 0);
+	if (cpuInfo[0] != 0) {
+		__cpuid(cpuInfo, 1);
+		if (cpuInfo[2] & (1 << 28)) {
+			bAVXok = true; // Note: this test only confirms CPU AVX capability, and does not check OS capability.
+						   // to-do: check for AVX2 ...
+		}
+	}
+	if (bAVXok) {
+		std::cout << "CPU supports AVX (ok)";
+		return true;
+	}
+	else {
+		std::cout << "Your CPU doesn't support AVX - please try a non-AVX build on this machine" << std::endl;
+		return false;
+	}
+#endif // defined (_MSC_VER) || defined (__INTEL_COMPILER)
 }

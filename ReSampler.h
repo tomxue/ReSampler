@@ -98,8 +98,11 @@ struct conversionInfo
 	std::string OutputFilename;
 	unsigned int OutputSampleRate;
 	double Limit;
+	bool bUseDoublePrecision;
 	bool bNormalize;
+	double normalizeAmount;
 	int OutputFormat;
+	std::string outBitFormat;
 	bool bDither;
 	double DitherAmount;
 	int ditherProfileID;
@@ -146,6 +149,9 @@ typedef struct
 
 } MetaData;
 
+bool parseParameters(conversionInfo & ci, int argc, char * argv[]);
+bool checkSSE2();
+bool checkAVX();
 bool determineBestBitFormat(std::string & BitFormat, const std::string & inFilename, const std::string & outFilename);
 int determineOutputFormat(const std::string & outFileExt, const std::string & bitFormat);
 void listSubFormats(const std::string & f);
