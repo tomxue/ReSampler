@@ -186,6 +186,13 @@ bool parseParameters(conversionInfo& ci, bool& bBadParams, int argc, char* argv[
 	//////////////////////////////////////////////////////////////
 	// terminating switch options: // 
 
+	// help switch:
+	if (findCmdlineOption(argv, argv + argc, "--help") || findCmdlineOption(argv, argv + argc, "-h")) {
+		std::cout << strUsage << std::endl;
+		std::cout << "Additional options:\n\n" << strExtraOptions << std::endl;
+		return false;
+	}
+
 	// version switch:
 	if (findCmdlineOption(argv, argv + argc, "--version")) {
 		std::cout << strVersion << std::endl;
@@ -199,14 +206,7 @@ bool parseParameters(conversionInfo& ci, bool& bBadParams, int argc, char* argv[
 		std::cout << s << std::endl;
 		return false;
 	}
-
-	// help switch:
-	if (findCmdlineOption(argv, argv + argc, "--help") || findCmdlineOption(argv, argv + argc, "-h")) {
-		std::cout << strUsage << std::endl;
-		std::cout << "Additional options:\n\n" << strExtraOptions << std::endl;
-		return false;
-	}
-
+	
 	// listsubformats
 	if (findCmdlineOption(argv, argv + argc, "--listsubformats")) {
 		std::string filetype;

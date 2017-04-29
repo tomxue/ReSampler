@@ -16,7 +16,24 @@
 
 const std::string strVersion("1.3.2 pre-release");
 const std::string strUsage("usage: resampler.exe -i <inputfile> [-o <outputfile>] -r <samplerate> [-b <bitformat>] [-n [<normalization factor>]]\n");
-const std::string strExtraOptions("--help\n--version\n--doubleprecision\n--listsubformats <ext>\n--dither [<amount>] [--autoblank]\n--minphase\n--flacCompression <compressionlevel>\n--vorbisQuality <quality>\n--noClippingProtection\n");
+const std::string strExtraOptions(
+	"--help\n"
+	"--version\n"
+	"--sndfile-version\n"
+	"--listsubformats <ext>\n"
+	"--showDitherProfiles\n"
+	"--doubleprecision\n"
+	"--dither [<amount>] [--autoblank] [--ns [<ID>]] [--flat-tpdf] [--seed [<num>]]\n"
+	"--minphase\n"
+	"--flacCompression <compressionlevel>\n"
+	"--vorbisQuality <quality>\n"
+	"--noClippingProtection\n"
+	"--relaxedLPF\n"
+	"--steepLPF\n"
+	"--mt\n"
+	"--rf64\n"
+	"--noMetadata\n"
+);
 const double clippingTrim = 1.0 - (1.0 / (1 << 24));
 
 #define BUFFERSIZE 32768 // buffer size for file reads
