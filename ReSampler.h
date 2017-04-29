@@ -14,7 +14,7 @@
 #include "sndfile.h"
 #include "sndfile.hh"
 
-const std::string strVersion("1.3.1");
+const std::string strVersion("1.3.2 pre-release");
 const std::string strUsage("usage: resampler.exe -i <inputfile> [-o <outputfile>] -r <samplerate> [-b <bitformat>] [-n [<normalization factor>]]\n");
 const std::string strExtraOptions("--help\n--version\n--doubleprecision\n--listsubformats <ext>\n--dither [<amount>] [--autoblank]\n--minphase\n--flacCompression <compressionlevel>\n--vorbisQuality <quality>\n--noClippingProtection\n");
 const double clippingTrim = 1.0 - (1.0 / (1 << 24));
@@ -149,10 +149,10 @@ typedef struct
 
 } MetaData;
 
-bool parseParameters(conversionInfo & ci, int argc, char * argv[]);
 bool checkSSE2();
 bool checkAVX();
 bool showBuildVersion();
+bool parseParameters(conversionInfo & ci, bool & bBadParams, int argc, char * argv[]);
 bool determineBestBitFormat(std::string & BitFormat, const std::string & inFilename, const std::string & outFilename);
 int determineOutputFormat(const std::string & outFileExt, const std::string & bitFormat);
 void listSubFormats(const std::string & f);

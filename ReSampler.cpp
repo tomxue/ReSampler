@@ -51,25 +51,29 @@
 int main(int argc, char * argv[])
 {
 	conversionInfo ci;
-	if (!parseParameters(ci, argc, argv))
-		exit(EXIT_SUCCESS); // todo: EXIT_FAILURE on bad parameter
+	
+	// result of parseParameters() indicates whether to terminate, and 
+	// badParams indicates whether there was an error:
+	bool badParams = false;
+	if (!parseParameters(ci, badParams, argc, argv))
+		exit(badParams ? EXIT_FAILURE : EXIT_SUCCESS);
 
 	if (!showBuildVersion())
-		exit(EXIT_FAILURE);
+		exit(EXIT_FAILURE); // can't continue (CPU / build mismatch)
 
+	// echo filenames to user
 	std::cout << "Input file: " << ci.InputFilename << std::endl;
 	std::cout << "Output file: " << ci.OutputFilename << std::endl;
 
 	// Isolate the file extensions
 	std::string inFileExt("");
 	std::string outFileExt("");
-
 	if (ci.InputFilename.find_last_of(".") != std::string::npos)
 		inFileExt = ci.InputFilename.substr(ci.InputFilename.find_last_of(".") + 1);
-
 	if (ci.OutputFilename.find_last_of(".") != std::string::npos)
 		outFileExt = ci.OutputFilename.substr(ci.OutputFilename.find_last_of(".") + 1);
 
+	// detect dsf or dff format
 	ci.dsfInput = (inFileExt == "dsf");
 	ci.dffInput = (inFileExt == "dff");
 
@@ -161,8 +165,12 @@ int main(int argc, char * argv[])
 	}
 }
 
-bool parseParameters(conversionInfo& ci, int argc, char* argv[]) {
+// parseParameters()
+// Return value indicates whether caller should continue execution (ie true: continue, false: terminate)
+// Some commandline options (eg --version) should result in termination, but not error.
+// unacceptable parameters are indicated by setting bBadParams to true
 
+bool parseParameters(conversionInfo& ci, bool& bBadParams, int argc, char* argv[]) {
 	// initialize defaults:
 	ci.InputFilename.clear();
 	ci.OutputFilename.clear();
@@ -247,7 +255,7 @@ bool parseParameters(conversionInfo& ci, int argc, char* argv[]) {
 	// auto-blanking option (for dithering):
 	ci.bAutoBlankingEnabled = findCmdlineOption(argv, argv + argc, "--autoblank");
 
-	// ns option to determine Noise Shaping Profile:
+	// ns option to determine Dither Profile:
 	if (findCmdlineOption(argv, argv + argc, "--ns")) {
 		getCmdlineParam(argv, argv + argc, "--ns", ci.ditherProfileID);
 		if (ci.ditherProfileID < 0)
@@ -259,7 +267,7 @@ bool parseParameters(conversionInfo& ci, int argc, char* argv[]) {
 		ci.ditherProfileID = getDefaultNoiseShape(ci.OutputSampleRate);
 	}
 
-	// --flat-tpdf option
+	// --flat-tpdf option (takes precedence over --ns)
 	if (findCmdlineOption(argv, argv + argc, "--flat-tpdf")) {
 		ci.ditherProfileID = DitherProfileID::flat;
 	}
@@ -317,7 +325,7 @@ bool parseParameters(conversionInfo& ci, int argc, char* argv[]) {
 	ci.bWriteMetaData = !findCmdlineOption(argv, argv + argc, "--noMetadata");
 
 	// test for bad parameters:
-	bool bBadParams = false;
+	bBadParams = false;
 	if (ci.OutputFilename.empty()) {
 		if (ci.InputFilename.empty()) {
 			std::cout << "Error: Input filename not specified" << std::endl;
@@ -1743,8 +1751,6 @@ std::string fmtNumberWithCommas(uint64_t n) {
 	}
 	return s;
 }
-
-
 
 bool testSetMetaData(DsfFile& outfile) {
 	// stub - to-do
