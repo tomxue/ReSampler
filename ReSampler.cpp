@@ -9,6 +9,8 @@
 
 // ReSampler.cpp : Audio Sample Rate Converter by Judd Niemann
 
+#define _USE_MATH_DEFINES
+#include <math.h>
 #include <iostream>
 #include <ostream>
 #include <cassert>
@@ -18,10 +20,6 @@
 #include <iomanip>
 #include <mutex>
 #include <cstdio>
-#include <locale>
-
-#define _USE_MATH_DEFINES
-#include <math.h>
 #include <cstring>
 
 #include "osspecific.h"
