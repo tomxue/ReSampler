@@ -1,8 +1,8 @@
+
 ## Synopsis
 ReSampler is a high-performance command-line audio sample rate conversion tool for Windows, which can convert audio file formats with a variety of different bit-depths and audio channel configurations. 
 
 ReSampler is intended to produce outstanding quality sound files, keeping aliasing and other unwanted artifacts to a minimum, as the following actual measurement graphs show:
-
 
 ![FIR Filter response - downsample 96k->44k](147_160_FIR_Frequency-response-2016-03-30-KAISER_WINDOW.JPG)   
 *Typical frequency response when downsampling from 96kHz to 44.1kHz*
@@ -73,50 +73,52 @@ from the command line, the main options are as follows:
 
 ### Additional options: ###
 
-**--mt** Multi-Threading (since v1.2.2). This will cause ReSampler to process each channel in a separate thread. 
-On a multi-core system, this makes better use of available CPU resources and results in a significant speed improvement.  
+**--help** shows usage and lists additional commandline options
 
-**--doubleprecision** will force ReSampler to use double-precision (64-bit floating point) arithmetic for its *internal calculations* and doesn't have anything to do with the file formats, although if you are working with 64-bit double-precision files, it would make sense to use double precision for calculations used in processing.
+**--version** displays the version number of the program
 
-**--dither [&lt;amount&gt;]** adds **+/-amount** *bits* of dither the output file. Dithering deliberately adds a small amount of a particular type of noise (triangular pdf with noise-shaping) prior to quantization to the output file. The goal of dithering is to reduce distortion, and allow extremely quiet passages to be preserved when they would otherwise be below the threshold of the target bit depth. Usually, it only makes sense to add dither when you are converting to a lower bit depth, for example:
+**--sndfile-version** displays the version of libsndfile dll
+
+**--listsubformats &lt;filetype&gt;** will list all valid subformats for a given *filetype*
+
+**--showDitherProfiles** (since 1.3.1) shows a list of all available dither profiles.
+
+**--doubleprecision** forces ReSampler to use double-precision (64-bit floating point) arithmetic for its *internal calculations* and is independent of the output format.
+
+**--dither [&lt;amount&gt;]** generates **+/-amount** *bits* of dither. Dithering deliberately adds a small amount of a particular type of noise (triangular pdf with noise-shaping) prior to quantization to the output file. The goal of dithering is to reduce distortion, and allow extremely quiet passages to be preserved when they would otherwise be below the threshold of the target bit depth. Usually, it only makes sense to add dither when you are converting to a lower bit depth, for example:
  
-- floating-point -> 24bit
-- 24bit -> 16bit
+- floating-point -> 16bit, or 8bit
+- 24bit -> 16bit, or 8bit
 - 16bit -> 8bit
-
-The *amount* parameter represents the number of *bits* of dither to add. The actual *level* of dithering added is equal to **+/- 2^(amount-1)** *steps*. The default is for *amount* is 1.0, and it doesn't need to be an integer. Values in the range 1-6 are sensible for most situations. The noise-shaping curve becomes more pronounced at higher dithering amounts.  
 
 The effect of dithering is most noticeable during extremely quiet passages (typically, in fade-outs) of the audio. If you can hear modulation effects, or "tearing" in the quietest passages of your output file, then a greater amount of dither may need to be applied. (note: in many cases, these passages are so quiet, you will need to normalize them just to hear them).
 
+The *amount* parameter represents the number of *bits* of dither noise to be generated (prior to the noise-shaping process). The actual *level* of dither noise is equal to **+/- 2^(amount-1)** *steps*. The default for *amount* is 1.0, and it doesn't need to be an integer. Values in the range 1-6 are sensible for most situations. The noise-shaping curve may further increase the amplitude of the dither, depending on the "intensity" (overall gain) of the chosen noise-shaping curve.   
+
 **--autoblank** when specified in conjunction with **--dither** causes dithering to switch-off after 30,000 consecutive input samples of *silence* (< -193dB is considered silence). Dithering is re-enabled immediately upon a non-zero input sample being detected.
+
+**--ns &lt;n&gt;** (since 1.3.1) select [dither profile](./ditherProfiles.md) from 0-12. Generally speaking, as the dither profile number increases, the noise-shaping curve gets  progressively more "intense" (higher amplitude). Dither profile 0 is completely flat (no noise shaping), and is equivalent to **--flat-tpdf**. The default dither profile (if no profile is specified) is #6 (standard), which has a moderate noise-shaping curve.
+
+**--flat-tpdf** (since v1.1.6) when specified in conjunction with **--dither** , causes the dithering to use flat tpdf noise with no noise-shaping.
 
 **--seed &lt;n&gt;** (since v1.1.5) when specified in conjunction with **--dither** , causes the pseudo-random number generator used to generate dither noise to generate a specific sequence of noise associated with the number n.
 Using the same value of n on subsequent conversions should reproduce precisely the same result. n is a signed integer in the range -2,147,483,648 through 2,147,483,647.  
 
-**--ns &lt;n&gt;** (since 1.3.1) select [dither profile](./ditherProfiles.md) from 0-12. Generally speaking, as the dither profile number increases, the noise-shaping curve gets  progressively more "intense" (higher amplitude). Dither profile 0 is completely flat (no noise shaping), and is equivalent to **--flat-tpdf**. The default dither profile (if no profile is specified) is #6 (standard), which has a moderate noise-shaping curve.
-
-**--showDitherProfiles** (since 1.3.1) shows a list of all available dither profiles.
-
-**--flat-tpdf** (since v1.1.6) when specified in conjunction with **--dither** , causes the dithering to use flat tpdf noise with no noise-shaping.
-
-**--listsubformats &lt;filetype&gt;** will list all valid subformats for a given *filetype*
-
-**--version** will display the version number of the program
-
-**--sndfile-version** will display the version of libsndfile
-
 **--minphase** use a minimum-phase FIR filter, instead of Linear-Phase
-
-**--relaxedLPF** (since v1.1.4) causes the lowpass filter to use a "late" cutoff frequency (95.45%), 
-which will (theoretically) allow a small amount of aliasing, but at the same time, keep ringing to a minimum and maintain a good frequency response.
-
-**--steepLPF** (since v1.2.0) causes the lowpass filter to use a steeper cutoff (half the standard transition width). It avoids aliasing, but may result in more ringing.
 
 **--flacCompression  &lt;compressionlevel&gt;** sets the compression level for flac output files (between 0 and 8)
 
 **--vorbisQuality &lt;quality&gt;** sets the quality level for ogg vorbis output files (between -1 and 10)
 
 **--noClippingProtection** disables clipping protection (clipping protection is normally active by default)
+
+**--relaxedLPF** (since v1.1.4) causes the lowpass filter to use a "late" cutoff frequency (95.45%), 
+which will (theoretically) allow a small amount of aliasing, but at the same time, keep ringing to a minimum and maintain a good frequency response.
+
+**--steepLPF** (since v1.2.0) causes the lowpass filter to use a steeper cutoff (half the standard transition width). It avoids aliasing, but may result in more ringing.
+
+**--mt** Multi-Threading (since v1.2.2). This will cause ReSampler to process each channel in a separate thread. 
+On a multi-core system, this makes better use of available CPU resources and results in a significant speed improvement.  
 
 **--rf64** (since v1.2.6) forces output .wav file to be in rf64 format. Has no effect if output file is not a .wav file.
 

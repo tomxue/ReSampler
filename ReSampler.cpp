@@ -18,6 +18,7 @@
 #include <iomanip>
 #include <mutex>
 #include <cstdio>
+#include <locale>
 
 #define _USE_MATH_DEFINES
 #include <math.h>
@@ -1815,7 +1816,7 @@ Fraction GetSimplifiedFraction(int InputSampleRate, int OutputSampleRate)			// e
 
 void getCmdlineParam(char** begin, char** end, const std::string& OptionName, std::string& Parameter)
 {
-	Parameter = "";
+	Parameter.clear();
 	char** it = std::find(begin, end, OptionName);
 	if (it != end)	// found option
 		if (++it != end) // found parameter after option
