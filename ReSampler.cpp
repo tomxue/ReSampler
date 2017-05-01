@@ -278,6 +278,9 @@ bool parseParameters(conversionInfo& ci, bool& bBadParams, int argc, char* argv[
 		getCmdlineParam(argv, argv + argc, "--seed", ci.seed);
 	}
 
+	// delay trim (group delay compensation)
+	ci.bDelayTrim = !findCmdlineOption(argv, argv + argc, "--noDelayTrim");
+
 	// minimum-phase option:
 	ci.bMinPhase = findCmdlineOption(argv, argv + argc, "--minphase");
 
@@ -700,8 +703,8 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 	std::cout.precision(prec);
 
 	// calculate group Delay
-	int groupDelay = ci.bMinPhase ? 0 : ((FilterSize - 1) / 2) / FOriginal.denominator;
-	// std::cout << "\nAnticipated Group Delay: " << groupDelay << std::endl;
+	int groupDelay = ci.bDelayTrim ?
+		(ci.bMinPhase ? 0 : ((FilterSize - 1) / 2) / FOriginal.denominator) : 0;
 
 	// Make some filter coefficients:
 	FloatType* FilterTaps = new FloatType[FilterSize];
@@ -1204,8 +1207,8 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 	std::cout.precision(prec);
 
 	// calculate group Delay
-	int groupDelay = ci.bMinPhase ? 0 : ((FilterSize - 1) / 2) / FOriginal.denominator;
-	// std::cout << "\nAnticipated Group Delay: " << groupDelay << std::endl;
+	int groupDelay = ci.bDelayTrim ?
+		(ci.bMinPhase ? 0 : ((FilterSize - 1) / 2) / FOriginal.denominator) : 0;
 
 	// Make some filter coefficients:
 	FloatType* FilterTaps = new FloatType[FilterSize];

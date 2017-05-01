@@ -124,6 +124,7 @@ struct conversionInfo
 	double DitherAmount;
 	int ditherProfileID;
 	bool bAutoBlankingEnabled;
+	bool bDelayTrim;
 	bool bMinPhase;
 	bool bSetFlacCompression;
 	int flacCompressionLevel;
