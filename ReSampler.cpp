@@ -703,8 +703,8 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 	std::cout.precision(prec);
 
 	// calculate group Delay
-	int groupDelay = ci.bDelayTrim ?
-		(ci.bMinPhase ? 0 : ((FilterSize - 1) / 2) / FOriginal.denominator) : 0;
+	int groupDelay = (ci.bMinPhase || !ci.bDelayTrim) ?
+		0 : (FilterSize - 1) / 2 / FOriginal.denominator;
 
 	// Make some filter coefficients:
 	FloatType* FilterTaps = new FloatType[FilterSize];
@@ -1207,8 +1207,8 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 	std::cout.precision(prec);
 
 	// calculate group Delay
-	int groupDelay = ci.bDelayTrim ?
-		(ci.bMinPhase ? 0 : ((FilterSize - 1) / 2) / FOriginal.denominator) : 0;
+	int groupDelay = (ci.bMinPhase || !ci.bDelayTrim) ? 
+		0 : (FilterSize - 1) / 2 / FOriginal.denominator;
 
 	// Make some filter coefficients:
 	FloatType* FilterTaps = new FloatType[FilterSize];
