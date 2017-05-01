@@ -14,7 +14,7 @@
 #include "sndfile.h"
 #include "sndfile.hh"
 
-const std::string strVersion("1.3.2");
+const std::string strVersion("1.3.3 dev");
 const std::string strUsage("usage: resampler.exe -i <inputfile> [-o <outputfile>] -r <samplerate> [-b <bitformat>] [-n [<normalization factor>]]\n");
 const std::string strExtraOptions(
 	"--help\n"
@@ -24,6 +24,7 @@ const std::string strExtraOptions(
 	"--showDitherProfiles\n"
 	"--doubleprecision\n"
 	"--dither [<amount>] [--autoblank] [--ns [<ID>]] [--flat-tpdf] [--seed [<num>]]\n"
+	"--noDelayTrim\n"
 	"--minphase\n"
 	"--flacCompression <compressionlevel>\n"
 	"--vorbisQuality <quality>\n"
