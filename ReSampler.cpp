@@ -699,6 +699,10 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 	std::cout << "LPF transition frequency: " << std::fixed << std::setprecision(2) << ft << " Hz (" << 100 * ft / targetNyquist << " %)" << std::endl;
 	std::cout.precision(prec);
 
+	// calculate group Delay
+	int groupDelay = ci.bMinPhase ? 0 : ((FilterSize - 1) / 2) / FOriginal.denominator;
+	// std::cout << "\nAnticipated Group Delay: " << groupDelay << std::endl;
+
 	// Make some filter coefficients:
 	FloatType* FilterTaps = new FloatType[FilterSize];
 	makeLPF<FloatType>(FilterTaps, FilterSize, ft, OverSampFreq);
@@ -838,7 +842,8 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 		}
 
 		std::cout << "Converting ...";
-		unsigned int OutBufferIndex = 0;
+		sf_count_t OutBufferIndex = 0;
+		int outStartOffset = groupDelay * nChannels;
 		PeakOutputSample = 0.0;
 		SamplesRead = 0;
 		sf_count_t NextProgressThreshold = IncrementalProgressThreshold;
@@ -898,7 +903,14 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 							di[Channel] = 0;
 					} // ends loop over s
 				} // ends loop over Channel
-				pOutFile->write(OutBuffer, OutBufferIndex);
+
+				if (outStartOffset <= 0) {
+					pOutFile->write(OutBuffer, OutBufferIndex);
+				}
+				else {
+					pOutFile->write(OutBuffer + outStartOffset, OutBufferIndex - outStartOffset);
+					outStartOffset = 0;
+				}
 
 				// conditionally send progress update:
 				if (SamplesRead > NextProgressThreshold) {
@@ -936,7 +948,14 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 						} // ends loop over ii
 					} // ends loop over s
 				} // ends loop over Channel
-				pOutFile->write(OutBuffer, OutBufferIndex);
+				
+				if (outStartOffset <= 0) {
+					pOutFile->write(OutBuffer, OutBufferIndex);
+				}
+				else {
+					pOutFile->write(OutBuffer + outStartOffset, OutBufferIndex - outStartOffset);
+					outStartOffset = 0;
+				}
 
 				 // conditionally send progress update:
 				if (SamplesRead > NextProgressThreshold) {
@@ -977,7 +996,14 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 						} // ends loop over ii
 					} // ends loop over s	
 				} // ends loop over Channel
-				pOutFile->write(OutBuffer, OutBufferIndex);
+				
+				if (outStartOffset <= 0) {
+					pOutFile->write(OutBuffer, OutBufferIndex);
+				}
+				else {
+					pOutFile->write(OutBuffer + outStartOffset, OutBufferIndex - outStartOffset);
+					outStartOffset = 0;
+				}
 
 				// conditionally send progress update:
 				if (SamplesRead > NextProgressThreshold) {
@@ -1177,6 +1203,10 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 	std::cout << "LPF transition frequency: " << std::fixed << std::setprecision(2) << ft << " Hz (" << 100 * ft / targetNyquist << " %)" << std::endl;
 	std::cout.precision(prec);
 
+	// calculate group Delay
+	int groupDelay = ci.bMinPhase ? 0 : ((FilterSize - 1) / 2) / FOriginal.denominator;
+	// std::cout << "\nAnticipated Group Delay: " << groupDelay << std::endl;
+
 	// Make some filter coefficients:
 	FloatType* FilterTaps = new FloatType[FilterSize];
 	makeLPF<FloatType>(FilterTaps, FilterSize, ft, OverSampFreq);
@@ -1316,7 +1346,8 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 		}
 
 		std::cout << "Converting (multi-threaded) ...";
-		unsigned int OutBufferIndex = 0;
+		sf_count_t OutBufferIndex = 0;
+		int outStartOffset = groupDelay * nChannels;
 		PeakOutputSample = 0.0;
 		SamplesRead = 0;
 		sf_count_t NextProgressThreshold = IncrementalProgressThreshold;
@@ -1405,7 +1436,13 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 				}
 
 				// write to file:
-				pOutFile->write(OutBuffer, OutBufferIndex);
+				if (outStartOffset <= 0) {
+					pOutFile->write(OutBuffer, OutBufferIndex);
+				}
+				else {
+					pOutFile->write(OutBuffer + outStartOffset, OutBufferIndex - outStartOffset);
+					outStartOffset = 0;
+				}
 
 				// conditionally send progress update:
 				if (SamplesRead > NextProgressThreshold) {
@@ -1471,7 +1508,13 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 				}
 
 				// write to file:
-				pOutFile->write(OutBuffer, OutBufferIndex);
+				if (outStartOffset <= 0) {
+					pOutFile->write(OutBuffer, OutBufferIndex);
+				}
+				else {
+					pOutFile->write(OutBuffer + outStartOffset, OutBufferIndex - outStartOffset);
+					outStartOffset = 0;
+				}
 
 				// conditionally send progress update:
 				if (SamplesRead > NextProgressThreshold) {
@@ -1542,7 +1585,13 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 				}
 
 				// write to file:
-				pOutFile->write(OutBuffer, OutBufferIndex);
+				if (outStartOffset <= 0) {
+					pOutFile->write(OutBuffer, OutBufferIndex);
+				}
+				else {
+					pOutFile->write(OutBuffer + outStartOffset, OutBufferIndex - outStartOffset);
+					outStartOffset = 0;
+				}
 
 				// conditionally send progress update:
 				if (SamplesRead > NextProgressThreshold) {
