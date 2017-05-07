@@ -104,6 +104,9 @@ The *amount* parameter represents the number of *bits* of dither noise to be gen
 **--seed &lt;n&gt;** (since v1.1.5) when specified in conjunction with **--dither** , causes the pseudo-random number generator used to generate dither noise to generate a specific sequence of noise associated with the number n.
 Using the same value of n on subsequent conversions should reproduce precisely the same result. n is a signed integer in the range -2,147,483,648 through 2,147,483,647.  
 
+**--noDelayTrim** (since v1.3.3) deactivates correction of [delay due to the linear-phase FIR anti-aliasing filter.](./GroupDelayCorrection/delayCorrection.md)
+*By default, delay correction is active to ensure that the timing of the converted output file matches the timing of the input file precisely.*
+
 **--minphase** use a minimum-phase FIR filter, instead of Linear-Phase
 
 **--flacCompression  &lt;compressionlevel&gt;** sets the compression level for flac output files (between 0 and 8)
