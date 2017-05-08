@@ -37,6 +37,7 @@ with the ID of 0 corresponding to *flat* (no noise shaping; which is also equiva
         <tr><td>10</td><td>Improved E-Weighted</td><td>widely used in many DAWs and audio software</td><td>from the paper "Minimally Audible Noise Shaping"</td></tr>
         <tr><td>11</td><td>High30</td><td>notches at 3150Hz and 11.25kHz with 30dB high shelf</td><td>sounds great to older listeners, but high-frequencies may annoy younger listeners. Nevertheless, at the intended playback volume, the high-frequency components will still be very quiet relative to the program material</td></tr>
         <tr><td>12</td><td>High32</td><td>notches at 3150Hz and 11.25kHz with 32dB high shelf</td><td>sounds great to older listeners, but high-frequencies may annoy younger listeners. Nevertheless, at the intended playback volume, the high-frequency components will still be very quiet relative to the program material</td></tr>
+        <tr><td>13</td><td>Blue Noise</td><td>3dB/octave increase in amplide vs frequency</td><td>in-between white(flat) noise and violet noise</td></tr>
     </tbody>
 </table>
 
