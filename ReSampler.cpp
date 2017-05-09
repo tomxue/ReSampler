@@ -317,6 +317,13 @@ bool parseParameters(conversionInfo& ci, bool& bBadParams, int argc, char* argv[
 		steep :
 		ci.lpfMode;
 
+	// custom LPF cutoff frequency:
+	if (findCmdlineOption(argv, argv + argc, "--LPFcutoff")) {
+		getCmdlineParam(argv, argv + argc, "--LPFcutoff", ci.customLpfCutoff);
+		ci.customLpfCutoff = std::max(1.0, std::min(ci.customLpfCutoff, 99.9));
+		ci.lpfMode = custom;
+	}
+
 	// multithreaded option:
 	ci.bMultiThreaded = findCmdlineOption(argv, argv + argc, "--mt");
 
@@ -682,6 +689,9 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 		break;
 	case steep:
 		ft = 21 * targetNyquist / 22; // late cutoff & steep
+		break;
+	case custom:
+		ft = (ci.customLpfCutoff / 100.0) * targetNyquist;
 		break;
 	default:
 		ft = 10 * targetNyquist / 11;
@@ -1186,6 +1196,9 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 		break;
 	case steep:
 		ft = 21 * targetNyquist / 22; // late cutoff & steep
+		break;
+	case custom:
+		ft = (ci.customLpfCutoff / 100.0) * targetNyquist;
 		break;
 	default:
 		ft = 10 * targetNyquist / 11;

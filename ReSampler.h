@@ -14,7 +14,7 @@
 #include "sndfile.h"
 #include "sndfile.hh"
 
-const std::string strVersion("1.3.3");
+const std::string strVersion("1.3.4 pre-release");
 const std::string strUsage("usage: resampler.exe -i <inputfile> [-o <outputfile>] -r <samplerate> [-b <bitformat>] [-n [<normalization factor>]]\n");
 const std::string strExtraOptions(
 	"--help\n"
@@ -106,7 +106,8 @@ const std::map<std::string, std::string> defaultSubFormats = {
 typedef enum {
 	relaxed,
 	normal,
-	steep
+	steep,
+	custom
 } LPFMode;
 
 // structure for holding all the parameters required for a conversion job:
@@ -133,6 +134,7 @@ struct conversionInfo
 	double vorbisQuality;
 	bool disableClippingProtection;
 	LPFMode lpfMode;
+	double customLpfCutoff;
 	bool bUseSeed;
 	int seed;
 	bool dsfInput;
