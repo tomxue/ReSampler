@@ -231,6 +231,14 @@ bool parseParameters(conversionInfo& ci, bool& bBadParams, int argc, char* argv[
 	// double precision switch:
 	ci.bUseDoublePrecision = findCmdlineOption(argv, argv + argc, "--doubleprecision");
 
+	// default gain:
+	ci.Limit = 1.0;
+
+	// gain
+	if (findCmdlineOption(argv, argv + argc, "--gain")) {
+		getCmdlineParam(argv, argv + argc, "--gain", ci.Limit);
+	}
+
 	// normalize option and parameter:
 	ci.bNormalize = findCmdlineOption(argv, argv + argc, "-n");
 	if (ci.bNormalize) {
@@ -239,9 +247,8 @@ bool parseParameters(conversionInfo& ci, bool& bBadParams, int argc, char* argv[
 			ci.normalizeAmount = 1.0;
 		if (ci.normalizeAmount > 1.0)
 			std::cout << "\nWarning: Normalization factor greater than 1.0 - THIS WILL CAUSE CLIPPING !!\n" << std::endl;
+		ci.Limit = ci.normalizeAmount;
 	}
-
-	ci.Limit = ci.bNormalize ? ci.normalizeAmount : 1.0;
 
 	// dither option and parameter:
 	ci.bDither = findCmdlineOption(argv, argv + argc, "--dither");
