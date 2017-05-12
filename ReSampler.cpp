@@ -667,11 +667,9 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 	Fraction FOriginal = GetSimplifiedFraction(InputSampleRate, ci.OutputSampleRate);
 	Fraction F = FOriginal;
 
-	// determine best filter size
-
+	// determine base filter size
 	int BaseFilterSize;
 	int overSamplingFactor = 1;
-
 	if ((FOriginal.numerator != FOriginal.denominator) && (FOriginal.numerator <= 4 || FOriginal.denominator <= 4)) { // simple ratios
 		BaseFilterSize = FILTERSIZE_MEDIUM * std::max(FOriginal.denominator, FOriginal.numerator) / 2;
 		if (ci.bMinPhase) { // oversample to improve filter performance
@@ -683,29 +681,33 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 	else { // complex ratios
 		BaseFilterSize = FILTERSIZE_HUGE * std::max(FOriginal.denominator, FOriginal.numerator) / 320;
 	}
-
-	// scale the base filter size, according to selected options:
-	int FilterSize = std::min(FILTERSIZE_LIMIT,
-		(overSamplingFactor * BaseFilterSize * ((ci.lpfMode == steep) ? 2 : 1)))
-		| (int)(1);					// ensure that filter length is always odd
-
-									// determine cutoff frequency
+	
+	// determine cutoff frequency and steepness
 	int OverSampFreq = InputSampleRate * F.numerator;
 	double targetNyquist = std::min(InputSampleRate, ci.OutputSampleRate) / 2.0;
 	double ft;
+	double steepness;
 	switch (ci.lpfMode) {
 	case relaxed:
 		ft = 21 * targetNyquist / 22; // late cutoff
+		steepness = 1;
 		break;
 	case steep:
 		ft = 21 * targetNyquist / 22; // late cutoff & steep
+		steepness = 2;
 		break;
 	case custom:
 		ft = (ci.customLpfCutoff / 100.0) * targetNyquist;
+		steepness = 0.090909091 / (1 - ci.customLpfCutoff / 100.0);
 		break;
 	default:
 		ft = 10 * targetNyquist / 11;
+		steepness = 1;
 	}
+
+	// scale the filter size, according to selected options:
+	int FilterSize = std::min(static_cast<int>(overSamplingFactor * BaseFilterSize * steepness), FILTERSIZE_LIMIT)
+		| (int)(1);	// ensure that filter length is always odd
 
 	// determine sidelobe attenuation
 	int SidelobeAtten = ((FOriginal.numerator == 1) || (FOriginal.denominator == 1)) ?
@@ -805,8 +807,6 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 	// Calculate initial gain:
 	FloatType Gain = ci.gain * 
 		(ci.bNormalize ? F.numerator * (ci.Limit / PeakInputSample) : F.numerator * ci.Limit);
-
-	std::cout << Gain << std::endl;
 
 	if (ci.bDither) { // allow headroom for dithering:
 		FloatType DitherCompensation =
@@ -1177,11 +1177,9 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 	Fraction FOriginal = GetSimplifiedFraction(InputSampleRate, ci.OutputSampleRate);
 	Fraction F = FOriginal;
 
-	// determine best filter size
-
+	// determine base filter size
 	int BaseFilterSize;
 	int overSamplingFactor = 1;
-
 	if ((FOriginal.numerator != FOriginal.denominator) && (FOriginal.numerator <= 4 || FOriginal.denominator <= 4)) { // simple ratios
 		BaseFilterSize = FILTERSIZE_MEDIUM * std::max(FOriginal.denominator, FOriginal.numerator) / 2;
 		if (ci.bMinPhase) { // oversample to improve filter performance
@@ -1194,28 +1192,32 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 		BaseFilterSize = FILTERSIZE_HUGE * std::max(FOriginal.denominator, FOriginal.numerator) / 320;
 	}
 
-	// scale the base filter size, according to selected options:
-	int FilterSize = std::min(FILTERSIZE_LIMIT,
-		(overSamplingFactor * BaseFilterSize * ((ci.lpfMode == steep) ? 2 : 1)))
-		| (int)(1);					// ensure that filter length is always odd
-
-									// determine cutoff frequency
+	// determine cutoff frequency and steepness
 	int OverSampFreq = InputSampleRate * F.numerator;
 	double targetNyquist = std::min(InputSampleRate, ci.OutputSampleRate) / 2.0;
 	double ft;
+	double steepness;
 	switch (ci.lpfMode) {
 	case relaxed:
 		ft = 21 * targetNyquist / 22; // late cutoff
+		steepness = 1;
 		break;
 	case steep:
 		ft = 21 * targetNyquist / 22; // late cutoff & steep
+		steepness = 2;
 		break;
 	case custom:
 		ft = (ci.customLpfCutoff / 100.0) * targetNyquist;
+		steepness = 0.090909091 / (1 - ci.customLpfCutoff / 100.0);
 		break;
 	default:
 		ft = 10 * targetNyquist / 11;
+		steepness = 1;
 	}
+
+	// scale the filter size, according to selected options:
+	int FilterSize = std::min(static_cast<int>(overSamplingFactor * BaseFilterSize * steepness), FILTERSIZE_LIMIT)
+		| (int)(1);	// ensure that filter length is always odd
 
 	// determine sidelobe attenuation
 	int SidelobeAtten = ((FOriginal.numerator == 1) || (FOriginal.denominator == 1)) ?
