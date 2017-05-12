@@ -231,8 +231,6 @@ bool parseParameters(conversionInfo& ci, bool& bBadParams, int argc, char* argv[
 	// double precision switch:
 	ci.bUseDoublePrecision = findCmdlineOption(argv, argv + argc, "--doubleprecision");
 
-	
-
 	// gain
 	if (findCmdlineOption(argv, argv + argc, "--gain")) {
 		getCmdlineParam(argv, argv + argc, "--gain", ci.gain);
