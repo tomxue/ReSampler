@@ -231,12 +231,14 @@ bool parseParameters(conversionInfo& ci, bool& bBadParams, int argc, char* argv[
 	// double precision switch:
 	ci.bUseDoublePrecision = findCmdlineOption(argv, argv + argc, "--doubleprecision");
 
-	// default gain:
-	ci.Limit = 1.0;
+	
 
 	// gain
 	if (findCmdlineOption(argv, argv + argc, "--gain")) {
-		getCmdlineParam(argv, argv + argc, "--gain", ci.Limit);
+		getCmdlineParam(argv, argv + argc, "--gain", ci.gain);
+	}
+	else {
+		ci.gain = 1.0; // default
 	}
 
 	// normalize option and parameter:
@@ -248,6 +250,9 @@ bool parseParameters(conversionInfo& ci, bool& bBadParams, int argc, char* argv[
 		if (ci.normalizeAmount > 1.0)
 			std::cout << "\nWarning: Normalization factor greater than 1.0 - THIS WILL CAUSE CLIPPING !!\n" << std::endl;
 		ci.Limit = ci.normalizeAmount;
+	}
+	else {
+		ci.Limit = 1.0; // default
 	}
 
 	// dither option and parameter:
@@ -800,7 +805,10 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 	}
 
 	// Calculate initial gain:
-	FloatType Gain = ci.bNormalize ? F.numerator * (ci.Limit / PeakInputSample) : F.numerator * ci.Limit;
+	FloatType Gain = ci.gain * 
+		(ci.bNormalize ? F.numerator * (ci.Limit / PeakInputSample) : F.numerator * ci.Limit);
+
+	std::cout << Gain << std::endl;
 
 	if (ci.bDither) { // allow headroom for dithering:
 		FloatType DitherCompensation =
@@ -1307,7 +1315,8 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 	}
 
 	// Calculate initial gain:
-	FloatType Gain = ci.bNormalize ? F.numerator * (ci.Limit / PeakInputSample) : F.numerator * ci.Limit;
+	FloatType Gain = ci.gain *
+		(ci.bNormalize ? F.numerator * (ci.Limit / PeakInputSample) : F.numerator * ci.Limit);
 
 	if (ci.bDither) { // allow headroom for dithering:
 		FloatType DitherCompensation =

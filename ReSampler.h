@@ -116,6 +116,7 @@ struct conversionInfo
 	std::string InputFilename;
 	std::string OutputFilename;
 	unsigned int OutputSampleRate;
+	double gain;
 	double Limit;
 	bool bUseDoublePrecision;
 	bool bNormalize;
