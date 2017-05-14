@@ -707,7 +707,7 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 
 	// scale the filter size, according to selected options:
 	int FilterSize = std::min(static_cast<int>(overSamplingFactor * BaseFilterSize * steepness), FILTERSIZE_LIMIT)
-		| (int)(1);	// ensure that filter length is always odd
+		| static_cast<int>(1);	// ensure that filter length is always odd
 
 	// determine sidelobe attenuation
 	int SidelobeAtten = ((FOriginal.numerator == 1) || (FOriginal.denominator == 1)) ?
@@ -1218,7 +1218,7 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 
 	// scale the filter size, according to selected options:
 	int FilterSize = std::min(static_cast<int>(overSamplingFactor * BaseFilterSize * steepness), FILTERSIZE_LIMIT)
-		| (int)(1);	// ensure that filter length is always odd
+		| static_cast<int>(1);	// ensure that filter length is always odd
 
 	// determine sidelobe attenuation
 	int SidelobeAtten = ((FOriginal.numerator == 1) || (FOriginal.denominator == 1)) ?
@@ -1256,7 +1256,7 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 		Filters.emplace_back(FilterTaps, FilterSize);
 	}
 
-	// deallocate filter taps (no longer required)
+	// deallocate resources
 	delete[] FilterTaps;
 	FilterTaps = nullptr;
 

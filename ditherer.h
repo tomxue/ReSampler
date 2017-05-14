@@ -113,7 +113,7 @@ public:
 		// general parameters:
 		maxSignalMagnitude = static_cast<FloatType>((1 << (signalBits - 1)) - 1); // note the -1 : match 32767 scaling factor for 16 bit !
 		reciprocalSignalMagnitude = 1.0 / maxSignalMagnitude; // value of LSB in target format
-		maxDitherScaleFactor = (FloatType)pow(2, ditherBits - 1) / maxSignalMagnitude / (FloatType)randMax;
+		maxDitherScaleFactor = static_cast<FloatType>(pow(2, ditherBits - 1)) / maxSignalMagnitude / static_cast<FloatType>(randMax);
 		oldRandom = 0;
 
 		// set-up noise generator:
