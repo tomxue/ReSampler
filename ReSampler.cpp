@@ -869,7 +869,6 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 
 		std::cout << "Converting ...";
 		sf_count_t OutBufferIndex = 0;
-		int outStartOffset = groupDelay * nChannels;
 		PeakOutputSample = 0.0;
 		SamplesRead = 0;
 		sf_count_t NextProgressThreshold = IncrementalProgressThreshold;
@@ -877,6 +876,8 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 		// Allocate output buffer:
 		size_t OutBufferSize = (2 * nChannels /* padding */ + (BufferSize * F.numerator / F.denominator));
 		FloatType* OutBuffer = new FloatType[OutBufferSize];
+
+		int outStartOffset = std::min(groupDelay * nChannels, static_cast<int>(OutBufferSize) - nChannels);
 
 		if (F.numerator == 1 && F.denominator == 1) { // no change to sample rate; format conversion only
 			std::cout << " No change to sample rate" << std::endl;
@@ -1379,7 +1380,6 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 
 		std::cout << "Converting (multi-threaded) ...";
 		sf_count_t OutBufferIndex = 0;
-		int outStartOffset = groupDelay * nChannels;
 		PeakOutputSample = 0.0;
 		SamplesRead = 0;
 		sf_count_t NextProgressThreshold = IncrementalProgressThreshold;
@@ -1387,6 +1387,8 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 		// Allocate output buffer:
 		size_t OutBufferSize = (2 * nChannels /* padding */ + (BufferSize * F.numerator / F.denominator));
 		FloatType* OutBuffer = new FloatType[OutBufferSize];
+
+		int outStartOffset = std::min(groupDelay * nChannels, static_cast<int>(OutBufferSize) - nChannels);
 
 		if (F.numerator == 1 && F.denominator == 1) { // no change to sample rate; format conversion only
 			std::cout << " No change to sample rate" << std::endl;
