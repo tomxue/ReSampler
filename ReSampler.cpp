@@ -328,16 +328,16 @@ bool parseParameters(conversionInfo& ci, bool& bBadParams, int argc, char* argv[
 		ci.lpfMode;
 
 	// custom LPF cutoff frequency:
-	if (findCmdlineOption(argv, argv + argc, "--LPFcutoff")) {
-		getCmdlineParam(argv, argv + argc, "--LPFcutoff", ci.customLpfCutoff);
+	if (findCmdlineOption(argv, argv + argc, "--lpf-cutoff")) {
+		getCmdlineParam(argv, argv + argc, "--lpf-cutoff", ci.customLpfCutoff);
 		ci.customLpfCutoff = std::max(1.0, std::min(ci.customLpfCutoff, 99.9));
 		ci.lpfMode = custom;
 	}
 
 	// custom LPF transition width:
 	ci.customLpfTransitionWidth = 0;
-	if (findCmdlineOption(argv, argv + argc, "--LPFtwidth")) {
-		getCmdlineParam(argv, argv + argc, "--LPFtwidth", ci.customLpfTransitionWidth);
+	if (findCmdlineOption(argv, argv + argc, "--lpf-transition")) {
+		getCmdlineParam(argv, argv + argc, "--lpf-transition", ci.customLpfTransitionWidth);
 		ci.customLpfTransitionWidth = std::max(0.1, std::min(ci.customLpfTransitionWidth, 99.9));
 	}
 
