@@ -137,6 +137,7 @@ struct conversionInfo
 	bool disableClippingProtection;
 	LPFMode lpfMode;
 	double customLpfCutoff;
+	double customLpfTransitionWidth;
 	bool bUseSeed;
 	int seed;
 	bool dsfInput;

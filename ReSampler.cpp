@@ -334,6 +334,13 @@ bool parseParameters(conversionInfo& ci, bool& bBadParams, int argc, char* argv[
 		ci.lpfMode = custom;
 	}
 
+	// custom LPF transition width:
+	ci.customLpfTransitionWidth = 0;
+	if (findCmdlineOption(argv, argv + argc, "--LPFtwidth")) {
+		getCmdlineParam(argv, argv + argc, "--LPFtwidth", ci.customLpfTransitionWidth);
+		ci.customLpfTransitionWidth = std::max(0.1, std::min(ci.customLpfTransitionWidth, 99.9));
+	}
+
 	// multithreaded option:
 	ci.bMultiThreaded = findCmdlineOption(argv, argv + argc, "--mt");
 
@@ -698,7 +705,12 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 		break;
 	case custom:
 		ft = (ci.customLpfCutoff / 100.0) * targetNyquist;
-		steepness = 0.090909091 / (1 - ci.customLpfCutoff / 100.0);
+		if (ci.customLpfTransitionWidth == 0) {
+			steepness = 0.090909091 / (1 - ci.customLpfCutoff / 100.0); // auto 
+		}
+		else {
+			steepness = 0.090909091 / (ci.customLpfTransitionWidth / 100.0); // custom
+		}
 		break;
 	default:
 		ft = 10 * targetNyquist / 11;
@@ -1209,7 +1221,12 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 		break;
 	case custom:
 		ft = (ci.customLpfCutoff / 100.0) * targetNyquist;
-		steepness = 0.090909091 / (1 - ci.customLpfCutoff / 100.0);
+		if (ci.customLpfTransitionWidth == 0) {
+			steepness = 0.090909091 / (1 - ci.customLpfCutoff / 100.0); // auto 
+		}
+		else {
+			steepness = 0.090909091 / (ci.customLpfTransitionWidth / 100.0); // custom
+		}
 		break;
 	default:
 		ft = 10 * targetNyquist / 11;
