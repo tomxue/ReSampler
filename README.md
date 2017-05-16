@@ -115,10 +115,16 @@ Using the same value of n on subsequent conversions should reproduce precisely t
 
 **--noClippingProtection** disables clipping protection (clipping protection is normally active by default)
 
-**--relaxedLPF** (since v1.1.4) causes the lowpass filter to use a "late" cutoff frequency (95.45%), 
-which will (theoretically) allow a small amount of aliasing, but at the same time, keep ringing to a minimum and maintain a good frequency response.
+**--relaxedLPF** (since v1.1.4) causes the lowpass filter to use a "late" cutoff frequency with regular (hence "relaxed") steepness. 
+(cutoff = 95.45% of Nyquist, transition width = 9.09% of Nyquist). 
+This will (theoretically) allow a small amount of aliasing, but at the same time, keep ringing to a minimum and maintain a good frequency response.
 
-**--steepLPF** (since v1.2.0) causes the lowpass filter to use a steeper cutoff (half the standard transition width). It avoids aliasing, but may result in more ringing.
+**--steepLPF** (since v1.2.0) causes the lowpass filter to use a steeper cutoff (cutoff = 95.45% of Nyquist, transition width = 4.55% of Nyquist). It avoids aliasing, but may result in more ringing.
+
+**--lpf-cutoff &lt;percentage&gt;** (since v1.3.4) set a custom cutoff frequency for the lowpass filter, expressed as a percentage of Nyquist Frequency. Allowable range: 1.0 - 99.9. 
+Overrides --relaxedLPF and --steepLPF
+
+**--lpf-transition &lt;percentage&gt;** (since 1.3.4) when used in conjunction with --lpf-cutoff, sets the transition width of the lowpass filter, expressed as a percentage of Nyquist frequency. 
 
 **--mt** Multi-Threading (since v1.2.2). This will cause ReSampler to process each channel in a separate thread. 
 On a multi-core system, this makes better use of available CPU resources and results in a significant speed improvement.  
