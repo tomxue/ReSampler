@@ -32,6 +32,7 @@ const std::string strExtraOptions(
 	"--noClippingProtection\n"
 	"--relaxedLPF\n"
 	"--steepLPF\n"
+	"--lpf-cutoff <percentage> [--lpf-transition <percentage>]\n"
 	"--mt\n"
 	"--rf64\n"
 	"--noMetadata\n"
