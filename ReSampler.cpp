@@ -76,7 +76,7 @@ int main(int argc, char * argv[])
 	ci.dsfInput = (inFileExt == "dsf");
 	ci.dffInput = (inFileExt == "dff");
 
-	if (!ci.outBitFormat.empty()) { // new output bit format requested
+	if (!ci.outBitFormat.empty()) {  // new output bit format requested
 		ci.OutputFormat = determineOutputFormat(outFileExt, ci.outBitFormat);
 		if (ci.OutputFormat)
 			std::cout << "Changing output bit format to " << ci.outBitFormat << std::endl;
@@ -482,7 +482,7 @@ bool determineBestBitFormat(std::string& BitFormat, const std::string& inFilenam
 				break;
 			}
 		}
-	}
+	} 
 	return true;
 }
 
@@ -1972,6 +1972,7 @@ bool checkSSE2() {
 		return false;
 	}
 #endif // defined (_MSC_VER) || defined (__INTEL_COMPILER)
+return true; // todo: fix the check on gcc
 }
 
 bool checkAVX() {
@@ -1996,6 +1997,7 @@ bool checkAVX() {
 		return false;
 	}
 #endif // defined (_MSC_VER) || defined (__INTEL_COMPILER)
+return true; // todo: gcc detection
 }
 
 bool showBuildVersion() {
