@@ -48,7 +48,7 @@ g++ -pthread -std=c++11 ReSampler.cpp -lfftw3 -lsndfile -o ReSampler -D USE_SSE2
 ~~~
 
 
-# misc:
+# misc tasks:
 
 ## show where gcc is looking for header files:
 ~~~
@@ -59,6 +59,15 @@ g++ -pthread -std=c++11 ReSampler.cpp -lfftw3 -lsndfile -o ReSampler -D USE_SSE2
 ## show where gcc is looking for libraries:
 ~~~
 gcc -print-search-dirs
+~~~
+
+## display info about the binary you just built:
+file ReSampler
+
+*sample output:*
+
+~~~
+ReSampler: ELF 64-bit LSB executable, x86-64, version 1 (SYSV), dynamically linked, interpreter /lib64/ld-linux-x86-64.so.2, for GNU/Linux 2.6.32, BuildID[sha1]=2873279a9b0040a268f7c485de9027660ab3617c, not stripped
 ~~~
 
 ## misc
