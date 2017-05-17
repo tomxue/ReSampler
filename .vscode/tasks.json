@@ -4,11 +4,14 @@
     "isShellCommand": true,
     "showOutput": "always",
     "args": [
+        "-pthread",
         "-std=c++11",
+        "ReSampler.cpp",
         "-l",
         "fftw3",
         "-l",
         "sndfile",
-        "ReSampler.cpp"
+        "-o",
+        "ReSampler"
     ]
 }
