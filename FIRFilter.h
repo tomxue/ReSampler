@@ -243,10 +243,24 @@ public:
 			Index += 4;
 		}
 
-		output += accumulator.m128_f32[0] +
+#ifdef SSE_CUSTOM_HSUM
+		// http://stackoverflow.com/questions/6996764/fastest-way-to-do-horizontal-float-vector-sum-on-x86
+
+		__m128 a   = _mm_shuffle_ps(
+			accumulator, 
+			accumulator,                 // accumulator = [D     C     | B     A    ]
+			_MM_SHUFFLE(2, 3, 0, 1));                  // [C     D     | A     B    ]
+		__m128 b   = _mm_add_ps(accumulator, a);       // [D+C   C+D   | B+A   A+B  ]
+		a          = _mm_movehl_ps(a, b);              // [C     D     | D+C   C+D  ]
+		b          = _mm_add_ss(a, b);                 // [C     D     | D+C A+B+C+D]
+		output    += _mm_cvtss_f32(b);                 // A+B+C+D
+#else
+		output += 
+			accumulator.m128_f32[0] +
 			accumulator.m128_f32[1] +
 			accumulator.m128_f32[2] +
 			accumulator.m128_f32[3];
+#endif
 
 		// Part 3: Tail
 		for (int j = (size >> 2) << 2; j < size; ++j) {
@@ -326,7 +340,7 @@ private:
 #ifdef USE_SIMD
 
 // Specialization for doubles:
-
+template <>
 double FIRFilter<double>::get() {
 	double output = 0.0;
 	int index = CurrentIndex;
