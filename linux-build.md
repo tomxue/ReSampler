@@ -1,5 +1,11 @@
 # building ReSampler (tested on Ubuntu 16.04)
 
+Building on linux is fairly straightforward and consists of the following 3 steps:
+
+- Build and install fftw library
+- Build and install libsndfile library
+- Build and install ReSampler
+
 ## build environment
 ~~~
 sudo apt-get install build-essential
@@ -37,6 +43,9 @@ sudo make install
 ~~~
 
 ## building ReSampler
+
+clone this repository to a local directory, and use one of the gcc command lines below to build:
+
 no SSE, no optimization:
 ~~~
 g++ -pthread -std=c++11 ReSampler.cpp -lfftw3 -lsndfile -o ReSampler
@@ -49,6 +58,39 @@ g++ -pthread -std=c++11 ReSampler.cpp -lfftw3 -lsndfile -o ReSampler -D USE_SSE2
 
 
 # misc tasks:
+
+## setting up C++ environment in vscode
+
+ensure that the vscode [c++ tools](https://marketplace.visualstudio.com/items?itemName=ms-vscode.cpptools) are installed.
+
+the g++ commands can be put into the **tasks.json** file. For example.:
+
+~~~
+{
+    "version": "0.1.0",
+    "command": "g++",
+    "isShellCommand": true,
+    "showOutput": "always",
+    "args": [
+        "-pthread",
+        "-std=c++11",
+        "ReSampler.cpp",
+        "-l",
+        "fftw3",
+        "-l",
+        "sndfile",
+        "-o",
+        "ReSampler",
+        "-D",
+        "USE_SSE2",
+        "-D",
+        "SSE_CUSTOM_HSUM",
+        "-O3",
+        "-v"
+    ]
+}
+~~~
+
 
 ## show where gcc is looking for header files:
 ~~~
@@ -68,13 +110,4 @@ file ReSampler
 
 ~~~
 ReSampler: ELF 64-bit LSB executable, x86-64, version 1 (SYSV), dynamically linked, interpreter /lib64/ld-linux-x86-64.so.2, for GNU/Linux 2.6.32, BuildID[sha1]=2873279a9b0040a268f7c485de9027660ab3617c, not stripped
-~~~
-
-## misc
-~~~
-export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig
-./autogen.sh
-./configure --enable-werror
-make
-make check
 ~~~
