@@ -1,6 +1,8 @@
 
 ## Synopsis
-ReSampler is a high-performance command-line audio sample rate conversion tool for Windows, which can convert audio file formats with a variety of different bit-depths and audio channel configurations. 
+ReSampler is a high-performance command-line audio sample rate conversion tool which can convert audio file formats with a variety of different bit-depths and audio channel configurations.
+
+ReSampler was originally developed on Windows, but has also been successfully compiled on Linux.
 
 ReSampler is intended to produce outstanding quality sound files, keeping aliasing and other unwanted artifacts to a minimum, as the following actual measurement graphs show:
 
@@ -38,12 +40,12 @@ from the command line, the main options are as follows:
 
 **bitformat** is the bit representation (sub format) of the data in the output file. If this option is omitted, resampler will try to deduce the intended bit format automatically. Not all bit formats are valid for a given output file type. For more details, refer to the [libsndfile](http://www.mega-nerd.com/libsndfile/) documentation. Here is a list of all subformats: 
 
-    8           8-bit (signed or unsigned - automatic, based on file type)
+    8           8-bit (signed or unsigned - automatic, based on filReSampler was originally developed on Windows, but has also been successfully compiled on Linux.e type)
     s8          Signed 8 bit data
     16          Signed 16 bit data
     24          Signed 24 bit data
     32          Signed 32 bit data
-    u8          Unsigned 8 bit data
+    u8          Unsigned 8 bit dataReSampler was originally developed on Windows, but has also been successfully compiled on Linux.
     32f         32 bit float data
     64f         64 bit float data
     ulaw        mu-Law encoded
@@ -94,7 +96,7 @@ from the command line, the main options are as follows:
 The effect of dithering is most noticeable during extremely quiet passages (typically, in fade-outs) of the audio. If you can hear modulation effects, or "tearing" in the quietest passages of your output file, then a greater amount of dither may need to be applied. (note: in many cases, these passages are so quiet, you will need to normalize them just to hear them).
 
 The *amount* parameter represents the number of *bits* of dither noise to be generated (prior to the noise-shaping process). The actual *level* of dither noise is equal to **+/- 2^(amount-1)** *steps*. The default for *amount* is 1.0, and it doesn't need to be an integer. Values in the range 1-6 are sensible for most situations. The noise-shaping curve may further increase the amplitude of the dither, depending on the "intensity" (overall gain) of the chosen noise-shaping curve.   
-
+ReSampler was originally developed on Windows, but has also been successfully compiled on Linux.
 **--autoblank** when specified in conjunction with **--dither** causes dithering to switch-off after 30,000 consecutive input samples of *silence* (< -193dB is considered silence). Dithering is re-enabled immediately upon a non-zero input sample being detected.
 
 **--ns &lt;n&gt;** (since 1.3.1) select [dither profile](./ditherProfiles.md) from 0-12. Generally speaking, as the dither profile number increases, the noise-shaping curve gets  progressively more "intense" (higher amplitude). Dither profile 0 is completely flat (no noise shaping), and is equivalent to **--flat-tpdf**. The default dither profile (if no profile is specified) is #6 (standard), which has a moderate noise-shaping curve.
