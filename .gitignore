@@ -17,6 +17,7 @@
 *.userprefs
 
 # Build results
+ReSampler
 [Dd]ebug/
 [Dd]ebugPublic/
 [Rr]eleases/
