@@ -44,18 +44,11 @@ sudo make install
 
 ## building ReSampler
 
-clone this repository to a local directory, and use one of the gcc command lines below to build:
+clone this repository to a local directory, and use gcc command line such as the one below to build:
 
-no SSE, no optimization:
 ~~~
-g++ -pthread -std=c++11 ReSampler.cpp -lfftw3 -lsndfile -o ReSampler
+g++ -pthread -std=c++11 ReSampler.cpp -lfftw3 -lsndfile -o ReSampler -O3
 ~~~
-
-SSE2, O3 optimization:
-~~~
-g++ -pthread -std=c++11 ReSampler.cpp -lfftw3 -lsndfile -o ReSampler -D USE_SSE2 -D SSE_CUSTOM_HSUM -O3
-~~~
-
 
 # misc tasks:
 
@@ -81,10 +74,6 @@ the g++ commands can be put into the **tasks.json** file. For example.:
         "sndfile",
         "-o",
         "ReSampler",
-        "-D",
-        "USE_SSE2",
-        "-D",
-        "SSE_CUSTOM_HSUM",
         "-O3",
         "-v"
     ]
