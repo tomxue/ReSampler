@@ -2002,7 +2002,7 @@ return true; // todo: gcc detection
 
 bool showBuildVersion() {
 	std::cout << strVersion << " ";
-#ifdef _M_X64
+#if defined(_M_X64) || defined(__x86_64__)
 	std::cout << "64-bit version";
 #ifdef USE_AVX
 	std::cout << " AVX build ... ";
