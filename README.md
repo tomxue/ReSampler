@@ -85,6 +85,8 @@ from the command line, the main options are as follows:
 
 **--showDitherProfiles** (since 1.3.1) shows a list of all available dither profiles.
 
+**--gain &lt;amount&gt;** (since 1.3.4) adjust the gain (amplification factor). 1.0 = unity gain (no amplification), -1.0 = invert signal, 0 = silence. Note: if clipping protection is enabled, gain will be automatically re-adjusted after the first pass if clipping occurs.
+
 **--doubleprecision** forces ReSampler to use double-precision (64-bit floating point) arithmetic for its *internal calculations* and is independent of the output format.
 
 **--dither [&lt;amount&gt;]** generates **+/-amount** *bits* of dither. Dithering deliberately adds a small amount of a particular type of noise (triangular pdf with noise-shaping) prior to quantization to the output file. The goal of dithering is to reduce distortion, and allow extremely quiet passages to be preserved when they would otherwise be below the threshold of the target bit depth. Usually, it only makes sense to add dither when you are converting to a lower bit depth, for example:
