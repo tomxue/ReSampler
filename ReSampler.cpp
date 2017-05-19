@@ -1057,7 +1057,6 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 		
 		// clean-up:
 		delete[] OutBuffer;
-		//delete pOutFile;
 
 		// notify user:
 		std::cout << "Done" << std::endl;
@@ -1345,7 +1344,7 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 
 	FloatType PeakOutputSample;
 	bool bClippingDetected;
-	SndfileHandle* pOutFile;
+	std::unique_ptr<SndfileHandle> pOutFile;
 
 	START_TIMER();
 
@@ -1355,10 +1354,10 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 
 		try { // Open output file:
 
-			  // pOutFile needs to be dynamically allocated, because the only way to close file is to go out of scope 
-			  // ... and we may need to overwrite file on subsequent pass:
+			// output file may need to be overwriten on subsequent passes,
+			// and the only way to close the file is to destroy the SndfileHandle.  
 
-			pOutFile = new SndfileHandle(ci.OutputFilename, SFM_WRITE, OutputFileFormat, nChannels, ci.OutputSampleRate);
+			pOutFile.reset(new SndfileHandle(ci.OutputFilename, SFM_WRITE, OutputFileFormat, nChannels, ci.OutputSampleRate));
 
 			if (int e = pOutFile->error()) {
 				std::cout << "Error: Couldn't Open Output File (" << sf_error_number(e) << ")" << std::endl;
@@ -1391,8 +1390,8 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 			}
 		}
 
-		catch (std::bad_alloc& b) {
-			std::cout << "Error: Couldn't Open Output File (memory allocation problem) " << b.what() << std::endl;
+		catch (std::exception& e) {
+			std::cout << "Error: Couldn't Open Output File " << e.what() << std::endl;
 			return false;
 		}
 
@@ -1657,7 +1656,6 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 
 		  // clean-up:
 		delete[] OutBuffer;
-		delete pOutFile;
 
 		// notify user:
 		std::cout << "Done" << std::endl;
