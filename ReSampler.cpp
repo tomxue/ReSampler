@@ -828,7 +828,6 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 
 	FloatType PeakOutputSample;
 	bool bClippingDetected;
-	SndfileHandle* pOutFile;
 
 	START_TIMER();
 
@@ -1344,13 +1343,13 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 
 	FloatType PeakOutputSample;
 	bool bClippingDetected;
-	std::unique_ptr<SndfileHandle> pOutFile;
-
+	
 	START_TIMER();
 
 	do { // clipping detection loop (repeat if clipping detected)
 
 		bClippingDetected = false;
+		std::unique_ptr<SndfileHandle> pOutFile;
 
 		try { // Open output file:
 
