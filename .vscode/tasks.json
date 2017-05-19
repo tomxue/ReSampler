@@ -13,7 +13,6 @@
         "sndfile",
         "-o",
         "ReSampler",
-        "-O3",
-        "-v"
+        "-O3"
     ]
 }

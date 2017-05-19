@@ -86,6 +86,7 @@ the g++ commands can be put into the **tasks.json** file. For example.:
 }
 ~~~
 
+[documentation](https://code.visualstudio.com/docs/languages/cpp)
 
 ## show where gcc is looking for header files:
 ~~~
