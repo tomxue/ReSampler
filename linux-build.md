@@ -44,10 +44,16 @@ sudo make install
 
 ## building ReSampler
 
-clone this repository to a local directory, and use gcc command line such as the one below to build:
+clone this repository to a local directory, and use one of the following command lines to compile:
 
+using gcc:
 ~~~
 g++ -pthread -std=c++11 ReSampler.cpp -lfftw3 -lsndfile -o ReSampler -O3
+~~~
+
+using clang:
+~~~
+clang++ -pthread -std=c++11 ReSampler.cpp -lfftw3 -lsndfile -o ReSampler-clang -O3
 ~~~
 
 # misc tasks:
