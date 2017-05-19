@@ -18,6 +18,7 @@
 
 # Build results
 ReSampler
+Resampler-clang
 [Dd]ebug/
 [Dd]ebugPublic/
 [Rr]eleases/
