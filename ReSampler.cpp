@@ -65,8 +65,8 @@ int main(int argc, char * argv[])
 	std::cout << "Output file: " << ci.OutputFilename << std::endl;
 
 	// Isolate the file extensions
-	std::string inFileExt("");
-	std::string outFileExt("");
+	std::string inFileExt;
+	std::string outFileExt;
 	if (ci.InputFilename.find_last_of(".") != std::string::npos)
 		inFileExt = ci.InputFilename.substr(ci.InputFilename.find_last_of(".") + 1);
 	if (ci.OutputFilename.find_last_of(".") != std::string::npos)
@@ -396,7 +396,7 @@ bool parseParameters(conversionInfo& ci, bool& bBadParams, int argc, char* argv[
 bool determineBestBitFormat(std::string& BitFormat, const std::string& inFilename, const std::string& outFilename)
 {
 	// get infile's extension from filename:
-	std::string inFileExt("");
+	std::string inFileExt;
 	if (inFilename.find_last_of(".") != std::string::npos)
 		inFileExt = inFilename.substr(inFilename.find_last_of(".") + 1);
 
@@ -440,7 +440,7 @@ bool determineBestBitFormat(std::string& BitFormat, const std::string& inFilenam
 	}
 
 	// get outfile's extension:
-	std::string outFileExt("");
+	std::string outFileExt;
 	if (outFilename.find_last_of(".") != std::string::npos)
 		outFileExt = outFilename.substr(outFilename.find_last_of(".") + 1);
 	
@@ -741,25 +741,25 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 		0 : (FilterSize - 1) / 2 / FOriginal.denominator;
 
 	// Make some filter coefficients:
-	FloatType* FilterTaps = new FloatType[FilterSize];
-	makeLPF<FloatType>(FilterTaps, FilterSize, ft, OverSampFreq);
-	applyKaiserWindow<FloatType>(FilterTaps, FilterSize, calcKaiserBeta(SidelobeAtten));
+	std::unique_ptr<FloatType> FilterTaps(new FloatType[FilterSize]);
+	FloatType* pFilterTaps = FilterTaps.get(); // API expects raw pointer
+
+	makeLPF<FloatType>(pFilterTaps, FilterSize, ft, OverSampFreq);
+	applyKaiserWindow<FloatType>(pFilterTaps, FilterSize, calcKaiserBeta(SidelobeAtten));
 
 	// conditionally convert filter coefficients to minimum-phase:
 	if (ci.bMinPhase) {
 		std::cout << "Using Minimum-Phase LPF" << std::endl;
-		makeMinPhase<FloatType>(FilterTaps, FilterSize);
+		makeMinPhase<FloatType>(pFilterTaps, FilterSize);
 	}
 
 	// make a vector of filters (one filter for each channel):
 	std::vector<FIRFilter<FloatType>> Filters;
 	for (unsigned int n = 0; n < nChannels; n++) {
-		Filters.emplace_back(FilterTaps, FilterSize);
+		Filters.emplace_back(pFilterTaps, FilterSize);
 	}
 
-	// deallocate filter taps (no longer required)
-	delete[] FilterTaps;
-	FilterTaps = nullptr;
+	FilterTaps.reset();
 
 	// if the OutputFormat is zero, it means "No change to file format"
 	// if output file format has changed, use OutputFormat. Otherwise, use same format as infile: 
@@ -884,10 +884,11 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 		PeakOutputSample = 0.0;
 		SamplesRead = 0;
 		sf_count_t NextProgressThreshold = IncrementalProgressThreshold;
-
-		// Allocate output buffer:
 		size_t OutBufferSize = (2 * nChannels /* padding */ + (BufferSize * F.numerator / F.denominator));
-		FloatType* OutBuffer = new FloatType[OutBufferSize];
+		
+		// Allocate output buffer:
+		std::unique_ptr<FloatType> OutBuffer(new FloatType[OutBufferSize]);
+		FloatType* pOutBuffer = OutBuffer.get();
 
 		int outStartOffset = std::min(groupDelay * nChannels, static_cast<int>(OutBufferSize) - nChannels);
 
@@ -902,12 +903,12 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 						FloatType OutputSample = ci.bDither ?
 							Ditherers[Channel].Dither(Gain * inbuffer[s + Channel]) :
 							Gain * inbuffer[s + Channel];
-						OutBuffer[OutBufferIndex + Channel] = OutputSample;
+						pOutBuffer[OutBufferIndex + Channel] = OutputSample;
 						PeakOutputSample = std::max(std::abs(PeakOutputSample), std::abs(OutputSample));
 						OutBufferIndex += nChannels;
 					} // ends loop over s
 				} // ends loop over channel
-				pOutFile->write(OutBuffer, OutBufferIndex);
+				pOutFile->write(pOutBuffer, OutBufferIndex);
 
 				// conditionally send progress update:
 				if (SamplesRead > NextProgressThreshold) {
@@ -934,7 +935,7 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 							FloatType OutputSample = ci.bDither ?
 								Ditherers[Channel].Dither(Gain * Filters[Channel].get()) :
 								Gain * Filters[Channel].get();
-							OutBuffer[OutBufferIndex + Channel] = OutputSample;
+							pOutBuffer[OutBufferIndex + Channel] = OutputSample;
 							PeakOutputSample = std::max(PeakOutputSample, std::abs(OutputSample));
 							OutBufferIndex += nChannels;
 						}
@@ -944,10 +945,10 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 				} // ends loop over Channel
 
 				if (outStartOffset <= 0) {
-					pOutFile->write(OutBuffer, OutBufferIndex);
+					pOutFile->write(pOutBuffer, OutBufferIndex);
 				}
 				else {
-					pOutFile->write(OutBuffer + outStartOffset, OutBufferIndex - outStartOffset);
+					pOutFile->write(pOutBuffer + outStartOffset, OutBufferIndex - outStartOffset);
 					outStartOffset = 0;
 				}
 
@@ -981,7 +982,7 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 								Ditherers[Channel].Dither(Gain * Filters[Channel].LazyGet(F.numerator)) :
 								Gain * Filters[Channel].LazyGet(F.numerator);
 #endif
-							OutBuffer[OutBufferIndex + Channel] = OutputSample;
+							pOutBuffer[OutBufferIndex + Channel] = OutputSample;
 							PeakOutputSample = std::max(PeakOutputSample, std::abs(OutputSample));
 							OutBufferIndex += nChannels;
 						} // ends loop over ii
@@ -989,10 +990,10 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 				} // ends loop over Channel
 				
 				if (outStartOffset <= 0) {
-					pOutFile->write(OutBuffer, OutBufferIndex);
+					pOutFile->write(pOutBuffer, OutBufferIndex);
 				}
 				else {
-					pOutFile->write(OutBuffer + outStartOffset, OutBufferIndex - outStartOffset);
+					pOutFile->write(pOutBuffer + outStartOffset, OutBufferIndex - outStartOffset);
 					outStartOffset = 0;
 				}
 
@@ -1026,7 +1027,7 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 								FloatType OutputSample = ci.bDither ?
 									Ditherers[Channel].Dither(Gain * Filters[Channel].LazyGet(F.numerator)) :
 									Gain * Filters[Channel].LazyGet(F.numerator);
-								OutBuffer[OutBufferIndex + Channel] = OutputSample;
+								pOutBuffer[OutBufferIndex + Channel] = OutputSample;
 								PeakOutputSample = std::max(PeakOutputSample, std::abs(OutputSample));
 								OutBufferIndex += nChannels;
 							}
@@ -1037,10 +1038,10 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 				} // ends loop over Channel
 				
 				if (outStartOffset <= 0) {
-					pOutFile->write(OutBuffer, OutBufferIndex);
+					pOutFile->write(pOutBuffer, OutBufferIndex);
 				}
 				else {
-					pOutFile->write(OutBuffer + outStartOffset, OutBufferIndex - outStartOffset);
+					pOutFile->write(pOutBuffer + outStartOffset, OutBufferIndex - outStartOffset);
 					outStartOffset = 0;
 				}
 
@@ -1053,9 +1054,6 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 
 			} while (count > 0);
 		} // ends Interpolate and Decimate
-		
-		// clean-up:
-		delete[] OutBuffer;
 
 		// notify user:
 		std::cout << "Done" << std::endl;
