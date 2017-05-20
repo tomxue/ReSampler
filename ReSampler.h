@@ -195,8 +195,6 @@ void showDitherProfiles();
 int getSfBytesPerSample(int format);
 bool checkWarnOutputSize(uint64_t inputSamples, int bytesPerSample, int numerator, int denominator);
 std::string fmtNumberWithCommas(uint64_t n);
-template<typename FloatType> bool deInterleave(FloatType ** channelBuffers, const FloatType * sampleData, uint64_t numFrames, unsigned int numChannels);
-template<typename FloatType> bool interleave(FloatType * sampleData, const FloatType ** channelBuffers, uint64_t numFrames, unsigned int numChannels);
 bool getMetaData(MetaData& metadata, SndfileHandle& infile);
 bool setMetaData(const MetaData& metadata, SndfileHandle& outfile);
 #endif // !RESAMPLER_H

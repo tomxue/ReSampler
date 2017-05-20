@@ -1863,24 +1863,6 @@ bool getMetaData(MetaData& metadata, const DsfFile& f) {
 	return true;
 }
 
-template <typename FloatType> bool deInterleave(FloatType** channelBuffers, const FloatType* sampleData, uint64_t numFrames, unsigned int numChannels) {
-	for (uint64_t f = 0; f < numFrames; ++f) {
-		for (uint64_t c = 0; c < numChannels; ++c) {
-			FloatType* channelBuffer = channelBuffers[c];
-			channelBuffer[f] = sampleData[c + numChannels * f];
-		}
-	}
-}
-
-template <typename FloatType> bool interleave(FloatType* sampleData, const FloatType** channelBuffers,  uint64_t numFrames, unsigned int numChannels) {
-	for (uint64_t f = 0; f < numFrames; ++f) {
-		for (uint64_t c = 0; c < numChannels; ++c) {
-			FloatType* channelBuffer = channelBuffers[c];
-			sampleData[c + numChannels * f] = channelBuffer[f];
-		}
-	}
-}
-
 // gcd() - greatest common divisor:
 int gcd(int a, int b) {
 	if (a<0) a = -a;
