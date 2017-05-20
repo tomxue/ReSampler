@@ -743,7 +743,6 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 	// Make some filter coefficients:
 	std::unique_ptr<FloatType> FilterTaps(new FloatType[FilterSize]);
 	FloatType* pFilterTaps = FilterTaps.get(); // API expects raw pointer
-
 	makeLPF<FloatType>(pFilterTaps, FilterSize, ft, OverSampFreq);
 	applyKaiserWindow<FloatType>(pFilterTaps, FilterSize, calcKaiserBeta(SidelobeAtten));
 
@@ -834,23 +833,23 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 	do { // clipping detection loop (repeat if clipping detected)
 
 		bClippingDetected = false;
-		std::unique_ptr<SndfileHandle> pOutFile;
+		std::unique_ptr<SndfileHandle> outFile;
 
 		try { // Open output file:
  
 			// output file may need to be overwriten on subsequent passes,
 			// and the only way to close the file is to destroy the SndfileHandle.  
 			
-			pOutFile.reset(new SndfileHandle(ci.OutputFilename, SFM_WRITE, OutputFileFormat, nChannels, ci.OutputSampleRate));  
+			outFile.reset(new SndfileHandle(ci.OutputFilename, SFM_WRITE, OutputFileFormat, nChannels, ci.OutputSampleRate));  
 			
-			if (int e = pOutFile->error()) {
+			if (int e = outFile->error()) {
 				std::cout << "Error: Couldn't Open Output File (" << sf_error_number(e) << ")" << std::endl;
 				return false;
 			}
 
 			if (ci.bWriteMetaData) {
-				if (!setMetaData(m, *pOutFile)) {
-					std::cout << "Warning: problem writing metadata to output file ( " << pOutFile->strError() << " )" << std::endl;
+				if (!setMetaData(m, *outFile)) {
+					std::cout << "Warning: problem writing metadata to output file ( " << outFile->strError() << " )" << std::endl;
 				}
 			}
 
@@ -858,7 +857,7 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 			if (((OutputFileFormat & SF_FORMAT_FLAC) == SF_FORMAT_FLAC) && ci.bSetFlacCompression) {
 				std::cout << "setting flac compression level to " << ci.flacCompressionLevel << std::endl;
 				double cl = static_cast<double>(ci.flacCompressionLevel / 8.0); // there are 9 flac compression levels from 0-8. Normalize to 0-1.0
-				pOutFile->command(SFC_SET_COMPRESSION_LEVEL, &cl, sizeof(cl));
+				outFile->command(SFC_SET_COMPRESSION_LEVEL, &cl, sizeof(cl));
 			}
 
 			// if the minor (sub) format of OutputFileFormat is vorbis, and user has requested a specific quality level, set quality level:
@@ -870,7 +869,7 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 				std::cout.precision(prec);
 
 				double cl = static_cast<double>((1.0 - ci.vorbisQuality) / 11.0); // Normalize from (-1 to 10), to (1.0 to 0) ... why is it backwards ?
-				pOutFile->command(SFC_SET_COMPRESSION_LEVEL, &cl, sizeof(cl));
+				outFile->command(SFC_SET_COMPRESSION_LEVEL, &cl, sizeof(cl));
 			}
 		}
 
@@ -908,7 +907,7 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 						OutBufferIndex += nChannels;
 					} // ends loop over s
 				} // ends loop over channel
-				pOutFile->write(pOutBuffer, OutBufferIndex);
+				outFile->write(pOutBuffer, OutBufferIndex);
 
 				// conditionally send progress update:
 				if (SamplesRead > NextProgressThreshold) {
@@ -945,10 +944,10 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 				} // ends loop over Channel
 
 				if (outStartOffset <= 0) {
-					pOutFile->write(pOutBuffer, OutBufferIndex);
+					outFile->write(pOutBuffer, OutBufferIndex);
 				}
 				else {
-					pOutFile->write(pOutBuffer + outStartOffset, OutBufferIndex - outStartOffset);
+					outFile->write(pOutBuffer + outStartOffset, OutBufferIndex - outStartOffset);
 					outStartOffset = 0;
 				}
 
@@ -990,10 +989,10 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 				} // ends loop over Channel
 				
 				if (outStartOffset <= 0) {
-					pOutFile->write(pOutBuffer, OutBufferIndex);
+					outFile->write(pOutBuffer, OutBufferIndex);
 				}
 				else {
-					pOutFile->write(pOutBuffer + outStartOffset, OutBufferIndex - outStartOffset);
+					outFile->write(pOutBuffer + outStartOffset, OutBufferIndex - outStartOffset);
 					outStartOffset = 0;
 				}
 
@@ -1038,10 +1037,10 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 				} // ends loop over Channel
 				
 				if (outStartOffset <= 0) {
-					pOutFile->write(pOutBuffer, OutBufferIndex);
+					outFile->write(pOutBuffer, OutBufferIndex);
 				}
 				else {
-					pOutFile->write(pOutBuffer + outStartOffset, OutBufferIndex - outStartOffset);
+					outFile->write(pOutBuffer + outStartOffset, OutBufferIndex - outStartOffset);
 					outStartOffset = 0;
 				}
 
@@ -1254,25 +1253,24 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 		0 : (FilterSize - 1) / 2 / FOriginal.denominator;
 
 	// Make some filter coefficients:
-	FloatType* FilterTaps = new FloatType[FilterSize];
-	makeLPF<FloatType>(FilterTaps, FilterSize, ft, OverSampFreq);
-	applyKaiserWindow<FloatType>(FilterTaps, FilterSize, calcKaiserBeta(SidelobeAtten));
+	std::unique_ptr<FloatType> FilterTaps(new FloatType[FilterSize]);
+	FloatType* pFilterTaps = FilterTaps.get(); // API expects raw pointer
+	makeLPF<FloatType>(pFilterTaps, FilterSize, ft, OverSampFreq);
+	applyKaiserWindow<FloatType>(pFilterTaps, FilterSize, calcKaiserBeta(SidelobeAtten));
 
 	// conditionally convert filter coefficients to minimum-phase:
 	if (ci.bMinPhase) {
 		std::cout << "Using Minimum-Phase LPF" << std::endl;
-		makeMinPhase<FloatType>(FilterTaps, FilterSize);
+		makeMinPhase<FloatType>(pFilterTaps, FilterSize);
 	}
 
 	// make a vector of filters (one filter for each channel):
 	std::vector<FIRFilter<FloatType>> Filters;
 	for (int n = 0; n < nChannels; n++) {
-		Filters.emplace_back(FilterTaps, FilterSize);
+		Filters.emplace_back(pFilterTaps, FilterSize);
 	}
 
-	// deallocate resources
-	delete[] FilterTaps;
-	FilterTaps = nullptr;
+	FilterTaps.reset();
 
 	// if the OutputFormat is zero, it means "No change to file format"
 	// if output file format has changed, use OutputFormat. Otherwise, use same format as infile: 
@@ -1347,23 +1345,23 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 	do { // clipping detection loop (repeat if clipping detected)
 
 		bClippingDetected = false;
-		std::unique_ptr<SndfileHandle> pOutFile;
+		std::unique_ptr<SndfileHandle> outFile;
 
 		try { // Open output file:
 
 			// output file may need to be overwriten on subsequent passes,
 			// and the only way to close the file is to destroy the SndfileHandle.  
 
-			pOutFile.reset(new SndfileHandle(ci.OutputFilename, SFM_WRITE, OutputFileFormat, nChannels, ci.OutputSampleRate));
+			outFile.reset(new SndfileHandle(ci.OutputFilename, SFM_WRITE, OutputFileFormat, nChannels, ci.OutputSampleRate));
 
-			if (int e = pOutFile->error()) {
+			if (int e = outFile->error()) {
 				std::cout << "Error: Couldn't Open Output File (" << sf_error_number(e) << ")" << std::endl;
 				return false;
 			}
 
 			if (ci.bWriteMetaData) {
-				if (!setMetaData(m, *pOutFile)) {
-					std::cout << "Warning: problem writing metadata to output file ( " << pOutFile->strError() << " )" << std::endl;
+				if (!setMetaData(m, *outFile)) {
+					std::cout << "Warning: problem writing metadata to output file ( " << outFile->strError() << " )" << std::endl;
 				}
 			}
 
@@ -1371,7 +1369,7 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 			if (((OutputFileFormat & SF_FORMAT_FLAC) == SF_FORMAT_FLAC) && ci.bSetFlacCompression) {
 				std::cout << "setting flac compression level to " << ci.flacCompressionLevel << std::endl;
 				double cl = static_cast<double>(ci.flacCompressionLevel / 8.0); // there are 9 flac compression levels from 0-8. Normalize to 0-1.0
-				pOutFile->command(SFC_SET_COMPRESSION_LEVEL, &cl, sizeof(cl));
+				outFile->command(SFC_SET_COMPRESSION_LEVEL, &cl, sizeof(cl));
 			}
 
 			// if the minor (sub) format of OutputFileFormat is vorbis, and user has requested a specific quality level, set quality level:
@@ -1383,7 +1381,7 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 				std::cout.precision(prec);
 
 				double cl = static_cast<double>((1.0 - ci.vorbisQuality) / 11.0); // Normalize from (-1 to 10), to (1.0 to 0) ... why is it backwards ?
-				pOutFile->command(SFC_SET_COMPRESSION_LEVEL, &cl, sizeof(cl));
+				outFile->command(SFC_SET_COMPRESSION_LEVEL, &cl, sizeof(cl));
 			}
 		}
 
@@ -1397,10 +1395,11 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 		PeakOutputSample = 0.0;
 		SamplesRead = 0;
 		sf_count_t NextProgressThreshold = IncrementalProgressThreshold;
-
-		// Allocate output buffer:
 		size_t OutBufferSize = (2 * nChannels /* padding */ + (BufferSize * F.numerator / F.denominator));
-		FloatType* OutBuffer = new FloatType[OutBufferSize];
+		
+		// Allocate output buffer:
+		std::unique_ptr<FloatType> OutBuffer(new FloatType[OutBufferSize]);
+		FloatType* pOutBuffer = OutBuffer.get();
 
 		int outStartOffset = std::min(groupDelay * nChannels, static_cast<int>(OutBufferSize) - nChannels);
 
@@ -1415,12 +1414,12 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 						FloatType OutputSample = ci.bDither ?
 							Ditherers[Channel].Dither(Gain * inbuffer[s + Channel]) :
 							Gain * inbuffer[s + Channel];
-						OutBuffer[OutBufferIndex + Channel] = OutputSample;
+						pOutBuffer[OutBufferIndex + Channel] = OutputSample;
 						PeakOutputSample = std::max(std::abs(PeakOutputSample), std::abs(OutputSample));
 						OutBufferIndex += nChannels;
 					} // ends loop over s
 				} // ends loop over channel
-				pOutFile->write(OutBuffer, OutBufferIndex);
+				outFile->write(pOutBuffer, OutBufferIndex);
 
 				// conditionally send progress update:
 				if (SamplesRead > NextProgressThreshold) {
@@ -1461,7 +1460,7 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 								FloatType OutputSample = ci.bDither ?
 									Ditherers[Channel].Dither(Gain * Filters[Channel].get()) :
 									Gain * Filters[Channel].get();
-								OutBuffer[localOutBufferIndex + Channel] = OutputSample;
+								pOutBuffer[localOutBufferIndex + Channel] = OutputSample;
 								localPeak = std::max(localPeak, std::abs(OutputSample));
 								localOutBufferIndex += nChannels;
 							}
@@ -1485,10 +1484,10 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 
 				// write to file:
 				if (outStartOffset <= 0) {
-					pOutFile->write(OutBuffer, OutBufferIndex);
+					outFile->write(pOutBuffer, OutBufferIndex);
 				}
 				else {
-					pOutFile->write(OutBuffer + outStartOffset, OutBufferIndex - outStartOffset);
+					outFile->write(pOutBuffer + outStartOffset, OutBufferIndex - outStartOffset);
 					outStartOffset = 0;
 				}
 
@@ -1534,7 +1533,7 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 									Ditherers[Channel].Dither(Gain * Filters[Channel].LazyGet(F.numerator)) :
 									Gain * Filters[Channel].LazyGet(F.numerator);
 #endif
-								OutBuffer[localOutBufferIndex + Channel] = OutputSample;
+								pOutBuffer[localOutBufferIndex + Channel] = OutputSample;
 								localPeak = std::max(localPeak, std::abs(OutputSample));
 								localOutBufferIndex += nChannels;
 							} // ends loop over ii
@@ -1557,10 +1556,10 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 
 				// write to file:
 				if (outStartOffset <= 0) {
-					pOutFile->write(OutBuffer, OutBufferIndex);
+					outFile->write(pOutBuffer, OutBufferIndex);
 				}
 				else {
-					pOutFile->write(OutBuffer + outStartOffset, OutBufferIndex - outStartOffset);
+					outFile->write(pOutBuffer + outStartOffset, OutBufferIndex - outStartOffset);
 					outStartOffset = 0;
 				}
 
@@ -1608,7 +1607,7 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 									FloatType OutputSample = ci.bDither ?
 										Ditherers[Channel].Dither(Gain * Filters[Channel].LazyGet(F.numerator)) :
 										Gain * Filters[Channel].LazyGet(F.numerator);
-									OutBuffer[localOutBufferIndex + Channel] = OutputSample;
+									pOutBuffer[localOutBufferIndex + Channel] = OutputSample;
 									localPeak = std::max(localPeak, std::abs(OutputSample));
 									localOutBufferIndex += nChannels;
 								}
@@ -1634,10 +1633,10 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 
 				// write to file:
 				if (outStartOffset <= 0) {
-					pOutFile->write(OutBuffer, OutBufferIndex);
+					outFile->write(pOutBuffer, OutBufferIndex);
 				}
 				else {
-					pOutFile->write(OutBuffer + outStartOffset, OutBufferIndex - outStartOffset);
+					outFile->write(pOutBuffer + outStartOffset, OutBufferIndex - outStartOffset);
 					outStartOffset = 0;
 				}
 
@@ -1650,9 +1649,6 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 
 			} while (count > 0);
 		} // ends Interpolate and Decimate
-
-		  // clean-up:
-		delete[] OutBuffer;
 
 		// notify user:
 		std::cout << "Done" << std::endl;
