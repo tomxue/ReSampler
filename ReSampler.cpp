@@ -742,8 +742,12 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 		0 : (FilterSize - 1) / 2 / FOriginal.denominator;
 
 	// Make some filter coefficients:
+	/*
 	std::unique_ptr<FloatType[]> FilterTaps(new FloatType[FilterSize]); //todo: just use vector ?
 	FloatType* pFilterTaps = FilterTaps.get(); // API expects raw pointer
+	*/
+	std::vector<FloatType> FilterTaps(FilterSize);
+	FloatType* pFilterTaps = &FilterTaps[0];
 	makeLPF<FloatType>(pFilterTaps, FilterSize, ft, OverSampFreq);
 	applyKaiserWindow<FloatType>(pFilterTaps, FilterSize, calcKaiserBeta(SidelobeAtten));
 
@@ -759,7 +763,7 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 		Filters.emplace_back(pFilterTaps, FilterSize);
 	}
 
-	FilterTaps.reset();
+	//FilterTaps.reset();
 
 	// if the OutputFormat is zero, it means "No change to file format"
 	// if output file format has changed, use OutputFormat. Otherwise, use same format as infile: 
@@ -888,8 +892,12 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 		size_t OutBufferSize = (2 * nChannels /* padding */ + (BufferSize * F.numerator / F.denominator));
 		
 		// Allocate output buffer:
+		/*
 		std::unique_ptr<FloatType[]> OutBuffer(new FloatType[OutBufferSize]);
 		FloatType* pOutBuffer = OutBuffer.get();
+		*/
+		std::vector<FloatType> OutBuffer(OutBufferSize);
+		FloatType* pOutBuffer = &OutBuffer[0];
 
 		int outStartOffset = std::min(groupDelay * nChannels, static_cast<int>(OutBufferSize) - nChannels);
 
@@ -1255,8 +1263,12 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 		0 : (FilterSize - 1) / 2 / FOriginal.denominator;
 
 	// Make some filter coefficients:
-	std::unique_ptr<FloatType[]> FilterTaps(new FloatType[FilterSize]);
+	/*
+	std::unique_ptr<FloatType[]> FilterTaps(new FloatType[FilterSize]); //todo: just use vector ?
 	FloatType* pFilterTaps = FilterTaps.get(); // API expects raw pointer
+	*/
+	std::vector<FloatType> FilterTaps(FilterSize);
+	FloatType* pFilterTaps = &FilterTaps[0];
 	makeLPF<FloatType>(pFilterTaps, FilterSize, ft, OverSampFreq);
 	applyKaiserWindow<FloatType>(pFilterTaps, FilterSize, calcKaiserBeta(SidelobeAtten));
 
@@ -1272,7 +1284,7 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 		Filters.emplace_back(pFilterTaps, FilterSize);
 	}
 
-	FilterTaps.reset();
+	// FilterTaps.reset();
 
 	// if the OutputFormat is zero, it means "No change to file format"
 	// if output file format has changed, use OutputFormat. Otherwise, use same format as infile: 
@@ -1401,8 +1413,12 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 		size_t OutBufferSize = (2 * nChannels /* padding */ + (BufferSize * F.numerator / F.denominator));
 		
 		// Allocate output buffer:
+		/*
 		std::unique_ptr<FloatType[]> OutBuffer(new FloatType[OutBufferSize]);
 		FloatType* pOutBuffer = OutBuffer.get();
+		*/
+		std::vector<FloatType> OutBuffer(OutBufferSize);
+		FloatType* pOutBuffer = &OutBuffer[0];
 
 		int outStartOffset = std::min(groupDelay * nChannels, static_cast<int>(OutBufferSize) - nChannels);
 
