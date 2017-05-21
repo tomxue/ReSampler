@@ -742,7 +742,7 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 		0 : (FilterSize - 1) / 2 / FOriginal.denominator;
 
 	// Make some filter coefficients:
-	std::unique_ptr<FloatType[]> FilterTaps(new FloatType[FilterSize]);
+	std::unique_ptr<FloatType[]> FilterTaps(new FloatType[FilterSize]); //todo: just use vector ?
 	FloatType* pFilterTaps = FilterTaps.get(); // API expects raw pointer
 	makeLPF<FloatType>(pFilterTaps, FilterSize, ft, OverSampFreq);
 	applyKaiserWindow<FloatType>(pFilterTaps, FilterSize, calcKaiserBeta(SidelobeAtten));
