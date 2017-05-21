@@ -742,7 +742,7 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 		0 : (FilterSize - 1) / 2 / FOriginal.denominator;
 
 	// Make some filter coefficients:
-	std::unique_ptr<FloatType> FilterTaps(new FloatType[FilterSize]);
+	std::unique_ptr<FloatType[]> FilterTaps(new FloatType[FilterSize]);
 	FloatType* pFilterTaps = FilterTaps.get(); // API expects raw pointer
 	makeLPF<FloatType>(pFilterTaps, FilterSize, ft, OverSampFreq);
 	applyKaiserWindow<FloatType>(pFilterTaps, FilterSize, calcKaiserBeta(SidelobeAtten));
@@ -888,7 +888,7 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 		size_t OutBufferSize = (2 * nChannels /* padding */ + (BufferSize * F.numerator / F.denominator));
 		
 		// Allocate output buffer:
-		std::unique_ptr<FloatType> OutBuffer(new FloatType[OutBufferSize]);
+		std::unique_ptr<FloatType[]> OutBuffer(new FloatType[OutBufferSize]);
 		FloatType* pOutBuffer = OutBuffer.get();
 
 		int outStartOffset = std::min(groupDelay * nChannels, static_cast<int>(OutBufferSize) - nChannels);
@@ -1255,7 +1255,7 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 		0 : (FilterSize - 1) / 2 / FOriginal.denominator;
 
 	// Make some filter coefficients:
-	std::unique_ptr<FloatType> FilterTaps(new FloatType[FilterSize]);
+	std::unique_ptr<FloatType[]> FilterTaps(new FloatType[FilterSize]);
 	FloatType* pFilterTaps = FilterTaps.get(); // API expects raw pointer
 	makeLPF<FloatType>(pFilterTaps, FilterSize, ft, OverSampFreq);
 	applyKaiserWindow<FloatType>(pFilterTaps, FilterSize, calcKaiserBeta(SidelobeAtten));
@@ -1401,7 +1401,7 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 		size_t OutBufferSize = (2 * nChannels /* padding */ + (BufferSize * F.numerator / F.denominator));
 		
 		// Allocate output buffer:
-		std::unique_ptr<FloatType> OutBuffer(new FloatType[OutBufferSize]);
+		std::unique_ptr<FloatType[]> OutBuffer(new FloatType[OutBufferSize]);
 		FloatType* pOutBuffer = OutBuffer.get();
 
 		int outStartOffset = std::min(groupDelay * nChannels, static_cast<int>(OutBufferSize) - nChannels);
