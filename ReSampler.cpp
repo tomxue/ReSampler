@@ -741,29 +741,25 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 	int groupDelay = (ci.bMinPhase || !ci.bDelayTrim) ?
 		0 : (FilterSize - 1) / 2 / FOriginal.denominator;
 
-	// Make some filter coefficients:
-	/*
-	std::unique_ptr<FloatType[]> FilterTaps(new FloatType[FilterSize]); //todo: just use vector ?
-	FloatType* pFilterTaps = FilterTaps.get(); // API expects raw pointer
-	*/
-	std::vector<FloatType> FilterTaps(FilterSize);
-	FloatType* pFilterTaps = &FilterTaps[0];
-	makeLPF<FloatType>(pFilterTaps, FilterSize, ft, OverSampFreq);
-	applyKaiserWindow<FloatType>(pFilterTaps, FilterSize, calcKaiserBeta(SidelobeAtten));
-
-	// conditionally convert filter coefficients to minimum-phase:
-	if (ci.bMinPhase) {
-		std::cout << "Using Minimum-Phase LPF" << std::endl;
-		makeMinPhase<FloatType>(pFilterTaps, FilterSize);
-	}
-
 	// make a vector of filters (one filter for each channel):
 	std::vector<FIRFilter<FloatType>> Filters;
-	for (unsigned int n = 0; n < nChannels; n++) {
-		Filters.emplace_back(pFilterTaps, FilterSize);
-	}
+	{
+		// Make some filter coefficients:
+		std::vector<FloatType> FilterTaps(FilterSize);
+		FloatType* pFilterTaps = &FilterTaps[0];
+		makeLPF<FloatType>(pFilterTaps, FilterSize, ft, OverSampFreq);
+		applyKaiserWindow<FloatType>(pFilterTaps, FilterSize, calcKaiserBeta(SidelobeAtten));
 
-	//FilterTaps.reset();
+		// conditionally convert filter coefficients to minimum-phase:
+		if (ci.bMinPhase) {
+			std::cout << "Using Minimum-Phase LPF" << std::endl;
+			makeMinPhase<FloatType>(pFilterTaps, FilterSize);
+		}
+
+		for (int n = 0; n < nChannels; n++) {
+			Filters.emplace_back(pFilterTaps, FilterSize);
+		}
+	}
 
 	// if the OutputFormat is zero, it means "No change to file format"
 	// if output file format has changed, use OutputFormat. Otherwise, use same format as infile: 
@@ -892,10 +888,6 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 		size_t OutBufferSize = (2 * nChannels /* padding */ + (BufferSize * F.numerator / F.denominator));
 		
 		// Allocate output buffer:
-		/*
-		std::unique_ptr<FloatType[]> OutBuffer(new FloatType[OutBufferSize]);
-		FloatType* pOutBuffer = OutBuffer.get();
-		*/
 		std::vector<FloatType> OutBuffer(OutBufferSize);
 		FloatType* pOutBuffer = &OutBuffer[0];
 
@@ -1262,29 +1254,25 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 	int groupDelay = (ci.bMinPhase || !ci.bDelayTrim) ? 
 		0 : (FilterSize - 1) / 2 / FOriginal.denominator;
 
-	// Make some filter coefficients:
-	/*
-	std::unique_ptr<FloatType[]> FilterTaps(new FloatType[FilterSize]); //todo: just use vector ?
-	FloatType* pFilterTaps = FilterTaps.get(); // API expects raw pointer
-	*/
-	std::vector<FloatType> FilterTaps(FilterSize);
-	FloatType* pFilterTaps = &FilterTaps[0];
-	makeLPF<FloatType>(pFilterTaps, FilterSize, ft, OverSampFreq);
-	applyKaiserWindow<FloatType>(pFilterTaps, FilterSize, calcKaiserBeta(SidelobeAtten));
-
-	// conditionally convert filter coefficients to minimum-phase:
-	if (ci.bMinPhase) {
-		std::cout << "Using Minimum-Phase LPF" << std::endl;
-		makeMinPhase<FloatType>(pFilterTaps, FilterSize);
-	}
-
 	// make a vector of filters (one filter for each channel):
 	std::vector<FIRFilter<FloatType>> Filters;
-	for (int n = 0; n < nChannels; n++) {
-		Filters.emplace_back(pFilterTaps, FilterSize);
-	}
+	{
+		// Make some filter coefficients:
+		std::vector<FloatType> FilterTaps(FilterSize);
+		FloatType* pFilterTaps = &FilterTaps[0];
+		makeLPF<FloatType>(pFilterTaps, FilterSize, ft, OverSampFreq);
+		applyKaiserWindow<FloatType>(pFilterTaps, FilterSize, calcKaiserBeta(SidelobeAtten));
 
-	// FilterTaps.reset();
+		// conditionally convert filter coefficients to minimum-phase:
+		if (ci.bMinPhase) {
+			std::cout << "Using Minimum-Phase LPF" << std::endl;
+			makeMinPhase<FloatType>(pFilterTaps, FilterSize);
+		}
+
+		for (int n = 0; n < nChannels; n++) {
+			Filters.emplace_back(pFilterTaps, FilterSize);
+		}
+	}
 
 	// if the OutputFormat is zero, it means "No change to file format"
 	// if output file format has changed, use OutputFormat. Otherwise, use same format as infile: 
@@ -1413,10 +1401,6 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 		size_t OutBufferSize = (2 * nChannels /* padding */ + (BufferSize * F.numerator / F.denominator));
 		
 		// Allocate output buffer:
-		/*
-		std::unique_ptr<FloatType[]> OutBuffer(new FloatType[OutBufferSize]);
-		FloatType* pOutBuffer = OutBuffer.get();
-		*/
 		std::vector<FloatType> OutBuffer(OutBufferSize);
 		FloatType* pOutBuffer = &OutBuffer[0];
 
