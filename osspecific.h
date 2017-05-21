@@ -20,6 +20,7 @@
 #pragma warning(disable : 4996) // suppress pointless MS "deprecation" warnings
 #pragma warning(disable : 4244) // suppress double-to-float warnings
 
+/* // obsolete (replaced with RAII-style scoped timer)
 // Timer macros:
 #ifndef USE_CHRONO
 // don't use the C++11 <chrono> api ...
@@ -40,6 +41,7 @@
 #define STOP_TIMER() auto endTimer = std::chrono::high_resolution_clock::now(); \
 std::cout << "Time=" << std::chrono::duration_cast<std::chrono::milliseconds>(endTimer - beginTimer).count() << " ms" << std::endl
 #endif // !USE_CHRONO
+*/
 
 #else // Non-Windows:
 typedef uint64_t __int64;

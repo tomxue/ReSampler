@@ -30,6 +30,7 @@
 #include "biquad.h"
 #include "dsf.h"
 #include "dff.h"
+#include "raiitimer.h"
 
 ////////////////////////////////////////////////////////////////////////////////////////
 // This program uses the following libraries:
@@ -828,7 +829,8 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 	FloatType PeakOutputSample;
 	bool bClippingDetected;
 
-	START_TIMER();
+	RaiiTimer timer;
+	//START_TIMER();
 
 	do { // clipping detection loop (repeat if clipping detected)
 
@@ -1086,7 +1088,7 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 
 	} while (!ci.disableClippingProtection && bClippingDetected);
 
-	STOP_TIMER();
+	//STOP_TIMER();
 	return true;
 } // ends Convert()
 
@@ -1340,7 +1342,8 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 	FloatType PeakOutputSample;
 	bool bClippingDetected;
 	
-	START_TIMER();
+	RaiiTimer timer;
+	//START_TIMER();
 
 	do { // clipping detection loop (repeat if clipping detected)
 
@@ -1682,7 +1685,7 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 
 	} while (!ci.disableClippingProtection && bClippingDetected);
 
-	STOP_TIMER();
+	//STOP_TIMER();
 	return true;
 } // ends ConvertMT()
 
