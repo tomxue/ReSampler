@@ -348,6 +348,9 @@ bool parseParameters(conversionInfo& ci, bool& bBadParams, int argc, char* argv[
 	// rf64 option:
 	ci.bRf64 = findCmdlineOption(argv, argv + argc, "--rf64");
 
+	// noPeakChunk option:
+	ci.bNoPeakChunk = findCmdlineOption(argv, argv + argc, "--noPeakChunk");
+
 	// noMetadata option:
 	ci.bWriteMetaData = !findCmdlineOption(argv, argv + argc, "--noMetadata");
 
@@ -745,7 +748,7 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 	std::vector<FIRFilter<FloatType>> Filters;
 	{
 		// Make some filter coefficients:
-		std::vector<FloatType> FilterTaps(FilterSize);
+		std::vector<FloatType> FilterTaps(FilterSize, 0);
 		FloatType* pFilterTaps = &FilterTaps[0];
 		makeLPF<FloatType>(pFilterTaps, FilterSize, ft, OverSampFreq);
 		applyKaiserWindow<FloatType>(pFilterTaps, FilterSize, calcKaiserBeta(SidelobeAtten));
@@ -849,11 +852,17 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 				return false;
 			}
 
+			if (ci.bNoPeakChunk) {
+				outFile->command(SFC_SET_ADD_PEAK_CHUNK, NULL, SF_FALSE);
+			}
+
 			if (ci.bWriteMetaData) {
 				if (!setMetaData(m, *outFile)) {
 					std::cout << "Warning: problem writing metadata to output file ( " << outFile->strError() << " )" << std::endl;
 				}
 			}
+
+			
 
 			// if the minor (sub) format of OutputFileFormat is flac, and user has requested a specific compression level, set compression level:
 			if (((OutputFileFormat & SF_FORMAT_FLAC) == SF_FORMAT_FLAC) && ci.bSetFlacCompression) {
@@ -888,7 +897,7 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 		size_t OutBufferSize = (2 * nChannels /* padding */ + (BufferSize * F.numerator / F.denominator));
 		
 		// Allocate output buffer:
-		std::vector<FloatType> OutBuffer(OutBufferSize);
+		std::vector<FloatType> OutBuffer(OutBufferSize, 0);
 		FloatType* pOutBuffer = &OutBuffer[0];
 
 		int outStartOffset = std::min(groupDelay * nChannels, static_cast<int>(OutBufferSize) - nChannels);
@@ -1258,7 +1267,7 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 	std::vector<FIRFilter<FloatType>> Filters;
 	{
 		// Make some filter coefficients:
-		std::vector<FloatType> FilterTaps(FilterSize);
+		std::vector<FloatType> FilterTaps(FilterSize, 0);
 		FloatType* pFilterTaps = &FilterTaps[0];
 		makeLPF<FloatType>(pFilterTaps, FilterSize, ft, OverSampFreq);
 		applyKaiserWindow<FloatType>(pFilterTaps, FilterSize, calcKaiserBeta(SidelobeAtten));
@@ -1362,6 +1371,10 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 				return false;
 			}
 
+			if (ci.bNoPeakChunk) {
+				outFile->command(SFC_SET_ADD_PEAK_CHUNK, NULL, SF_FALSE);
+			}
+
 			if (ci.bWriteMetaData) {
 				if (!setMetaData(m, *outFile)) {
 					std::cout << "Warning: problem writing metadata to output file ( " << outFile->strError() << " )" << std::endl;
@@ -1401,7 +1414,7 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 		size_t OutBufferSize = (2 * nChannels /* padding */ + (BufferSize * F.numerator / F.denominator));
 		
 		// Allocate output buffer:
-		std::vector<FloatType> OutBuffer(OutBufferSize);
+		std::vector<FloatType> OutBuffer(OutBufferSize, 0);
 		FloatType* pOutBuffer = &OutBuffer[0];
 
 		int outStartOffset = std::min(groupDelay * nChannels, static_cast<int>(OutBufferSize) - nChannels);

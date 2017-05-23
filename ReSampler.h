@@ -145,6 +145,7 @@ struct conversionInfo
 	bool dffInput;
 	bool bMultiThreaded;
 	bool bRf64;
+	bool bNoPeakChunk;
 	bool bWriteMetaData;
 };
 
