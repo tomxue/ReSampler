@@ -14,7 +14,7 @@
 #include "sndfile.h"
 #include "sndfile.hh"
 
-const std::string strVersion("1.3.4");
+const std::string strVersion("1.3.5 pre-release");
 const std::string strUsage("usage: ReSampler -i <inputfile> [-o <outputfile>] -r <samplerate> [-b <bitformat>] [-n [<normalization factor>]]\n");
 const std::string strExtraOptions(
 	"--help\n"
@@ -35,6 +35,7 @@ const std::string strExtraOptions(
 	"--lpf-cutoff <percentage> [--lpf-transition <percentage>]\n"
 	"--mt\n"
 	"--rf64\n"
+	"--noPeakChunk\n"
 	"--noMetadata\n"
 );
 const double clippingTrim = 1.0 - (1.0 / (1 << 24));
