@@ -46,17 +46,17 @@ sudo make install
 
 clone this repository to a local directory, and use one of the following command lines to compile:
 
-using gcc:
+#### using gcc:
 ~~~
 g++ -pthread -std=c++11 ReSampler.cpp -lfftw3 -lsndfile -o ReSampler -O3
 ~~~
 
-using clang:
+#### using clang:
 ~~~
 clang++ -pthread -std=c++11 ReSampler.cpp -lfftw3 -lsndfile -o ReSampler-clang -O3
 ~~~
 
-using minGW-W64 under Windows (to build 64-bit .exe):
+#### using minGW-W64 under Windows (to build 64-bit .exe):
 - use MinGW-W64 with Posix Threads and SEH
 - {...}\MinGW-W64\mingw64\bin must be added to Path
 - unlike *nix systems, there is no standard place to put libraries and include files
