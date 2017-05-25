@@ -56,8 +56,7 @@ using clang:
 clang++ -pthread -std=c++11 ReSampler.cpp -lfftw3 -lsndfile -o ReSampler-clang -O3
 ~~~
 
-using minGW under Windows:
-(*WIP; not working yet*)
+using minGW-W64 under Windows (to build 64-bit .exe):
 - use MinGW-W64 with Posix Threads and SEH
 - {...}\MinGW-W64\mingw64\bin must be added to Path
 - unlike *nix systems, there is no standard place to put libraries and include files
@@ -65,10 +64,10 @@ using minGW under Windows:
 - locations of library files can be specified by -Ldir
 - if libraries are .lib (instead of .a), use -llib&lt;name&gt; instead of -l&lt;name&gt; 
 - launch from git bash
-- currently having problems with dll 32bit/64-bit mismatches
+- depends on these 64-bit dlls: **libfftw3-3.dll  libgcc_s_seh-1.dll  libsndfile-1.dll  libstdc++-6.dll  libwinpthread-1.dll**
 
 ~~~
-g++ -pthread -std=c++11 ReSampler.cpp -Ilibsndfile/include -Ifftw64 -Lfftw64 -llibfftw3-3 -Llibsndfile/lib -llibsndfile-1 -o ReSampler-minGW64.exe -O3
+g++ -pthread -std=c++11 ReSampler.cpp -Ilibsndfile/include -Ifftw64 -Lfftw64 -llibfftw3-3 -Llibsndfile/lib -llibsndfile-1 -o x64/minGW-W64/ReSampler.exe -O3
 ~~~
 
 # misc tasks:
