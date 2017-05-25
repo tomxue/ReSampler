@@ -3,6 +3,7 @@
 
 # database files
 *.VC.db
+*.VC.opendb
 
 # Assembler output
 *.asm
