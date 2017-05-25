@@ -19,6 +19,8 @@
 # Build results
 ReSampler
 ReSampler-clang
+x64/minGW-W64
+x64/minGW-W64/*
 [Dd]ebug/
 [Dd]ebugPublic/
 [Rr]eleases/

@@ -22,20 +22,16 @@
 // other systems use posix_memalign()
 // the function signatures also differ
 
-#ifdef _MSC_VER 
-	#include <malloc.h>
-#else
-	#include <stdlib.h>
-#endif
-
 inline void* aligned_malloc(size_t size, size_t alignment) {
 	
 	if (size == 0)
 		return 0;
 	
-#ifdef _MSC_VER 
+#ifdef _WIN32 
+	#include <malloc.h>
 	return _aligned_malloc(size, alignment);
 #else 
+	#include <stdlib.h>
 	void *memory;
 	return posix_memalign(&memory, alignment, size) ? 0 : memory; // (note: posix_memalign returns 0 if successful, non-zero error code if not)
 #endif
@@ -43,7 +39,7 @@ inline void* aligned_malloc(size_t size, size_t alignment) {
 }
 
 inline void aligned_free(void *ptr) {
-#ifdef _MSC_VER 
+#ifdef _WIN32
 	_aligned_free(ptr);
 #else 
 	free(ptr);

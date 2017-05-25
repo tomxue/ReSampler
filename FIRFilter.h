@@ -17,6 +17,7 @@
 #include <complex>
 #include <cstdint>
 #include <cassert>
+#include <xmmintrin.h>
 
 #include <fftw3.h>
 #include "alignedmalloc.h"

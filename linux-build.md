@@ -56,6 +56,21 @@ using clang:
 clang++ -pthread -std=c++11 ReSampler.cpp -lfftw3 -lsndfile -o ReSampler-clang -O3
 ~~~
 
+using minGW under Windows:
+(*WIP; not working yet*)
+- use MinGW-W64 with Posix Threads and SEH
+- {...}\MinGW-W64\mingw64\bin must be added to Path
+- unlike *nix systems, there is no standard place to put libraries and include files
+- locations of include files can be specified by -Idir
+- locations of library files can be specified by -Ldir
+- if libraries are .lib (instead of .a), use -llib&lt;name&gt; instead of -l&lt;name&gt; 
+- launch from git bash
+- currently having problems with dll 32bit/64-bit mismatches
+
+~~~
+g++ -pthread -std=c++11 ReSampler.cpp -Ilibsndfile/include -Ifftw64 -Lfftw64 -llibfftw3-3 -Llibsndfile/lib -llibsndfile-1 -o ReSampler-minGW64.exe -O3
+~~~
+
 # misc tasks:
 
 ## setting up C++ environment in vscode
