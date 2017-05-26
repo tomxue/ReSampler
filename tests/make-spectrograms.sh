@@ -8,12 +8,18 @@
 # Windows dependencies: libcairo-2.dll libpng12-0.dll libsndfile-1.dll libfftw3-3.dll
 
 spectrogram_tool="spectrogram"
+parallel_spectrograms=4
 
 echo $(tput setaf 2)cleaning ./spectrograms folder ...$(tput setaf 7)
 rm ./spectrograms/*.*
 
 echo $(tput setaf 2)generating spectrograms ...$(tput setaf 1)
-find ./outputs -type f ! -name '*.png' -exec $spectrogram_tool --dyn-range=190 '{}' 1200 960 '{}'.png \;
+
+#series
+#find ./outputs -type f ! -name '*.png' -exec $spectrogram_tool --dyn-range=190 '{}' 1200 960 '{}'.png \;
+
+#parallel
+find ./outputs -type f ! -name '*.png' -print0 | xargs -i --null -n 1 -P $parallel_spectrograms $spectrogram_tool --dyn-range=190 {} 1200 960 {}.png 
 
 echo $(tput setaf 2)moving spectrograms to ./spectrograms folder$(tput setaf 7)
 mv ./outputs/*.png ./spectrograms
