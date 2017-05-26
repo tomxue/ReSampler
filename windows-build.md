@@ -1,3 +1,11 @@
+## Building ReSampler on Windows
+
+#### using Visual Studio
+
+- Just open the project file (ReSampler.vcxproj) in Visual Studio
+- Choose the configuration you want (eg Release x64)
+- BUILD !!
+
 #### using minGW-W64 under Windows (to build 64-bit .exe):
 - use MinGW-W64 with Posix Threads and SEH
 - {...}\MinGW-W64\mingw64\bin must be added to Path
