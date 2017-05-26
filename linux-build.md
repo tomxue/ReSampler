@@ -47,8 +47,15 @@ sudo make install
 clone this repository to a local directory, and use one of the following command lines to compile:
 
 #### using gcc:
+
+standard 64-bit build:
 ~~~
 g++ -pthread -std=c++11 ReSampler.cpp -lfftw3 -lsndfile -o ReSampler -O3
+~~~
+
+AVX Build **(NOT TESTED YET !)**:
+~~~
+g++ -pthread -std=c++11 ReSampler.cpp -lfftw3 -lsndfile -o ReSampler -O3 -DUSE_AVX -mavx
 ~~~
 
 #### using clang:
@@ -66,8 +73,14 @@ clang++ -pthread -std=c++11 ReSampler.cpp -lfftw3 -lsndfile -o ReSampler-clang -
 - launch from git bash
 - depends on these 64-bit dlls: **libfftw3-3.dll  libgcc_s_seh-1.dll  libsndfile-1.dll  libstdc++-6.dll  libwinpthread-1.dll**
 
+standard 64-bit build:
 ~~~
 g++ -pthread -std=c++11 ReSampler.cpp -Ilibsndfile/include -Ifftw64 -Lfftw64 -llibfftw3-3 -Llibsndfile/lib -llibsndfile-1 -o x64/minGW-W64/ReSampler.exe -O3
+~~~
+
+AVX build:
+~~~
+g++ -pthread -std=c++11 ReSampler.cpp -Ilibsndfile/include -Ifftw64 -Lfftw64 -llibfftw3-3 -Llibsndfile/lib -llibsndfile-1 -o x64/minGW-W64-AVX/ReSampler.exe -O3 -DUSE_AVX -mavx
 ~~~
 
 # misc tasks:

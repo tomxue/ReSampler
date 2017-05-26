@@ -406,6 +406,7 @@ private:
 // AVX specializations for doubles :
 // =================================
 
+template <>
 double FIRFilter<double>::get() {
 
 	// AVX implementation: This only works with doubles !
