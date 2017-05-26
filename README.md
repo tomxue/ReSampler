@@ -137,6 +137,8 @@ On a multi-core system, this makes better use of available CPU resources and res
 
 *Note: If your output file has an .rf64 extension, it will automatically be in rf64 format*
 
+**--noPeakChunk** (since v1.3.5) supresses output of PEAK chunk in floating-point formats
+
 **--noMetadata** (since v1.2.6) prevents copying of metadata from input file to output file. 
 
 *By default, ReSampler will attempt to copy native metadata from the input file to the output file, provided the input and output file types support metadata 
