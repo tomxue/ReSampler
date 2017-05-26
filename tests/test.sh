@@ -40,6 +40,16 @@ $resampler_path -i $input_path/96khz_sweep-3dBFS_32f.wav -o $output_path/96khz_s
 $resampler_path -i $input_path/96khz_sweep-3dBFS_32f.wav -o $output_path/96khz_sweep-3dBFS_32f-to176k-dp-steep.wav -r 176400 --noPeakChunk --doubleprecision --steepLPF
 $resampler_path -i $input_path/96khz_sweep-3dBFS_32f.wav -o $output_path/96khz_sweep-3dBFS_32f-to192k-dp-steep.wav -r 192000 --noPeakChunk --doubleprecision --steepLPF --mt
 
+# 32-bit float, double-precision sweeps, minimum Phase
+$resampler_path -i $input_path/96khz_sweep-3dBFS_32f.wav -o $output_path/96khz_sweep-3dBFS_32f-to22k-minphase.wav -r 22050 --noPeakChunk --doubleprecision --minphase
+$resampler_path -i $input_path/96khz_sweep-3dBFS_32f.wav -o $output_path/96khz_sweep-3dBFS_32f-to32k-minphase.wav -r 32000 --noPeakChunk --doubleprecision --minphase --mt
+$resampler_path -i $input_path/96khz_sweep-3dBFS_32f.wav -o $output_path/96khz_sweep-3dBFS_32f-to44k-minphase.wav -r 44100 --noPeakChunk --doubleprecision --minphase
+$resampler_path -i $input_path/96khz_sweep-3dBFS_32f.wav -o $output_path/96khz_sweep-3dBFS_32f-to48k-minphase.wav -r 48000 --noPeakChunk --doubleprecision --minphase --mt
+$resampler_path -i $input_path/96khz_sweep-3dBFS_32f.wav -o $output_path/96khz_sweep-3dBFS_32f-to88k-minphase.wav -r 88200 --noPeakChunk --doubleprecision --minphase
+$resampler_path -i $input_path/96khz_sweep-3dBFS_32f.wav -o $output_path/96khz_sweep-3dBFS_32f-to96k-minphase.wav -r 96000 --noPeakChunk --doubleprecision --minphase --mt
+$resampler_path -i $input_path/96khz_sweep-3dBFS_32f.wav -o $output_path/96khz_sweep-3dBFS_32f-to176k-minphase.wav -r 176400 --noPeakChunk --doubleprecision --minphase
+$resampler_path -i $input_path/96khz_sweep-3dBFS_32f.wav -o $output_path/96khz_sweep-3dBFS_32f-to192k-minphase.wav -r 192000 --noPeakChunk --doubleprecision --minphase --mt
+
 # 16-bit sweeps, relaxed LPF
 $resampler_path -i $input_path/96khz_sweep-3dBFS_32f.wav -o $output_path/96khz_sweep-3dBFS_16-to22k-relaxed.wav -r 22050 -b 16 --relaxedLPF
 $resampler_path -i $input_path/96khz_sweep-3dBFS_32f.wav -o $output_path/96khz_sweep-3dBFS_16-to32k-relaxed.wav -r 32000 -b 16 --relaxedLPF --mt
