@@ -20,8 +20,8 @@ else
 fi
 
 # clear old outputs:
-rm $output_path/*
-rm $output_path/.*
+rm $output_path/*.*
+rm $output_path/._*
 
 # 32-bit float sweeps
 $resampler_path -i $input_path/96khz_sweep-3dBFS_32f.wav -o $output_path/96khz_sweep-3dBFS_32f-to22k.wav -r 22050 --noPeakChunk
