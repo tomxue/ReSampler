@@ -52,6 +52,7 @@ x64/Release_AVX/*
 tests/outputs/*
 !tests/outputs/.git-keep.txt
 tests/spectrograms/*
+!tests/spectrograms/.git-keep.txt
 tests/checklist.chk
 tests/results.txt
 
