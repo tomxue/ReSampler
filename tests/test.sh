@@ -1,9 +1,23 @@
 #!/usr/bin/env bash
 
-resampler_path=../x64/Release/ReSampler.exe
-#resampler_path=../x64/minGW-W64/ReSampler.exe
 input_path=./inputs
 output_path=./outputs
+
+function tolower(){
+    echo $1 | sed "y/ABCDEFGHIJKLMNOPQRSTUVWXYZ/abcdefghijklmnopqrstuvwxyz/"
+}
+
+os=`tolower $OSTYPE`
+
+# set converter path according to OS:
+if [ $os == 'cygwin' ] || [ $os == 'msys' ]
+then 
+    #Windows ...
+    resampler_path=../x64/Release/ReSampler.exe
+    #resampler_path=../x64/minGW-W64/ReSampler.exe
+else
+    resampler_path=../ReSampler
+fi
 
 # clear old outputs:
 rm $output_path/*
