@@ -1096,8 +1096,6 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 		}
 
 	} while (!ci.disableClippingProtection && bClippingDetected);
-
-	//STOP_TIMER();
 	return true;
 } // ends Convert()
 
@@ -1697,8 +1695,6 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 		}
 
 	} while (!ci.disableClippingProtection && bClippingDetected);
-
-	//STOP_TIMER();
 	return true;
 } // ends ConvertMT()
 

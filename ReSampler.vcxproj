@@ -283,6 +283,7 @@
     <ClInclude Include="FIRFilterAVX.h" />
     <ClInclude Include="noiseshape.h" />
     <ClInclude Include="osspecific.h" />
+    <ClInclude Include="raiitimer.h" />
     <ClInclude Include="ReSampler.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
