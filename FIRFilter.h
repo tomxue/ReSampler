@@ -519,10 +519,11 @@ logV(const std::vector<std::complex<double>>& input) {
 	return output;
 }
 
-// limitDynRangeV() : set a limit (-dB) on how quiet signal is allowed to be below the peak
+// limitDynRangeV() : set a limit (-dB) on how quiet signal is allowed to be below the peak. 
+// Guaranteed to never return zero.
 std::vector<std::complex<double>>
 limitDynRangeV(const std::vector<std::complex<double>>& input, double dynRangeDB) {
-	double dynRangeLinear = pow(10, dynRangeDB / 20.0);
+	double dynRangeLinear = pow(10, std::abs(dynRangeDB) / 20.0); // will give same result for positive or negative dB values.
 	
 	// find peak:
 	double peak=0.0;
@@ -531,17 +532,24 @@ limitDynRangeV(const std::vector<std::complex<double>>& input, double dynRangeDB
 	}
 	
 	// determine low threshold
-	double lowThresh = peak * dynRangeLinear;
+	double lowThresh = peak / dynRangeLinear;	// a level which is dynRangeDB dB below peak
+	std::complex<double> lastX = lowThresh;		// variable for storing last output value
 	
 	std::vector<std::complex<double>> output(input.size(), 0);
 
 	std::transform(input.begin(), input.end(), output.begin(),
-		[lowThresh](std::complex<double> x) -> std::complex<double> {
+		[lowThresh, &lastX](std::complex<double> x) -> std::complex<double> {
 		
 		double level = std::abs(x);
-		if (level < lowThresh)
-			x *= lowThresh / level;
-
+		if (level < lowThresh) {
+			if (x == 0.0) {		// when input is zero, we must somehow decide whether output should be plus or minus lowThresh
+				x = lastX;		// sticky output; use last output value instead of zero
+			}
+			else {
+				x = (x / level) * lowThresh; // limit to +/- lowThresh
+				lastX = x;
+			}
+		}
 		return x; } // ends lambda
 	); // ends call to std::transform()
 
@@ -670,8 +678,6 @@ void makeMinPhase(FloatType* pFIRcoeffs, size_t length)
 		complexInput.push_back({ 0, 0 });
 	}
 
-	assert(complexInput.size() == fftLength);
-	
 	/*
 	// pad with trailing zeros
 	for (int n = 0; n < fftLength; ++n) {
@@ -681,7 +687,9 @@ void makeMinPhase(FloatType* pFIRcoeffs, size_t length)
 			complexInput.push_back({ 0, 0 }); // pad remainder with zeros
 	}
 	*/
-	
+
+	assert(complexInput.size() == fftLength); // make sure padding worked properly.
+
 	// Formula is as follows:
 
 	// take the reversed array of
@@ -721,7 +729,7 @@ void dumpKaiserWindow(int Length, double Beta) {
 	}
 
 	std::vector<double> g(Length, 1);
-	applyKaiserWindow2<double>(g.data(), Length, Beta);
+	applyKaiserWindow<double>(g.data(), Length, Beta);
 	for (int i = 0; i < Length; ++i) {
 		std::cout << i << ": " << g[i] << std::endl;
 	}
