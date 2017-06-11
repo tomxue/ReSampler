@@ -14,7 +14,7 @@
 #include "sndfile.h"
 #include "sndfile.hh"
 
-const std::string strVersion("1.3.5");
+const std::string strVersion("1.3.6");
 const std::string strUsage("usage: ReSampler -i <inputfile> [-o <outputfile>] -r <samplerate> [-b <bitformat>] [-n [<normalization factor>]]\n");
 const std::string strExtraOptions(
 	"--help\n"
