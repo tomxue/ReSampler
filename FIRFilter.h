@@ -537,11 +537,11 @@ limitDynRangeV(const std::vector<std::complex<double>>& input, double dynRangeDB
 		
 		double level = std::abs(x);
 		if (level < lowThresh) {
-			if (x == 0.0) {		// when input is zero, we must somehow decide whether output should be plus or minus lowThresh
+			if (x == 0.0) {		// when input is zero, we must somehow make the modulus of the output equal to lowThresh
 				x = lastX;		// sticky output; use last output value instead of zero
 			}
 			else {
-				x = (x / level) * lowThresh; // limit to +/- lowThresh
+				x = (x / level) * lowThresh; // scale x such that |x| == lowThresh
 				lastX = x;
 			}
 		}
