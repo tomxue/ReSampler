@@ -32,7 +32,7 @@ public:
 	// constructor:
 	FIRFilter(const FloatType* taps, size_t size) :
 		size(size), sizeRounded8((size >> 3) << 3), sizeRounded4((size >> 2) << 2), CurrentIndex(size-1), LastPut(0),
-		Signal(NULL), Kernel0(NULL), Kernel1(NULL), Kernel2(NULL), Kernel3(NULL), Kernel4(NULL), Kernel5(NULL), Kernel6(NULL), Kernel7(NULL)
+		Signal(nullptr), Kernel0(nullptr), Kernel1(nullptr), Kernel2(nullptr), Kernel3(nullptr), Kernel4(nullptr), Kernel5(nullptr), Kernel6(nullptr), Kernel7(nullptr)
 	{
 		// allocate buffers:
 		allocateBuffers();

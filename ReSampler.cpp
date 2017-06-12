@@ -444,7 +444,7 @@ bool determineBestBitFormat(std::string& BitFormat, const std::string& inFilenam
 		// retrieve infile's TRUE extension (from the file contents), and if retrieval is successful, override extension derived from filename:
 		SF_FORMAT_INFO infileFormatInfo;
 		infileFormatInfo.format = inFileFormat & SF_FORMAT_TYPEMASK;
-		if (sf_command(NULL, SFC_GET_FORMAT_INFO, &infileFormatInfo, sizeof(infileFormatInfo)) == 0) {
+		if (sf_command(nullptr, SFC_GET_FORMAT_INFO, &infileFormatInfo, sizeof(infileFormatInfo)) == 0) {
 			inFileExt = std::string(infileFormatInfo.extension);
 		}
 	}
@@ -465,13 +465,13 @@ bool determineBestBitFormat(std::string& BitFormat, const std::string& inFilenam
 	SF_FORMAT_INFO formatinfo;
 	int format, major_count;
 	memset(&formatinfo, 0, sizeof(formatinfo));
-	sf_command(NULL, SFC_GET_FORMAT_MAJOR_COUNT, &major_count, sizeof(int));
+	sf_command(nullptr, SFC_GET_FORMAT_MAJOR_COUNT, &major_count, sizeof(int));
 
 	// determine if inFile's subformat is valid for outFile:
 	for (int m = 0; m < major_count; m++)
 	{
 		formatinfo.format = m;
-		sf_command(NULL, SFC_GET_FORMAT_MAJOR, &formatinfo, sizeof(formatinfo));
+		sf_command(nullptr, SFC_GET_FORMAT_MAJOR, &formatinfo, sizeof(formatinfo));
 
 		if (stricmp(formatinfo.extension, outFileExt.c_str()) == 0) { // match between format number m and outfile's file extension
 			format = formatinfo.format | (inFileFormat & SF_FORMAT_SUBMASK); // combine outfile's major format with infile's subformat
@@ -503,13 +503,13 @@ int determineOutputFormat(const std::string& outFileExt, const std::string& bitF
 	int format = 0;
 	int major_count;
 	memset(&info, 0, sizeof(info));
-	sf_command(NULL, SFC_GET_FORMAT_MAJOR_COUNT, &major_count, sizeof(int));
+	sf_command(nullptr, SFC_GET_FORMAT_MAJOR_COUNT, &major_count, sizeof(int));
 	bool bFileExtFound = false;
 
 	// Loop through all major formats to find match for outFileExt:
 	for (int m = 0; m < major_count; ++m) {
 		info.format = m;
-		sf_command(NULL, SFC_GET_FORMAT_MAJOR, &info, sizeof(info));
+		sf_command(nullptr, SFC_GET_FORMAT_MAJOR, &info, sizeof(info));
 		if (stricmp(info.extension, outFileExt.c_str()) == 0) {
 			bFileExtFound = true;
 			break;
@@ -546,13 +546,13 @@ void listSubFormats(const std::string& f)
 	int format = 0;
 	int major_count;
 	memset(&info, 0, sizeof(info));
-	sf_command(NULL, SFC_GET_FORMAT_MAJOR_COUNT, &major_count, sizeof(int));
+	sf_command(nullptr, SFC_GET_FORMAT_MAJOR_COUNT, &major_count, sizeof(int));
 	bool bFileExtFound = false;
 
 	// Loop through all major formats to find match for outFileExt:
 	for (int m = 0; m < major_count; ++m) {
 		info.format = m;
-		sf_command(NULL, SFC_GET_FORMAT_MAJOR, &info, sizeof(info));
+		sf_command(nullptr, SFC_GET_FORMAT_MAJOR, &info, sizeof(info));
 		if (stricmp(info.extension, f.c_str()) == 0) {
 			bFileExtFound = true;
 			break;
@@ -859,7 +859,7 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 			}
 
 			if (ci.bNoPeakChunk) {
-				outFile->command(SFC_SET_ADD_PEAK_CHUNK, NULL, SF_FALSE);
+				outFile->command(SFC_SET_ADD_PEAK_CHUNK, nullptr, SF_FALSE);
 			}
 
 			if (ci.bWriteMetaData) {
@@ -1376,7 +1376,7 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 			}
 
 			if (ci.bNoPeakChunk) {
-				outFile->command(SFC_SET_ADD_PEAK_CHUNK, NULL, SF_FALSE);
+				outFile->command(SFC_SET_ADD_PEAK_CHUNK, nullptr, SF_FALSE);
 			}
 
 			if (ci.bWriteMetaData) {

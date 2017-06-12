@@ -22,11 +22,6 @@
 #include <fftw3.h>
 #include "alignedmalloc.h"
 
-// ensure C-style NULL pointer is defined (used for aligned_malloc)
-#ifndef NULL
-	#define NULL 0
-#endif
-
 #define FILTERSIZE_LIMIT 131071
 #define FILTERSIZE_HUGE 32767
 #define FILTERSIZE_MEDIUM 255
@@ -47,8 +42,8 @@ class FIRFilter {
 public:
 	// constructor:
 	FIRFilter(const FloatType* taps, size_t size) :
-		size(size), CurrentIndex(size-1), LastPut(0), Signal(NULL),
-		Kernel0(NULL),Kernel1(NULL), Kernel2(NULL), Kernel3(NULL)
+		size(size), CurrentIndex(size-1), LastPut(0), Signal(nullptr),
+		Kernel0(nullptr),Kernel1(nullptr), Kernel2(nullptr), Kernel3(nullptr)
 	{
 		assert(nullptr == NULL);
 
