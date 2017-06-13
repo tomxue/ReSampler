@@ -837,9 +837,8 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 
 	FloatType PeakOutputSample;
 	bool bClippingDetected;
-
 	RaiiTimer timer;
-	//START_TIMER();
+	
 
 	do { // clipping detection loop (repeat if clipping detected)
 
@@ -1354,9 +1353,8 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 
 	FloatType PeakOutputSample;
 	bool bClippingDetected;
-	
 	RaiiTimer timer;
-	//START_TIMER();
+	
 
 	do { // clipping detection loop (repeat if clipping detected)
 
