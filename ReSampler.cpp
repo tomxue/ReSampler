@@ -227,8 +227,7 @@ bool parseParameters(conversionInfo& ci, bool& bBadParams, int argc, char* argv[
 		return false;
 	}
 
-	////
-
+	////////////////////////////////////////////////////////////////////
 	// core parameters:
 	getCmdlineParam(argv, argv + argc, "-i", ci.InputFilename);
 	getCmdlineParam(argv, argv + argc, "-o", ci.OutputFilename);
@@ -324,30 +323,41 @@ bool parseParameters(conversionInfo& ci, bool& bBadParams, int argc, char* argv[
 	// noClippingProtection option:
 	ci.disableClippingProtection = findCmdlineOption(argv, argv + argc, "--noClippingProtection");
 
-	// relaxedLPF option:
-	ci.lpfMode = findCmdlineOption(argv, argv + argc, "--relaxedLPF") ?
-		relaxed :
-		normal;
+	// default cutoff and transition width:
+	ci.lpfMode = normal;
+	ci.lpfCutoff = 100.0 * (10.0 / 11.0);
+	ci.lpfTransitionWidth = 100.0 - ci.lpfCutoff;
 
+	// relaxedLPF option:
+	if (findCmdlineOption(argv, argv + argc, "--relaxedLPF")) {
+		ci.lpfMode = relaxed;
+		ci.lpfCutoff = 100.0 * (21.0 / 22.0);				// late cutoff
+		ci.lpfTransitionWidth = 2 * (100.0 - ci.lpfCutoff); // wide transition (double-width)  
+	}
+	
 	// steepLPF option:
-	ci.lpfMode = findCmdlineOption(argv, argv + argc, "--steepLPF") ?
-		steep :
-		ci.lpfMode;
+	if (findCmdlineOption(argv, argv + argc, "--steepLPF")) {
+		ci.lpfMode = steep;
+		ci.lpfCutoff = 100.0 * (21.0 / 22.0);				// late cutoff
+		ci.lpfTransitionWidth = 100.0 - ci.lpfCutoff;       // steep transition  
+	}
 
 	// custom LPF cutoff frequency:
 	if (findCmdlineOption(argv, argv + argc, "--lpf-cutoff")) {
-		getCmdlineParam(argv, argv + argc, "--lpf-cutoff", ci.customLpfCutoff);
-		ci.customLpfCutoff = std::max(1.0, std::min(ci.customLpfCutoff, 99.9));
+		getCmdlineParam(argv, argv + argc, "--lpf-cutoff", ci.lpfCutoff);
 		ci.lpfMode = custom;
-	}
+		ci.lpfCutoff = std::max(1.0, std::min(ci.lpfCutoff, 99.9));
 
-	// custom LPF transition width:
-	ci.customLpfTransitionWidth = 0;
-	if (findCmdlineOption(argv, argv + argc, "--lpf-transition")) {
-		getCmdlineParam(argv, argv + argc, "--lpf-transition", ci.customLpfTransitionWidth);
-		ci.customLpfTransitionWidth = std::max(0.1, std::min(ci.customLpfTransitionWidth, 399.9));
+		// custom LPF transition width:
+		if (findCmdlineOption(argv, argv + argc, "--lpf-transition")) {
+			getCmdlineParam(argv, argv + argc, "--lpf-transition", ci.lpfTransitionWidth);
+		}
+		else {
+			ci.lpfTransitionWidth = 100 - ci.lpfCutoff; // auto mode
+		}
+		ci.lpfTransitionWidth = std::max(0.1, std::min(ci.lpfTransitionWidth, 400.0));
 	}
-
+	
 	// multithreaded option:
 	ci.bMultiThreaded = findCmdlineOption(argv, argv + argc, "--mt");
 
@@ -611,8 +621,7 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 	int InputFileFormat = infile.format();
 
 	if (InputFileFormat != DFF_FORMAT && InputFileFormat != DSF_FORMAT) { // this block only relevant to libsndfile ...
-
-																		  // detect if input format is a floating-point format:
+		// detect if input format is a floating-point format:
 		bool bFloat = false;
 		bool bDouble = false;
 		switch (InputFileFormat & SF_FORMAT_SUBMASK) {
@@ -700,32 +709,9 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 	}
 	
 	// determine cutoff frequency and steepness
-	int OverSampFreq = InputSampleRate * F.numerator;
 	double targetNyquist = std::min(InputSampleRate, ci.OutputSampleRate) / 2.0;
-	double ft;
-	double steepness;
-	switch (ci.lpfMode) {
-	case relaxed:
-		ft = 21 * targetNyquist / 22; // late cutoff
-		steepness = 1;
-		break;
-	case steep:
-		ft = 21 * targetNyquist / 22; // late cutoff & steep
-		steepness = 2;
-		break;
-	case custom:
-		ft = (ci.customLpfCutoff / 100.0) * targetNyquist;
-		if (ci.customLpfTransitionWidth == 0) {
-			steepness = 0.090909091 / (1 - ci.customLpfCutoff / 100.0); // auto 
-		}
-		else {
-			steepness = 0.090909091 / (ci.customLpfTransitionWidth / 100.0); // custom
-		}
-		break;
-	default:
-		ft = 10 * targetNyquist / 11;
-		steepness = 1;
-	}
+	double ft = (ci.lpfCutoff / 100.0) * targetNyquist;
+	double steepness = steepness = 0.090909091 / (ci.lpfTransitionWidth / 100.0);
 
 	// scale the filter size, according to selected options:
 	int FilterSize = std::min(static_cast<int>(overSamplingFactor * BaseFilterSize * steepness), FILTERSIZE_LIMIT)
@@ -737,6 +723,7 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 		160;
 
 	// Make some filter coefficients:
+	int OverSampFreq = InputSampleRate * F.numerator;
 	std::vector<FloatType> FilterTaps(FilterSize, 0);
 	FloatType* pFilterTaps = &FilterTaps[0];
 	makeLPF<FloatType>(pFilterTaps, FilterSize, ft, OverSampFreq);
@@ -835,7 +822,6 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 	FloatType PeakOutputSample;
 	bool bClippingDetected;
 	RaiiTimer timer;
-	
 
 	do { // clipping detection loop (repeat if clipping detected)
 
@@ -863,8 +849,6 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 					std::cout << "Warning: problem writing metadata to output file ( " << outFile->strError() << " )" << std::endl;
 				}
 			}
-
-			
 
 			// if the minor (sub) format of OutputFileFormat is flac, and user has requested a specific compression level, set compression level:
 			if (((OutputFileFormat & SF_FORMAT_FLAC) == SF_FORMAT_FLAC) && ci.bSetFlacCompression) {
@@ -1126,8 +1110,7 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 	int InputFileFormat = infile.format();
 
 	if (InputFileFormat != DFF_FORMAT && InputFileFormat != DSF_FORMAT) { // this block only relevant to libsndfile ...
-
-																		  // detect if input format is a floating-point format:
+		// detect if input format is a floating-point format:
 		bool bFloat = false;
 		bool bDouble = false;
 		switch (InputFileFormat & SF_FORMAT_SUBMASK) {
@@ -1213,32 +1196,9 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 	}
 
 	// determine cutoff frequency and steepness
-	int OverSampFreq = InputSampleRate * F.numerator;
 	double targetNyquist = std::min(InputSampleRate, ci.OutputSampleRate) / 2.0;
-	double ft;
-	double steepness;
-	switch (ci.lpfMode) {
-	case relaxed:
-		ft = 21 * targetNyquist / 22; // late cutoff
-		steepness = 1;
-		break;
-	case steep:
-		ft = 21 * targetNyquist / 22; // late cutoff & steep
-		steepness = 2;
-		break;
-	case custom:
-		ft = (ci.customLpfCutoff / 100.0) * targetNyquist;
-		if (ci.customLpfTransitionWidth == 0) {
-			steepness = 0.090909091 / (1 - ci.customLpfCutoff / 100.0); // auto 
-		}
-		else {
-			steepness = 0.090909091 / (ci.customLpfTransitionWidth / 100.0); // custom
-		}
-		break;
-	default:
-		ft = 10 * targetNyquist / 11;
-		steepness = 1;
-	}
+	double ft = (ci.lpfCutoff / 100.0) * targetNyquist;
+	double steepness = steepness = 0.090909091 / (ci.lpfTransitionWidth / 100.0);
 
 	// scale the filter size, according to selected options:
 	int FilterSize = std::min(static_cast<int>(overSamplingFactor * BaseFilterSize * steepness), FILTERSIZE_LIMIT)
@@ -1250,6 +1210,7 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 		160;
 
 	// Make some filter coefficients:
+	int OverSampFreq = InputSampleRate * F.numerator;
 	std::vector<FloatType> FilterTaps(FilterSize, 0);
 	FloatType* pFilterTaps = &FilterTaps[0];
 	makeLPF<FloatType>(pFilterTaps, FilterSize, ft, OverSampFreq);
@@ -1349,7 +1310,6 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 	bool bClippingDetected;
 	RaiiTimer timer;
 	
-
 	do { // clipping detection loop (repeat if clipping detected)
 
 		bClippingDetected = false;

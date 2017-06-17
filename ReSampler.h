@@ -138,8 +138,8 @@ struct conversionInfo
 	double vorbisQuality;
 	bool disableClippingProtection;
 	LPFMode lpfMode;
-	double customLpfCutoff;
-	double customLpfTransitionWidth;
+	double lpfCutoff;
+	double lpfTransitionWidth;
 	bool bUseSeed;
 	int seed;
 	bool dsfInput;
