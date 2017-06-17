@@ -1,14 +1,30 @@
 #!/usr/bin/env bash
 
+numThreads=4
+
 # notes on obtaining spectrogram utility:
 # spectrogram tool available from http://www.mega-nerd.com/libsndfile/tools/#spectrogram
 # ... and https://github.com/erikd/sndfile-tools/tree/master/src
 
 # Windows binary for spectrogram.exe available here: https://hydrogenaud.io/index.php/topic,102495.0.html
 # Windows dependencies: libcairo-2.dll libpng12-0.dll libsndfile-1.dll libfftw3-3.dll
+# Ubuntu: sudo apt-get install sndfile-tools
 
-spectrogram_tool="spectrogram"
-numThreads=4
+function tolower(){
+    echo $1 | sed "y/ABCDEFGHIJKLMNOPQRSTUVWXYZ/abcdefghijklmnopqrstuvwxyz/"
+}
+
+os=`tolower $OSTYPE`
+
+# set spectrogram path according to OS:
+if [ $os == 'cygwin' ] || [ $os == 'msys' ]
+then 
+    #Windows ...
+    spectrogram_tool="spectrogram"
+else
+    #*nix ...
+    spectrogram_tool="sndfile-spectrogram"
+fi
 
 echo $(tput setaf 2)cleaning ./spectrograms folder ...$(tput setaf 7)
 rm ./spectrograms/*.*
