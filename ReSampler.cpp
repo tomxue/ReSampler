@@ -345,7 +345,7 @@ bool parseParameters(conversionInfo& ci, bool& bBadParams, int argc, char* argv[
 	ci.customLpfTransitionWidth = 0;
 	if (findCmdlineOption(argv, argv + argc, "--lpf-transition")) {
 		getCmdlineParam(argv, argv + argc, "--lpf-transition", ci.customLpfTransitionWidth);
-		ci.customLpfTransitionWidth = std::max(0.1, std::min(ci.customLpfTransitionWidth, 99.9));
+		ci.customLpfTransitionWidth = std::max(0.1, std::min(ci.customLpfTransitionWidth, 399.9));
 	}
 
 	// multithreaded option:
@@ -683,7 +683,7 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 
 	Fraction FOriginal = GetSimplifiedFraction(InputSampleRate, ci.OutputSampleRate);
 	Fraction F = FOriginal;
-
+	
 	// determine base filter size
 	int BaseFilterSize;
 	int overSamplingFactor = 1;
@@ -736,6 +736,18 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 		195 :
 		160;
 
+	// Make some filter coefficients:
+	std::vector<FloatType> FilterTaps(FilterSize, 0);
+	FloatType* pFilterTaps = &FilterTaps[0];
+	makeLPF<FloatType>(pFilterTaps, FilterSize, ft, OverSampFreq);
+	applyKaiserWindow<FloatType>(pFilterTaps, FilterSize, calcKaiserBeta(SidelobeAtten));
+
+	// conditionally convert filter coefficients to minimum-phase:
+	if (ci.bMinPhase) {
+		std::cout << "Using Minimum-Phase LPF" << std::endl;
+		makeMinPhase<FloatType>(pFilterTaps, FilterSize);
+	}
+
 	// echo conversion ratio to user:
 	FloatType ResamplingFactor = static_cast<FloatType>(ci.OutputSampleRate) / InputSampleRate;
 	std::cout << "\nConversion ratio: " << ResamplingFactor
@@ -746,29 +758,14 @@ bool Convert(const conversionInfo& ci, bool peakDetection)
 	std::cout << "LPF transition frequency: " << std::fixed << std::setprecision(2) << ft << " Hz (" << 100 * ft / targetNyquist << " %)" << std::endl;
 	std::cout.precision(prec);
 
-	// calculate group Delay
-	int groupDelay = (ci.bMinPhase || !ci.bDelayTrim) ?
-		0 : (FilterSize - 1) / 2 / FOriginal.denominator;
-
 	// make a vector of filters (one filter for each channel):
 	std::vector<FIRFilter<FloatType>> Filters;
-	{
-		// Make some filter coefficients:
-		std::vector<FloatType> FilterTaps(FilterSize, 0);
-		FloatType* pFilterTaps = &FilterTaps[0];
-		makeLPF<FloatType>(pFilterTaps, FilterSize, ft, OverSampFreq);
-		applyKaiserWindow<FloatType>(pFilterTaps, FilterSize, calcKaiserBeta(SidelobeAtten));
-
-		// conditionally convert filter coefficients to minimum-phase:
-		if (ci.bMinPhase) {
-			std::cout << "Using Minimum-Phase LPF" << std::endl;
-			makeMinPhase<FloatType>(pFilterTaps, FilterSize);
-		}
-
-		for (int n = 0; n < nChannels; n++) {
-			Filters.emplace_back(pFilterTaps, FilterSize);
-		}
+	for (int n = 0; n < nChannels; n++) {
+		Filters.emplace_back(pFilterTaps, FilterSize);
 	}
+
+	// calculate group Delay
+	int groupDelay = (ci.bMinPhase || !ci.bDelayTrim) ? 0 : (FilterSize - 1) / 2 / FOriginal.denominator;
 
 	// if the OutputFormat is zero, it means "No change to file format"
 	// if output file format has changed, use OutputFormat. Otherwise, use same format as infile: 
@@ -1247,10 +1244,22 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 	int FilterSize = std::min(static_cast<int>(overSamplingFactor * BaseFilterSize * steepness), FILTERSIZE_LIMIT)
 		| static_cast<int>(1);	// ensure that filter length is always odd
 
-	// determine sidelobe attenuation
+								// determine sidelobe attenuation
 	int SidelobeAtten = ((FOriginal.numerator == 1) || (FOriginal.denominator == 1)) ?
 		195 :
 		160;
+
+	// Make some filter coefficients:
+	std::vector<FloatType> FilterTaps(FilterSize, 0);
+	FloatType* pFilterTaps = &FilterTaps[0];
+	makeLPF<FloatType>(pFilterTaps, FilterSize, ft, OverSampFreq);
+	applyKaiserWindow<FloatType>(pFilterTaps, FilterSize, calcKaiserBeta(SidelobeAtten));
+
+	// conditionally convert filter coefficients to minimum-phase:
+	if (ci.bMinPhase) {
+		std::cout << "Using Minimum-Phase LPF" << std::endl;
+		makeMinPhase<FloatType>(pFilterTaps, FilterSize);
+	}
 
 	// echo conversion ratio to user:
 	FloatType ResamplingFactor = static_cast<FloatType>(ci.OutputSampleRate) / InputSampleRate;
@@ -1262,29 +1271,14 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 	std::cout << "LPF transition frequency: " << std::fixed << std::setprecision(2) << ft << " Hz (" << 100 * ft / targetNyquist << " %)" << std::endl;
 	std::cout.precision(prec);
 
-	// calculate group Delay
-	int groupDelay = (ci.bMinPhase || !ci.bDelayTrim) ? 
-		0 : (FilterSize - 1) / 2 / FOriginal.denominator;
-
 	// make a vector of filters (one filter for each channel):
 	std::vector<FIRFilter<FloatType>> Filters;
-	{
-		// Make some filter coefficients:
-		std::vector<FloatType> FilterTaps(FilterSize, 0);
-		FloatType* pFilterTaps = &FilterTaps[0];
-		makeLPF<FloatType>(pFilterTaps, FilterSize, ft, OverSampFreq);
-		applyKaiserWindow<FloatType>(pFilterTaps, FilterSize, calcKaiserBeta(SidelobeAtten));
-
-		// conditionally convert filter coefficients to minimum-phase:
-		if (ci.bMinPhase) {
-			std::cout << "Using Minimum-Phase LPF" << std::endl;
-			makeMinPhase<FloatType>(pFilterTaps, FilterSize);
-		}
-
-		for (int n = 0; n < nChannels; n++) {
-			Filters.emplace_back(pFilterTaps, FilterSize);
-		}
+	for (int n = 0; n < nChannels; n++) {
+		Filters.emplace_back(pFilterTaps, FilterSize);
 	}
+
+	// calculate group Delay
+	int groupDelay = (ci.bMinPhase || !ci.bDelayTrim) ? 0 : (FilterSize - 1) / 2 / FOriginal.denominator;
 
 	// if the OutputFormat is zero, it means "No change to file format"
 	// if output file format has changed, use OutputFormat. Otherwise, use same format as infile: 
