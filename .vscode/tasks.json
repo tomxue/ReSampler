@@ -35,7 +35,7 @@
                 "-l",
                 "sndfile",
                 "-o",
-                "ReSampler",
+                "ReSampler-clang",
                 "-O3"
             ]
         },

@@ -1,0 +1,26 @@
+// https://github.com/Microsoft/vscode-cpptools/blob/master/launch.md
+
+{
+   "version": "1.0.0",
+   "name": "C++ Launch",
+   "type": "cppdbg",
+   "request": "launch",
+   "program": "${workspaceRoot}/ReSampler",
+   "cwd": "${workspaceRoot}",
+   "stopAtEntry": true,
+   "customLaunchSetupCommands": [
+      { "text": "target-run", "description": "run target", "ignoreFailures": false }
+   ],
+   "launchCompleteCommand": "exec-run",
+   "linux": {
+      "MIMode": "gdb",
+      "miDebuggerPath": "/usr/bin/gdb"
+   },
+   "osx": {
+      "MIMode": "lldb"
+   },
+   "windows": {
+      "MIMode": "gdb",
+      "miDebuggerPath": "C:\\MinGw\\bin\\gdb.exe"
+   }
+}

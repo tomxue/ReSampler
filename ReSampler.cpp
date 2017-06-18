@@ -205,6 +205,11 @@ bool parseParameters(conversionInfo& ci, bool& bBadParams, int argc, char* argv[
 		return false;
 	}
 
+	if (findCmdlineOption(argv, argv + argc, "--compiler")) {
+		showCompiler();
+		return false;
+	}
+
 	// sndfile-version switch:
 	if (findCmdlineOption(argv, argv + argc, "--sndfile-version")) {
 		char s[128];
@@ -1968,4 +1973,28 @@ bool showBuildVersion() {
 	std::cout << "\n" << std::endl;
 #endif
 	return true;
+}
+
+void showCompiler() {
+	// https://sourceforge.net/p/predef/wiki/Compilers/
+#if defined (__clang__)
+	std::cout << "Clang " << __clang_major__ << "." 
+	<< __clang_minor__ << "."
+	<< __clang_patchlevel__ << std::endl;
+#elif defined (__MINGW64__)
+	std::cout << "minGW-w64" << "minGW-w64" << std::endl;
+#elif defined (__MINGW32__)
+	std::cout << "minGW" << std::endl;
+#elif defined (__GNUC__)
+	std::cout << "gcc " << __GNUC__ << "." 
+	<< __GNUC_MINOR__ << "."
+	<< __GNUC_PATCHLEVEL__ << std::endl;
+#elif defined (_MSC_VER)
+	std::cout << "Visual C++ " << _MSC_VER_FULL << std::endl;
+#elif defined (__INTEL_COMPILER)
+	std::cout << "Intel Compiler " << __INTEL_COMPILER << std::endl;
+#else
+	std::cout << "unknown" << std::endl;
+#endif 
+
 }
