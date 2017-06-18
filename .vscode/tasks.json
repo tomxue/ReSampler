@@ -1,18 +1,62 @@
 {
     "version": "0.1.0",
-    "command": "g++",
+    "command": "",
+    "args": [],
     "isShellCommand": true,
     "showOutput": "always",
-    "args": [
-        "-pthread",
-        "-std=c++11",
-        "ReSampler.cpp",
-        "-l",
-        "fftw3",
-        "-l",
-        "sndfile",
-        "-o",
-        "ReSampler",
-        "-O3"
-    ]
+    "tasks":[
+        {
+            "taskName": "Build with gcc",
+            "command": "g++",
+            "isBuildCommand" : true,
+            "args": [
+                "-pthread",
+                "-std=c++11",
+                "ReSampler.cpp",
+                "-l",
+                "fftw3",
+                "-l",
+                "sndfile",
+                "-o",
+                "ReSampler",
+                "-O3",
+                "-v"
+            ]
+        },
+        {
+            "taskName": "Build with Clang",
+            "command": "clang++",
+            "args": [
+                "-pthread",
+                "-std=c++11",
+                "ReSampler.cpp",
+                "-l",
+                "fftw3",
+                "-l",
+                "sndfile",
+                "-o",
+                "ReSampler",
+                "-O3"
+            ]
+        },
+        {
+            "taskName": "Build AVX version with gcc",
+            "command": "g++",
+            "args": [
+                "-pthread",
+                "-std=c++11", 
+                "ReSampler.cpp", 
+                "-l",
+                "fftw3",
+                "-l",
+                "sndfile",
+                "-o",
+                "ReSampler", 
+                "-O3",
+                "-DUSE_AVX",
+                "-mavx",
+                "-v"
+            ]   
+        }
+    ],
 }
