@@ -1982,7 +1982,7 @@ void showCompiler() {
 	<< __clang_minor__ << "."
 	<< __clang_patchlevel__ << std::endl;
 #elif defined (__MINGW64__)
-	std::cout << "minGW-w64" << "minGW-w64" << std::endl;
+	std::cout << "minGW-w64" << std::endl;
 #elif defined (__MINGW32__)
 	std::cout << "minGW" << std::endl;
 #elif defined (__GNUC__)
@@ -1990,7 +1990,7 @@ void showCompiler() {
 	<< __GNUC_MINOR__ << "."
 	<< __GNUC_PATCHLEVEL__ << std::endl;
 #elif defined (_MSC_VER)
-	std::cout << "Visual C++ " << _MSC_VER_FULL << std::endl;
+	std::cout << "Visual C++ " << _MSC_FULL_VER << std::endl;
 #elif defined (__INTEL_COMPILER)
 	std::cout << "Intel Compiler " << __INTEL_COMPILER << std::endl;
 #else
