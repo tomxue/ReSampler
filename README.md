@@ -79,6 +79,8 @@ from the command line, the main options are as follows:
 
 **--version** displays the version number of the program
 
+**--compiler** (since 1.3.6) displays compiler used to build the app
+
 **--sndfile-version** displays the version of libsndfile dll
 
 **--listsubformats &lt;filetype&gt;** will list all valid subformats for a given *filetype*
