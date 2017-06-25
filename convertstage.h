@@ -34,6 +34,10 @@ private:
     int M;
     FIRFilter<FloatType> filter;
     void (*convertFn)(FloatType* outBuffer, size_t& outBufferSize, const FloatType* inBuffer, const size_t& inBufferSize);
+    void passThrough(FloatType* outBuffer, size_t& outBufferSize, const FloatType* inBuffer, const size_t& inBufferSize) {
+        memcpy(outBuffer, inBuffer, inBufferSize);
+        outBufferSize = inBufferSize;
+    }
     void filterOnly(FloatType* outBuffer, size_t& outBufferSize, const FloatType* inBuffer, const size_t& inBufferSize) {
 
     }
