@@ -7,11 +7,14 @@ template<typename FloatType>
 class ConvertStage
 {
 public:
-    ConvertStage(int L, int M, FIRFilter<FloatType>& filter)
-        : L(L), M(M), filter(filter)
+    ConvertStage(int L, int M, FIRFilter<FloatType>& filter, bool passThrough = false)
+        : L(L), M(M), filter(filter), ii(0), di(0)
     {
         // to-do: check that FIRFilter has copy constructor
-        if(L == 1 && M == 1) {
+        if(passThrough) {
+            convertFn = &ConvertStage::passThrough;
+        }
+        else if(L == 1 && M == 1) {
             convertFn = &ConvertStage::filterOnly;
         }
         else if (L != 1 && M == 1) {
@@ -33,7 +36,11 @@ private:
     int L;
     int M;
     FIRFilter<FloatType> filter;
+    int ii;
+    int di;
+
     void (*convertFn)(FloatType* outBuffer, size_t& outBufferSize, const FloatType* inBuffer, const size_t& inBufferSize);
+    
     void passThrough(FloatType* outBuffer, size_t& outBufferSize, const FloatType* inBuffer, const size_t& inBufferSize) {
         memcpy(outBuffer, inBuffer, inBufferSize);
         outBufferSize = inBufferSize;
