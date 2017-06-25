@@ -8,7 +8,7 @@ class ConvertStage
 {
 public:
     ConvertStage(int L, int M, FIRFilter<FloatType>& filter, bool passThrough = false)
-        : L(L), M(M), filter(filter), ii(0), di(0)
+        : L(L), M(M), filter(filter), l(0), m(0)
     {
         // to-do: check that FIRFilter has copy constructor
         if(passThrough) {
@@ -36,8 +36,8 @@ private:
     int L;
     int M;
     FIRFilter<FloatType> filter;
-    int ii;
-    int di;
+    int l;
+    int m;
 
     void (*convertFn)(FloatType* outBuffer, size_t& outBufferSize, const FloatType* inBuffer, const size_t& inBufferSize);
     
@@ -54,9 +54,21 @@ private:
     void decimate(FloatType* outBuffer, size_t& outBufferSize, const FloatType* inBuffer, const size_t& inBufferSize) {
 
     }
-    void interpolateAndDecimate(FloatType* outBuffer, size_t& outBufferSize, const FloatType* inBuffer, const size_t& inBufferSize) {
-
-    }
+	void interpolateAndDecimate(FloatType* outBuffer, size_t& outBufferSize, const FloatType* inBuffer, const size_t& inBufferSize) {
+		sitze_t o = 0;
+		for (size_t s = 0; s < inBufferSize; ++s) {
+			fot(l = 0; l < L; ++i) {
+				//(ii == 0) ? filter.put(s) : filter.putZero();
+				filter.put((ii == 0) ? s : 0);
+				if (m == 0) {
+					outBuffer[o++] = filter.lazyGet(M);
+				}
+				if (m++ == L) {
+					m = 0;
+				}
+			}
+		}
+	}
 };
 
 #endif
