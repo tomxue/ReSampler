@@ -1327,7 +1327,7 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 		inputBuffers.emplace_back(std::unique_ptr<FloatType[]>{new FloatType[BUFFERSIZE]});
 		outputBuffers.emplace_back(std::unique_ptr<FloatType[]>{new FloatType[outBufferSize]});
 
-		convertStages.emplace_back(F.numerator, F.denominator, Filters[0]);
+		convertStages.emplace_back(F.numerator, F.denominator, Filters[n]);
 
 	}
 
