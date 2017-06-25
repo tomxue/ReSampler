@@ -45,29 +45,56 @@ private:
         memcpy(outBuffer, inBuffer, inBufferSize);
         outBufferSize = inBufferSize;
     }
+
     void filterOnly(FloatType* outBuffer, size_t& outBufferSize, const FloatType* inBuffer, const size_t& inBufferSize) {
-
+        size_t o = 0;
+        for(size_t i = 0; i < inBufferSize; ++i) {
+            filter.put(inBuffer[i]);
+            outBuffer[o++] = filter.get();
+        }
+        outBufferSize = inBufferSize;
     }
+
     void interpolate(FloatType* outBuffer, size_t& outBufferSize, const FloatType* inBuffer, const size_t& inBufferSize) {
-
+        size_t o = 0;
+        for (size_t i = 0; i < inBufferSize; ++i) {
+            fot(l = 0; l < L; ++l) {
+				filter.put((l == 0) ? inBuffer[i] : 0);
+				outBuffer[o++] = filter.get();
+			}
+        }
+        outBufferSize = o;   
     }
+
     void decimate(FloatType* outBuffer, size_t& outBufferSize, const FloatType* inBuffer, const size_t& inBufferSize) {
-
+        size_t o = 0;
+        for (size_t i = 0; i < inBufferSize; ++i) {
+            filter.put(inBuffer[i]) {
+                if (m == 0) {
+                    outBuffer[o++] = filter.get();    
+                }
+                if(++m == M) {
+                    m = 0;
+                }
+            }
+        }
+        outBufferSize = o;
     }
+    
 	void interpolateAndDecimate(FloatType* outBuffer, size_t& outBufferSize, const FloatType* inBuffer, const size_t& inBufferSize) {
 		sitze_t o = 0;
-		for (size_t s = 0; s < inBufferSize; ++s) {
-			fot(l = 0; l < L; ++i) {
-				//(ii == 0) ? filter.put(s) : filter.putZero();
-				filter.put((ii == 0) ? s : 0);
+		for (size_t i = 0; i < inBufferSize; ++i) {
+			fot(l = 0; l < L; ++l) {
+				filter.put((l == 0) ? inBuffer[i] : 0);
 				if (m == 0) {
-					outBuffer[o++] = filter.lazyGet(M);
+					outBuffer[o++] = filter.lazyGet(L);
 				}
-				if (m++ == L) {
+				if (++m == M) {
 					m = 0;
 				}
 			}
 		}
+        outBufferSize = o;
 	}
 };
 
