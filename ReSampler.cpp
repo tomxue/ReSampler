@@ -1316,6 +1316,28 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 	bool bClippingDetected;
 	RaiiTimer timer;
 	
+	// Make vectors of input and output Buffers
+
+	std::vector<std::unique_ptr<FloatType[]>> inputBuffers;
+	std::vector<std::unique_ptr<FloatType[]>> outputBuffers;
+	std::vector<ConvertStage<FloatType>> convertStages;
+	size_t outBufferSize = std::ceil(BUFFERSIZE * static_cast<double>(F.numerator) / static_cast<double>(F.denominator));
+
+	for (int n = 0; n < nChannels; n++) {
+		inputBuffers.emplace_back(std::unique_ptr<FloatType[]>{new FloatType[BUFFERSIZE]});
+		outputBuffers.emplace_back(std::unique_ptr<FloatType[]>{new FloatType[outBufferSize]});
+
+		convertStages.emplace_back(F.numerator, F.denominator, Filters[0]);
+
+	}
+
+	// ---
+
+	// make a vector of output buffers
+
+
+
+
 	do { // clipping detection loop (repeat if clipping detected)
 
 		bClippingDetected = false;

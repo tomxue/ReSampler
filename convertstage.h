@@ -7,45 +7,41 @@ template<typename FloatType>
 class ConvertStage
 {
 public:
-    ConvertStage(int L, int M, FIRFilter<FloatType>& filter, bool passThrough = false)
-        : L(L), M(M), filter(filter), l(0), m(0)
+    ConvertStage(int L, int M, FIRFilter<FloatType>& filter)
+        : L(L), M(M), filter(filter), l(0), m(0), bypassMode(false)
     {
-        // to-do: check that FIRFilter has copy constructor
-        if(passThrough) {
-            convertFn = &ConvertStage::passThrough;
-        }
-        else if(L == 1 && M == 1) {
-            convertFn = &ConvertStage::filterOnly;
-        }
-        else if (L != 1 && M == 1) {
-            convertFn = &ConvertStage::interpolate;
-        }
-        else if (L == 1 && M != 1) {
-            convertFn = &ConvertStage::decimate;
-        }
-        else {
-            convertFn = &ConvertStage::interpolateAndDecimate;
-        }
+		SetConvertFunction();
     }
 
     void convert(FloatType* outBuffer, size_t& outBufferSize, const FloatType* inBuffer, const size_t& inBufferSize) {
         (*convertFn)(outBuffer, outBufferSize, inBuffer, inBufferSize);
-    }    
+    }
+
+	void setBypassMode(bool bypassMode) {
+		ConvertStage::bypassMode = bypassMode;
+		SetConvertFunction();
+	}
 
 private:
-    int L;
-    int M;
+    int L;	// interpoLation factor
+    int M;	// deciMation factor
     FIRFilter<FloatType> filter;
-    int l;
-    int m;
-
-    void (*convertFn)(FloatType* outBuffer, size_t& outBufferSize, const FloatType* inBuffer, const size_t& inBufferSize);
+    int l;	// interpolation index
+    int m;	// decimation index
+	bool bypassMode;
     
+	// The following typedef defines the type 'ConvertFunction' which is a pointer to any of the member functions which 
+	// take the arguments (FloatType* outBuffer, size_t& outBufferSize, const FloatType* inBuffer, const size_t& inBufferSize) ...
+	typedef void (ConvertStage::*ConvertFunction) (FloatType* outBuffer, size_t& outBufferSize, const FloatType* inBuffer, const size_t& inBufferSize); // see https://isocpp.org/wiki/faq/pointers-to-members
+	ConvertFunction convertFn;
+
+	// passThrough() - just copies input straight to output (used in bypassMode mode)
     void passThrough(FloatType* outBuffer, size_t& outBufferSize, const FloatType* inBuffer, const size_t& inBufferSize) {
-        memcpy(outBuffer, inBuffer, inBufferSize);
+        memcpy(outBuffer, inBuffer, inBufferSize * sizeof(FloatType));
         outBufferSize = inBufferSize;
     }
 
+	// filerOnly() - keeps 1:1 conversion ratio, but applies filter
     void filterOnly(FloatType* outBuffer, size_t& outBufferSize, const FloatType* inBuffer, const size_t& inBufferSize) {
         size_t o = 0;
         for(size_t i = 0; i < inBufferSize; ++i) {
@@ -55,10 +51,11 @@ private:
         outBufferSize = inBufferSize;
     }
 
+	// interpolate() - interpolate (zero-stuffing) and apply filter:
     void interpolate(FloatType* outBuffer, size_t& outBufferSize, const FloatType* inBuffer, const size_t& inBufferSize) {
         size_t o = 0;
         for (size_t i = 0; i < inBufferSize; ++i) {
-            fot(l = 0; l < L; ++l) {
+            for(l = 0; l < L; ++l) {
 				filter.put((l == 0) ? inBuffer[i] : 0);
 				outBuffer[o++] = filter.get();
 			}
@@ -66,28 +63,29 @@ private:
         outBufferSize = o;   
     }
 
+	// decimate() - decimate and apply filter
     void decimate(FloatType* outBuffer, size_t& outBufferSize, const FloatType* inBuffer, const size_t& inBufferSize) {
         size_t o = 0;
         for (size_t i = 0; i < inBufferSize; ++i) {
-            filter.put(inBuffer[i]) {
-                if (m == 0) {
-                    outBuffer[o++] = filter.get();    
-                }
-                if(++m == M) {
-                    m = 0;
-                }
+			filter.put(inBuffer[i]);
+            if (m == 0) {
+                outBuffer[o++] = filter.get();    
+            }
+            if(++m == M) {
+                m = 0;
             }
         }
         outBufferSize = o;
     }
     
+	// interpolateAndDecimate()
 	void interpolateAndDecimate(FloatType* outBuffer, size_t& outBufferSize, const FloatType* inBuffer, const size_t& inBufferSize) {
-		sitze_t o = 0;
+		size_t o = 0;
 		for (size_t i = 0; i < inBufferSize; ++i) {
-			fot(l = 0; l < L; ++l) {
+			for(l = 0; l < L; ++l) {
 				filter.put((l == 0) ? inBuffer[i] : 0);
 				if (m == 0) {
-					outBuffer[o++] = filter.lazyGet(L);
+					outBuffer[o++] = filter.LazyGet(L);
 				}
 				if (++m == M) {
 					m = 0;
@@ -95,6 +93,24 @@ private:
 			}
 		}
         outBufferSize = o;
+	}
+
+	void SetConvertFunction() {
+		if (bypassMode) {
+			convertFn = &ConvertStage::passThrough;
+		}
+		else if (L == 1 && M == 1) {
+			convertFn = &ConvertStage::filterOnly;
+		}
+		else if (L != 1 && M == 1) {
+			convertFn = &ConvertStage::interpolate;
+		}
+		else if (L == 1 && M != 1) {
+			convertFn = &ConvertStage::decimate;
+		}
+		else {
+			convertFn = &ConvertStage::interpolateAndDecimate;
+		}
 	}
 };
 
