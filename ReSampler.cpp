@@ -1333,10 +1333,14 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 
 	// ---
 
-	// make a vector of output buffers
-
-
-
+// to-do (new system)
+// =====================
+// Grab nChannels * inBufferSize samples from file
+// de-interleave into channel buffers
+// run convert stage for each channel (concurrently)
+// Apply Gain & dithering
+// interleave and get peak
+// write to outfile
 
 	do { // clipping detection loop (repeat if clipping detected)
 
