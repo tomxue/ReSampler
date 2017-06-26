@@ -14,7 +14,7 @@ public:
     }
 
     void convert(FloatType* outBuffer, size_t& outBufferSize, const FloatType* inBuffer, const size_t& inBufferSize) {
-        (*convertFn)(outBuffer, outBufferSize, inBuffer, inBufferSize);
+        (this->*convertFn)(outBuffer, outBufferSize, inBuffer, inBufferSize);
     }
 
 	void setBypassMode(bool bypassMode) {

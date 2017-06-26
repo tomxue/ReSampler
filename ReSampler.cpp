@@ -1406,17 +1406,17 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 			count = infile.read(&InBuffer[0], InBufferSize);
 			
 			// de-interleave into channel buffers
-			size_t f = 0;
+			size_t i = 0;
 			for (size_t s = 0 ; s < count; s += nChannels) {
 				for (int ch = 0 ; ch < nChannels; ++ch) {
-					inputBuffers[ch][f] = InBuffer[s+ch];
+					inputBuffers[ch][i] = InBuffer[s+ch];
 				}
-				++f;
+				++i;
 			}
 			// run convert stage for each channel (concurrently)
 			for (int ch = 0; ch < nChannels; ++ch) {
 				size_t o = 0;
-				convertStages[ch].convert(&outputBuffers[ch][0],o,&inputBuffers[ch][0],f);
+				convertStages[ch].convert(&outputBuffers[ch][0],o,&inputBuffers[ch][0],i);
 			}
 			// Apply Gain & dithering
 			// interleave and get peak
