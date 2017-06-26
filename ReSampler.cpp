@@ -1317,30 +1317,20 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 	RaiiTimer timer;
 	
 	// Make vectors of input and output Buffers
-
-	std::vector<std::unique_ptr<FloatType[]>> inputBuffers;
-	std::vector<std::unique_ptr<FloatType[]>> outputBuffers;
+	std::vector<std::vector<FloatType>> inputBuffers;
+	std::vector<std::vector<FloatType>> outputBuffers;
+	//std::vector<std::unique_ptr<FloatType[]>> inputBuffers;
+	//std::vector<std::unique_ptr<FloatType[]>> outputBuffers;
 	std::vector<ConvertStage<FloatType>> convertStages;
 	size_t outBufferSize = std::ceil(BUFFERSIZE * static_cast<double>(F.numerator) / static_cast<double>(F.denominator));
 
 	for (int n = 0; n < nChannels; n++) {
-		inputBuffers.emplace_back(std::unique_ptr<FloatType[]>{new FloatType[BUFFERSIZE]});
-		outputBuffers.emplace_back(std::unique_ptr<FloatType[]>{new FloatType[outBufferSize]});
-
+		//inputBuffers.emplace_back(std::unique_ptr<FloatType[]>{new FloatType[BUFFERSIZE]});
+		//outputBuffers.emplace_back(std::unique_ptr<FloatType[]>{new FloatType[outBufferSize]});
+		inputBuffers.emplace_back(std::vector<FloatType>(BUFFERSIZE,0));
+		outputBuffers.emplace_back(std::vector<FloatType>(outBufferSize,0));
 		convertStages.emplace_back(F.numerator, F.denominator, Filters[n]);
-
 	}
-
-	// ---
-
-// to-do (new system)
-// =====================
-// Grab nChannels * inBufferSize samples from file
-// de-interleave into channel buffers
-// run convert stage for each channel (concurrently)
-// Apply Gain & dithering
-// interleave and get peak
-// write to outfile
 
 	do { // clipping detection loop (repeat if clipping detected)
 
@@ -1399,14 +1389,44 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 		PeakOutputSample = 0.0;
 		SamplesRead = 0;
 		sf_count_t NextProgressThreshold = IncrementalProgressThreshold;
-		size_t OutBufferSize = (2 * nChannels /* padding */ + (BufferSize * F.numerator / F.denominator));
-		
+//		size_t OutBufferSize = (2 * nChannels /* padding */ + (BufferSize * F.numerator / F.denominator));
+		size_t OutBufferSize = nChannels * outBufferSize;	// little outBufferSize is size of out channel buffer.
+		size_t InBufferSize = BufferSize;	
 		// Allocate output buffer:
+		std::vector<FloatType> InBuffer(InBufferSize, 0);
 		std::vector<FloatType> OutBuffer(OutBufferSize, 0);
+
 		FloatType* pOutBuffer = &OutBuffer[0];
 
 		int outStartOffset = std::min(groupDelay * nChannels, static_cast<int>(OutBufferSize) - nChannels);
+		do {
+			// to-do (new system)
+			// =====================
+			// Grab nChannels * inBufferSize samples from file
+			count = infile.read(&InBuffer[0], InBufferSize);
+			
+			// de-interleave into channel buffers
+			size_t f = 0;
+			for (size_t s = 0 ; s < count; s += nChannels) {
+				for (int ch = 0 ; ch < nChannels; ++ch) {
+					inputBuffers[ch][f] = InBuffer[s+ch];
+				}
+				++f;
+			}
+			// run convert stage for each channel (concurrently)
+			for (int ch = 0; ch < nChannels; ++ch) {
+				size_t o = 0;
+				convertStages[ch].convert(&outputBuffers[ch][0],o,&inputBuffers[ch][0],f);
+			}
+			// Apply Gain & dithering
+			// interleave and get peak
+			// write to outfile
 
+		} while (count > 0);
+
+
+
+/*
 		if (F.numerator == 1 && F.denominator == 1) { // no change to sample rate; format conversion only
 			std::cout << " No change to sample rate" << std::endl;
 			do { // Read and process blocks of samples until the end of file is reached
@@ -1653,7 +1673,7 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 
 			} while (count > 0);
 		} // ends Interpolate and Decimate
-
+*/
 		// notify user:
 		std::cout << "Done" << std::endl;
 		auto prec = std::cout.precision();
