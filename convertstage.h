@@ -83,9 +83,11 @@ private:
 		size_t o = 0;
 		for (size_t i = 0; i < inBufferSize; ++i) {
 			for(l = 0; l < L; ++l) {
-				filter.put((l == 0) ? inBuffer[i] : 0);
+			//	filter.put((l == 0) ? inBuffer[i] : 0);
+				((l == 0) ? filter.put(inBuffer[i]) : filter.putZero());
 				if (m == 0) {
 					outBuffer[o++] = filter.LazyGet(L);
+					//outBuffer[o++] = filter.get();
 				}
 				if (++m == M) {
 					m = 0;
@@ -98,18 +100,23 @@ private:
 	void SetConvertFunction() {
 		if (bypassMode) {
 			convertFn = &ConvertStage::passThrough;
+			std::cout << "convert mode: bypass" << std::endl;
 		}
 		else if (L == 1 && M == 1) {
 			convertFn = &ConvertStage::filterOnly;
+			std::cout << "convert mode: filter only" << std::endl;
 		}
 		else if (L != 1 && M == 1) {
 			convertFn = &ConvertStage::interpolate;
+			std::cout << "convert mode: interpolate" << std::endl;
 		}
 		else if (L == 1 && M != 1) {
 			convertFn = &ConvertStage::decimate;
+			std::cout << "convert mode: decimate" << std::endl;
 		}
 		else {
 			convertFn = &ConvertStage::interpolateAndDecimate;
+			std::cout << "convert mode: interpolate & decimate" << std::endl;
 		}
 	}
 };

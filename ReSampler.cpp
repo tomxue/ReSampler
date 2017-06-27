@@ -1329,7 +1329,7 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 		Gain *= DitherCompensation;
 	}
 
-	FloatType PeakOutputSample;
+	FloatType peakOutputSample;
 	bool bClippingDetected;
 	RaiiTimer timer;
 
@@ -1387,7 +1387,7 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 
 		std::cout << "Converting (multi-threaded) ...";
 		//sf_count_t OutBufferIndex = 0;
-		PeakOutputSample = 0.0;
+		peakOutputSample = 0.0;
 		totalSamplesRead = 0;
 		sf_count_t NextProgressThreshold = IncrementalProgressThreshold;
 
@@ -1421,6 +1421,7 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 					outputBlock[outputBlockIndex[ch]] = outputSample; // interleave
 					outputBlockIndex[ch] += nChannels;
 				}
+				peakOutputSample = std::max(peakOutputSample, localPeak);
 			}
 
 			outFile->write(outputBlock.data(), outputBlockIndex[0]);
@@ -1686,13 +1687,13 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 		// notify user:
 		std::cout << "Done" << std::endl;
 		auto prec = std::cout.precision();
-		std::cout << "Peak output sample: " << std::setprecision(6) << PeakOutputSample << " (" << 20 * log10(PeakOutputSample) << " dBFS)" << std::endl;
+		std::cout << "Peak output sample: " << std::setprecision(6) << peakOutputSample << " (" << 20 * log10(peakOutputSample) << " dBFS)" << std::endl;
 		std::cout.precision(prec);
 
 		// Test for clipping:	
-		if (PeakOutputSample > ci.Limit) {
+		if (peakOutputSample > ci.Limit) {
 			bClippingDetected = true;
-			FloatType GainAdjustment = static_cast<FloatType>(clippingTrim) * ci.Limit / PeakOutputSample;
+			FloatType GainAdjustment = static_cast<FloatType>(clippingTrim) * ci.Limit / peakOutputSample;
 
 			Gain *= GainAdjustment;
 			std::cout << "\nClipping detected !" << std::endl;
