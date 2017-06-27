@@ -7,8 +7,8 @@ template<typename FloatType>
 class ConvertStage
 {
 public:
-    ConvertStage(int L, int M, FIRFilter<FloatType>& filter)
-        : L(L), M(M), filter(filter), l(0), m(0), bypassMode(false)
+    ConvertStage(int L, int M, FIRFilter<FloatType>& filter, bool bypassMode = false)
+        : L(L), M(M), filter(filter), l(0), m(0), bypassMode(bypassMode)
     {
 		SetConvertFunction();
     }
