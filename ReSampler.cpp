@@ -1104,6 +1104,7 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 		return false;
 	}
 
+	// read metadata:
 	MetaData m;
 	getMetaData(m, infile);
 	
@@ -1113,8 +1114,27 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 	sf_count_t InputSampleCount = infile.frames() * nChannels;
 	sf_count_t IncrementalProgressThreshold = InputSampleCount / 10;
 
-	int InputFileFormat = infile.format();
+	// determine conversion ratio:
+	Fraction FOriginal = GetSimplifiedFraction(InputSampleRate, ci.OutputSampleRate);
+	Fraction F = FOriginal;
 
+	// set buffer sizes:
+	size_t inputChannelBufferSize = BUFFERSIZE;
+	size_t inputBlockSize = BUFFERSIZE * nChannels;
+	size_t outputChannelBufferSize = std::ceil(BUFFERSIZE * static_cast<double>(F.numerator) / static_cast<double>(F.denominator));
+	size_t outputBlockSize = nChannels * outputChannelBufferSize;
+	
+	// allocate buffers:
+	std::vector<FloatType> inputBlock(inputBlockSize, 0);		// input buffer for storing interleaved samples from input file
+	std::vector<FloatType> outputBlock(outputBlockSize, 0);		// output buffer for storing interleaved samples to be saved to output file
+	std::vector<std::vector<FloatType>> inputChannelBuffers;	// input buffer for each channel to store deinterleaved samples 
+	std::vector<std::vector<FloatType>> outputChannelBuffers;	// output buffer for each channel to store converted deinterleaved samples
+	for (int n = 0; n < nChannels; n++) {
+		inputChannelBuffers.emplace_back(std::vector<FloatType>(inputChannelBufferSize, 0));
+		outputChannelBuffers.emplace_back(std::vector<FloatType>(outputChannelBufferSize, 0));
+	}
+			
+	int InputFileFormat = infile.format();
 	if (InputFileFormat != DFF_FORMAT && InputFileFormat != DSF_FORMAT) { // this block only relevant to libsndfile ...
 		// detect if input format is a floating-point format:
 		bool bFloat = false;
@@ -1146,25 +1166,20 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 	std::cout << "source file channels: " << nChannels << std::endl;
 	std::cout << "input sample rate: " << InputSampleRate << "\noutput sample rate: " << ci.OutputSampleRate << std::endl;
 
-	size_t BufferSize = (BUFFERSIZE / nChannels) * nChannels; // round down to integer multiple of nChannels (file may have odd number of channels!)
-	assert(BUFFERSIZE >= BufferSize);
-
-	FloatType inbuffer[BUFFERSIZE];
-	sf_count_t count;
-	sf_count_t SamplesRead = 0;
+	sf_count_t samplesRead;
+	sf_count_t totalSamplesRead = 0;
 	FloatType PeakInputSample;
-
 	if (peakDetection) {
 		PeakInputSample = 0.0;
-		std::cout << "Scanning input file for peaks ..."; // to-do: can we read the PEAK chunk in floating-point files ?
+		std::cout << "Scanning input file for peaks ...";
 
 		do {
-			count = infile.read(inbuffer, BufferSize);
-			SamplesRead += count;
-			for (unsigned int s = 0; s < count; ++s) { // read all samples, without caring which channel they belong to
-				PeakInputSample = std::max(PeakInputSample, std::abs(inbuffer[s]));
+			samplesRead = infile.read(inputBlock.data(), inputBlockSize);
+			totalSamplesRead += samplesRead;
+			for (unsigned int s = 0; s < samplesRead; ++s) { // read all samples, without caring which channel they belong to
+				PeakInputSample = std::max(PeakInputSample, std::abs(inputBlock[s]));
 			}
-		} while (count > 0);
+		} while (samplesRead > 0);
 
 		std::cout << "Done\n";
 		std::cout << "Peak input sample: " << std::fixed << PeakInputSample << " (" << 20 * log10(PeakInputSample) << " dBFS)" << std::endl;
@@ -1182,9 +1197,6 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 		std::cout << "Normalizing to " << std::setprecision(2) << ci.Limit << std::endl;
 		std::cout.precision(prec);
 	}
-
-	Fraction FOriginal = GetSimplifiedFraction(InputSampleRate, ci.OutputSampleRate);
-	Fraction F = FOriginal;
 
 	// determine base filter size
 	int BaseFilterSize;
@@ -1210,7 +1222,7 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 	int FilterSize = std::min(static_cast<int>(overSamplingFactor * BaseFilterSize * steepness), FILTERSIZE_LIMIT)
 		| static_cast<int>(1);	// ensure that filter length is always odd
 
-								// determine sidelobe attenuation
+	// determine sidelobe attenuation
 	int SidelobeAtten = ((FOriginal.numerator == 1) || (FOriginal.denominator == 1)) ?
 		195 :
 		160;
@@ -1244,6 +1256,11 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 		Filters.emplace_back(pFilterTaps, FilterSize);
 	}
 
+	// make a vector of converter stages:
+	std::vector<ConvertStage<FloatType>> convertStages;
+	for (int n = 0; n < nChannels; n++) {
+		convertStages.emplace_back(F.numerator, F.denominator, Filters[n]);
+	}
 	// calculate group Delay
 	int groupDelay = (ci.bMinPhase || !ci.bDelayTrim) ? 0 : (FilterSize - 1) / 2 / FOriginal.denominator;
 
@@ -1315,22 +1332,6 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 	FloatType PeakOutputSample;
 	bool bClippingDetected;
 	RaiiTimer timer;
-	
-	// Make vectors of input and output Buffers
-	std::vector<std::vector<FloatType>> inputBuffers;
-	std::vector<std::vector<FloatType>> outputBuffers;
-	//std::vector<std::unique_ptr<FloatType[]>> inputBuffers;
-	//std::vector<std::unique_ptr<FloatType[]>> outputBuffers;
-	std::vector<ConvertStage<FloatType>> convertStages;
-	size_t outBufferSize = std::ceil(BUFFERSIZE * static_cast<double>(F.numerator) / static_cast<double>(F.denominator));
-
-	for (int n = 0; n < nChannels; n++) {
-		//inputBuffers.emplace_back(std::unique_ptr<FloatType[]>{new FloatType[BUFFERSIZE]});
-		//outputBuffers.emplace_back(std::unique_ptr<FloatType[]>{new FloatType[outBufferSize]});
-		inputBuffers.emplace_back(std::vector<FloatType>(BUFFERSIZE,0));
-		outputBuffers.emplace_back(std::vector<FloatType>(outBufferSize,0));
-		convertStages.emplace_back(F.numerator, F.denominator, Filters[n]);
-	}
 
 	do { // clipping detection loop (repeat if clipping detected)
 
@@ -1385,46 +1386,36 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 		}
 
 		std::cout << "Converting (multi-threaded) ...";
-		sf_count_t OutBufferIndex = 0;
+		//sf_count_t OutBufferIndex = 0;
 		PeakOutputSample = 0.0;
-		SamplesRead = 0;
+		totalSamplesRead = 0;
 		sf_count_t NextProgressThreshold = IncrementalProgressThreshold;
-//		size_t OutBufferSize = (2 * nChannels /* padding */ + (BufferSize * F.numerator / F.denominator));
-		size_t OutBufferSize = nChannels * outBufferSize;	// little outBufferSize is size of out channel buffer.
-		size_t InBufferSize = BufferSize;	
-		// Allocate output buffer:
-		std::vector<FloatType> InBuffer(InBufferSize, 0);
-		std::vector<FloatType> OutBuffer(OutBufferSize, 0);
 
-		FloatType* pOutBuffer = &OutBuffer[0];
-
-		int outStartOffset = std::min(groupDelay * nChannels, static_cast<int>(OutBufferSize) - nChannels);
+		int outStartOffset = std::min(groupDelay * nChannels, static_cast<int>(outputBlockSize) - nChannels);
 		do {
 			// to-do (new system)
 			// =====================
-			// Grab nChannels * inBufferSize samples from file
-			count = infile.read(&InBuffer[0], InBufferSize);
+			// Grab a block of interleaved samples from file:
+			samplesRead = infile.read(inputBlock.data(), inputBlockSize);
 			
 			// de-interleave into channel buffers
 			size_t i = 0;
-			for (size_t s = 0 ; s < count; s += nChannels) {
+			for (size_t s = 0 ; s < samplesRead; s += nChannels) {
 				for (int ch = 0 ; ch < nChannels; ++ch) {
-					inputBuffers[ch][i] = InBuffer[s+ch];
+					inputChannelBuffers[ch][i] = inputBlock[s+ch];
 				}
 				++i;
 			}
 			// run convert stage for each channel (concurrently)
 			for (int ch = 0; ch < nChannels; ++ch) {
 				size_t o = 0;
-				convertStages[ch].convert(&outputBuffers[ch][0],o,&inputBuffers[ch][0],i);
+				convertStages[ch].convert(outputChannelBuffers[ch].data(), o, inputChannelBuffers[ch].data(), i);
 			}
 			// Apply Gain & dithering
 			// interleave and get peak
 			// write to outfile
 
-		} while (count > 0);
-
-
+		} while (samplesRead > 0);
 
 /*
 		if (F.numerator == 1 && F.denominator == 1) { // no change to sample rate; format conversion only
@@ -1674,6 +1665,7 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 			} while (count > 0);
 		} // ends Interpolate and Decimate
 */
+
 		// notify user:
 		std::cout << "Done" << std::endl;
 		auto prec = std::cout.precision();
