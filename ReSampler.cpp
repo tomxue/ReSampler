@@ -1257,12 +1257,6 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 
 	//to-do: handle oversampled ratios (eg 8/8) - F vs FOriginal etc
 
-	// make a vector of converter stages:
-	bool bypassMode = (F.numerator == 1 && F.denominator == 1);
-	std::vector<ConvertStage<FloatType>> convertStages;
-	for (int n = 0; n < nChannels; n++) {
-		convertStages.emplace_back(F.numerator, F.denominator, Filters[n], bypassMode);
-	}
 	// calculate group Delay
 	int groupDelay = (ci.bMinPhase || !ci.bDelayTrim) ? 0 : (FilterSize - 1) / 2 / FOriginal.denominator;
 
@@ -1339,6 +1333,13 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 
 		bClippingDetected = false;
 		std::unique_ptr<SndfileHandle> outFile;
+
+		// make a vector of converter stages:
+		bool bypassMode = (F.numerator == 1 && F.denominator == 1);
+		std::vector<ConvertStage<FloatType>> convertStages;
+		for (int n = 0; n < nChannels; n++) {
+			convertStages.emplace_back(F.numerator, F.denominator, Filters[n], bypassMode);
+		}
 
 		try { // Open output file:
 
@@ -1436,255 +1437,6 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 
 		} while (samplesRead > 0);
 
-/*
-		if (F.numerator == 1 && F.denominator == 1) { // no change to sample rate; format conversion only
-			std::cout << " No change to sample rate" << std::endl;
-			do { // Read and process blocks of samples until the end of file is reached
-				count = infile.read(inbuffer, BufferSize);
-				SamplesRead += count;
-				for (int Channel = 0; Channel < nChannels; Channel++) {
-					OutBufferIndex = 0;
-					for (unsigned int s = 0; s < count; s += nChannels) {
-						FloatType OutputSample = ci.bDither ?
-							Ditherers[Channel].Dither(Gain * inbuffer[s + Channel]) :
-							Gain * inbuffer[s + Channel];
-						pOutBuffer[OutBufferIndex + Channel] = OutputSample;
-						PeakOutputSample = std::max(std::abs(PeakOutputSample), std::abs(OutputSample));
-						OutBufferIndex += nChannels;
-					} // ends loop over s
-				} // ends loop over channel
-				outFile->write(pOutBuffer, OutBufferIndex);
-
-				// conditionally send progress update:
-				if (SamplesRead > NextProgressThreshold) {
-					int ProgressPercentage = std::min(static_cast<int>(99), static_cast<int>(100 * SamplesRead / InputSampleCount));
-					std::cout << ProgressPercentage << "%\b\b\b" << std::flush;
-					NextProgressThreshold += IncrementalProgressThreshold;
-				}
-			} while (count > 0);
-		} // ends 1:1 conversion
-
-		else if (F.numerator == 1 && F.denominator != 1) { // Decimate Only
-			
-			int di[MAXCHANNELS];
-			for (int x = 0; x < MAXCHANNELS; x++) {
-				di[x] = 0;
-			}
-
-			typedef struct {
-				int outputBufferIndex;
-				FloatType peak;
-			} Res;
-
-			std::vector<std::future<Res>> r(nChannels);
-			ctpl::thread_pool threadPool(nChannels);
-
-			do { // Read and process blocks of samples until the end of file is reached
-				count = infile.read(inbuffer, BufferSize);
-				SamplesRead += count;
-
-				for (int Channel = 0; Channel < nChannels; Channel++) {
-					r[Channel] = threadPool.push([&, Channel](int) {
-						int localDecimationIndex = di[Channel];
-						FloatType localPeak = 0;
-						unsigned int localOutBufferIndex = 0;
-						for (unsigned int s = 0; s < count; s += nChannels) {
-							Filters[Channel].put(inbuffer[s + Channel]); // inject a source sample
-							if (localDecimationIndex == 0) { // decimate
-								FloatType OutputSample = ci.bDither ?
-									Ditherers[Channel].Dither(Gain * Filters[Channel].get()) :
-									Gain * Filters[Channel].get();
-								pOutBuffer[localOutBufferIndex + Channel] = OutputSample;
-								localPeak = std::max(localPeak, std::abs(OutputSample));
-								localOutBufferIndex += nChannels;
-							}
-							if (++localDecimationIndex == F.denominator)
-								localDecimationIndex = 0;
-						} // ends loop over s
-						di[Channel] = localDecimationIndex;
-						Res res;
-						res.outputBufferIndex = localOutBufferIndex;
-						res.peak = localPeak;
-						return res;
-					});
-				} // ends loop over Channel
-
-				// collect results:
-				for (int Channel = 0; Channel < nChannels; ++Channel) {
-					Res res = r[Channel].get();
-					OutBufferIndex = res.outputBufferIndex;
-					PeakOutputSample = std::max(PeakOutputSample, res.peak);
-				}
-
-				// write to file:
-				if (outStartOffset <= 0) {
-					outFile->write(pOutBuffer, OutBufferIndex);
-				}
-				else {
-					outFile->write(pOutBuffer + outStartOffset, OutBufferIndex - outStartOffset);
-					outStartOffset = 0;
-				}
-
-				// conditionally send progress update:
-				if (SamplesRead > NextProgressThreshold) {
-					int ProgressPercentage = std::min(99, static_cast<int>(100 * SamplesRead / InputSampleCount));
-					std::cout << ProgressPercentage << "%\b\b\b" << std::flush;
-					NextProgressThreshold += IncrementalProgressThreshold;
-				}
-			} while (count > 0);
-		} // ends Decimate Only
-
-		else if (F.denominator == 1) { // Interpolate only
-
-			typedef struct {
-				int outputBufferIndex;
-				FloatType peak;
-			} Res;
-
-			std::vector<std::future<Res>> r(nChannels);
-			ctpl::thread_pool threadPool(nChannels);
-
-			do { // Read and process blocks of samples until the end of file is reached
-				count = infile.read(inbuffer, BufferSize);
-				SamplesRead += count;
-
-				for (int Channel = 0; Channel < nChannels; Channel++) {
-					r[Channel] = threadPool.push([&, Channel](int) {
-						FloatType localPeak = 0;
-						unsigned int localOutBufferIndex = 0;
-						for (unsigned int s = 0; s < count; s += nChannels) {
-							for (int ii = 0; ii < F.numerator; ++ii) {
-								if (ii == 0)
-									Filters[Channel].put(inbuffer[s + Channel]); // inject a source sample
-								else
-									Filters[Channel].putZero(); // inject a Zero
-#ifdef USE_AVX
-								FloatType OutputSample = ci.bDither ?
-									Ditherers[Channel].Dither(Gain * Filters[Channel].get()) :
-									Gain * Filters[Channel].get();
-#else
-								FloatType OutputSample = ci.bDither ?
-									Ditherers[Channel].Dither(Gain * Filters[Channel].LazyGet(F.numerator)) :
-									Gain * Filters[Channel].LazyGet(F.numerator);
-#endif
-								pOutBuffer[localOutBufferIndex + Channel] = OutputSample;
-								localPeak = std::max(localPeak, std::abs(OutputSample));
-								localOutBufferIndex += nChannels;
-							} // ends loop over ii
-						} // ends loop over s
-					
-						Res res;
-						res.outputBufferIndex = localOutBufferIndex;
-						res.peak = localPeak;
-						return res;
-					});
-
-				} // ends loop over Channel
-
-				// collect results:
-				for (int Channel = 0; Channel < nChannels; ++Channel) {
-					Res res = r[Channel].get();
-					OutBufferIndex = res.outputBufferIndex;
-					PeakOutputSample = std::max(PeakOutputSample, res.peak);
-				}
-
-				// write to file:
-				if (outStartOffset <= 0) {
-					outFile->write(pOutBuffer, OutBufferIndex);
-				}
-				else {
-					outFile->write(pOutBuffer + outStartOffset, OutBufferIndex - outStartOffset);
-					outStartOffset = 0;
-				}
-
-				// conditionally send progress update:
-				if (SamplesRead > NextProgressThreshold) {
-					int ProgressPercentage = std::min(99, static_cast<int>(100 * SamplesRead / InputSampleCount));
-					std::cout << ProgressPercentage << "%\b\b\b" << std::flush;
-					NextProgressThreshold += IncrementalProgressThreshold;
-				}
-
-			} while (count > 0);
-		} // ends Interpolate Only
-
-		else { // Interpolate and Decimate
-
-			int di[MAXCHANNELS];
-			for (int x = 0; x < MAXCHANNELS; x++) {
-				di[x] = 0;
-			}
-
-			typedef struct {
-				int outputBufferIndex;
-				FloatType peak;
-			} Res;
-
-			std::vector<std::future<Res>> r(nChannels);
-			ctpl::thread_pool threadPool(nChannels);
-
-			do { // Read and process blocks of samples until the end of file is reached
-				count = infile.read(inbuffer, BufferSize);
-				SamplesRead += count;
-
-				for (int Channel = 0; Channel < nChannels; ++Channel) {
-					r[Channel] = threadPool.push([&, Channel](int) {
-						int localDecimationIndex = di[Channel];
-						FloatType localPeak = 0;
-						unsigned int localOutBufferIndex = 0;
-						for (unsigned int s = 0; s < count; s += nChannels) {
-							for (int ii = 0; ii < F.numerator; ++ii) {
-								if (ii == 0)
-									Filters[Channel].put(inbuffer[s + Channel]);
-								else
-									Filters[Channel].putZero(); // interpolate		
-								if (localDecimationIndex == 0) { // decimate
-									FloatType OutputSample = ci.bDither ?
-										Ditherers[Channel].Dither(Gain * Filters[Channel].LazyGet(F.numerator)) :
-										Gain * Filters[Channel].LazyGet(F.numerator);
-									pOutBuffer[localOutBufferIndex + Channel] = OutputSample;
-									localPeak = std::max(localPeak, std::abs(OutputSample));
-									localOutBufferIndex += nChannels;
-								}
-								if (++localDecimationIndex == F.denominator)
-									localDecimationIndex = 0;
-							} // ends loop over ii
-						} // ends loop over s
-
-						di[Channel] = localDecimationIndex;
-						Res res;
-						res.outputBufferIndex = localOutBufferIndex;
-						res.peak = localPeak;
-						return res;
-					});
-				} // ends loop over Channel
-
-				// collect results:
-				for (int Channel = 0; Channel < nChannels; ++Channel) {
-					Res res = r[Channel].get();
-					OutBufferIndex = res.outputBufferIndex;
-					PeakOutputSample = std::max(PeakOutputSample, res.peak);
-				}
-
-				// write to file:
-				if (outStartOffset <= 0) {
-					outFile->write(pOutBuffer, OutBufferIndex);
-				}
-				else {
-					outFile->write(pOutBuffer + outStartOffset, OutBufferIndex - outStartOffset);
-					outStartOffset = 0;
-				}
-
-				// conditionally send progress update:
-				if (SamplesRead > NextProgressThreshold) {
-					int ProgressPercentage = std::min(99, static_cast<int>(100 * SamplesRead / InputSampleCount));
-					std::cout << ProgressPercentage << "%\b\b\b" << std::flush;
-					NextProgressThreshold += IncrementalProgressThreshold;
-				}
-
-			} while (count > 0);
-		} // ends Interpolate and Decimate
-*/
-
 		// notify user:
 		std::cout << "Done" << std::endl;
 		auto prec = std::cout.precision();
@@ -1703,9 +1455,13 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 				infile.seek(0, SEEK_SET);
 			}
 
+			// Ditherers and convertStages are stateful and need to be reset before doing another round:
+
+			/*
 			for (auto& filter : Filters) {
 				filter.reset();
 			}
+			*/
 
 			if (ci.bDither) {
 				for (auto& ditherer : Ditherers) {
@@ -1713,6 +1469,8 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 					ditherer.reset();
 				}
 			}
+
+			convertStages.clear();
 		}
 
 	} while (!ci.disableClippingProtection && bClippingDetected);
