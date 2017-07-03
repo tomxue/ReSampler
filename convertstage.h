@@ -8,13 +8,13 @@ class ConvertStage
 {
 public:
     ConvertStage(int L, int M, FIRFilter<FloatType>& filter, bool bypassMode = false)
-        : L(L), M(M), filter(filter), l(0), m(0), bypassMode(bypassMode)
+        : L(L), M(M), filter(filter), bypassMode(bypassMode)
     {
 		SetConvertFunction();
     }
 
     void convert(FloatType* outBuffer, size_t& outBufferSize, const FloatType* inBuffer, const size_t& inBufferSize) {
-        (this->*convertFn)(outBuffer, outBufferSize, inBuffer, inBufferSize);
+		(this->*convertFn)(outBuffer, outBufferSize, inBuffer, inBufferSize);
     }
 
 	void setBypassMode(bool bypassMode) {
@@ -26,8 +26,6 @@ private:
     int L;	// interpoLation factor
     int M;	// deciMation factor
     FIRFilter<FloatType> filter;
-    int l;	// interpolation index
-    int m;	// decimation index
 	bool bypassMode;
     
 	// The following typedef defines the type 'ConvertFunction' which is a pointer to any of the member functions which 
@@ -55,7 +53,7 @@ private:
     void interpolate(FloatType* outBuffer, size_t& outBufferSize, const FloatType* inBuffer, const size_t& inBufferSize) {
         size_t o = 0;
         for (size_t i = 0; i < inBufferSize; ++i) {
-            for(l = 0; l < L; ++l) {
+            for(int l = 0; l < L; ++l) {
 				filter.put((l == 0) ? inBuffer[i] : 0);
 				outBuffer[o++] = filter.get();
 			}
@@ -66,6 +64,7 @@ private:
 	// decimate() - decimate and apply filter
     void decimate(FloatType* outBuffer, size_t& outBufferSize, const FloatType* inBuffer, const size_t& inBufferSize) {
         size_t o = 0;
+		static int m = 0;
         for (size_t i = 0; i < inBufferSize; ++i) {
 			filter.put(inBuffer[i]);
             if (m == 0) {
@@ -81,8 +80,9 @@ private:
 	// interpolateAndDecimate()
 	void interpolateAndDecimate(FloatType* outBuffer, size_t& outBufferSize, const FloatType* inBuffer, const size_t& inBufferSize) {
 		size_t o = 0;
+		static int m = 0;
 		for (size_t i = 0; i < inBufferSize; ++i) {
-			for(l = 0; l < L; ++l) {
+			for(int l = 0; l < L; ++l) {
 				((l == 0) ? filter.put(inBuffer[i]) : filter.putZero());
 				if (m == 0) {
 					outBuffer[o++] = filter.LazyGet(L);
