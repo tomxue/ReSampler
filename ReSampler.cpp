@@ -1450,7 +1450,10 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 			}
 
 			// write output block:
-			outFile->write(outputBlock.data(), outputBlockIndex);
+
+			//outFile->write(outputBlock.data(), outputBlockIndex);
+			outFile->write(outputBlock.data() + outStartOffset, outputBlockIndex - outStartOffset); // group delay compensation
+			outStartOffset = 0; // reset after first use
 
 			// conditionally send progress update:
 			if (totalSamplesRead > NextProgressThreshold) {
@@ -1478,14 +1481,6 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 				std::cout << "Re-doing with " << 20 * log10(GainAdjustment) << " dB gain adjustment" << std::endl;
 				infile.seek(0, SEEK_SET);
 			}
-
-			// Ditherers and convertStages are stateful and need to be reset before doing another round:
-
-			/*
-			for (auto& filter : Filters) {
-				filter.reset();
-			}
-			*/
 
 			if (ci.bDither) {
 				for (auto& ditherer : Ditherers) {
