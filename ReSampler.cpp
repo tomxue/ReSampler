@@ -1395,10 +1395,12 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 		sf_count_t NextProgressThreshold = IncrementalProgressThreshold;
 
 		int outStartOffset = std::min(groupDelay * nChannels, static_cast<int>(outputBlockSize) - nChannels);
+		size_t count;
 		do {
 			// Grab a block of interleaved samples from file:
 			samplesRead = infile.read(inputBlock.data(), inputBlockSize);
-			
+			totalSamplesRead += samplesRead;
+
 			// de-interleave into channel buffers
 			size_t i = 0;
 			for (size_t s = 0 ; s < samplesRead; s += nChannels) {
@@ -1408,29 +1410,51 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 				++i;
 			}
 			
-			// run convert stage for each channel (concurrently)
+			typedef struct {
+				size_t outBlockindex;
+				FloatType peak;
+			} Result;
+
+			std::vector<std::future<Result>> results(nChannels);
+			ctpl::thread_pool threadPool(nChannels);
 			size_t outputBlockIndex;
-			for (int ch = 0; ch < nChannels; ++ch) {
-				FloatType* iBuf = inputChannelBuffers[ch].data();
-				FloatType* oBuf = outputChannelBuffers[ch].data();
-				FloatType localPeak = 0.0;
-				size_t o = 0;
-				outputBlockIndex = 0;
-				convertStages[ch].convert(oBuf, o, iBuf, i);				
-				for (size_t f = 0; f < o; ++f) {
-					FloatType outputSample = ci.bDither ? Ditherers[ch].Dither(Gain * oBuf[f]) : Gain * oBuf[f]; // gain, dither
-					localPeak = std::max(localPeak, std::abs(outputSample)); // peak
-					outputBlock[outputBlockIndex + ch] = outputSample; // interleave
-					outputBlockIndex += nChannels;
-				}
-				peakOutputSample = std::max(peakOutputSample, localPeak);
+			
+			for (int ch = 0; ch < nChannels; ++ch) { // run convert stage for each channel (concurrently)
+
+				results[ch] = threadPool.push([&, ch] (int) { // worker thread
+					FloatType* iBuf = inputChannelBuffers[ch].data();
+					FloatType* oBuf = outputChannelBuffers[ch].data();
+					size_t o = 0;
+					FloatType localPeak = 0.0;
+					size_t localOutputBlockIndex = 0;
+					convertStages[ch].convert(oBuf, o, iBuf, i);
+					for (size_t f = 0; f < o; ++f) {
+						FloatType outputSample = ci.bDither ? Ditherers[ch].Dither(Gain * oBuf[f]) : Gain * oBuf[f]; // gain, dither
+						localPeak = std::max(localPeak, std::abs(outputSample)); // peak
+						outputBlock[localOutputBlockIndex + ch] = outputSample; // interleave
+						localOutputBlockIndex += nChannels;
+					}
+					Result res;
+					res.outBlockindex = localOutputBlockIndex;
+					res.peak = localPeak;
+					return res;
+				});
+
 			}
 
+			// collect results:
+			for (int ch = 0; ch < nChannels; ++ch) {
+				Result res = results[ch].get();
+				peakOutputSample = std::max(peakOutputSample, res.peak);
+				outputBlockIndex = res.outBlockindex;
+			}
+
+			// write output block:
 			outFile->write(outputBlock.data(), outputBlockIndex);
 
 			// conditionally send progress update:
-			if (samplesRead > NextProgressThreshold) {
-				int ProgressPercentage = std::min(static_cast<int>(99), static_cast<int>(100 * samplesRead / InputSampleCount));
+			if (totalSamplesRead > NextProgressThreshold) {
+				int ProgressPercentage = std::min(static_cast<int>(99), static_cast<int>(100 * totalSamplesRead / InputSampleCount));
 				std::cout << ProgressPercentage << "%\b\b\b" << std::flush;
 				NextProgressThreshold += IncrementalProgressThreshold;
 			}
