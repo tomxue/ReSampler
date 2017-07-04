@@ -1409,7 +1409,7 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 				}
 				++i;
 			}
-			
+
 			typedef struct {
 				size_t outBlockindex;
 				FloatType peak;
@@ -1428,7 +1428,7 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 					FloatType localPeak = 0.0;
 					size_t localOutputBlockIndex = 0;
 					convertStages[ch].convert(oBuf, o, iBuf, i);
-					for (size_t f = 0; f < o; ++f) {
+ 					for (size_t f = 0; f < o; ++f) {
 						FloatType outputSample = ci.bDither ? Ditherers[ch].Dither(Gain * oBuf[f]) : Gain * oBuf[f]; // gain, dither
 						localPeak = std::max(localPeak, std::abs(outputSample)); // peak
 						outputBlock[localOutputBlockIndex + ch] = outputSample; // interleave
@@ -1448,8 +1448,6 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 				peakOutputSample = std::max(peakOutputSample, res.peak);
 				outputBlockIndex = res.outBlockindex;
 			}
-
-			// write output block:
 
 			//outFile->write(outputBlock.data(), outputBlockIndex);
 			outFile->write(outputBlock.data() + outStartOffset, outputBlockIndex - outStartOffset); // group delay compensation

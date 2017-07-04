@@ -8,7 +8,7 @@ class ConvertStage
 {
 public:
     ConvertStage(int L, int M, FIRFilter<FloatType>& filter, bool bypassMode = false)
-        : L(L), M(M), filter(filter), bypassMode(bypassMode)
+        : L(L), M(M), filter(filter), bypassMode(bypassMode), m(0)
     {
 		SetConvertFunction();
     }
@@ -25,6 +25,7 @@ public:
 private:
     int L;	// interpoLation factor
     int M;	// deciMation factor
+	int m;	// decimation index
     FIRFilter<FloatType> filter;
 	bool bypassMode;
     
@@ -64,7 +65,6 @@ private:
 	// decimate() - decimate and apply filter
     void decimate(FloatType* outBuffer, size_t& outBufferSize, const FloatType* inBuffer, const size_t& inBufferSize) {
         size_t o = 0;
-		static int m = 0;
         for (size_t i = 0; i < inBufferSize; ++i) {
 			filter.put(inBuffer[i]);
             if (m == 0) {
@@ -80,7 +80,6 @@ private:
 	// interpolateAndDecimate()
 	void interpolateAndDecimate(FloatType* outBuffer, size_t& outBufferSize, const FloatType* inBuffer, const size_t& inBufferSize) {
 		size_t o = 0;
-		static int m = 0;
 		for (size_t i = 0; i < inBufferSize; ++i) {
 			for(int l = 0; l < L; ++l) {
 				((l == 0) ? filter.put(inBuffer[i]) : filter.putZero());
@@ -98,23 +97,18 @@ private:
 	void SetConvertFunction() {
 		if (bypassMode) {
 			convertFn = &ConvertStage::passThrough;
-			std::cout << "convert mode: bypass" << std::endl;
 		}
 		else if (L == 1 && M == 1) {
 			convertFn = &ConvertStage::filterOnly;
-			std::cout << "convert mode: filter only" << std::endl;
 		}
 		else if (L != 1 && M == 1) {
 			convertFn = &ConvertStage::interpolate;
-			std::cout << "convert mode: interpolate" << std::endl;
 		}
 		else if (L == 1 && M != 1) {
 			convertFn = &ConvertStage::decimate;
-			std::cout << "convert mode: decimate" << std::endl;
 		}
 		else {
 			convertFn = &ConvertStage::interpolateAndDecimate;
-			std::cout << "convert mode: interpolate & decimate" << std::endl;
 		}
 	}
 };
