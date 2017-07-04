@@ -1259,6 +1259,11 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 
 	// calculate group Delay
 	int groupDelay = (ci.bMinPhase || !ci.bDelayTrim) ? 0 : (FilterSize - 1) / 2 / FOriginal.denominator;
+	if (FOriginal.numerator == 1 && FOriginal.denominator == 1) {
+		groupDelay = 0;
+	}
+
+	std::cout << "expected group delay " << groupDelay << std::endl;
 
 	// if the OutputFormat is zero, it means "No change to file format"
 	// if output file format has changed, use OutputFormat. Otherwise, use same format as infile: 

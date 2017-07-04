@@ -55,8 +55,10 @@ private:
         size_t o = 0;
         for (size_t i = 0; i < inBufferSize; ++i) {
             for(int l = 0; l < L; ++l) {
-				filter.put((l == 0) ? inBuffer[i] : 0);
-				outBuffer[o++] = filter.get();
+				//filter.put((l == 0) ? inBuffer[i] : 0);
+				((l == 0) ? filter.put(inBuffer[i]) : filter.putZero());
+				//outBuffer[o++] = filter.get();
+				outBuffer[o++] = filter.LazyGet(L);
 			}
         }
         outBufferSize = o;   
