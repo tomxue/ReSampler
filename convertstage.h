@@ -65,33 +65,37 @@ private:
 	// decimate() - decimate and apply filter
     void decimate(FloatType* outBuffer, size_t& outBufferSize, const FloatType* inBuffer, const size_t& inBufferSize) {
         size_t o = 0;
+		int localm = m;
         for (size_t i = 0; i < inBufferSize; ++i) {
 			filter.put(inBuffer[i]);
-            if (m == 0) {
+            if (localm == 0) {
                 outBuffer[o++] = filter.get();    
             }
-            if(++m == M) {
-                m = 0;
+            if(++localm == M) {
+                localm = 0;
             }
         }
         outBufferSize = o;
+		m = localm;
     }
     
 	// interpolateAndDecimate()
 	void interpolateAndDecimate(FloatType* outBuffer, size_t& outBufferSize, const FloatType* inBuffer, const size_t& inBufferSize) {
 		size_t o = 0;
+		int localm = m;
 		for (size_t i = 0; i < inBufferSize; ++i) {
 			for(int l = 0; l < L; ++l) {
 				((l == 0) ? filter.put(inBuffer[i]) : filter.putZero());
-				if (m == 0) {
+				if (localm == 0) {
 					outBuffer[o++] = filter.LazyGet(L);
 				}
-				if (++m == M) {
-					m = 0;
+				if (++localm == M) {
+					localm = 0;
 				}
 			}
 		}
         outBufferSize = o;
+		m = localm;
 	}
 
 	void SetConvertFunction() {
