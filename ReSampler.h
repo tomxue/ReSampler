@@ -190,7 +190,6 @@ void getCmdlineParam(char ** begin, char ** end, const std::string & OptionName,
 void getCmdlineParam(char ** begin, char ** end, const std::string & OptionName, int & nParameter);
 void getCmdlineParam(char ** begin, char ** end, const std::string & OptionName, double & Parameter);
 bool findCmdlineOption(char ** begin, char ** end, const std::string & option);
-template<typename FileReader, typename FloatType> bool Convert(const conversionInfo & ci, bool peakDetection = true);
 template<typename FileReader, typename FloatType> bool ConvertMT(const conversionInfo & ci, bool peakDetection = true);
 int getDefaultNoiseShape(int sampleRate);
 void showDitherProfiles();

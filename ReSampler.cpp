@@ -115,57 +115,31 @@ int main(int argc, char * argv[])
 	}
 
 	try {
-		if (ci.bMultiThreaded) {
-			if (ci.bUseDoublePrecision) {
-				std::cout << "Using double precision for calculations." << std::endl;
-				if (ci.dsfInput) {
-					return ConvertMT<DsfFile, double>(ci, /* peakDetection = */ false) ? EXIT_SUCCESS : EXIT_FAILURE;
-				}
-				else if (ci.dffInput) {
-					return ConvertMT<DffFile, double>(ci, /* peakDetection = */ false) ? EXIT_SUCCESS : EXIT_FAILURE;
-				}
-				else {
-					return ConvertMT<SndfileHandle, double>(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
-				}
+		if (ci.bUseDoublePrecision) {
+			std::cout << "Using double precision for calculations." << std::endl;
+			if (ci.dsfInput) {
+				return ConvertMT<DsfFile, double>(ci, /* peakDetection = */ false) ? EXIT_SUCCESS : EXIT_FAILURE;
+			}
+			else if (ci.dffInput) {
+				return ConvertMT<DffFile, double>(ci, /* peakDetection = */ false) ? EXIT_SUCCESS : EXIT_FAILURE;
 			}
 			else {
-				if (ci.dsfInput) {
-					return ConvertMT<DsfFile, float>(ci, /* peakDetection = */ false) ? EXIT_SUCCESS : EXIT_FAILURE;
-				}
-				else if (ci.dffInput) {
-					return ConvertMT<DffFile, float>(ci, /* peakDetection = */ false) ? EXIT_SUCCESS : EXIT_FAILURE;
-				}
-				else {
-					return ConvertMT<SndfileHandle, float>(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
-				}
+				return ConvertMT<SndfileHandle, double>(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
 			}
 		}
 		else {
-			if (ci.bUseDoublePrecision) {
-				std::cout << "Using double precision for calculations." << std::endl;
-				if (ci.dsfInput) {
-					return Convert<DsfFile, double>(ci, /* peakDetection = */ false) ? EXIT_SUCCESS : EXIT_FAILURE;
-				}
-				else if (ci.dffInput) {
-					return Convert<DffFile, double>(ci, /* peakDetection = */ false) ? EXIT_SUCCESS : EXIT_FAILURE;
-				}
-				else {
-					return Convert<SndfileHandle, double>(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
-				}
+			if (ci.dsfInput) {
+				return ConvertMT<DsfFile, float>(ci, /* peakDetection = */ false) ? EXIT_SUCCESS : EXIT_FAILURE;
+			}
+			else if (ci.dffInput) {
+				return ConvertMT<DffFile, float>(ci, /* peakDetection = */ false) ? EXIT_SUCCESS : EXIT_FAILURE;
 			}
 			else {
-				if (ci.dsfInput) {
-					return Convert<DsfFile, float>(ci, /* peakDetection = */ false) ? EXIT_SUCCESS : EXIT_FAILURE;
-				}
-				else if (ci.dffInput) {
-					return Convert<DffFile, float>(ci, /* peakDetection = */ false) ? EXIT_SUCCESS : EXIT_FAILURE;
-				}
-				else {
-					return Convert<SndfileHandle, float>(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
-				}
+				return ConvertMT<SndfileHandle, float>(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
 			}
 		}
 	}
+		
 	catch (const std::exception& e) {
 		std::cerr << "fatal error: " << e.what();
 		return EXIT_FAILURE;
@@ -591,511 +565,24 @@ void listSubFormats(const std::string& f)
 	}
 }
 
-// convert() : performs the conversion task, given a FileReader, conversionInfo, and a FloatType (either float or double)
-
-	/* Note: type 'FileReader' MUST implement the following methods:
-		constuctor(const std::string& fileName)
-		bool error() // or int error() 
-		unsigned int channels() 
-		unsigned int samplerate()
-		uint64_t frames()
-		int format()
-		read(inbuffer, count)
-		seek(position, whence)
-	*/
-
-template<typename FileReader, typename FloatType>
-bool Convert(const conversionInfo& ci, bool peakDetection)
-{
-	// Open input file:
-	FileReader infile(ci.InputFilename);
-
-	if (int e = infile.error()) {
-		std::cout << "Error: Couldn't Open Input File (" << sf_error_number(e) << ")" << std::endl; // to-do: make this more specific (?)
-		return false;
-	}
-
-	MetaData m;
-	getMetaData(m, infile);
-	
-	// read file properties:
-	unsigned int nChannels = infile.channels();
-	unsigned int InputSampleRate = infile.samplerate();
-	sf_count_t InputSampleCount = infile.frames() * nChannels;
-	sf_count_t IncrementalProgressThreshold = InputSampleCount / 10;
-
-	int InputFileFormat = infile.format();
-
-	if (InputFileFormat != DFF_FORMAT && InputFileFormat != DSF_FORMAT) { // this block only relevant to libsndfile ...
-		// detect if input format is a floating-point format:
-		bool bFloat = false;
-		bool bDouble = false;
-		switch (InputFileFormat & SF_FORMAT_SUBMASK) {
-		case SF_FORMAT_FLOAT:
-			bFloat = true;
-			break;
-		case SF_FORMAT_DOUBLE:
-			bDouble = true;
-			break;
-		}
-
-		for (auto& subformat : subFormats) { // scan subformats for a match:
-			if (subformat.second == (InputFileFormat & SF_FORMAT_SUBMASK)) {
-				std::cout << "input bit format: " << subformat.first;
-				break;
-			}
-		}
-
-		if (bFloat)
-			std::cout << " (float)";
-		if (bDouble)
-			std::cout << " (double precision)";
-
-		std::cout << std::endl;
-	}
-
-	std::cout << "source file channels: " << nChannels << std::endl;
-	std::cout << "input sample rate: " << InputSampleRate << "\noutput sample rate: " << ci.OutputSampleRate << std::endl;
-
-	size_t BufferSize = (BUFFERSIZE / nChannels) * nChannels; // round down to integer multiple of nChannels (file may have odd number of channels!)
-	assert(BUFFERSIZE >= BufferSize);
-
-	FloatType inbuffer[BUFFERSIZE];
-
-	sf_count_t count;
-	sf_count_t SamplesRead = 0;
-	FloatType PeakInputSample;
-
-	if (peakDetection) {
-
-		PeakInputSample = 0.0;
-		std::cout << "Scanning input file for peaks ..."; // to-do: can we read the PEAK chunk in floating-point files ?
-		
-		do { 
-			count = infile.read(inbuffer, BufferSize);
-			SamplesRead += count;
-			for (unsigned int s = 0; s < count; ++s) { // read all samples, without caring which channel they belong to
-				PeakInputSample = std::max(PeakInputSample, std::abs(inbuffer[s]));
-			}
-		} while (count > 0);
-	
-		std::cout << "Done\n";
-		std::cout << "Peak input sample: " << std::fixed << PeakInputSample << " (" << 20 * log10(PeakInputSample) << " dBFS)" << std::endl;
-		infile.seek(0, SEEK_SET); // rewind back to start of file
-	}
-
-	else { // no peak detection
-		PeakInputSample = ci.bNormalize ?
-			0.5 /* ... a guess, since we haven't actually measured the peak (in the case of DSD, it is a good guess.) */ :
-			1.0;
-	}
-
-	if (ci.bNormalize) { // echo Normalization settings to user
-		auto prec = std::cout.precision();
-		std::cout << "Normalizing to " << std::setprecision(2) << ci.Limit << std::endl;
-		std::cout.precision(prec);
-	}
-
-	Fraction FOriginal = GetSimplifiedFraction(InputSampleRate, ci.OutputSampleRate);
-	Fraction F = FOriginal;
-	
-	// determine base filter size
-	int BaseFilterSize;
-	int overSamplingFactor = 1;
-	if ((FOriginal.numerator != FOriginal.denominator) && (FOriginal.numerator <= 4 || FOriginal.denominator <= 4)) { // simple ratios
-		BaseFilterSize = FILTERSIZE_MEDIUM * std::max(FOriginal.denominator, FOriginal.numerator) / 2;
-		if (ci.bMinPhase) { // oversample to improve filter performance
-			overSamplingFactor = 8;
-			F.numerator *= overSamplingFactor;
-			F.denominator *= overSamplingFactor;
-		}
-	}
-	else { // complex ratios
-		BaseFilterSize = FILTERSIZE_HUGE * std::max(FOriginal.denominator, FOriginal.numerator) / 320;
-	}
-	
-	// determine cutoff frequency and steepness
-	double targetNyquist = std::min(InputSampleRate, ci.OutputSampleRate) / 2.0;
-	double ft = (ci.lpfCutoff / 100.0) * targetNyquist;
-	double steepness = steepness = 0.090909091 / (ci.lpfTransitionWidth / 100.0);
-
-	// scale the filter size, according to selected options:
-	int FilterSize = std::min(static_cast<int>(overSamplingFactor * BaseFilterSize * steepness), FILTERSIZE_LIMIT)
-		| static_cast<int>(1);	// ensure that filter length is always odd
-
-	// determine sidelobe attenuation
-	int SidelobeAtten = ((FOriginal.numerator == 1) || (FOriginal.denominator == 1)) ?
-		195 :
-		160;
-
-	// Make some filter coefficients:
-	int OverSampFreq = InputSampleRate * F.numerator;
-	std::vector<FloatType> FilterTaps(FilterSize, 0);
-	FloatType* pFilterTaps = &FilterTaps[0];
-	makeLPF<FloatType>(pFilterTaps, FilterSize, ft, OverSampFreq);
-	applyKaiserWindow<FloatType>(pFilterTaps, FilterSize, calcKaiserBeta(SidelobeAtten));
-
-	// conditionally convert filter coefficients to minimum-phase:
-	if (ci.bMinPhase) {
-		std::cout << "Using Minimum-Phase LPF" << std::endl;
-		makeMinPhase<FloatType>(pFilterTaps, FilterSize);
-	}
-
-	// echo conversion ratio to user:
-	FloatType ResamplingFactor = static_cast<FloatType>(ci.OutputSampleRate) / InputSampleRate;
-	std::cout << "\nConversion ratio: " << ResamplingFactor
-		<< " (" << FOriginal.numerator << ":" << FOriginal.denominator << ")" << std::endl;
-
-	// echo cutoff frequency to user:
-	auto prec = std::cout.precision();
-	std::cout << "LPF transition frequency: " << std::fixed << std::setprecision(2) << ft << " Hz (" << 100 * ft / targetNyquist << " %)" << std::endl;
-	std::cout.precision(prec);
-
-	// make a vector of filters (one filter for each channel):
-	std::vector<FIRFilter<FloatType>> Filters;
-	for (int n = 0; n < nChannels; n++) {
-		Filters.emplace_back(pFilterTaps, FilterSize);
-	}
-
-	// calculate group Delay
-	int groupDelay = (ci.bMinPhase || !ci.bDelayTrim) ? 0 : (FilterSize - 1) / 2 / FOriginal.denominator;
-
-	// if the OutputFormat is zero, it means "No change to file format"
-	// if output file format has changed, use OutputFormat. Otherwise, use same format as infile: 
-	int OutputFileFormat = ci.OutputFormat ? ci.OutputFormat : InputFileFormat;
-
-	// if the minor (sub) format of OutputFileFormat is not set, attempt to use minor format of input file (as a last resort)
-	if ((OutputFileFormat & SF_FORMAT_SUBMASK) == 0) {
-		OutputFileFormat |= (InputFileFormat & SF_FORMAT_SUBMASK); // may not be valid subformat for new file format. 
-	}
-
-	// for wav files, determine whether to switch to rf64 mode:
-	if (((OutputFileFormat & SF_FORMAT_TYPEMASK) == SF_FORMAT_WAV) ||
-		((OutputFileFormat & SF_FORMAT_TYPEMASK) == SF_FORMAT_WAVEX)) {
-		if (ci.bRf64 || 
-			checkWarnOutputSize(InputSampleCount, getSfBytesPerSample(OutputFileFormat), FOriginal.numerator, FOriginal.denominator)) {
-			std::cout << "Switching to rf64 format !" << std::endl;
-			OutputFileFormat &= ~SF_FORMAT_TYPEMASK; // clear file type
-			OutputFileFormat |= SF_FORMAT_RF64;
-		}
-	}
-
-	// determine number of bits in output format (used for dithering purposes):
-	int outputSignalBits;
-	switch (OutputFileFormat & SF_FORMAT_SUBMASK) {
-	case SF_FORMAT_PCM_24:
-		outputSignalBits = 24;
-		break;
-	case SF_FORMAT_PCM_S8:
-	case SF_FORMAT_PCM_U8:
-		outputSignalBits = 8;
-		break;
-	default:
-		outputSignalBits = 16;
-	}
-
-	// confirm dithering options for user:
-	if (ci.bDither) {
-		auto prec = std::cout.precision();
-		std::cout << "Generating " << std::setprecision(2) << ci.DitherAmount << " bits of " << ditherProfileList[ci.ditherProfileID].name << " dither for " << outputSignalBits << "-bit output format";
-		std::cout.precision(prec);
-		if (ci.bAutoBlankingEnabled)
-			std::cout << ", with auto-blanking";
-		std::cout << std::endl;
-	}
-
-	// make a vector of ditherers (one ditherer for each channel):
-	std::vector<Ditherer<FloatType>> Ditherers;
-	int seed = ci.bUseSeed ? ci.seed : time(0);
-
-	for (unsigned int n = 0; n < nChannels; n++) {
-		// to-do: explore other seed-generation options (remote possibility of overlap)
-		// maybe use a single global RNG ? 
-		// or use discard/jump-ahead ... to ensure parallel streams are sufficiently "far away" from each other ?
-		Ditherers.emplace_back(outputSignalBits, ci.DitherAmount, ci.bAutoBlankingEnabled, n + seed, static_cast<DitherProfileID>(ci.ditherProfileID));
-	}
-
-	// Calculate initial gain:
-	FloatType Gain = ci.gain * 
-		(ci.bNormalize ? F.numerator * (ci.Limit / PeakInputSample) : F.numerator * ci.Limit);
-
-	if (ci.bDither) { // allow headroom for dithering:
-		FloatType DitherCompensation =
-			(pow(2, outputSignalBits - 1) - pow(2, ci.DitherAmount - 1)) / pow(2, outputSignalBits - 1); // eg 32767/32768 = 0.999969 (-0.00027 dB)
-		Gain *= DitherCompensation;
-	}
-
-	FloatType PeakOutputSample;
-	bool bClippingDetected;
-	RaiiTimer timer;
-
-	do { // clipping detection loop (repeat if clipping detected)
-
-		bClippingDetected = false;
-		std::unique_ptr<SndfileHandle> outFile;
-
-		try { // Open output file:
- 
-			// output file may need to be overwriten on subsequent passes,
-			// and the only way to close the file is to destroy the SndfileHandle.  
-			
-			outFile.reset(new SndfileHandle(ci.OutputFilename, SFM_WRITE, OutputFileFormat, nChannels, ci.OutputSampleRate));  
-			
-			if (int e = outFile->error()) {
-				std::cout << "Error: Couldn't Open Output File (" << sf_error_number(e) << ")" << std::endl;
-				return false;
-			}
-
-			if (ci.bNoPeakChunk) {
-				outFile->command(SFC_SET_ADD_PEAK_CHUNK, nullptr, SF_FALSE);
-			}
-
-			if (ci.bWriteMetaData) {
-				if (!setMetaData(m, *outFile)) {
-					std::cout << "Warning: problem writing metadata to output file ( " << outFile->strError() << " )" << std::endl;
-				}
-			}
-
-			// if the minor (sub) format of OutputFileFormat is flac, and user has requested a specific compression level, set compression level:
-			if (((OutputFileFormat & SF_FORMAT_FLAC) == SF_FORMAT_FLAC) && ci.bSetFlacCompression) {
-				std::cout << "setting flac compression level to " << ci.flacCompressionLevel << std::endl;
-				double cl = static_cast<double>(ci.flacCompressionLevel / 8.0); // there are 9 flac compression levels from 0-8. Normalize to 0-1.0
-				outFile->command(SFC_SET_COMPRESSION_LEVEL, &cl, sizeof(cl));
-			}
-
-			// if the minor (sub) format of OutputFileFormat is vorbis, and user has requested a specific quality level, set quality level:
-			if (((OutputFileFormat & SF_FORMAT_VORBIS) == SF_FORMAT_VORBIS) && ci.bSetVorbisQuality) {
-
-				auto prec = std::cout.precision();
-				std::cout.precision(1);
-				std::cout << "setting vorbis quality level to " << ci.vorbisQuality << std::endl;
-				std::cout.precision(prec);
-
-				double cl = static_cast<double>((1.0 - ci.vorbisQuality) / 11.0); // Normalize from (-1 to 10), to (1.0 to 0) ... why is it backwards ?
-				outFile->command(SFC_SET_COMPRESSION_LEVEL, &cl, sizeof(cl));
-			}
-		}
-
-		catch (std::exception& e) {
-			std::cout << "Error: Couldn't Open Output File " << e.what() << std::endl;
-			return false;
-		}
-
-		std::cout << "Converting ...";
-		sf_count_t OutBufferIndex = 0;
-		PeakOutputSample = 0.0;
-		SamplesRead = 0;
-		sf_count_t NextProgressThreshold = IncrementalProgressThreshold;
-		size_t OutBufferSize = (2 * nChannels /* padding */ + (BufferSize * F.numerator / F.denominator));
-		
-		// Allocate output buffer:
-		std::vector<FloatType> OutBuffer(OutBufferSize, 0);
-		FloatType* pOutBuffer = &OutBuffer[0];
-
-		int outStartOffset = std::min(groupDelay * nChannels, static_cast<int>(OutBufferSize) - nChannels);
-
-		if (F.numerator == 1 && F.denominator == 1) { // no change to sample rate; format conversion only
-			std::cout << " No change to sample rate" << std::endl;
-			do { // Read and process blocks of samples until the end of file is reached
-				count = infile.read(inbuffer, BufferSize);
-				SamplesRead += count;
-				for (unsigned int Channel = 0; Channel < nChannels; Channel++) {
-					OutBufferIndex = 0;
-					for (unsigned int s = 0; s < count; s += nChannels) {
-						FloatType OutputSample = ci.bDither ?
-							Ditherers[Channel].Dither(Gain * inbuffer[s + Channel]) :
-							Gain * inbuffer[s + Channel];
-						pOutBuffer[OutBufferIndex + Channel] = OutputSample;
-						PeakOutputSample = std::max(std::abs(PeakOutputSample), std::abs(OutputSample));
-						OutBufferIndex += nChannels;
-					} // ends loop over s
-				} // ends loop over channel
-				outFile->write(pOutBuffer, OutBufferIndex);
-
-				// conditionally send progress update:
-				if (SamplesRead > NextProgressThreshold) {
-					int ProgressPercentage = std::min(99, static_cast<int>(100 * SamplesRead / InputSampleCount));
-					std::cout << ProgressPercentage << "%\b\b\b" << std::flush;
-					NextProgressThreshold += IncrementalProgressThreshold;
-				}
-			} while (count > 0);
-		} // ends 1:1 conversion
-
-		else if (F.numerator == 1 && F.denominator != 1) { // Decimate Only
-			int di[MAXCHANNELS];
-			for (int x = 0; x < MAXCHANNELS; x++) {
-				di[x] = 0;
-			}
-			do { // Read and process blocks of samples until the end of file is reached
-				count = infile.read(inbuffer, BufferSize);
-				SamplesRead += count;
-				for (unsigned int Channel = 0; Channel < nChannels; Channel++) {
-					OutBufferIndex = 0;
-					for (unsigned int s = 0; s < count; s += nChannels) {
-						Filters[Channel].put(inbuffer[s + Channel]); // inject a source sample
-						if (di[Channel] == 0) { // decimate
-							FloatType OutputSample = ci.bDither ?
-								Ditherers[Channel].Dither(Gain * Filters[Channel].get()) :
-								Gain * Filters[Channel].get();
-							pOutBuffer[OutBufferIndex + Channel] = OutputSample;
-							PeakOutputSample = std::max(PeakOutputSample, std::abs(OutputSample));
-							OutBufferIndex += nChannels;
-						}
-						if (++di[Channel] == F.denominator)
-							di[Channel] = 0;
-					} // ends loop over s
-				} // ends loop over Channel
-
-				if (outStartOffset <= 0) {
-					outFile->write(pOutBuffer, OutBufferIndex);
-				}
-				else {
-					outFile->write(pOutBuffer + outStartOffset, OutBufferIndex - outStartOffset);
-					outStartOffset = 0;
-				}
-
-				// conditionally send progress update:
-				if (SamplesRead > NextProgressThreshold) {
-					int ProgressPercentage = std::min(99, static_cast<int>(100 * SamplesRead / InputSampleCount));
-					std::cout << ProgressPercentage << "%\b\b\b" << std::flush;
-					NextProgressThreshold += IncrementalProgressThreshold;
-				}
-			} while (count > 0);
-		} // ends Decimate Only
-
-		else if (F.denominator == 1) { // Interpolate only
-			do { // Read and process blocks of samples until the end of file is reached
-				count = infile.read(inbuffer, BufferSize);
-				SamplesRead += count;
-				for (unsigned int Channel = 0; Channel < nChannels; Channel++) {
-					OutBufferIndex = 0;
-					for (unsigned int s = 0; s < count; s += nChannels) {
-						for (int ii = 0; ii < F.numerator; ++ii) {
-							if (ii == 0)
-								Filters[Channel].put(inbuffer[s + Channel]); // inject a source sample
-							else
-								Filters[Channel].putZero(); // inject a Zero
-#ifdef USE_AVX
-							FloatType OutputSample = ci.bDither ?
-								Ditherers[Channel].Dither(Gain * Filters[Channel].get()) :
-								Gain * Filters[Channel].get();
-#else
-							FloatType OutputSample = ci.bDither ?
-								Ditherers[Channel].Dither(Gain * Filters[Channel].LazyGet(F.numerator)) :
-								Gain * Filters[Channel].LazyGet(F.numerator);
-#endif
-							pOutBuffer[OutBufferIndex + Channel] = OutputSample;
-							PeakOutputSample = std::max(PeakOutputSample, std::abs(OutputSample));
-							OutBufferIndex += nChannels;
-						} // ends loop over ii
-					} // ends loop over s
-				} // ends loop over Channel
-				
-				if (outStartOffset <= 0) {
-					outFile->write(pOutBuffer, OutBufferIndex);
-				}
-				else {
-					outFile->write(pOutBuffer + outStartOffset, OutBufferIndex - outStartOffset);
-					outStartOffset = 0;
-				}
-
-				 // conditionally send progress update:
-				if (SamplesRead > NextProgressThreshold) {
-					int ProgressPercentage = std::min(99, static_cast<int>(100 * SamplesRead / InputSampleCount));
-					std::cout << ProgressPercentage << "%\b\b\b" << std::flush;
-					NextProgressThreshold += IncrementalProgressThreshold;
-				}
-
-			} while (count > 0);
-		} // ends Interpolate Only
-
-		else { // Interpolate and Decimate
-			int di[MAXCHANNELS];
-			for (int x = 0; x < MAXCHANNELS; x++) {
-				di[x] = 0;
-			}
-			do { // Read and process blocks of samples until the end of file is reached
-				count = infile.read(inbuffer, BufferSize);
-				SamplesRead += count;
-				for (unsigned int Channel = 0; Channel < nChannels; ++Channel) {
-					OutBufferIndex = 0;
-					for (unsigned int s = 0; s < count; s += nChannels) {
-						for (int ii = 0; ii < F.numerator; ++ii) { // (ii stands for "interpolation index
-							if(ii==0)
-								Filters[Channel].put(inbuffer[s + Channel]);
-							else
-								Filters[Channel].putZero(); // interpolate		
-							if (di[Channel] == 0) { // decimate
-								FloatType OutputSample = ci.bDither ?
-									Ditherers[Channel].Dither(Gain * Filters[Channel].LazyGet(F.numerator)) :
-									Gain * Filters[Channel].LazyGet(F.numerator);
-								pOutBuffer[OutBufferIndex + Channel] = OutputSample;
-								PeakOutputSample = std::max(PeakOutputSample, std::abs(OutputSample));
-								OutBufferIndex += nChannels;
-							}
-							if (++di[Channel] == F.denominator)
-								di[Channel] = 0;
-						} // ends loop over ii
-					} // ends loop over s	
-				} // ends loop over Channel
-				
-				if (outStartOffset <= 0) {
-					outFile->write(pOutBuffer, OutBufferIndex);
-				}
-				else {
-					outFile->write(pOutBuffer + outStartOffset, OutBufferIndex - outStartOffset);
-					outStartOffset = 0;
-				}
-
-				// conditionally send progress update:
-				if (SamplesRead > NextProgressThreshold) {
-					int ProgressPercentage = std::min(99, static_cast<int>(100 * SamplesRead / InputSampleCount));
-					std::cout << ProgressPercentage << "%\b\b\b" << std::flush;
-					NextProgressThreshold += IncrementalProgressThreshold;
-				}
-
-			} while (count > 0);
-		} // ends Interpolate and Decimate
-
-		// notify user:
-		std::cout << "Done" << std::endl;
-		auto prec = std::cout.precision();
-		std::cout << "Peak output sample: " << std::setprecision(6) << PeakOutputSample << " (" << 20 * log10(PeakOutputSample) << " dBFS)" << std::endl;
-		std::cout.precision(prec);
-		
-		// Test for clipping:	
-		if (PeakOutputSample > ci.Limit) {
-			bClippingDetected = true;
-			FloatType GainAdjustment = static_cast<FloatType>(clippingTrim) * ci.Limit / PeakOutputSample;
-
-			Gain *= GainAdjustment;
-			std::cout << "\nClipping detected !" << std::endl;
-			if (!ci.disableClippingProtection) {
-				std::cout << "Re-doing with " << 20 * log10(GainAdjustment) << " dB gain adjustment" << std::endl;
-				infile.seek(0, SEEK_SET);
-			}
-
-			for (auto& filter : Filters) {
-				filter.reset();
-			}
-
-			if (ci.bDither) {
-				for (auto& ditherer : Ditherers) {
-					ditherer.adjustGain(GainAdjustment);
-					ditherer.reset();
-				}
-			}
-		}
-
-	} while (!ci.disableClippingProtection && bClippingDetected);
-	return true;
-} // ends Convert()
-
 // Multi-threaded convert() :
+
+/* Note: type 'FileReader' MUST implement the following methods:
+constuctor(const std::string& fileName)
+bool error() // or int error()
+unsigned int channels()
+unsigned int samplerate()
+uint64_t frames()
+int format()
+read(inbuffer, count)
+seek(position, whence)
+*/
 
 template<typename FileReader, typename FloatType>
 bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 {
+	bool multiThreaded = ci.bMultiThreaded;
+
 	// Open input file:
 	FileReader infile(ci.InputFilename);
 
@@ -1263,7 +750,7 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 		groupDelay = 0;
 	}
 
-	std::cout << "expected group delay " << groupDelay << std::endl;
+	// std::cout << "expected group delay " << groupDelay << std::endl;
 
 	// if the OutputFormat is zero, it means "No change to file format"
 	// if output file format has changed, use OutputFormat. Otherwise, use same format as infile: 
@@ -1393,7 +880,13 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 			return false;
 		}
 
-		std::cout << "Converting (multi-threaded) ...";
+		if (multiThreaded) {
+			std::cout << "Converting (multi-threaded) ...";
+		}
+		else {
+			std::cout << "Converting ...";
+		}
+
 		peakOutputSample = 0.0;
 		totalSamplesRead = 0;
 		sf_count_t IncrementalProgressThreshold = InputSampleCount / 10;
@@ -1426,14 +919,14 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 			
 			for (int ch = 0; ch < nChannels; ++ch) { // run convert stage for each channel (concurrently)
 
-				results[ch] = threadPool.push([&, ch] (int) { // worker thread
+				auto kernel = [&, ch](int x = 0) {
 					FloatType* iBuf = inputChannelBuffers[ch].data();
 					FloatType* oBuf = outputChannelBuffers[ch].data();
 					size_t o = 0;
 					FloatType localPeak = 0.0;
 					size_t localOutputBlockIndex = 0;
 					convertStages[ch].convert(oBuf, o, iBuf, i);
- 					for (size_t f = 0; f < o; ++f) {
+					for (size_t f = 0; f < o; ++f) {
 						FloatType outputSample = ci.bDither ? Ditherers[ch].Dither(Gain * oBuf[f]) : Gain * oBuf[f]; // gain, dither
 						localPeak = std::max(localPeak, std::abs(outputSample)); // peak
 						outputBlock[localOutputBlockIndex + ch] = outputSample; // interleave
@@ -1443,18 +936,26 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 					res.outBlockindex = localOutputBlockIndex;
 					res.peak = localPeak;
 					return res;
-				});
+				};
 
+				if (multiThreaded) {
+					results[ch] = threadPool.push(kernel);
+				}
+				else {
+					Result res = kernel();
+					peakOutputSample = std::max(peakOutputSample, res.peak);
+					outputBlockIndex = res.outBlockindex;
+				}
 			}
 
-			// collect results:
-			for (int ch = 0; ch < nChannels; ++ch) {
-				Result res = results[ch].get();
-				peakOutputSample = std::max(peakOutputSample, res.peak);
-				outputBlockIndex = res.outBlockindex;
+			if (multiThreaded) { // collect results:
+				for (int ch = 0; ch < nChannels; ++ch) {
+					Result res = results[ch].get();
+					peakOutputSample = std::max(peakOutputSample, res.peak);
+					outputBlockIndex = res.outBlockindex;
+				}
 			}
 
-			//outFile->write(outputBlock.data(), outputBlockIndex);
 			outFile->write(outputBlock.data() + outStartOffset, outputBlockIndex - outStartOffset); // group delay compensation
 			outStartOffset = 0; // reset after first use
 
