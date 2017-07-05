@@ -18,6 +18,7 @@
 *.userprefs
 
 # Build results
+dist
 ReSampler
 ReSampler-clang
 #x64/minGW-W64
@@ -50,7 +51,6 @@ x64/Release_AVX/*
 
 # private tests
 tests/test-legacy.sh
-
 
 # test results
 tests/outputs/*
