@@ -13,8 +13,8 @@ os=`tolower $OSTYPE`
 if [ $os == 'cygwin' ] || [ $os == 'msys' ]
 then 
     #Windows ...
-    resampler_path=../x64/Release/ReSampler.exe
-    #resampler_path=../x64/minGW-W64/ReSampler.exe
+    #resampler_path=../x64/Release/ReSampler.exe
+    resampler_path=../x64/minGW-W64/ReSampler.exe
 else
     resampler_path=../ReSampler
 fi
