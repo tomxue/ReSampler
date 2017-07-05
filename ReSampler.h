@@ -14,7 +14,7 @@
 #include "sndfile.h"
 #include "sndfile.hh"
 
-const std::string strVersion("1.3.6");
+const std::string strVersion("1.3.7");
 const std::string strUsage("usage: ReSampler -i <inputfile> [-o <outputfile>] -r <samplerate> [-b <bitformat>] [-n [<normalization factor>]]\n");
 const std::string strExtraOptions(
 	"--help\n"
@@ -190,7 +190,6 @@ void getCmdlineParam(char ** begin, char ** end, const std::string & OptionName,
 void getCmdlineParam(char ** begin, char ** end, const std::string & OptionName, int & nParameter);
 void getCmdlineParam(char ** begin, char ** end, const std::string & OptionName, double & Parameter);
 bool findCmdlineOption(char ** begin, char ** end, const std::string & option);
-template<typename FileReader, typename FloatType> bool Convert(const conversionInfo & ci, bool peakDetection = true);
 template<typename FileReader, typename FloatType> bool ConvertMT(const conversionInfo & ci, bool peakDetection = true);
 int getDefaultNoiseShape(int sampleRate);
 void showDitherProfiles();

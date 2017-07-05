@@ -48,6 +48,10 @@ x64/Release_AVX/*
 # Visual Studio 2015 cache/options directory
 .vs/
 
+# private tests
+tests/test-legacy.sh
+
+
 # test results
 tests/outputs/*
 !tests/outputs/.git-keep.txt
