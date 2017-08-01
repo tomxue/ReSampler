@@ -737,48 +737,6 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 		std::cout.precision(prec);
 	}
 
-	//// determine base filter size
-	//int BaseFilterSize;
-	//int overSamplingFactor = 1;
-	//if ((FOriginal.numerator != FOriginal.denominator) && (FOriginal.numerator <= 4 || FOriginal.denominator <= 4)) { // simple ratios
-	//	BaseFilterSize = FILTERSIZE_MEDIUM * std::max(FOriginal.denominator, FOriginal.numerator) / 2;
-	//	if (ci.bMinPhase) { // oversample to improve filter performance
-	//		overSamplingFactor = 8;
-	//		F.numerator *= overSamplingFactor;
-	//		F.denominator *= overSamplingFactor;
-	//	}
-	//}
-	//else { // complex ratios
-	//	BaseFilterSize = FILTERSIZE_HUGE * std::max(FOriginal.denominator, FOriginal.numerator) / 320;
-	//}
-
-	//// determine cutoff frequency and steepness
-	//double targetNyquist = std::min(InputSampleRate, ci.OutputSampleRate) / 2.0;
-	//double ft = (ci.lpfCutoff / 100.0) * targetNyquist;
-	//double steepness = steepness = 0.090909091 / (ci.lpfTransitionWidth / 100.0);
-
-	//// scale the filter size, according to selected options:
-	//int FilterSize = std::min(static_cast<int>(overSamplingFactor * BaseFilterSize * steepness), FILTERSIZE_LIMIT)
-	//	| static_cast<int>(1);	// ensure that filter length is always odd
-
-	//// determine sidelobe attenuation
-	//int SidelobeAtten = ((FOriginal.numerator == 1) || (FOriginal.denominator == 1)) ?
-	//	195 :
-	//	160;
-
-	//// Make some filter coefficients:
-	//int OverSampFreq = InputSampleRate * F.numerator;
-	//std::vector<FloatType> FilterTaps(FilterSize, 0);
-	//FloatType* pFilterTaps = &FilterTaps[0];
-	//makeLPF<FloatType>(pFilterTaps, FilterSize, ft, OverSampFreq);
-	//applyKaiserWindow<FloatType>(pFilterTaps, FilterSize, calcKaiserBeta(SidelobeAtten));
-
-	//// conditionally convert filter coefficients to minimum-phase:
-	//if (ci.bMinPhase) {
-	//	std::cout << "Using Minimum-Phase LPF" << std::endl;
-	//	makeMinPhase<FloatType>(pFilterTaps, FilterSize);
-	//}
-
 	std::vector<FloatType> FilterTaps = std::move(makeFilterCoefficients<FloatType>(InputSampleRate, ci, FOriginal));
 
 	// echo conversion ratio to user:
