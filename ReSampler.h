@@ -114,20 +114,20 @@ typedef enum {
 } LPFMode;
 
 // structure for holding all the parameters required for a conversion job:
-struct conversionInfo
+struct ConversionInfo
 {
-	std::string InputFilename;
-	std::string OutputFilename;
-	unsigned int OutputSampleRate;
+	std::string inputFilename;
+	std::string outputFilename;
+	unsigned int outputSampleRate;
 	double gain;
-	double Limit;
+	double limit;
 	bool bUseDoublePrecision;
 	bool bNormalize;
 	double normalizeAmount;
-	int OutputFormat;
+	int outputFormat;
 	std::string outBitFormat;
 	bool bDither;
-	double DitherAmount;
+	double ditherAmount;
 	int ditherProfileID;
 	bool bAutoBlankingEnabled;
 	bool bDelayTrim;
@@ -179,20 +179,20 @@ typedef struct
 bool checkSSE2();
 bool checkAVX();
 bool showBuildVersion();
-bool parseParameters(conversionInfo & ci, bool & bBadParams, int argc, char * argv[]);
+bool parseParameters(ConversionInfo & ci, bool & bBadParams, int argc, char * argv[]);
 bool determineBestBitFormat(std::string & BitFormat, const std::string & inFilename, const std::string & outFilename);
 int determineOutputFormat(const std::string & outFileExt, const std::string & bitFormat);
 void listSubFormats(const std::string & f);
 int gcd(int a, int b);
-Fraction GetSimplifiedFraction(int InputSampleRate, int OutputSampleRate);
+Fraction getSimplifiedFraction(int InputSampleRate, int outputSampleRate);
 void getCmdlineParam(char ** begin, char ** end, const std::string & OptionName, std::string & Parameter);
 void getCmdlineParam(char ** begin, char ** end, const std::string & OptionName, unsigned int & nParameter);
 void getCmdlineParam(char ** begin, char ** end, const std::string & OptionName, int & nParameter);
 void getCmdlineParam(char ** begin, char ** end, const std::string & OptionName, double & Parameter);
 bool findCmdlineOption(char ** begin, char ** end, const std::string & option);
 template<typename FloatType>
-std::vector<FloatType> makeFilterCoefficients(unsigned int InputSampleRate, const conversionInfo& ci, Fraction FOriginal);
-template<typename FileReader, typename FloatType> bool ConvertMT(const conversionInfo & ci, bool peakDetection = true);
+std::vector<FloatType> makeFilterCoefficients(unsigned int InputSampleRate, const ConversionInfo& ci, Fraction FOriginal);
+template<typename FileReader, typename FloatType> bool convertMT(const ConversionInfo & ci, bool peakDetection = true);
 int getDefaultNoiseShape(int sampleRate);
 void showDitherProfiles();
 int getSfBytesPerSample(int format);

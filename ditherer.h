@@ -235,7 +235,7 @@ public:
 		}
 	}
 
-// The Dither function ///////////////////////////////////////////////////////
+// The dither function ///////////////////////////////////////////////////////
 //
 // Ditherer Topology:
 //                              Noise
@@ -257,7 +257,7 @@ public:
 //  G2 = masterVolume
 //
 
-FloatType Dither(FloatType inSample) {
+FloatType dither(FloatType inSample) {
 
 	// Auto-Blanking
 	if (bAutoBlankingEnabled) {
@@ -285,7 +285,7 @@ FloatType Dither(FloatType inSample) {
 	postQuantize = reciprocalSignalMagnitude * round(maxSignalMagnitude * preQuantize); // quantize
 	Z1 = (postQuantize - preDither);		
 	return postQuantize;
-} // ends function: Dither()
+} // ends function: dither()
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

@@ -294,7 +294,7 @@ public:
 		return output;
 	}
 
-	FloatType LazyGet(int L) {	// Skips stuffed-zeros introduced by interpolation, by only calculating every Lth sample from LastPut
+	FloatType lazyGet(int L) {	// Skips stuffed-zeros introduced by interpolation, by only calculating every Lth sample from LastPut
 		FloatType output = 0.0;
 		int Offset = LastPut - CurrentIndex;
 		if (Offset < 0) { // Wrap condition

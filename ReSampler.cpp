@@ -57,7 +57,7 @@ unsigned int fp_control_state = _controlfp(_EM_INEXACT, _MCW_EM);
 
 int main(int argc, char * argv[])
 {
-	conversionInfo ci;
+	ConversionInfo ci;
 	
 	// result of parseParameters() indicates whether to terminate, and 
 	// badParams indicates whether there was an error:
@@ -69,32 +69,32 @@ int main(int argc, char * argv[])
 		exit(EXIT_FAILURE); // can't continue (CPU / build mismatch)
 
 	// echo filenames to user
-	std::cout << "Input file: " << ci.InputFilename << std::endl;
-	std::cout << "Output file: " << ci.OutputFilename << std::endl;
+	std::cout << "Input file: " << ci.inputFilename << std::endl;
+	std::cout << "Output file: " << ci.outputFilename << std::endl;
 
 	// Isolate the file extensions
 	std::string inFileExt;
 	std::string outFileExt;
-	if (ci.InputFilename.find_last_of(".") != std::string::npos)
-		inFileExt = ci.InputFilename.substr(ci.InputFilename.find_last_of(".") + 1);
-	if (ci.OutputFilename.find_last_of(".") != std::string::npos)
-		outFileExt = ci.OutputFilename.substr(ci.OutputFilename.find_last_of(".") + 1);
+	if (ci.inputFilename.find_last_of(".") != std::string::npos)
+		inFileExt = ci.inputFilename.substr(ci.inputFilename.find_last_of(".") + 1);
+	if (ci.outputFilename.find_last_of(".") != std::string::npos)
+		outFileExt = ci.outputFilename.substr(ci.outputFilename.find_last_of(".") + 1);
 
 	// detect dsf or dff format
 	ci.dsfInput = (inFileExt == "dsf");
 	ci.dffInput = (inFileExt == "dff");
 
 	if (!ci.outBitFormat.empty()) {  // new output bit format requested
-		ci.OutputFormat = determineOutputFormat(outFileExt, ci.outBitFormat);
-		if (ci.OutputFormat)
+		ci.outputFormat = determineOutputFormat(outFileExt, ci.outBitFormat);
+		if (ci.outputFormat)
 			std::cout << "Changing output bit format to " << ci.outBitFormat << std::endl;
 		else { // user-supplied bit format not valid; try choosing appropriate format
-			determineBestBitFormat(ci.outBitFormat, ci.InputFilename, ci.OutputFilename);
-			if (ci.OutputFormat = determineOutputFormat(outFileExt, ci.outBitFormat))
+			determineBestBitFormat(ci.outBitFormat, ci.inputFilename, ci.outputFilename);
+			if (ci.outputFormat = determineOutputFormat(outFileExt, ci.outBitFormat))
 				std::cout << "Changing output bit format to " << ci.outBitFormat << std::endl;
 			else {
 				std::cout << "Warning: NOT Changing output file bit format !" << std::endl;
-				ci.OutputFormat = 0; // back where it started
+				ci.outputFormat = 0; // back where it started
 			}
 		}
 	}
@@ -104,10 +104,10 @@ int main(int argc, char * argv[])
 
 		if (ci.outBitFormat.empty()) { // user changed file extension only. Attempt to choose appropriate output sub format:
 			std::cout << "Output Bit Format not specified" << std::endl;
-			determineBestBitFormat(ci.outBitFormat, ci.InputFilename, ci.OutputFilename);
+			determineBestBitFormat(ci.outBitFormat, ci.inputFilename, ci.outputFilename);
 		}
-		ci.OutputFormat = determineOutputFormat(outFileExt, ci.outBitFormat);
-		if (ci.OutputFormat)
+		ci.outputFormat = determineOutputFormat(outFileExt, ci.outBitFormat);
+		if (ci.outputFormat)
 			std::cout << "Changing output file format to " << outFileExt << std::endl;
 		else { // cannot determine subformat of output file
 			std::cout << "Warning: NOT Changing output file format ! (extension different, but format will remain the same)" << std::endl;
@@ -118,24 +118,24 @@ int main(int argc, char * argv[])
 		if (ci.bUseDoublePrecision) {
 			std::cout << "Using double precision for calculations." << std::endl;
 			if (ci.dsfInput) {
-				return ConvertMT<DsfFile, double>(ci, /* peakDetection = */ false) ? EXIT_SUCCESS : EXIT_FAILURE;
+				return convertMT<DsfFile, double>(ci, /* peakDetection = */ false) ? EXIT_SUCCESS : EXIT_FAILURE;
 			}
 			else if (ci.dffInput) {
-				return ConvertMT<DffFile, double>(ci, /* peakDetection = */ false) ? EXIT_SUCCESS : EXIT_FAILURE;
+				return convertMT<DffFile, double>(ci, /* peakDetection = */ false) ? EXIT_SUCCESS : EXIT_FAILURE;
 			}
 			else {
-				return ConvertMT<SndfileHandle, double>(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
+				return convertMT<SndfileHandle, double>(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
 			}
 		}
 		else {
 			if (ci.dsfInput) {
-				return ConvertMT<DsfFile, float>(ci, /* peakDetection = */ false) ? EXIT_SUCCESS : EXIT_FAILURE;
+				return convertMT<DsfFile, float>(ci, /* peakDetection = */ false) ? EXIT_SUCCESS : EXIT_FAILURE;
 			}
 			else if (ci.dffInput) {
-				return ConvertMT<DffFile, float>(ci, /* peakDetection = */ false) ? EXIT_SUCCESS : EXIT_FAILURE;
+				return convertMT<DffFile, float>(ci, /* peakDetection = */ false) ? EXIT_SUCCESS : EXIT_FAILURE;
 			}
 			else {
-				return ConvertMT<SndfileHandle, float>(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
+				return convertMT<SndfileHandle, float>(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
 			}
 		}
 	}
@@ -151,15 +151,15 @@ int main(int argc, char * argv[])
 // Some commandline options (eg --version) should result in termination, but not error.
 // unacceptable parameters are indicated by setting bBadParams to true
 
-bool parseParameters(conversionInfo& ci, bool& bBadParams, int argc, char* argv[]) {
+bool parseParameters(ConversionInfo& ci, bool& bBadParams, int argc, char* argv[]) {
 	// initialize defaults:
-	ci.InputFilename.clear();
-	ci.OutputFilename.clear();
+	ci.inputFilename.clear();
+	ci.outputFilename.clear();
 	ci.outBitFormat.clear();
-	ci.OutputFormat = 0;
-	ci.OutputSampleRate = 44100;
+	ci.outputFormat = 0;
+	ci.outputSampleRate = 44100;
 	ci.normalizeAmount = 1.0;
-	ci.DitherAmount = 1.0;
+	ci.ditherAmount = 1.0;
 	ci.flacCompressionLevel = 5;
 	ci.vorbisQuality = 3;
 	ci.ditherProfileID = DitherProfileID::standard;
@@ -209,9 +209,9 @@ bool parseParameters(conversionInfo& ci, bool& bBadParams, int argc, char* argv[
 
 	////////////////////////////////////////////////////////////////////
 	// core parameters:
-	getCmdlineParam(argv, argv + argc, "-i", ci.InputFilename);
-	getCmdlineParam(argv, argv + argc, "-o", ci.OutputFilename);
-	getCmdlineParam(argv, argv + argc, "-r", ci.OutputSampleRate);
+	getCmdlineParam(argv, argv + argc, "-i", ci.inputFilename);
+	getCmdlineParam(argv, argv + argc, "-o", ci.outputFilename);
+	getCmdlineParam(argv, argv + argc, "-r", ci.outputSampleRate);
 	getCmdlineParam(argv, argv + argc, "-b", ci.outBitFormat);
 
 	// double precision switch:
@@ -233,33 +233,33 @@ bool parseParameters(conversionInfo& ci, bool& bBadParams, int argc, char* argv[
 			ci.normalizeAmount = 1.0;
 		if (ci.normalizeAmount > 1.0)
 			std::cout << "\nWarning: Normalization factor greater than 1.0 - THIS WILL CAUSE CLIPPING !!\n" << std::endl;
-		ci.Limit = ci.normalizeAmount;
+		ci.limit = ci.normalizeAmount;
 	}
 	else {
-		ci.Limit = 1.0; // default
+		ci.limit = 1.0; // default
 	}
 
 	// dither option and parameter:
 	ci.bDither = findCmdlineOption(argv, argv + argc, "--dither");
 	if (ci.bDither) {
-		getCmdlineParam(argv, argv + argc, "--dither", ci.DitherAmount);
-		if (ci.DitherAmount <= 0.0)
-			ci.DitherAmount = 1.0;
+		getCmdlineParam(argv, argv + argc, "--dither", ci.ditherAmount);
+		if (ci.ditherAmount <= 0.0)
+			ci.ditherAmount = 1.0;
 	}
 
 	// auto-blanking option (for dithering):
 	ci.bAutoBlankingEnabled = findCmdlineOption(argv, argv + argc, "--autoblank");
 
-	// ns option to determine Dither Profile:
+	// ns option to determine dither Profile:
 	if (findCmdlineOption(argv, argv + argc, "--ns")) {
 		getCmdlineParam(argv, argv + argc, "--ns", ci.ditherProfileID);
 		if (ci.ditherProfileID < 0)
 			ci.ditherProfileID = 0;
 		if (ci.ditherProfileID >= DitherProfileID::end)
-			ci.ditherProfileID = getDefaultNoiseShape(ci.OutputSampleRate);
+			ci.ditherProfileID = getDefaultNoiseShape(ci.outputSampleRate);
 	}
 	else {
-		ci.ditherProfileID = getDefaultNoiseShape(ci.OutputSampleRate);
+		ci.ditherProfileID = getDefaultNoiseShape(ci.outputSampleRate);
 	}
 
 	// --flat-tpdf option (takes precedence over --ns)
@@ -352,31 +352,31 @@ bool parseParameters(conversionInfo& ci, bool& bBadParams, int argc, char* argv[
 
 	// test for bad parameters:
 	bBadParams = false;
-	if (ci.OutputFilename.empty()) {
-		if (ci.InputFilename.empty()) {
+	if (ci.outputFilename.empty()) {
+		if (ci.inputFilename.empty()) {
 			std::cout << "Error: Input filename not specified" << std::endl;
 			bBadParams = true;
 		}
 		else {
 			std::cout << "Output filename not specified" << std::endl;
-			ci.OutputFilename = ci.InputFilename;
-			if (ci.OutputFilename.find(".") != std::string::npos) {
-				auto dot = ci.OutputFilename.find_last_of(".");
-				ci.OutputFilename.insert(dot, "(converted)");
+			ci.outputFilename = ci.inputFilename;
+			if (ci.outputFilename.find(".") != std::string::npos) {
+				auto dot = ci.outputFilename.find_last_of(".");
+				ci.outputFilename.insert(dot, "(converted)");
 			}
 			else {
-				ci.OutputFilename.append("(converted)");
+				ci.outputFilename.append("(converted)");
 			}
-			std::cout << "defaulting to: " << ci.OutputFilename << "\n" << std::endl;
+			std::cout << "defaulting to: " << ci.outputFilename << "\n" << std::endl;
 		}
 	}
 
-	else if (ci.OutputFilename == ci.InputFilename) {
+	else if (ci.outputFilename == ci.inputFilename) {
 		std::cout << "\nError: Input and Output filenames cannot be the same" << std::endl;
 		bBadParams = true;
 	}
 
-	if (ci.OutputSampleRate == 0) {
+	if (ci.outputSampleRate == 0) {
 		std::cout << "Error: Target sample rate not specified" << std::endl;
 		bBadParams = true;
 	}
@@ -566,13 +566,13 @@ void listSubFormats(const std::string& f)
 }
 
 template<typename FloatType>
-std::vector<FloatType> makeFilterCoefficients(unsigned int InputSampleRate, const conversionInfo& ci, Fraction FOriginal) {
+std::vector<FloatType> makeFilterCoefficients(unsigned int InputSampleRate, const ConversionInfo& ci, Fraction FOriginal) {
 	// determine base filter size
-	int BaseFilterSize;
+	int baseFilterSize;
 	int overSamplingFactor = 1;
 	Fraction F = FOriginal;
 	if ((FOriginal.numerator != FOriginal.denominator) && (FOriginal.numerator <= 4 || FOriginal.denominator <= 4)) { // simple ratios
-		BaseFilterSize = FILTERSIZE_MEDIUM * std::max(FOriginal.denominator, FOriginal.numerator) / 2;
+		baseFilterSize = FILTERSIZE_MEDIUM * std::max(FOriginal.denominator, FOriginal.numerator) / 2;
 		if (ci.bMinPhase) { // oversample to improve filter performance
 			overSamplingFactor = 8;
 			F.numerator *= overSamplingFactor;
@@ -580,29 +580,29 @@ std::vector<FloatType> makeFilterCoefficients(unsigned int InputSampleRate, cons
 		}
 	}
 	else { // complex ratios
-		BaseFilterSize = FILTERSIZE_HUGE * std::max(FOriginal.denominator, FOriginal.numerator) / 320;
+		baseFilterSize = FILTERSIZE_HUGE * std::max(FOriginal.denominator, FOriginal.numerator) / 320;
 	}
 
 	// determine cutoff frequency and steepness
-	double targetNyquist = std::min(InputSampleRate, ci.OutputSampleRate) / 2.0;
+	double targetNyquist = std::min(InputSampleRate, ci.outputSampleRate) / 2.0;
 	double ft = (ci.lpfCutoff / 100.0) * targetNyquist;
 	double steepness = steepness = 0.090909091 / (ci.lpfTransitionWidth / 100.0);
 
 	// scale the filter size, according to selected options:
-	int FilterSize = std::min(static_cast<int>(overSamplingFactor * BaseFilterSize * steepness), FILTERSIZE_LIMIT)
+	int filterSize = std::min(static_cast<int>(overSamplingFactor * baseFilterSize * steepness), FILTERSIZE_LIMIT)
 		| static_cast<int>(1);	// ensure that filter length is always odd
 
 								// determine sidelobe attenuation
-	int SidelobeAtten = ((FOriginal.numerator == 1) || (FOriginal.denominator == 1)) ?
+	int sidelobeAtten = ((FOriginal.numerator == 1) || (FOriginal.denominator == 1)) ?
 		195 :
 		160;
 
 	// Make some filter coefficients:
-	int OverSampFreq = InputSampleRate * F.numerator;
-	std::vector<FloatType> FilterTaps(FilterSize, 0);
-	FloatType* pFilterTaps = &FilterTaps[0];
-	makeLPF<FloatType>(pFilterTaps, FilterSize, ft, OverSampFreq);
-	applyKaiserWindow<FloatType>(pFilterTaps, FilterSize, calcKaiserBeta(SidelobeAtten));
+	int overSampFreq = InputSampleRate * F.numerator;
+	std::vector<FloatType> filterTaps(filterSize, 0);
+	FloatType* pFilterTaps = &filterTaps[0];
+	makeLPF<FloatType>(pFilterTaps, filterSize, ft, overSampFreq);
+	applyKaiserWindow<FloatType>(pFilterTaps, filterSize, calcKaiserBeta(sidelobeAtten));
 
 	// echo cutoff frequency to user:
 	auto prec = std::cout.precision();
@@ -612,10 +612,10 @@ std::vector<FloatType> makeFilterCoefficients(unsigned int InputSampleRate, cons
 	// conditionally convert filter coefficients to minimum-phase:
 	if (ci.bMinPhase) {
 		std::cout << "Using Minimum-Phase LPF" << std::endl;
-		makeMinPhase<FloatType>(pFilterTaps, FilterSize);
+		makeMinPhase<FloatType>(pFilterTaps, filterSize);
 	}
 
-	return FilterTaps;
+	return filterTaps;
 }
 
 // Multi-threaded convert() :
@@ -632,12 +632,12 @@ seek(position, whence)
 */
 
 template<typename FileReader, typename FloatType>
-bool ConvertMT(const conversionInfo& ci, bool peakDetection)
+bool convertMT(const ConversionInfo& ci, bool peakDetection)
 {
 	bool multiThreaded = ci.bMultiThreaded;
 
 	// Open input file:
-	FileReader infile(ci.InputFilename);
+	FileReader infile(ci.inputFilename);
 
 	if (int e = infile.error()) {
 		std::cout << "Error: Couldn't Open Input File (" << sf_error_number(e) << ")" << std::endl; // to-do: make this more specific (?)
@@ -650,17 +650,17 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 	
 	// read file properties:
 	int nChannels = infile.channels();
-	unsigned int InputSampleRate = infile.samplerate();
-	sf_count_t InputSampleCount = infile.frames() * nChannels;
+	unsigned int inputSampleRate = infile.samplerate();
+	sf_count_t inputSampleCount = infile.frames() * nChannels;
 
 	// determine conversion ratio:
-	Fraction FOriginal = GetSimplifiedFraction(InputSampleRate, ci.OutputSampleRate);
-	Fraction F = FOriginal;
+	Fraction fOriginal = getSimplifiedFraction(inputSampleRate, ci.outputSampleRate);
+	Fraction f = fOriginal;
 
 	// set buffer sizes:
 	size_t inputChannelBufferSize = BUFFERSIZE;
 	size_t inputBlockSize = BUFFERSIZE * nChannels;
-	size_t outputChannelBufferSize = std::ceil(BUFFERSIZE * static_cast<double>(F.numerator) / static_cast<double>(F.denominator));
+	size_t outputChannelBufferSize = std::ceil(BUFFERSIZE * static_cast<double>(f.numerator) / static_cast<double>(f.denominator));
 	size_t outputBlockSize = nChannels * outputChannelBufferSize;
 	
 	// allocate buffers:
@@ -673,12 +673,12 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 		outputChannelBuffers.emplace_back(std::vector<FloatType>(outputChannelBufferSize, 0));
 	}
 			
-	int InputFileFormat = infile.format();
-	if (InputFileFormat != DFF_FORMAT && InputFileFormat != DSF_FORMAT) { // this block only relevant to libsndfile ...
+	int inputFileFormat = infile.format();
+	if (inputFileFormat != DFF_FORMAT && inputFileFormat != DSF_FORMAT) { // this block only relevant to libsndfile ...
 		// detect if input format is a floating-point format:
 		bool bFloat = false;
 		bool bDouble = false;
-		switch (InputFileFormat & SF_FORMAT_SUBMASK) {
+		switch (inputFileFormat & SF_FORMAT_SUBMASK) {
 		case SF_FORMAT_FLOAT:
 			bFloat = true;
 			break;
@@ -688,7 +688,7 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 		}
 
 		for (auto& subformat : subFormats) { // scan subformats for a match:
-			if (subformat.second == (InputFileFormat & SF_FORMAT_SUBMASK)) {
+			if (subformat.second == (inputFileFormat & SF_FORMAT_SUBMASK)) {
 				std::cout << "input bit format: " << subformat.first;
 				break;
 			}
@@ -703,86 +703,86 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 	}
 
 	std::cout << "source file channels: " << nChannels << std::endl;
-	std::cout << "input sample rate: " << InputSampleRate << "\noutput sample rate: " << ci.OutputSampleRate << std::endl;
+	std::cout << "input sample rate: " << inputSampleRate << "\noutput sample rate: " << ci.outputSampleRate << std::endl;
 
 	sf_count_t samplesRead;
 	sf_count_t totalSamplesRead = 0;
-	FloatType PeakInputSample;
+	FloatType peakInputSample;
 	if (peakDetection) {
-		PeakInputSample = 0.0;
+		peakInputSample = 0.0;
 		std::cout << "Scanning input file for peaks ...";
 
 		do {
 			samplesRead = infile.read(inputBlock.data(), inputBlockSize);
 			totalSamplesRead += samplesRead;
 			for (unsigned int s = 0; s < samplesRead; ++s) { // read all samples, without caring which channel they belong to
-				PeakInputSample = std::max(PeakInputSample, std::abs(inputBlock[s]));
+				peakInputSample = std::max(peakInputSample, std::abs(inputBlock[s]));
 			}
 		} while (samplesRead > 0);
 
 		std::cout << "Done\n";
-		std::cout << "Peak input sample: " << std::fixed << PeakInputSample << " (" << 20 * log10(PeakInputSample) << " dBFS)" << std::endl;
+		std::cout << "Peak input sample: " << std::fixed << peakInputSample << " (" << 20 * log10(peakInputSample) << " dBFS)" << std::endl;
 		infile.seek(0, SEEK_SET); // rewind back to start of file
 	}
 
 	else { // no peak detection
-		PeakInputSample = ci.bNormalize ?
+		peakInputSample = ci.bNormalize ?
 			0.5 /* ... a guess, since we haven't actually measured the peak (in the case of DSD, it is a good guess.) */ :
 			1.0;
 	}
 
 	if (ci.bNormalize) { // echo Normalization settings to user
 		auto prec = std::cout.precision();
-		std::cout << "Normalizing to " << std::setprecision(2) << ci.Limit << std::endl;
+		std::cout << "Normalizing to " << std::setprecision(2) << ci.limit << std::endl;
 		std::cout.precision(prec);
 	}
 
-	std::vector<FloatType> FilterTaps = std::move(makeFilterCoefficients<FloatType>(InputSampleRate, ci, FOriginal));
+	std::vector<FloatType> FilterTaps = std::move(makeFilterCoefficients<FloatType>(inputSampleRate, ci, fOriginal));
 
 	// echo conversion ratio to user:
-	FloatType ResamplingFactor = static_cast<FloatType>(ci.OutputSampleRate) / InputSampleRate;
-	std::cout << "\nConversion ratio: " << ResamplingFactor
-		<< " (" << FOriginal.numerator << ":" << FOriginal.denominator << ")" << std::endl;
+	FloatType resamplingFactor = static_cast<FloatType>(ci.outputSampleRate) / inputSampleRate;
+	std::cout << "\nConversion ratio: " << resamplingFactor
+		<< " (" << fOriginal.numerator << ":" << fOriginal.denominator << ")" << std::endl;
 
 	// make a vector of filters (one filter for each channel):
-	std::vector<FIRFilter<FloatType>> Filters;
+	std::vector<FIRFilter<FloatType>> filters;
 	for (int n = 0; n < nChannels; n++) {
-		Filters.emplace_back(FilterTaps.data(), FilterTaps.size());
+		filters.emplace_back(FilterTaps.data(), FilterTaps.size());
 	}
 
-	//to-do: handle oversampled ratios (eg 8/8) - F vs FOriginal etc
+	//to-do: handle oversampled ratios (eg 8/8) - f vs fOriginal etc
 
 	// calculate group Delay
-	int groupDelay = (ci.bMinPhase || !ci.bDelayTrim) ? 0 : (FilterTaps.size() - 1) / 2 / FOriginal.denominator;
-	if (FOriginal.numerator == 1 && FOriginal.denominator == 1) {
+	int groupDelay = (ci.bMinPhase || !ci.bDelayTrim) ? 0 : (FilterTaps.size() - 1) / 2 / fOriginal.denominator;
+	if (fOriginal.numerator == 1 && fOriginal.denominator == 1) {
 		groupDelay = 0;
 	}
 
 	// std::cout << "expected group delay " << groupDelay << std::endl;
 
-	// if the OutputFormat is zero, it means "No change to file format"
-	// if output file format has changed, use OutputFormat. Otherwise, use same format as infile: 
-	int OutputFileFormat = ci.OutputFormat ? ci.OutputFormat : InputFileFormat;
+	// if the outputFormat is zero, it means "No change to file format"
+	// if output file format has changed, use outputFormat. Otherwise, use same format as infile: 
+	int outputFileFormat = ci.outputFormat ? ci.outputFormat : inputFileFormat;
 
-	// if the minor (sub) format of OutputFileFormat is not set, attempt to use minor format of input file (as a last resort)
-	if ((OutputFileFormat & SF_FORMAT_SUBMASK) == 0) {
-		OutputFileFormat |= (InputFileFormat & SF_FORMAT_SUBMASK); // may not be valid subformat for new file format. 
+	// if the minor (sub) format of outputFileFormat is not set, attempt to use minor format of input file (as a last resort)
+	if ((outputFileFormat & SF_FORMAT_SUBMASK) == 0) {
+		outputFileFormat |= (inputFileFormat & SF_FORMAT_SUBMASK); // may not be valid subformat for new file format. 
 	}
 
 	// for wav files, determine whether to switch to rf64 mode:
-	if (((OutputFileFormat & SF_FORMAT_TYPEMASK) == SF_FORMAT_WAV) ||
-		((OutputFileFormat & SF_FORMAT_TYPEMASK) == SF_FORMAT_WAVEX)) {
+	if (((outputFileFormat & SF_FORMAT_TYPEMASK) == SF_FORMAT_WAV) ||
+		((outputFileFormat & SF_FORMAT_TYPEMASK) == SF_FORMAT_WAVEX)) {
 		if (ci.bRf64 ||
-			checkWarnOutputSize(InputSampleCount, getSfBytesPerSample(OutputFileFormat), FOriginal.numerator, FOriginal.denominator)) {
+			checkWarnOutputSize(inputSampleCount, getSfBytesPerSample(outputFileFormat), fOriginal.numerator, fOriginal.denominator)) {
 			std::cout << "Switching to rf64 format !" << std::endl;
-			OutputFileFormat &= ~SF_FORMAT_TYPEMASK; // clear file type
-			OutputFileFormat |= SF_FORMAT_RF64;
+			outputFileFormat &= ~SF_FORMAT_TYPEMASK; // clear file type
+			outputFileFormat |= SF_FORMAT_RF64;
 		}
 	}
 
 	// determine number of bits in output format (used for Dithering purposes):
 	int outputSignalBits;
-	switch (OutputFileFormat & SF_FORMAT_SUBMASK) {
+	switch (outputFileFormat & SF_FORMAT_SUBMASK) {
 	case SF_FORMAT_PCM_24:
 		outputSignalBits = 24;
 		break;
@@ -797,7 +797,7 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 	// confirm dithering options for user:
 	if (ci.bDither) {
 		auto prec = std::cout.precision();
-		std::cout << "Generating " << std::setprecision(2) << ci.DitherAmount << " bits of " << ditherProfileList[ci.ditherProfileID].name << " dither for " << outputSignalBits << "-bit output format";
+		std::cout << "Generating " << std::setprecision(2) << ci.ditherAmount << " bits of " << ditherProfileList[ci.ditherProfileID].name << " dither for " << outputSignalBits << "-bit output format";
 		std::cout.precision(prec);
 		if (ci.bAutoBlankingEnabled)
 			std::cout << ", with auto-blanking";
@@ -805,24 +805,24 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 	}
 
 	// make a vector of ditherers (one ditherer for each channel):
-	std::vector<Ditherer<FloatType>> Ditherers;
+	std::vector<Ditherer<FloatType>> ditherers;
 	int seed = ci.bUseSeed ? ci.seed : time(0);
 
 	for (int n = 0; n < nChannels; n++) {
 		// to-do: explore other seed-generation options (remote possibility of overlap)
 		// maybe use a single global RNG ? 
 		// or use discard/jump-ahead ... to ensure parallel streams are sufficiently "far away" from each other ?
-		Ditherers.emplace_back(outputSignalBits, ci.DitherAmount, ci.bAutoBlankingEnabled, n + seed, static_cast<DitherProfileID>(ci.ditherProfileID));
+		ditherers.emplace_back(outputSignalBits, ci.ditherAmount, ci.bAutoBlankingEnabled, n + seed, static_cast<DitherProfileID>(ci.ditherProfileID));
 	}
 
 	// Calculate initial gain:
-	FloatType Gain = ci.gain *
-		(ci.bNormalize ? F.numerator * (ci.Limit / PeakInputSample) : F.numerator * ci.Limit);
+	FloatType gain = ci.gain *
+		(ci.bNormalize ? f.numerator * (ci.limit / peakInputSample) : f.numerator * ci.limit);
 
 	if (ci.bDither) { // allow headroom for dithering:
-		FloatType DitherCompensation =
-			(pow(2, outputSignalBits - 1) - pow(2, ci.DitherAmount - 1)) / pow(2, outputSignalBits - 1); // eg 32767/32768 = 0.999969 (-0.00027 dB)
-		Gain *= DitherCompensation;
+		FloatType ditherCompensation =
+			(pow(2, outputSignalBits - 1) - pow(2, ci.ditherAmount - 1)) / pow(2, outputSignalBits - 1); // eg 32767/32768 = 0.999969 (-0.00027 dB)
+		gain *= ditherCompensation;
 	}
 
 	FloatType peakOutputSample;
@@ -835,10 +835,10 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 		std::unique_ptr<SndfileHandle> outFile;
 
 		// make a vector of converter stages:
-		bool bypassMode = (F.numerator == 1 && F.denominator == 1);
+		bool bypassMode = (f.numerator == 1 && f.denominator == 1);
 		std::vector<ConvertStage<FloatType>> convertStages;
 		for (int n = 0; n < nChannels; n++) {
-			convertStages.emplace_back(F.numerator, F.denominator, Filters[n], bypassMode);
+			convertStages.emplace_back(f.numerator, f.denominator, filters[n], bypassMode);
 		}
 
 		try { // Open output file:
@@ -846,7 +846,7 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 			// output file may need to be overwriten on subsequent passes,
 			// and the only way to close the file is to destroy the SndfileHandle.  
 
-			outFile.reset(new SndfileHandle(ci.OutputFilename, SFM_WRITE, OutputFileFormat, nChannels, ci.OutputSampleRate));
+			outFile.reset(new SndfileHandle(ci.outputFilename, SFM_WRITE, outputFileFormat, nChannels, ci.outputSampleRate));
 
 			if (int e = outFile->error()) {
 				std::cout << "Error: Couldn't Open Output File (" << sf_error_number(e) << ")" << std::endl;
@@ -863,15 +863,15 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 				}
 			}
 
-			// if the minor (sub) format of OutputFileFormat is flac, and user has requested a specific compression level, set compression level:
-			if (((OutputFileFormat & SF_FORMAT_FLAC) == SF_FORMAT_FLAC) && ci.bSetFlacCompression) {
+			// if the minor (sub) format of outputFileFormat is flac, and user has requested a specific compression level, set compression level:
+			if (((outputFileFormat & SF_FORMAT_FLAC) == SF_FORMAT_FLAC) && ci.bSetFlacCompression) {
 				std::cout << "setting flac compression level to " << ci.flacCompressionLevel << std::endl;
 				double cl = static_cast<double>(ci.flacCompressionLevel / 8.0); // there are 9 flac compression levels from 0-8. Normalize to 0-1.0
 				outFile->command(SFC_SET_COMPRESSION_LEVEL, &cl, sizeof(cl));
 			}
 
-			// if the minor (sub) format of OutputFileFormat is vorbis, and user has requested a specific quality level, set quality level:
-			if (((OutputFileFormat & SF_FORMAT_VORBIS) == SF_FORMAT_VORBIS) && ci.bSetVorbisQuality) {
+			// if the minor (sub) format of outputFileFormat is vorbis, and user has requested a specific quality level, set quality level:
+			if (((outputFileFormat & SF_FORMAT_VORBIS) == SF_FORMAT_VORBIS) && ci.bSetVorbisQuality) {
 
 				auto prec = std::cout.precision();
 				std::cout.precision(1);
@@ -897,11 +897,11 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 
 		peakOutputSample = 0.0;
 		totalSamplesRead = 0;
-		sf_count_t IncrementalProgressThreshold = InputSampleCount / 10;
-		sf_count_t NextProgressThreshold = IncrementalProgressThreshold;
+		sf_count_t incrementalProgressThreshold = inputSampleCount / 10;
+		sf_count_t nextProgressThreshold = incrementalProgressThreshold;
 
 		int outStartOffset = std::min(groupDelay * nChannels, static_cast<int>(outputBlockSize) - nChannels);
-		size_t count;
+//		size_t count; // to-do: remove ?
 		do {
 			// Grab a block of interleaved samples from file:
 			samplesRead = infile.read(inputBlock.data(), inputBlockSize);
@@ -935,7 +935,7 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 					size_t localOutputBlockIndex = 0;
 					convertStages[ch].convert(oBuf, o, iBuf, i);
 					for (size_t f = 0; f < o; ++f) {
-						FloatType outputSample = ci.bDither ? Ditherers[ch].Dither(Gain * oBuf[f]) : Gain * oBuf[f]; // gain, dither
+						FloatType outputSample = ci.bDither ? ditherers[ch].dither(gain * oBuf[f]) : gain * oBuf[f]; // gain, dither
 						localPeak = std::max(localPeak, std::abs(outputSample)); // peak
 						outputBlock[localOutputBlockIndex + ch] = outputSample; // interleave
 						localOutputBlockIndex += nChannels;
@@ -968,10 +968,10 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 			outStartOffset = 0; // reset after first use
 
 			// conditionally send progress update:
-			if (totalSamplesRead > NextProgressThreshold) {
-				int ProgressPercentage = std::min(static_cast<int>(99), static_cast<int>(100 * totalSamplesRead / InputSampleCount));
-				std::cout << ProgressPercentage << "%\b\b\b" << std::flush;
-				NextProgressThreshold += IncrementalProgressThreshold;
+			if (totalSamplesRead > nextProgressThreshold) {
+				int progressPercentage = std::min(static_cast<int>(99), static_cast<int>(100 * totalSamplesRead / inputSampleCount));
+				std::cout << progressPercentage << "%\b\b\b" << std::flush;
+				nextProgressThreshold += incrementalProgressThreshold;
 			}
 
 		} while (samplesRead > 0);
@@ -983,20 +983,20 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 		std::cout.precision(prec);
 
 		// Test for clipping:	
-		if (peakOutputSample > ci.Limit) {
+		if (peakOutputSample > ci.limit) {
 			bClippingDetected = true;
-			FloatType GainAdjustment = static_cast<FloatType>(clippingTrim) * ci.Limit / peakOutputSample;
+			FloatType gainAdjustment = static_cast<FloatType>(clippingTrim) * ci.limit / peakOutputSample;
 
-			Gain *= GainAdjustment;
+			gain *= gainAdjustment;
 			std::cout << "\nClipping detected !" << std::endl;
 			if (!ci.disableClippingProtection) {
-				std::cout << "Re-doing with " << 20 * log10(GainAdjustment) << " dB gain adjustment" << std::endl;
+				std::cout << "Re-doing with " << 20 * log10(gainAdjustment) << " dB gain adjustment" << std::endl;
 				infile.seek(0, SEEK_SET);
 			}
 
 			if (ci.bDither) {
-				for (auto& ditherer : Ditherers) {
-					ditherer.adjustGain(GainAdjustment);
+				for (auto& ditherer : ditherers) {
+					ditherer.adjustGain(gainAdjustment);
 					ditherer.reset();
 				}
 			}
@@ -1006,7 +1006,7 @@ bool ConvertMT(const conversionInfo& ci, bool peakDetection)
 
 	} while (!ci.disableClippingProtection && bClippingDetected);
 	return true;
-} // ends ConvertMT()
+} // ends convertMT()
 
 // retrieve metadata using libsndfile API :
 bool getMetaData(MetaData& metadata, SndfileHandle& infile) {
@@ -1197,49 +1197,49 @@ int gcd(int a, int b) {
 	return a;
 }
 
-//  GetSimplifiedFraction() - turns a sample-rate ratio into a fraction:
-Fraction GetSimplifiedFraction(int InputSampleRate, int OutputSampleRate)			// eg 44100, 48000
+//  getSimplifiedFraction() - turns a sample-rate ratio into a fraction:
+Fraction getSimplifiedFraction(int inputSampleRate, int outputSampleRate)			// eg 44100, 48000
 {
 	Fraction f;
-	f.numerator = (OutputSampleRate / gcd(InputSampleRate, OutputSampleRate));		// L (eg 160)
-	f.denominator = (InputSampleRate / gcd(InputSampleRate, OutputSampleRate));		// M (eg 147)
+	f.numerator = (outputSampleRate / gcd(inputSampleRate, outputSampleRate));		// L (eg 160)
+	f.denominator = (inputSampleRate / gcd(inputSampleRate, outputSampleRate));		// M (eg 147)
 	return f;
 }
 
 // The following functions are used for parsing commandline parameters:
 
-void getCmdlineParam(char** begin, char** end, const std::string& OptionName, std::string& Parameter)
+void getCmdlineParam(char** begin, char** end, const std::string& optionName, std::string& Parameter)
 {
 	Parameter.clear();
-	char** it = std::find(begin, end, OptionName);
+	char** it = std::find(begin, end, optionName);
 	if (it != end)	// found option
 		if (++it != end) // found parameter after option
 			Parameter = *it;
 }
 
-void getCmdlineParam(char** begin, char** end, const std::string& OptionName, unsigned int& nParameter)
+void getCmdlineParam(char** begin, char** end, const std::string& optionName, unsigned int& nParameter)
 {
 	nParameter = 0;
-	char** it = std::find(begin, end, OptionName);
+	char** it = std::find(begin, end, optionName);
 	if (it != end)	// found option
 		if (++it != end) // found parameter after option
 			nParameter = atoi(*it);
 }
 
-void getCmdlineParam(char** begin, char** end, const std::string& OptionName, int& nParameter)
+void getCmdlineParam(char** begin, char** end, const std::string& optionName, int& nParameter)
 {
 	nParameter = 0;
-	char** it = std::find(begin, end, OptionName);
+	char** it = std::find(begin, end, optionName);
 	if (it != end)	// found option
 		if (++it != end) // found parameter after option
 			nParameter = atoi(*it);
 }
 
 
-void getCmdlineParam(char** begin, char** end, const std::string& OptionName, double& Parameter)
+void getCmdlineParam(char** begin, char** end, const std::string& optionName, double& Parameter)
 {
 	Parameter = 0.0;
-	char** it = std::find(begin, end, OptionName);
+	char** it = std::find(begin, end, optionName);
 	if (it != end)	// found option
 		if (++it != end) // found parameter after option
 			Parameter = atof(*it);

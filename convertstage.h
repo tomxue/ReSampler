@@ -58,7 +58,7 @@ private:
 				//filter.put((l == 0) ? inBuffer[i] : 0);
 				((l == 0) ? filter.put(inBuffer[i]) : filter.putZero());
 				//outBuffer[o++] = filter.get();
-				outBuffer[o++] = filter.LazyGet(L);
+				outBuffer[o++] = filter.lazyGet(L);
 			}
         }
         outBufferSize = o;   
@@ -89,7 +89,7 @@ private:
 			for(int l = 0; l < L; ++l) {
 				((l == 0) ? filter.put(inBuffer[i]) : filter.putZero());
 				if (localm == 0) {
-					outBuffer[o++] = filter.LazyGet(L);
+					outBuffer[o++] = filter.lazyGet(L);
 				}
 				if (++localm == M) {
 					localm = 0;
