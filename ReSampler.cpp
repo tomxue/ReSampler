@@ -566,25 +566,25 @@ void listSubFormats(const std::string& f)
 }
 
 template<typename FloatType>
-std::vector<FloatType> makeFilterCoefficients(unsigned int InputSampleRate, const ConversionInfo& ci, Fraction FOriginal) {
+std::vector<FloatType> makeFilterCoefficients(unsigned int inputSampleRate, const ConversionInfo& ci, Fraction fraction) {
 	// determine base filter size
 	int baseFilterSize;
 	int overSamplingFactor = 1;
-	Fraction F = FOriginal;
-	if ((FOriginal.numerator != FOriginal.denominator) && (FOriginal.numerator <= 4 || FOriginal.denominator <= 4)) { // simple ratios
-		baseFilterSize = FILTERSIZE_MEDIUM * std::max(FOriginal.denominator, FOriginal.numerator) / 2;
+	Fraction f = fraction;
+	if ((fraction.numerator != fraction.denominator) && (fraction.numerator <= 4 || fraction.denominator <= 4)) { // simple ratios
+		baseFilterSize = FILTERSIZE_MEDIUM * std::max(fraction.denominator, fraction.numerator) / 2;
 		if (ci.bMinPhase) { // oversample to improve filter performance
 			overSamplingFactor = 8;
-			F.numerator *= overSamplingFactor;
-			F.denominator *= overSamplingFactor;
+			f.numerator *= overSamplingFactor;
+			f.denominator *= overSamplingFactor;
 		}
 	}
 	else { // complex ratios
-		baseFilterSize = FILTERSIZE_HUGE * std::max(FOriginal.denominator, FOriginal.numerator) / 320;
+		baseFilterSize = FILTERSIZE_HUGE * std::max(fraction.denominator, fraction.numerator) / 320;
 	}
 
 	// determine cutoff frequency and steepness
-	double targetNyquist = std::min(InputSampleRate, ci.outputSampleRate) / 2.0;
+	double targetNyquist = std::min(inputSampleRate, ci.outputSampleRate) / 2.0;
 	double ft = (ci.lpfCutoff / 100.0) * targetNyquist;
 	double steepness = steepness = 0.090909091 / (ci.lpfTransitionWidth / 100.0);
 
@@ -593,25 +593,19 @@ std::vector<FloatType> makeFilterCoefficients(unsigned int InputSampleRate, cons
 		| static_cast<int>(1);	// ensure that filter length is always odd
 
 								// determine sidelobe attenuation
-	int sidelobeAtten = ((FOriginal.numerator == 1) || (FOriginal.denominator == 1)) ?
+	int sidelobeAtten = ((fraction.numerator == 1) || (fraction.denominator == 1)) ?
 		195 :
 		160;
 
 	// Make some filter coefficients:
-	int overSampFreq = InputSampleRate * F.numerator;
+	int overSampFreq = inputSampleRate * f.numerator;
 	std::vector<FloatType> filterTaps(filterSize, 0);
 	FloatType* pFilterTaps = &filterTaps[0];
 	makeLPF<FloatType>(pFilterTaps, filterSize, ft, overSampFreq);
 	applyKaiserWindow<FloatType>(pFilterTaps, filterSize, calcKaiserBeta(sidelobeAtten));
 
-	// echo cutoff frequency to user:
-	auto prec = std::cout.precision();
-	std::cout << "LPF transition frequency: " << std::fixed << std::setprecision(2) << ft << " Hz (" << 100 * ft / targetNyquist << " %)" << std::endl;
-	std::cout.precision(prec);
-
 	// conditionally convert filter coefficients to minimum-phase:
 	if (ci.bMinPhase) {
-		std::cout << "Using Minimum-Phase LPF" << std::endl;
 		makeMinPhase<FloatType>(pFilterTaps, filterSize);
 	}
 
@@ -737,6 +731,17 @@ bool convertMT(const ConversionInfo& ci, bool peakDetection)
 		std::cout.precision(prec);
 	}
 
+	// echo filter settings to user:
+	double targetNyquist = std::min(inputSampleRate, ci.outputSampleRate) / 2.0;
+	double ft = (ci.lpfCutoff / 100.0) * targetNyquist;
+	auto prec = std::cout.precision();
+	std::cout << "LPF transition frequency: " << std::fixed << std::setprecision(2) << ft << " Hz (" << 100 * ft / targetNyquist << " %)" << std::endl;
+	std::cout.precision(prec);
+	if (ci.bMinPhase) {
+		std::cout << "Using Minimum-Phase LPF" << std::endl;
+	}
+
+	// calculate filter coefficients
 	std::vector<FloatType> FilterTaps = std::move(makeFilterCoefficients<FloatType>(inputSampleRate, ci, fOriginal));
 
 	// echo conversion ratio to user:
