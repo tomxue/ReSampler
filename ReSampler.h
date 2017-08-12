@@ -184,6 +184,7 @@ bool determineBestBitFormat(std::string & BitFormat, const std::string & inFilen
 int determineOutputFormat(const std::string & outFileExt, const std::string & bitFormat);
 void listSubFormats(const std::string & f);
 int gcd(int a, int b);
+std::vector<int> factorize(int n);
 Fraction getSimplifiedFraction(int InputSampleRate, int outputSampleRate);
 void getCmdlineParam(char ** begin, char ** end, const std::string & OptionName, std::string & Parameter);
 void getCmdlineParam(char ** begin, char ** end, const std::string & OptionName, unsigned int & nParameter);

@@ -1202,6 +1202,23 @@ int gcd(int a, int b) {
 	return a;
 }
 
+std::vector<int> factorize(int n) {
+	std::vector<int> factors;
+	int maxFactor = std::sqrt(n);
+
+	for (int factor = 2; factor <= maxFactor; factor++) {
+		while (n % factor == 0) {
+			factors.push_back(factor);
+			n /= factor;
+		}
+		if (n == 1)
+			return factors;
+	}
+
+	factors.push_back(n);
+	return factors;
+}
+
 //  getSimplifiedFraction() - turns a sample-rate ratio into a fraction:
 Fraction getSimplifiedFraction(int inputSampleRate, int outputSampleRate)			// eg 44100, 48000
 {
