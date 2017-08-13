@@ -2,6 +2,7 @@
 #define CONVERTSTAGE_H 1
 
 #include "FIRFilter.h"
+#include "ReSampler.h"
 
 template<typename FloatType>
 class ConvertStage
@@ -117,6 +118,27 @@ private:
 			convertFn = &ConvertStage::interpolateAndDecimate;
 		}
 	}
+};
+
+template <typename FloatType>
+class ConverterBaseClass
+{
+protected:
+	ConverterBaseClass(const ConversionInfo& ci) : ci(ci) {}
+	virtual void convert(FloatType* outBuffer, size_t& outBufferSize, const FloatType* inBuffer, const size_t& inBufferSize) = 0;
+	ConversionInfo ci;
+};
+
+class <typename FloatType>
+class SingleStageConverter : public ConverterBaseClass
+{
+public:
+	SingleStageConverter(const ConversionInfo& ci) : ConverterBaseClass(ci) {}
+	void (FloatType* outBuffer, size_t& outBufferSize, const FloatType* inBuffer, const size_t& inBufferSize) {
+		
+	}
+private:
+	FIRFilter firFilter;
 };
 
 #endif
