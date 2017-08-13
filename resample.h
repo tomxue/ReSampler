@@ -1,14 +1,14 @@
-#ifndef CONVERTSTAGE_H
-#define CONVERTSTAGE_H 1
+#ifndef CONVERT_H
+#define CONVERT_H 1
 
 #include "FIRFilter.h"
 #include "ReSampler.h"
 
 template<typename FloatType>
-class ConvertStage
+class ResamplingStage
 {
 public:
-    ConvertStage(int L, int M, FIRFilter<FloatType>& filter, bool bypassMode = false)
+    ResamplingStage(int L, int M, FIRFilter<FloatType>& filter, bool bypassMode = false)
         : L(L), M(M), filter(filter), bypassMode(bypassMode), m(0)
     {
 		SetConvertFunction();
@@ -19,7 +19,7 @@ public:
     }
 
 	void setBypassMode(bool bypassMode) {
-		ConvertStage::bypassMode = bypassMode;
+		ResamplingStage::bypassMode = bypassMode;
 		SetConvertFunction();
 	}
 
@@ -32,7 +32,7 @@ private:
     
 	// The following typedef defines the type 'ConvertFunction' which is a pointer to any of the member functions which 
 	// take the arguments (FloatType* outBuffer, size_t& outBufferSize, const FloatType* inBuffer, const size_t& inBufferSize) ...
-	typedef void (ConvertStage::*ConvertFunction) (FloatType* outBuffer, size_t& outBufferSize, const FloatType* inBuffer, const size_t& inBufferSize); // see https://isocpp.org/wiki/faq/pointers-to-members
+	typedef void (ResamplingStage::*ConvertFunction) (FloatType* outBuffer, size_t& outBufferSize, const FloatType* inBuffer, const size_t& inBufferSize); // see https://isocpp.org/wiki/faq/pointers-to-members
 	ConvertFunction convertFn;
 
 	// passThrough() - just copies input straight to output (used in bypassMode mode)
@@ -103,25 +103,25 @@ private:
 
 	void SetConvertFunction() {
 		if (bypassMode) {
-			convertFn = &ConvertStage::passThrough;
+			convertFn = &ResamplingStage::passThrough;
 		}
 		else if (L == 1 && M == 1) {
-			convertFn = &ConvertStage::filterOnly;
+			convertFn = &ResamplingStage::filterOnly;
 		}
 		else if (L != 1 && M == 1) {
-			convertFn = &ConvertStage::interpolate;
+			convertFn = &ResamplingStage::interpolate;
 		}
 		else if (L == 1 && M != 1) {
-			convertFn = &ConvertStage::decimate;
+			convertFn = &ResamplingStage::decimate;
 		}
 		else {
-			convertFn = &ConvertStage::interpolateAndDecimate;
+			convertFn = &ResamplingStage::interpolateAndDecimate;
 		}
 	}
 };
 
 template <typename FloatType>
-class ConverterBaseClass
+class AbstractResampler
 {
 public:
 	virtual void convert(FloatType* outBuffer, size_t& outBufferSize, const FloatType* inBuffer, const size_t& inBufferSize) = 0;
@@ -129,20 +129,19 @@ public:
 		return groupDelay;
 	}
 protected:
-	ConverterBaseClass(unsigned int inputSampleRate, const ConversionInfo& ci) : inputSampleRate(inputSampleRate), ci(ci) {}
-	unsigned int inputSampleRate;
+	AbstractResampler(const ConversionInfo& ci) : ci(ci) {}
 	ConversionInfo ci;
 	int groupDelay;
-	std::vector<ConvertStage<FloatType>> convertStages;
+	std::vector<ResamplingStage<FloatType>> convertStages;
 };
 
 template <typename FloatType>
-class SingleStageConverter : public ConverterBaseClass<FloatType>
+class SingleStageResampler : public AbstractResampler<FloatType>
 {
 public:
-	SingleStageConverter(unsigned int inputSampleRate, const ConversionInfo& ci) : ConverterBaseClass<FloatType>(inputSampleRate, ci) {
-		Fraction f = getSimplifiedFraction(inputSampleRate, ci.outputSampleRate);
-		std::vector<FloatType> filterTaps = makeFilterCoefficients<FloatType>(inputSampleRate, ci, f);
+	SingleStageResampler(const ConversionInfo& ci) : AbstractResampler<FloatType>(ci) {
+		Fraction f = getSimplifiedFraction(ci.inputSampleRate, ci.outputSampleRate);
+		std::vector<FloatType> filterTaps = makeFilterCoefficients<FloatType>(ci, f);
 		FIRFilter<FloatType> firFilter(filterTaps.data(), filterTaps.size());
 		bool bypassMode = (f.numerator == 1 && f.denominator == 1);
 		convertStages.emplace_back(f.numerator, f.denominator, firFilter, bypassMode);
@@ -157,4 +156,4 @@ public:
 	}
 };
 
-#endif
+#endif // CONVERT_H
