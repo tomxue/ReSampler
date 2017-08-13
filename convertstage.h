@@ -129,13 +129,13 @@ protected:
 	ConversionInfo ci;
 };
 
-class <typename FloatType>
+<typename FloatType>
 class SingleStageConverter : public ConverterBaseClass
 {
 public:
 	SingleStageConverter(const ConversionInfo& ci) : ConverterBaseClass(ci) {}
 	void (FloatType* outBuffer, size_t& outBufferSize, const FloatType* inBuffer, const size_t& inBufferSize) {
-		
+
 	}
 private:
 	FIRFilter firFilter;
