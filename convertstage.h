@@ -123,22 +123,23 @@ private:
 template <typename FloatType>
 class ConverterBaseClass
 {
+public:
+	virtual void convert(FloatType* outBuffer, size_t& outBufferSize, const FloatType* inBuffer, const size_t& inBufferSize) = 0;
 protected:
 	ConverterBaseClass(const ConversionInfo& ci) : ci(ci) {}
-	virtual void convert(FloatType* outBuffer, size_t& outBufferSize, const FloatType* inBuffer, const size_t& inBufferSize) = 0;
 	ConversionInfo ci;
 };
 
-<typename FloatType>
-class SingleStageConverter : public ConverterBaseClass
+template <typename FloatType>
+class SingleStageConverter : public ConverterBaseClass<FloatType>
 {
 public:
-	SingleStageConverter(const ConversionInfo& ci) : ConverterBaseClass(ci) {}
-	void (FloatType* outBuffer, size_t& outBufferSize, const FloatType* inBuffer, const size_t& inBufferSize) {
+	SingleStageConverter(const ConversionInfo& ci) : ConverterBaseClass<FloatType>(ci) {}
+	void convert(FloatType* outBuffer, size_t& outBufferSize, const FloatType* inBuffer, const size_t& inBufferSize) {
 
 	}
 private:
-	FIRFilter firFilter;
+	FIRFilter<FloatType> firFilter;
 };
 
 #endif
