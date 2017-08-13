@@ -125,21 +125,36 @@ class ConverterBaseClass
 {
 public:
 	virtual void convert(FloatType* outBuffer, size_t& outBufferSize, const FloatType* inBuffer, const size_t& inBufferSize) = 0;
+	int getGroupDelay() {
+		return groupDelay;
+	}
 protected:
-	ConverterBaseClass(const ConversionInfo& ci) : ci(ci) {}
+	ConverterBaseClass(unsigned int inputSampleRate, const ConversionInfo& ci) : inputSampleRate(inputSampleRate), ci(ci) {}
+	unsigned int inputSampleRate;
 	ConversionInfo ci;
+	int groupDelay;
+	std::vector<ConvertStage<FloatType>> convertStages;
 };
 
 template <typename FloatType>
 class SingleStageConverter : public ConverterBaseClass<FloatType>
 {
 public:
-	SingleStageConverter(const ConversionInfo& ci) : ConverterBaseClass<FloatType>(ci) {}
-	void convert(FloatType* outBuffer, size_t& outBufferSize, const FloatType* inBuffer, const size_t& inBufferSize) {
+	SingleStageConverter(unsigned int inputSampleRate, const ConversionInfo& ci) : ConverterBaseClass<FloatType>(inputSampleRate, ci) {
+		Fraction f = getSimplifiedFraction(inputSampleRate, ci.outputSampleRate);
+		std::vector<FloatType> filterTaps = makeFilterCoefficients<FloatType>(inputSampleRate, ci, f);
+		FIRFilter<FloatType> firFilter(filterTaps.data(), filterTaps.size());
+		bool bypassMode = (f.numerator == 1 && f.denominator == 1);
+		convertStages.emplace_back(f.numerator, f.denominator, firFilter, bypassMode);
 
+		groupDelay = (ci.bMinPhase || !ci.bDelayTrim) ? 0 : (filterTaps.size() - 1) / 2 / f.denominator;
+		if (f.numerator == 1 && f.denominator == 1) {
+			groupDelay = 0;
+		}
 	}
-private:
-	FIRFilter<FloatType> firFilter;
+	void convert(FloatType* outBuffer, size_t& outBufferSize, const FloatType* inBuffer, const size_t& inBufferSize) {
+		convertStages[0].convert(outBuffer, outBufferSize, inBuffer, inBufferSize);
+	}
 };
 
 #endif
