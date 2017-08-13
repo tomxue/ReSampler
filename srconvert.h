@@ -1,3 +1,12 @@
+/*
+* Copyright (C) 2016 - 2017 Judd Niemann - All Rights Reserved
+* You may use, distribute and modify this code under the
+* terms of the GNU Lesser General Public License, version 2.1
+*
+* You should have received a copy of GNU Lesser General Public License v2.1
+* with this file. If not, please refer to: https://github.com/jniemann66/ReSampler
+*/
+
 #ifndef CONVERT_H
 #define CONVERT_H 1
 
@@ -144,15 +153,15 @@ public:
 		std::vector<FloatType> filterTaps = makeFilterCoefficients<FloatType>(ci, f);
 		FIRFilter<FloatType> firFilter(filterTaps.data(), filterTaps.size());
 		bool bypassMode = (f.numerator == 1 && f.denominator == 1);
-		convertStages.emplace_back(f.numerator, f.denominator, firFilter, bypassMode);
+		AbstractResampler<FloatType>::convertStages.emplace_back(f.numerator, f.denominator, firFilter, bypassMode);
 
-		groupDelay = (ci.bMinPhase || !ci.bDelayTrim) ? 0 : (filterTaps.size() - 1) / 2 / f.denominator;
+		AbstractResampler<FloatType>::groupDelay = (ci.bMinPhase || !ci.bDelayTrim) ? 0 : (filterTaps.size() - 1) / 2 / f.denominator;
 		if (f.numerator == 1 && f.denominator == 1) {
-			groupDelay = 0;
+			AbstractResampler<FloatType>::groupDelay = 0;
 		}
 	}
 	void convert(FloatType* outBuffer, size_t& outBufferSize, const FloatType* inBuffer, const size_t& inBufferSize) {
-		convertStages[0].convert(outBuffer, outBufferSize, inBuffer, inBufferSize);
+		AbstractResampler<FloatType>::convertStages[0].convert(outBuffer, outBufferSize, inBuffer, inBufferSize);
 	}
 };
 
