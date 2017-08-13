@@ -37,7 +37,7 @@ unsigned int fp_control_state = _controlfp(_EM_INEXACT, _MCW_EM);
 #include "dsf.h"
 #include "dff.h"
 #include "raiitimer.h"
-#include "resample.h"
+#include "srconvert.h"
 
 ////////////////////////////////////////////////////////////////////////////////////////
 // This program uses the following libraries:
