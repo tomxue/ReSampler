@@ -118,6 +118,7 @@ struct ConversionInfo
 {
 	std::string inputFilename;
 	std::string outputFilename;
+	unsigned int inputSampleRate;
 	unsigned int outputSampleRate;
 	double gain;
 	double limit;
@@ -184,6 +185,7 @@ bool determineBestBitFormat(std::string & BitFormat, const std::string & inFilen
 int determineOutputFormat(const std::string & outFileExt, const std::string & bitFormat);
 void listSubFormats(const std::string & f);
 int gcd(int a, int b);
+std::vector<int> factorize(int n);
 Fraction getSimplifiedFraction(int InputSampleRate, int outputSampleRate);
 void getCmdlineParam(char ** begin, char ** end, const std::string & OptionName, std::string & Parameter);
 void getCmdlineParam(char ** begin, char ** end, const std::string & OptionName, unsigned int & nParameter);
@@ -191,8 +193,8 @@ void getCmdlineParam(char ** begin, char ** end, const std::string & OptionName,
 void getCmdlineParam(char ** begin, char ** end, const std::string & OptionName, double & Parameter);
 bool findCmdlineOption(char ** begin, char ** end, const std::string & option);
 template<typename FloatType>
-std::vector<FloatType> makeFilterCoefficients(unsigned int InputSampleRate, const ConversionInfo& ci, Fraction FOriginal);
-template<typename FileReader, typename FloatType> bool convertMT(const ConversionInfo & ci, bool peakDetection = true);
+std::vector<FloatType> makeFilterCoefficients(const ConversionInfo& ci, Fraction fraction);
+template<typename FileReader, typename FloatType> bool convert(ConversionInfo & ci, bool peakDetection = true);
 int getDefaultNoiseShape(int sampleRate);
 void showDitherProfiles();
 int getSfBytesPerSample(int format);
