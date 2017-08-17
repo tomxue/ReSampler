@@ -151,10 +151,14 @@ public:
 	SingleStageResampler(const ConversionInfo& ci) : AbstractResampler<FloatType>(ci) {
 		Fraction f = getSimplifiedFraction(ci.inputSampleRate, ci.outputSampleRate);
 		std::vector<FloatType> filterTaps = makeFilterCoefficients<FloatType>(ci, f);
-		FIRFilter<FloatType> firFilter(filterTaps.data(), filterTaps.size());
 		bool bypassMode = (f.numerator == 1 && f.denominator == 1);
-		AbstractResampler<FloatType>::convertStages.emplace_back(f.numerator, f.denominator, firFilter, bypassMode);
 
+		int overSamplingFactor = ci.bMinPhase && (f.numerator != f.denominator) && (f.numerator <= 4 || f.denominator <= 4) ? 8 : 1;
+		f.numerator *= overSamplingFactor;
+		f.denominator *= overSamplingFactor;
+
+		FIRFilter<FloatType> firFilter(filterTaps.data(), filterTaps.size());
+		AbstractResampler<FloatType>::convertStages.emplace_back(f.numerator, f.denominator, firFilter, bypassMode);
 		AbstractResampler<FloatType>::groupDelay = (ci.bMinPhase || !ci.bDelayTrim) ? 0 : (filterTaps.size() - 1) / 2 / f.denominator;
 		if (f.numerator == 1 && f.denominator == 1) {
 			AbstractResampler<FloatType>::groupDelay = 0;

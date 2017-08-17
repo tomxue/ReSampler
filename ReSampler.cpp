@@ -592,7 +592,7 @@ std::vector<FloatType> makeFilterCoefficients(const ConversionInfo& ci, Fraction
 	int filterSize = std::min(static_cast<int>(overSamplingFactor * baseFilterSize * steepness), FILTERSIZE_LIMIT)
 		| static_cast<int>(1);	// ensure that filter length is always odd
 
-								// determine sidelobe attenuation
+	// determine sidelobe attenuation
 	int sidelobeAtten = ((fraction.numerator == 1) || (fraction.denominator == 1)) ?
 		195 :
 		160;
@@ -648,13 +648,13 @@ bool convert(ConversionInfo& ci, bool peakDetection)
 	sf_count_t inputSampleCount = infile.frames() * nChannels;
 
 	// determine conversion ratio:
-	Fraction fOriginal = getSimplifiedFraction(ci.inputSampleRate, ci.outputSampleRate);
-	Fraction f = fOriginal;
+	//Fraction fOriginal = getSimplifiedFraction(ci.inputSampleRate, ci.outputSampleRate);
+	Fraction fraction = getSimplifiedFraction(ci.inputSampleRate, ci.outputSampleRate);
 
 	// set buffer sizes:
 	size_t inputChannelBufferSize = BUFFERSIZE;
 	size_t inputBlockSize = BUFFERSIZE * nChannels;
-	size_t outputChannelBufferSize = std::ceil(BUFFERSIZE * static_cast<double>(f.numerator) / static_cast<double>(f.denominator));
+	size_t outputChannelBufferSize = std::ceil(BUFFERSIZE * static_cast<double>(fraction.numerator) / static_cast<double>(fraction.denominator));
 	size_t outputBlockSize = nChannels * outputChannelBufferSize;
 	
 	// allocate buffers:
@@ -747,9 +747,9 @@ bool convert(ConversionInfo& ci, bool peakDetection)
 	// echo conversion ratio to user:
 	FloatType resamplingFactor = static_cast<FloatType>(ci.outputSampleRate) / ci.inputSampleRate;
 	std::cout << "\nConversion ratio: " << resamplingFactor
-		<< " (" << fOriginal.numerator << ":" << fOriginal.denominator << ")" << std::endl;
+		<< " (" << fraction.numerator << ":" << fraction.denominator << ")" << std::endl;
 
-	//to-do: handle oversampled ratios (eg 8/8) - f vs fOriginal etc
+	//to-do: handle oversampled ratios (eg 8/8) - fraction vs fOriginal etc
 
 	// if the outputFormat is zero, it means "No change to file format"
 	// if output file format has changed, use outputFormat. Otherwise, use same format as infile: 
@@ -764,7 +764,7 @@ bool convert(ConversionInfo& ci, bool peakDetection)
 	if (((outputFileFormat & SF_FORMAT_TYPEMASK) == SF_FORMAT_WAV) ||
 		((outputFileFormat & SF_FORMAT_TYPEMASK) == SF_FORMAT_WAVEX)) {
 		if (ci.bRf64 ||
-			checkWarnOutputSize(inputSampleCount, getSfBytesPerSample(outputFileFormat), fOriginal.numerator, fOriginal.denominator)) {
+			checkWarnOutputSize(inputSampleCount, getSfBytesPerSample(outputFileFormat), fraction.numerator, fraction.denominator)) {
 			std::cout << "Switching to rf64 format !" << std::endl;
 			outputFileFormat &= ~SF_FORMAT_TYPEMASK; // clear file type
 			outputFileFormat |= SF_FORMAT_RF64;
@@ -808,7 +808,7 @@ bool convert(ConversionInfo& ci, bool peakDetection)
 
 	// Calculate initial gain:
 	FloatType gain = ci.gain *
-		(ci.bNormalize ? f.numerator * (ci.limit / peakInputSample) : f.numerator * ci.limit);
+		(ci.bNormalize ? fraction.numerator * (ci.limit / peakInputSample) : fraction.numerator * ci.limit);
 
 	if (ci.bDither) { // allow headroom for dithering:
 		FloatType ditherCompensation =
