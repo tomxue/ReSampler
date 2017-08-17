@@ -118,6 +118,7 @@ struct ConversionInfo
 {
 	std::string inputFilename;
 	std::string outputFilename;
+	unsigned int inputSampleRate;
 	unsigned int outputSampleRate;
 	double gain;
 	double limit;
@@ -192,8 +193,8 @@ void getCmdlineParam(char ** begin, char ** end, const std::string & OptionName,
 void getCmdlineParam(char ** begin, char ** end, const std::string & OptionName, double & Parameter);
 bool findCmdlineOption(char ** begin, char ** end, const std::string & option);
 template<typename FloatType>
-std::vector<FloatType> makeFilterCoefficients(unsigned int InputSampleRate, const ConversionInfo& ci, Fraction FOriginal);
-template<typename FileReader, typename FloatType> bool convertMT(const ConversionInfo & ci, bool peakDetection = true);
+std::vector<FloatType> makeFilterCoefficients(const ConversionInfo& ci, Fraction fraction);
+template<typename FileReader, typename FloatType> bool convert(ConversionInfo & ci, bool peakDetection = true);
 int getDefaultNoiseShape(int sampleRate);
 void showDitherProfiles();
 int getSfBytesPerSample(int format);

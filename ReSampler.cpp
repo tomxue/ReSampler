@@ -37,7 +37,7 @@ unsigned int fp_control_state = _controlfp(_EM_INEXACT, _MCW_EM);
 #include "dsf.h"
 #include "dff.h"
 #include "raiitimer.h"
-#include "convertstage.h"
+#include "srconvert.h"
 
 ////////////////////////////////////////////////////////////////////////////////////////
 // This program uses the following libraries:
@@ -118,24 +118,24 @@ int main(int argc, char * argv[])
 		if (ci.bUseDoublePrecision) {
 			std::cout << "Using double precision for calculations." << std::endl;
 			if (ci.dsfInput) {
-				return convertMT<DsfFile, double>(ci, /* peakDetection = */ false) ? EXIT_SUCCESS : EXIT_FAILURE;
+				return convert<DsfFile, double>(ci, /* peakDetection = */ false) ? EXIT_SUCCESS : EXIT_FAILURE;
 			}
 			else if (ci.dffInput) {
-				return convertMT<DffFile, double>(ci, /* peakDetection = */ false) ? EXIT_SUCCESS : EXIT_FAILURE;
+				return convert<DffFile, double>(ci, /* peakDetection = */ false) ? EXIT_SUCCESS : EXIT_FAILURE;
 			}
 			else {
-				return convertMT<SndfileHandle, double>(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
+				return convert<SndfileHandle, double>(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
 			}
 		}
 		else {
 			if (ci.dsfInput) {
-				return convertMT<DsfFile, float>(ci, /* peakDetection = */ false) ? EXIT_SUCCESS : EXIT_FAILURE;
+				return convert<DsfFile, float>(ci, /* peakDetection = */ false) ? EXIT_SUCCESS : EXIT_FAILURE;
 			}
 			else if (ci.dffInput) {
-				return convertMT<DffFile, float>(ci, /* peakDetection = */ false) ? EXIT_SUCCESS : EXIT_FAILURE;
+				return convert<DffFile, float>(ci, /* peakDetection = */ false) ? EXIT_SUCCESS : EXIT_FAILURE;
 			}
 			else {
-				return convertMT<SndfileHandle, float>(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
+				return convert<SndfileHandle, float>(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
 			}
 		}
 	}
@@ -566,7 +566,7 @@ void listSubFormats(const std::string& f)
 }
 
 template<typename FloatType>
-std::vector<FloatType> makeFilterCoefficients(unsigned int inputSampleRate, const ConversionInfo& ci, Fraction fraction) {
+std::vector<FloatType> makeFilterCoefficients(const ConversionInfo& ci, Fraction fraction) {
 	// determine base filter size
 	int baseFilterSize;
 	int overSamplingFactor = 1;
@@ -584,7 +584,7 @@ std::vector<FloatType> makeFilterCoefficients(unsigned int inputSampleRate, cons
 	}
 
 	// determine cutoff frequency and steepness
-	double targetNyquist = std::min(inputSampleRate, ci.outputSampleRate) / 2.0;
+	double targetNyquist = std::min(ci.inputSampleRate, ci.outputSampleRate) / 2.0;
 	double ft = (ci.lpfCutoff / 100.0) * targetNyquist;
 	double steepness = steepness = 0.090909091 / (ci.lpfTransitionWidth / 100.0);
 
@@ -592,13 +592,13 @@ std::vector<FloatType> makeFilterCoefficients(unsigned int inputSampleRate, cons
 	int filterSize = std::min(static_cast<int>(overSamplingFactor * baseFilterSize * steepness), FILTERSIZE_LIMIT)
 		| static_cast<int>(1);	// ensure that filter length is always odd
 
-								// determine sidelobe attenuation
+	// determine sidelobe attenuation
 	int sidelobeAtten = ((fraction.numerator == 1) || (fraction.denominator == 1)) ?
 		195 :
 		160;
 
 	// Make some filter coefficients:
-	int overSampFreq = inputSampleRate * f.numerator;
+	int overSampFreq = ci.inputSampleRate * f.numerator;
 	std::vector<FloatType> filterTaps(filterSize, 0);
 	FloatType* pFilterTaps = &filterTaps[0];
 	makeLPF<FloatType>(pFilterTaps, filterSize, ft, overSampFreq);
@@ -626,7 +626,7 @@ seek(position, whence)
 */
 
 template<typename FileReader, typename FloatType>
-bool convertMT(const ConversionInfo& ci, bool peakDetection)
+bool convert(ConversionInfo& ci, bool peakDetection)
 {
 	bool multiThreaded = ci.bMultiThreaded;
 
@@ -644,17 +644,17 @@ bool convertMT(const ConversionInfo& ci, bool peakDetection)
 	
 	// read file properties:
 	int nChannels = infile.channels();
-	unsigned int inputSampleRate = infile.samplerate();
+	ci.inputSampleRate = infile.samplerate();
 	sf_count_t inputSampleCount = infile.frames() * nChannels;
 
 	// determine conversion ratio:
-	Fraction fOriginal = getSimplifiedFraction(inputSampleRate, ci.outputSampleRate);
-	Fraction f = fOriginal;
+	//Fraction fOriginal = getSimplifiedFraction(ci.inputSampleRate, ci.outputSampleRate);
+	Fraction fraction = getSimplifiedFraction(ci.inputSampleRate, ci.outputSampleRate);
 
 	// set buffer sizes:
 	size_t inputChannelBufferSize = BUFFERSIZE;
 	size_t inputBlockSize = BUFFERSIZE * nChannels;
-	size_t outputChannelBufferSize = std::ceil(BUFFERSIZE * static_cast<double>(f.numerator) / static_cast<double>(f.denominator));
+	size_t outputChannelBufferSize = std::ceil(BUFFERSIZE * static_cast<double>(fraction.numerator) / static_cast<double>(fraction.denominator));
 	size_t outputBlockSize = nChannels * outputChannelBufferSize;
 	
 	// allocate buffers:
@@ -697,7 +697,7 @@ bool convertMT(const ConversionInfo& ci, bool peakDetection)
 	}
 
 	std::cout << "source file channels: " << nChannels << std::endl;
-	std::cout << "input sample rate: " << inputSampleRate << "\noutput sample rate: " << ci.outputSampleRate << std::endl;
+	std::cout << "input sample rate: " << ci.inputSampleRate << "\noutput sample rate: " << ci.outputSampleRate << std::endl;
 
 	sf_count_t samplesRead;
 	sf_count_t totalSamplesRead = 0;
@@ -732,7 +732,7 @@ bool convertMT(const ConversionInfo& ci, bool peakDetection)
 	}
 
 	// echo filter settings to user:
-	double targetNyquist = std::min(inputSampleRate, ci.outputSampleRate) / 2.0;
+	double targetNyquist = std::min(ci.inputSampleRate, ci.outputSampleRate) / 2.0;
 	double ft = (ci.lpfCutoff / 100.0) * targetNyquist;
 	auto prec = std::cout.precision();
 	std::cout << "LPF transition frequency: " << std::fixed << std::setprecision(2) << ft << " Hz (" << 100 * ft / targetNyquist << " %)" << std::endl;
@@ -742,28 +742,14 @@ bool convertMT(const ConversionInfo& ci, bool peakDetection)
 	}
 
 	// calculate filter coefficients
-	std::vector<FloatType> FilterTaps = std::move(makeFilterCoefficients<FloatType>(inputSampleRate, ci, fOriginal));
+//	std::vector<FloatType> FilterTaps = std::move(makeFilterCoefficients<FloatType>(ci.inputSampleRate, ci, fOriginal));
 
 	// echo conversion ratio to user:
-	FloatType resamplingFactor = static_cast<FloatType>(ci.outputSampleRate) / inputSampleRate;
+	FloatType resamplingFactor = static_cast<FloatType>(ci.outputSampleRate) / ci.inputSampleRate;
 	std::cout << "\nConversion ratio: " << resamplingFactor
-		<< " (" << fOriginal.numerator << ":" << fOriginal.denominator << ")" << std::endl;
+		<< " (" << fraction.numerator << ":" << fraction.denominator << ")" << std::endl;
 
-	// make a vector of filters (one filter for each channel):
-	std::vector<FIRFilter<FloatType>> filters;
-	for (int n = 0; n < nChannels; n++) {
-		filters.emplace_back(FilterTaps.data(), FilterTaps.size());
-	}
-
-	//to-do: handle oversampled ratios (eg 8/8) - f vs fOriginal etc
-
-	// calculate group Delay
-	int groupDelay = (ci.bMinPhase || !ci.bDelayTrim) ? 0 : (FilterTaps.size() - 1) / 2 / fOriginal.denominator;
-	if (fOriginal.numerator == 1 && fOriginal.denominator == 1) {
-		groupDelay = 0;
-	}
-
-	// std::cout << "expected group delay " << groupDelay << std::endl;
+	//to-do: handle oversampled ratios (eg 8/8) - fraction vs fOriginal etc
 
 	// if the outputFormat is zero, it means "No change to file format"
 	// if output file format has changed, use outputFormat. Otherwise, use same format as infile: 
@@ -778,7 +764,7 @@ bool convertMT(const ConversionInfo& ci, bool peakDetection)
 	if (((outputFileFormat & SF_FORMAT_TYPEMASK) == SF_FORMAT_WAV) ||
 		((outputFileFormat & SF_FORMAT_TYPEMASK) == SF_FORMAT_WAVEX)) {
 		if (ci.bRf64 ||
-			checkWarnOutputSize(inputSampleCount, getSfBytesPerSample(outputFileFormat), fOriginal.numerator, fOriginal.denominator)) {
+			checkWarnOutputSize(inputSampleCount, getSfBytesPerSample(outputFileFormat), fraction.numerator, fraction.denominator)) {
 			std::cout << "Switching to rf64 format !" << std::endl;
 			outputFileFormat &= ~SF_FORMAT_TYPEMASK; // clear file type
 			outputFileFormat |= SF_FORMAT_RF64;
@@ -822,7 +808,7 @@ bool convertMT(const ConversionInfo& ci, bool peakDetection)
 
 	// Calculate initial gain:
 	FloatType gain = ci.gain *
-		(ci.bNormalize ? f.numerator * (ci.limit / peakInputSample) : f.numerator * ci.limit);
+		(ci.bNormalize ? fraction.numerator * (ci.limit / peakInputSample) : fraction.numerator * ci.limit);
 
 	if (ci.bDither) { // allow headroom for dithering:
 		FloatType ditherCompensation =
@@ -839,12 +825,13 @@ bool convertMT(const ConversionInfo& ci, bool peakDetection)
 		bClippingDetected = false;
 		std::unique_ptr<SndfileHandle> outFile;
 
-		// make a vector of converter stages:
-		bool bypassMode = (f.numerator == 1 && f.denominator == 1);
-		std::vector<ConvertStage<FloatType>> convertStages;
+		// make a vector of singleStageResamper s
+		std::vector<SingleStageResampler<FloatType>> converters;
 		for (int n = 0; n < nChannels; n++) {
-			convertStages.emplace_back(f.numerator, f.denominator, filters[n], bypassMode);
-		}
+			converters.emplace_back(ci);
+		} 
+		int groupDelay = converters[0].getGroupDelay();
+		// std::cout << "expected group delay " << groupDelay << std::endl;
 
 		try { // Open output file:
 
@@ -906,7 +893,6 @@ bool convertMT(const ConversionInfo& ci, bool peakDetection)
 		sf_count_t nextProgressThreshold = incrementalProgressThreshold;
 
 		int outStartOffset = std::min(groupDelay * nChannels, static_cast<int>(outputBlockSize) - nChannels);
-//		size_t count; // to-do: remove ?
 		do {
 			// Grab a block of interleaved samples from file:
 			samplesRead = infile.read(inputBlock.data(), inputBlockSize);
@@ -938,7 +924,8 @@ bool convertMT(const ConversionInfo& ci, bool peakDetection)
 					size_t o = 0;
 					FloatType localPeak = 0.0;
 					size_t localOutputBlockIndex = 0;
-					convertStages[ch].convert(oBuf, o, iBuf, i);
+				//	convertStages[ch].convert(oBuf, o, iBuf, i);
+					converters[ch].convert(oBuf, o, iBuf, i);
 					for (size_t f = 0; f < o; ++f) {
 						FloatType outputSample = ci.bDither ? ditherers[ch].dither(gain * oBuf[f]) : gain * oBuf[f]; // gain, dither
 						localPeak = std::max(localPeak, std::abs(outputSample)); // peak
@@ -1006,12 +993,13 @@ bool convertMT(const ConversionInfo& ci, bool peakDetection)
 				}
 			}
 
-			convertStages.clear();
+		//	convertStages.clear();
+			converters.clear();
 		}
 
 	} while (!ci.disableClippingProtection && bClippingDetected);
 	return true;
-} // ends convertMT()
+} // ends convert()
 
 // retrieve metadata using libsndfile API :
 bool getMetaData(MetaData& metadata, SndfileHandle& infile) {
