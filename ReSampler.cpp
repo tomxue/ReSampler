@@ -741,15 +741,10 @@ bool convert(ConversionInfo& ci, bool peakDetection)
 		std::cout << "Using Minimum-Phase LPF" << std::endl;
 	}
 
-	// calculate filter coefficients
-//	std::vector<FloatType> FilterTaps = std::move(makeFilterCoefficients<FloatType>(ci.inputSampleRate, ci, fOriginal));
-
 	// echo conversion ratio to user:
 	FloatType resamplingFactor = static_cast<FloatType>(ci.outputSampleRate) / ci.inputSampleRate;
 	std::cout << "\nConversion ratio: " << resamplingFactor
 		<< " (" << fraction.numerator << ":" << fraction.denominator << ")" << std::endl;
-
-	//to-do: handle oversampled ratios (eg 8/8) - fraction vs fOriginal etc
 
 	// if the outputFormat is zero, it means "No change to file format"
 	// if output file format has changed, use outputFormat. Otherwise, use same format as infile: 
@@ -992,8 +987,6 @@ bool convert(ConversionInfo& ci, bool peakDetection)
 					ditherer.reset();
 				}
 			}
-
-		//	convertStages.clear();
 			converters.clear();
 		}
 
