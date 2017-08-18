@@ -276,6 +276,7 @@
   <ItemGroup>
     <ClInclude Include="alignedmalloc.h" />
     <ClInclude Include="biquad.h" />
+    <ClInclude Include="conversioninfo.h" />
     <ClInclude Include="srconvert.h" />
     <ClInclude Include="dff.h" />
     <ClInclude Include="ditherer.h" />

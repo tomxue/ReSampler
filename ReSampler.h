@@ -10,9 +10,13 @@
 #ifndef RESAMPLER_H
 #define RESAMPLER_H 1
 
-#include <map>
 #include "sndfile.h"
 #include "sndfile.hh"
+
+#include <string>
+#include <map>
+
+struct ConversionInfo;
 
 const std::string strVersion("1.3.7");
 const std::string strUsage("usage: ReSampler -i <inputfile> [-o <outputfile>] -r <samplerate> [-b <bitformat>] [-n [<normalization factor>]]\n");
@@ -106,51 +110,6 @@ const std::map<std::string, std::string> defaultSubFormats = {
 	{"xi","dpcm16"}
 };
 
-typedef enum {
-	relaxed,
-	normal,
-	steep,
-	custom
-} LPFMode;
-
-// structure for holding all the parameters required for a conversion job:
-struct ConversionInfo
-{
-	std::string inputFilename;
-	std::string outputFilename;
-	unsigned int inputSampleRate;
-	unsigned int outputSampleRate;
-	double gain;
-	double limit;
-	bool bUseDoublePrecision;
-	bool bNormalize;
-	double normalizeAmount;
-	int outputFormat;
-	std::string outBitFormat;
-	bool bDither;
-	double ditherAmount;
-	int ditherProfileID;
-	bool bAutoBlankingEnabled;
-	bool bDelayTrim;
-	bool bMinPhase;
-	bool bSetFlacCompression;
-	int flacCompressionLevel;
-	bool bSetVorbisQuality;
-	double vorbisQuality;
-	bool disableClippingProtection;
-	LPFMode lpfMode;
-	double lpfCutoff;
-	double lpfTransitionWidth;
-	bool bUseSeed;
-	int seed;
-	bool dsfInput;
-	bool dffInput;
-	bool bMultiThreaded;
-	bool bRf64;
-	bool bNoPeakChunk;
-	bool bWriteMetaData;
-};
-
 #define MAX_CART_TAG_TEXT_SIZE 16384
 typedef SF_CART_INFO_VAR(MAX_CART_TAG_TEXT_SIZE) LargeSFCartInfo;
 
@@ -192,8 +151,6 @@ void getCmdlineParam(char ** begin, char ** end, const std::string & OptionName,
 void getCmdlineParam(char ** begin, char ** end, const std::string & OptionName, int & nParameter);
 void getCmdlineParam(char ** begin, char ** end, const std::string & OptionName, double & Parameter);
 bool findCmdlineOption(char ** begin, char ** end, const std::string & option);
-template<typename FloatType>
-std::vector<FloatType> makeFilterCoefficients(const ConversionInfo& ci, Fraction fraction);
 template<typename FileReader, typename FloatType> bool convert(ConversionInfo & ci, bool peakDetection = true);
 int getDefaultNoiseShape(int sampleRate);
 void showDitherProfiles();
@@ -203,4 +160,5 @@ std::string fmtNumberWithCommas(uint64_t n);
 bool getMetaData(MetaData& metadata, SndfileHandle& infile);
 bool setMetaData(const MetaData& metadata, SndfileHandle& outfile);
 void showCompiler();
+
 #endif // !RESAMPLER_H
