@@ -47,11 +47,6 @@ const double clippingTrim = 1.0 - (1.0 / (1 << 24));
 #define BUFFERSIZE 32768 // buffer size for file reads
 #define MAXCHANNELS 64
 
-typedef struct fraction {
-	int numerator;
-	int denominator;
-} Fraction;
-
 // map of commandline subformats to libsndfile subformats:
 const std::map<std::string,int> subFormats = { 
 	{ "s8",SF_FORMAT_PCM_S8 },
@@ -143,9 +138,6 @@ bool parseParameters(ConversionInfo & ci, bool & bBadParams, int argc, char * ar
 bool determineBestBitFormat(std::string & BitFormat, const std::string & inFilename, const std::string & outFilename);
 int determineOutputFormat(const std::string & outFileExt, const std::string & bitFormat);
 void listSubFormats(const std::string & f);
-int gcd(int a, int b);
-std::vector<int> factorize(int n);
-Fraction getSimplifiedFraction(int InputSampleRate, int outputSampleRate);
 void getCmdlineParam(char ** begin, char ** end, const std::string & OptionName, std::string & Parameter);
 void getCmdlineParam(char ** begin, char ** end, const std::string & OptionName, unsigned int & nParameter);
 void getCmdlineParam(char ** begin, char ** end, const std::string & OptionName, int & nParameter);

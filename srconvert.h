@@ -14,6 +14,7 @@
 
 #include "FIRFilter.h"
 #include "conversioninfo.h"
+#include "fraction.h"
 
 template<typename FloatType>
 std::vector<FloatType> makeFilterCoefficients(const ConversionInfo& ci, Fraction fraction) {
