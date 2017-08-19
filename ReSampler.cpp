@@ -37,6 +37,7 @@ unsigned int fp_control_state = _controlfp(_EM_INEXACT, _MCW_EM);
 #include "dsf.h"
 #include "dff.h"
 #include "raiitimer.h"
+#include "fraction.h"
 #include "srconvert.h"
 
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -565,8 +566,6 @@ void listSubFormats(const std::string& f)
 	}
 }
 
-
-
 // Multi-threaded convert() :
 
 /* Note: type 'FileReader' MUST implement the following methods:
@@ -775,7 +774,7 @@ bool convert(ConversionInfo& ci, bool peakDetection)
 		bClippingDetected = false;
 		std::unique_ptr<SndfileHandle> outFile;
 
-		// make a vector of singleStageResamper s
+		// make a vector of singleStageResamplers
 		std::vector<SingleStageResampler<FloatType>> converters;
 		for (int n = 0; n < nChannels; n++) {
 			converters.emplace_back(ci);
@@ -874,7 +873,6 @@ bool convert(ConversionInfo& ci, bool peakDetection)
 					size_t o = 0;
 					FloatType localPeak = 0.0;
 					size_t localOutputBlockIndex = 0;
-				//	convertStages[ch].convert(oBuf, o, iBuf, i);
 					converters[ch].convert(oBuf, o, iBuf, i);
 					for (size_t f = 0; f < o; ++f) {
 						FloatType outputSample = ci.bDither ? ditherers[ch].dither(gain * oBuf[f]) : gain * oBuf[f]; // gain, dither
@@ -1124,44 +1122,6 @@ bool getMetaData(MetaData& metadata, const DffFile& f) {
 bool getMetaData(MetaData& metadata, const DsfFile& f) {
 	// stub - to-do
 	return true;
-}
-
-// gcd() - greatest common divisor:
-int gcd(int a, int b) {
-	if (a<0) a = -a;
-	if (b<0) b = -b;
-	while (b != 0) {
-		a %= b;
-		if (a == 0) return b;
-		b %= a;
-	}
-	return a;
-}
-
-std::vector<int> factorize(int n) {
-	std::vector<int> factors;
-	int maxFactor = std::sqrt(n);
-
-	for (int factor = 2; factor <= maxFactor; factor++) {
-		while (n % factor == 0) {
-			factors.push_back(factor);
-			n /= factor;
-		}
-		if (n == 1)
-			return factors;
-	}
-
-	factors.push_back(n);
-	return factors;
-}
-
-//  getSimplifiedFraction() - turns a sample-rate ratio into a fraction:
-Fraction getSimplifiedFraction(int inputSampleRate, int outputSampleRate)			// eg 44100, 48000
-{
-	Fraction f;
-	f.numerator = (outputSampleRate / gcd(inputSampleRate, outputSampleRate));		// L (eg 160)
-	f.denominator = (inputSampleRate / gcd(inputSampleRate, outputSampleRate));		// M (eg 147)
-	return f;
 }
 
 // The following functions are used for parsing commandline parameters:
