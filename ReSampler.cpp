@@ -776,6 +776,7 @@ bool convert(ConversionInfo& ci, bool peakDetection)
 
 		// make a vector of singleStageResamplers
 		std::vector<SingleStageResampler<FloatType>> converters;
+	//	std::vector<MultiStageResampler<FloatType>> converters;
 		for (int n = 0; n < nChannels; n++) {
 			converters.emplace_back(ci);
 		} 

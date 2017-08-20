@@ -226,12 +226,20 @@ template <typename FloatType>
 class MultiStageResampler : public AbstractResampler<FloatType>
 {
 public:
-	MultiStageResampler(const ConversionInfo& ci) : AbstractResampler<FloatType>(ci) {
+	MultiStageResampler(const ConversionInfo& ci) : AbstractResampler<FloatType>(ci), numStages(3), indexOfLastStage(2) {
 		makeConversionParams();
 	}
+
 	void convert(FloatType* outBuffer, size_t& outBufferSize, const FloatType* inBuffer, const size_t& inBufferSize) {
-		AbstractResampler<FloatType>::convertStages[0].convert(outBuffer, outBufferSize, inBuffer, inBufferSize);
+		for (int i = 0; i < numStages; i++) {
+			// first stage reads directly from inBuffer. Subsequent stages read from output of previous stage
+			const FloatType* in = (i == 0) ? inBuffer : intermediateOutputBuffers[i - 1].data(); 
+			size_t inSize = (i == 0) ? inBufferSize : intermediateOutputBuffers[i - 1].size();
+			FloatType* out = (i == indexOfLastStage) ? outBuffer : intermediateOutputBuffers[i].data(); // last stage writes straight to outBuffer;
+			convertStages[i].convert(out, outBufferSize, in, inSize);
+		}
 	}
+
 private:
 	const std::vector<Fraction> ratios {
 		{3, 4},
@@ -239,6 +247,8 @@ private:
 		{7, 10}
 	};
 
+	int numStages;
+	int indexOfLastStage;
 	std::vector<std::vector<FloatType>> intermediateOutputBuffers;	// intermediate output buffer for each ConvertStage;
 	
 	void makeConversionParams() {
@@ -246,7 +256,7 @@ private:
 		double guarantee = inputRate / 2.0;
 		double ft = ci.lpfCutoff/100 * ci.outputSampleRate / 2.0;
 		
-		for (size_t i = 0; i < ratios.size(); i++) {
+		for (int i = 0; i < numStages; i++) {
 			ConversionInfo newCi = ci;
 			newCi.inputSampleRate = inputRate;
 			newCi.outputSampleRate = inputRate * ratios[i].numerator / ratios[i].denominator;
@@ -278,19 +288,21 @@ private:
 			int overSamplingFactor = ci.bMinPhase && (f.numerator != f.denominator) && (f.numerator <= 4 || f.denominator <= 4) ? 8 : 1;
 			f.numerator *= overSamplingFactor;
 			f.denominator *= overSamplingFactor;
-			AbstractResampler<FloatType>::convertStages.emplace_back(f.numerator, f.denominator, firFilter, bypassMode);
+			convertStages.emplace_back(f.numerator, f.denominator, firFilter, bypassMode);
 			
 			// add Group Delay:
 			groupDelay += (ci.bMinPhase || !ci.bDelayTrim) ? 0 : (filterTaps.size() - 1) / 2 / f.denominator;
 			if (f.numerator == 1 && f.denominator == 1) {
-				AbstractResampler<FloatType>::groupDelay = 0;
+				groupDelay = 0;
 			}
 
+			
 			// make the outputBuffer (last stage doesn't need one)
-			if (i != ratios.size() - 1) {
+			if (i != numStages - 1) {
 				size_t outBufferSize = std::ceil(BUFFERSIZE * static_cast<double>(ratios[i].numerator) / static_cast<double>(ratios[i].denominator));
 				intermediateOutputBuffers.emplace_back(std::vector<FloatType>(outBufferSize, 0));
 			}
+			
 		
 			// set input rate of next stage
 			inputRate = newCi.outputSampleRate; 
