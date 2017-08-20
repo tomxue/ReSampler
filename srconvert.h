@@ -16,6 +16,9 @@
 #include "conversioninfo.h"
 #include "fraction.h"
 
+static_assert(std::is_copy_constructible<ConversionInfo>::value, "ConversionInfo needs to be copy Constructible");
+static_assert(std::is_copy_assignable<ConversionInfo>::value, "ConversionInfo needs to be copy Assignable");
+
 template<typename FloatType>
 std::vector<FloatType> makeFilterCoefficients(const ConversionInfo& ci, Fraction fraction) {
 	// determine base filter size
@@ -216,6 +219,82 @@ public:
 	}
 	void convert(FloatType* outBuffer, size_t& outBufferSize, const FloatType* inBuffer, const size_t& inBufferSize) {
 		AbstractResampler<FloatType>::convertStages[0].convert(outBuffer, outBufferSize, inBuffer, inBufferSize);
+	}
+};
+
+template <typename FloatType>
+class MultiStageResampler : public AbstractResampler<FloatType>
+{
+public:
+	MultiStageResampler(const ConversionInfo& ci) : AbstractResampler<FloatType>(ci) {
+		makeConversionParams();
+	}
+	void convert(FloatType* outBuffer, size_t& outBufferSize, const FloatType* inBuffer, const size_t& inBufferSize) {
+		AbstractResampler<FloatType>::convertStages[0].convert(outBuffer, outBufferSize, inBuffer, inBufferSize);
+	}
+private:
+	const std::vector<Fraction> ratios {
+		{3, 4},
+		{7, 8},
+		{7, 10}
+	};
+
+	std::vector<std::vector<FloatType>> intermediateOutputBuffers;	// intermediate output buffer for each ConvertStage;
+	
+	void makeConversionParams() {
+		int inputRate = ci.inputSampleRate;
+		double guarantee = inputRate / 2.0;
+		double ft = ci.lpfCutoff/100 * ci.outputSampleRate / 2.0;
+		
+		for (size_t i = 0; i < ratios.size(); i++) {
+			ConversionInfo newCi = ci;
+			newCi.inputSampleRate = inputRate;
+			newCi.outputSampleRate = inputRate * ratios[i].numerator / ratios[i].denominator;
+			decltype(newCi.inputSampleRate) minSampleRate = std::min(newCi.inputSampleRate, newCi.outputSampleRate);
+			double stopFreq = std::max(minSampleRate / 2.0, minSampleRate - guarantee);
+			double widthAdjust = ((stopFreq - ft) / (minSampleRate / 2.0 - ft));
+			newCi.lpfTransitionWidth *= widthAdjust;
+			guarantee = std::min(guarantee, stopFreq);
+			
+			// dump stage parameters:
+			std::cout << "Stage: " << 1 + i << "\n";
+			std::cout << "inputRate: " << newCi.inputSampleRate << "\n";
+			std::cout << "outputRate: " << newCi.outputSampleRate << "\n";
+			std::cout << "ft: " << ft << "\n";
+			std::cout << "stopFreq: " << stopFreq << "\n";
+			std::cout << "widthAdjust: " << widthAdjust << "\n";
+			std::cout << "guarantee: " << guarantee << "\n";
+			
+			// make the filter coefficients
+			std::vector<FloatType> filterTaps = makeFilterCoefficients<FloatType>(newCi, ratios[i]);
+			std::cout << "Generated Filter Size: " << filterTaps.size() << "\n\n" << std::endl;
+			
+			// make the filter
+			FIRFilter<FloatType> firFilter(filterTaps.data(), filterTaps.size());
+
+			// make the ConvertStage:
+			Fraction f = ratios[i];
+			bool bypassMode = (f.numerator == 1 && f.denominator == 1);
+			int overSamplingFactor = ci.bMinPhase && (f.numerator != f.denominator) && (f.numerator <= 4 || f.denominator <= 4) ? 8 : 1;
+			f.numerator *= overSamplingFactor;
+			f.denominator *= overSamplingFactor;
+			AbstractResampler<FloatType>::convertStages.emplace_back(f.numerator, f.denominator, firFilter, bypassMode);
+			
+			// add Group Delay:
+			groupDelay += (ci.bMinPhase || !ci.bDelayTrim) ? 0 : (filterTaps.size() - 1) / 2 / f.denominator;
+			if (f.numerator == 1 && f.denominator == 1) {
+				AbstractResampler<FloatType>::groupDelay = 0;
+			}
+
+			// make the outputBuffer (last stage doesn't need one)
+			if (i != ratios.size() - 1) {
+				size_t outBufferSize = std::ceil(BUFFERSIZE * static_cast<double>(ratios[i].numerator) / static_cast<double>(ratios[i].denominator));
+				intermediateOutputBuffers.emplace_back(std::vector<FloatType>(outBufferSize, 0));
+			}
+		
+			// set input rate of next stage
+			inputRate = newCi.outputSampleRate; 
+		}
 	}
 };
 

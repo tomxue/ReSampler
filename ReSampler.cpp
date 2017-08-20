@@ -779,6 +779,15 @@ bool convert(ConversionInfo& ci, bool peakDetection)
 		for (int n = 0; n < nChannels; n++) {
 			converters.emplace_back(ci);
 		} 
+
+		/*
+		// make a vector of MultiStageResamplers
+		std::vector<MultiStageResampler<FloatType>> multiConverters;
+		for (int n = 0; n < nChannels; n++) {
+			multiConverters.emplace_back(ci);
+		}
+		*/
+
 		int groupDelay = converters[0].getGroupDelay();
 		// std::cout << "expected group delay " << groupDelay << std::endl;
 
