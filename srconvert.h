@@ -191,7 +191,7 @@ public:
 		return groupDelay;
 	}
 protected:
-	AbstractResampler(const ConversionInfo& ci) : ci(ci) {}
+	AbstractResampler(const ConversionInfo& ci) : ci(ci), groupDelay(0) {}
 	ConversionInfo ci;
 	int groupDelay;
 	std::vector<ResamplingStage<FloatType>> convertStages;
@@ -241,17 +241,90 @@ public:
 	}
 
 private:
-	const std::vector<Fraction> ratios {
+	/*const std::vector<Fraction> ratios {
 		{3, 4},
 		{7, 8},
 		{7, 10}
-	};
+	};*/
 
 	int numStages;
 	int indexOfLastStage;
 	std::vector<std::vector<FloatType>> intermediateOutputBuffers;	// intermediate output buffer for each ConvertStage;
 	
+	std::vector<Fraction> getPartialRatios(Fraction f, int maxStages) {
+		std::vector<int> numerators;
+		std::vector<int> denominators;
+		
+		// to-do: improve algorithm and remove these special cases:
+		if (maxStages == 3  && f.numerator == 80) {
+			numerators = { 2, 4, 10 };
+		}
+		else if (maxStages == 3 && f.numerator == 160) {
+			numerators = { 4, 4, 10 };
+		}
+		else if (maxStages == 3 && f.numerator == 320) {
+			numerators = { 4, 8, 10 };
+		}
+		else {
+			numerators = factorize(f.numerator);
+		}
+		//
+		if (maxStages == 3 && f.denominator == 80) {
+			denominators = { 2, 4, 10 };
+		}
+		else if (maxStages == 3 && f.denominator == 160) {
+			denominators = { 4, 4, 10 };
+		}
+		else if (maxStages == 3 && f.denominator == 320) {
+			denominators = { 4, 8, 10 };
+		}
+		else {
+			denominators = factorize(f.denominator);
+		}
+
+		
+		// if too many items, consolidate into maxStages items - to-do: algorithm is very crude and produces suboptimal results - fix !
+		while (numerators.size() > maxStages) {
+			numerators[maxStages - 1] *= numerators.back();
+			numerators.pop_back();
+		}
+		while (denominators.size() > maxStages) {
+			denominators[maxStages - 1] *= denominators.back();
+			denominators.pop_back();
+		}
+
+		int nStages = std::max(numerators.size(), denominators.size());
+		assert(nStages <= maxStages);
+
+		// if not enough items, fill with 1's at the front
+		if (numerators.size() < nStages) {
+			numerators.insert(numerators.begin(), nStages - numerators.size(), 1);
+		}
+		if (denominators.size() < nStages) {
+			denominators.insert(denominators.begin(), nStages - denominators.size(), 1);
+		}
+	
+		assert(numerators.size() == denominators.size());
+		
+		// pack numerators and denominators into vector of fractions
+		std::vector<Fraction> fractions;
+		for (int i = 0; i < numStages; i++) {
+			Fraction f;
+			f.numerator = numerators[i];
+			f.denominator = denominators[i];
+
+			std::cout << "numerator: " << f.numerator << std::endl;
+			std::cout << "denominator: " << f.denominator << std::endl;
+			fractions.push_back(f);
+		}
+
+		return fractions;
+	}
+
 	void makeConversionParams() {
+		Fraction masterConversionRatio = getSimplifiedFraction(ci.inputSampleRate, ci.outputSampleRate);
+		auto ratios = getPartialRatios(masterConversionRatio, 3);
+		numStages = ratios.size();
 		int inputRate = ci.inputSampleRate;
 		double guarantee = inputRate / 2.0;
 		double ft = ci.lpfCutoff/100 * ci.outputSampleRate / 2.0;
@@ -277,7 +350,7 @@ private:
 			
 			// make the filter coefficients
 			std::vector<FloatType> filterTaps = makeFilterCoefficients<FloatType>(newCi, ratios[i]);
-			std::cout << "Generated Filter Size: " << filterTaps.size() << "\n\n" << std::endl;
+			std::cout << "Generated Filter Size: " << filterTaps.size() << "\n";
 			
 			// make the filter
 			FIRFilter<FloatType> firFilter(filterTaps.data(), filterTaps.size());
@@ -296,14 +369,21 @@ private:
 				groupDelay = 0;
 			}
 
-			
+			// calculate size of output buffer for this stage:
+			double cumulativeNumerator = 1.0;
+			double cumulativeDenominator = 1.0;
+			for (int j = 0; j <= i; j++) {
+				cumulativeNumerator *= ratios[j].numerator;
+				cumulativeDenominator *= ratios[j].denominator;
+			}
+			size_t outBufferSize = std::ceil(BUFFERSIZE * cumulativeNumerator / cumulativeDenominator);
+			std::cout << "Output Buffer Size: " << outBufferSize << "\n\n" << std::endl;
+
 			// make the outputBuffer (last stage doesn't need one)
-			if (i != numStages - 1) {
-				size_t outBufferSize = std::ceil(BUFFERSIZE * static_cast<double>(ratios[i].numerator) / static_cast<double>(ratios[i].denominator));
+			if (i != numStages - 1) {	
 				intermediateOutputBuffers.emplace_back(std::vector<FloatType>(outBufferSize, 0));
 			}
 			
-		
 			// set input rate of next stage
 			inputRate = newCi.outputSampleRate; 
 		}

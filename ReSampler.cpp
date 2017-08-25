@@ -774,23 +774,15 @@ bool convert(ConversionInfo& ci, bool peakDetection)
 		bClippingDetected = false;
 		std::unique_ptr<SndfileHandle> outFile;
 
-		// make a vector of singleStageResamplers
+		// make a vector of Resamplers
 		std::vector<SingleStageResampler<FloatType>> converters;
-	//	std::vector<MultiStageResampler<FloatType>> converters;
+//		std::vector<MultiStageResampler<FloatType>> converters;
 		for (int n = 0; n < nChannels; n++) {
 			converters.emplace_back(ci);
 		} 
 
-		/*
-		// make a vector of MultiStageResamplers
-		std::vector<MultiStageResampler<FloatType>> multiConverters;
-		for (int n = 0; n < nChannels; n++) {
-			multiConverters.emplace_back(ci);
-		}
-		*/
-
 		int groupDelay = converters[0].getGroupDelay();
-		// std::cout << "expected group delay " << groupDelay << std::endl;
+		std::cout << "expected group delay " << groupDelay << std::endl;
 
 		try { // Open output file:
 
