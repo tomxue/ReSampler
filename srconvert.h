@@ -226,27 +226,24 @@ template <typename FloatType>
 class MultiStageResampler : public AbstractResampler<FloatType>
 {
 public:
-	MultiStageResampler(const ConversionInfo& ci) : AbstractResampler<FloatType>(ci), numStages(3), indexOfLastStage(2) {
+	MultiStageResampler(const ConversionInfo& ci) : AbstractResampler<FloatType>(ci), numStages(3), indexOfLastStage(2), lastOutputStage(0) {
 		makeConversionParams();
 	}
 
 	void convert(FloatType* outBuffer, size_t& outBufferSize, const FloatType* inBuffer, const size_t& inBufferSize) {
+		const FloatType* in = inBuffer; // first stage reads directly from inBuffer. Subsequent stages read from output of previous stage
+		size_t inSize = inBufferSize;
 		for (int i = 0; i < numStages; i++) {
-			// first stage reads directly from inBuffer. Subsequent stages read from output of previous stage
-			const FloatType* in = (i == 0) ? inBuffer : intermediateOutputBuffers[i - 1].data(); 
-			size_t inSize = (i == 0) ? inBufferSize : intermediateOutputBuffers[i - 1].size();
 			FloatType* out = (i == indexOfLastStage) ? outBuffer : intermediateOutputBuffers[i].data(); // last stage writes straight to outBuffer;
-			convertStages[i].convert(out, outBufferSize, in, inSize);
+			size_t outSize;
+			convertStages[i].convert(out, outSize, in, inSize);
+			in = out; // input of next stage is the output of this stage
+			inSize = outSize;
 		}
+		outBufferSize = outSize;
 	}
 
 private:
-	/*const std::vector<Fraction> ratios {
-		{3, 4},
-		{7, 8},
-		{7, 10}
-	};*/
-
 	int numStages;
 	int indexOfLastStage;
 	std::vector<std::vector<FloatType>> intermediateOutputBuffers;	// intermediate output buffer for each ConvertStage;
