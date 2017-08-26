@@ -605,7 +605,6 @@ bool convert(ConversionInfo& ci, bool peakDetection)
 	sf_count_t inputSampleCount = infile.frames() * nChannels;
 
 	// determine conversion ratio:
-	//Fraction fOriginal = getSimplifiedFraction(ci.inputSampleRate, ci.outputSampleRate);
 	Fraction fraction = getSimplifiedFraction(ci.inputSampleRate, ci.outputSampleRate);
 
 	// set buffer sizes:
@@ -778,8 +777,8 @@ bool convert(ConversionInfo& ci, bool peakDetection)
 		std::unique_ptr<SndfileHandle> outFile;
 
 		// make a vector of Resamplers
-//		std::vector<SingleStageResampler<FloatType>> converters;
-		std::vector<MultiStageResampler<FloatType>> converters;
+		std::vector<SingleStageResampler<FloatType>> converters;
+//		std::vector<MultiStageResampler<FloatType>> converters;
 		for (int n = 0; n < nChannels; n++) {
 			converters.emplace_back(ci);
 		} 

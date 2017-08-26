@@ -277,6 +277,9 @@ private:
 		else if (maxStages == 3 && f.numerator == 320) {
 			numerators = { 4, 8, 10 };
 		}
+		else if (maxStages == 3 && f.numerator == 640) {
+			numerators = { 4, 8, 20 };
+		}
 		else {
 			numerators = factorize(f.numerator);
 		}
@@ -290,11 +293,13 @@ private:
 		else if (maxStages == 3 && f.denominator == 320) {
 			denominators = { 4, 8, 10 };
 		}
+		else if (maxStages == 3 && f.denominator == 640) {
+			denominators = { 4, 8, 20 };
+		}
 		else {
 			denominators = factorize(f.denominator);
 		}
 
-		
 		// if too many items, consolidate into maxStages items - to-do: algorithm is very crude and produces suboptimal results - fix !
 		while (numerators.size() > maxStages) {
 			numerators[maxStages - 1] *= numerators.back();
