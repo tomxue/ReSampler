@@ -226,7 +226,11 @@ template <typename FloatType>
 class MultiStageResampler : public AbstractResampler<FloatType>
 {
 public:
-	MultiStageResampler(const ConversionInfo& ci) : AbstractResampler<FloatType>(ci), numStages(3), indexOfLastStage(2)  {
+	MultiStageResampler(const ConversionInfo& ci) : AbstractResampler<FloatType>(ci), numStages(3), indexOfLastStage(2)   {
+		Fraction f1;
+		f1.numerator = 1;
+		f1.denominator = 2;
+		auto ratios = getPartialRatios(f1, 3);
 		makeConversionParams();
 	}
 
@@ -290,22 +294,22 @@ private:
 			denominators.pop_back();
 		}
 
-		int nStages = std::max(numerators.size(), denominators.size());
-		assert(nStages <= maxStages);
+		int n = std::max(numerators.size(), denominators.size());
+		assert(n <= maxStages);
 
 		// if not enough items, fill with 1's at the front
-		if (numerators.size() < nStages) {
-			numerators.insert(numerators.begin(), nStages - numerators.size(), 1);
+		if (numerators.size() < n) {
+			numerators.insert(numerators.begin(), n - numerators.size(), 1);
 		}
-		if (denominators.size() < nStages) {
-			denominators.insert(denominators.begin(), nStages - denominators.size(), 1);
+		if (denominators.size() < n) {
+			denominators.insert(denominators.begin(), n - denominators.size(), 1);
 		}
 	
 		assert(numerators.size() == denominators.size());
 		
 		// pack numerators and denominators into vector of fractions
 		std::vector<Fraction> fractions;
-		for (int i = 0; i < numStages; i++) {
+		for (int i = 0; i < n; i++) {
 			Fraction f;
 			f.numerator = numerators[i];
 			f.denominator = denominators[i];
