@@ -351,6 +351,9 @@ bool parseParameters(ConversionInfo& ci, bool& bBadParams, int argc, char* argv[
 	// noMetadata option:
 	ci.bWriteMetaData = !findCmdlineOption(argv, argv + argc, "--noMetadata");
 
+	// showStages option:
+	ci.bShowStages = findCmdlineOption(argv, argv + argc, "--showStages");
+
 	// test for bad parameters:
 	bBadParams = false;
 	if (ci.outputFilename.empty()) {

@@ -10,6 +10,9 @@
 #ifndef SRCONVERT_H
 #define SRCONVERT_H 1
 
+//#define USE_LAZYGET_ON_INTERPOLATE
+#define USE_LAZYGET_ON_INTERPOLATE_DECIMATE
+
 // srconvert.h : core sample rate conversion code.
 
 #include "FIRFilter.h"
@@ -103,7 +106,7 @@ private:
         outBufferSize = inBufferSize;
     }
 
-	// filerOnly() - keeps 1:1 conversion ratio, but applies filter
+	// filterOnly() - keeps 1:1 conversion ratio, but applies filter
     void filterOnly(FloatType* outBuffer, size_t& outBufferSize, const FloatType* inBuffer, const size_t& inBufferSize) {
         size_t o = 0;
         for(size_t i = 0; i < inBufferSize; ++i) {
@@ -118,10 +121,14 @@ private:
         size_t o = 0;
         for (size_t i = 0; i < inBufferSize; ++i) {
             for(int l = 0; l < L; ++l) {
-				//filter.put((l == 0) ? inBuffer[i] : 0);
+
+#ifdef	USE_LAZYGET_ON_INTERPOLATE
 				((l == 0) ? filter.put(inBuffer[i]) : filter.putZero());
-				//outBuffer[o++] = filter.get();
 				outBuffer[o++] = filter.lazyGet(L);
+#else 
+				filter.put((l == 0) ? inBuffer[i] : 0);
+				outBuffer[o++] = filter.get();
+#endif	
 			}
         }
         outBufferSize = o;   
@@ -150,10 +157,18 @@ private:
 		int localm = m;
 		for (size_t i = 0; i < inBufferSize; ++i) {
 			for(int l = 0; l < L; ++l) {
+
+#ifdef	USE_LAZYGET_ON_INTERPOLATE_DECIMATE
 				((l == 0) ? filter.put(inBuffer[i]) : filter.putZero());
 				if (localm == 0) {
 					outBuffer[o++] = filter.lazyGet(L);
 				}
+#else 
+				filter.put((l == 0) ? inBuffer[i] : 0);
+				if (localm == 0) {
+					outBuffer[o++] = filter.get();
+				}
+#endif	
 				if (++localm == M) {
 					localm = 0;
 				}
@@ -226,11 +241,7 @@ template <typename FloatType>
 class MultiStageResampler : public AbstractResampler<FloatType>
 {
 public:
-	MultiStageResampler(const ConversionInfo& ci) : AbstractResampler<FloatType>(ci), numStages(3), indexOfLastStage(2)   {
-		Fraction f1;
-		f1.numerator = 1;
-		f1.denominator = 2;
-		auto ratios = getPartialRatios(f1, 3);
+	MultiStageResampler(const ConversionInfo& ci) : AbstractResampler<FloatType>(ci) {
 		makeConversionParams();
 	}
 
@@ -261,7 +272,7 @@ private:
 			numerators = { 2, 4, 10 };
 		}
 		else if (maxStages == 3 && f.numerator == 160) {
-			numerators = { 4, 4, 10 };
+			numerators = { 2, 8, 10 };
 		}
 		else if (maxStages == 3 && f.numerator == 320) {
 			numerators = { 4, 8, 10 };
@@ -274,7 +285,7 @@ private:
 			denominators = { 2, 4, 10 };
 		}
 		else if (maxStages == 3 && f.denominator == 160) {
-			denominators = { 4, 4, 10 };
+			denominators = { 2, 8, 10 };
 		}
 		else if (maxStages == 3 && f.denominator == 320) {
 			denominators = { 4, 8, 10 };
@@ -340,23 +351,24 @@ private:
 			double widthAdjust = ((stopFreq - ft) / (minSampleRate / 2.0 - ft));
 			newCi.lpfTransitionWidth *= widthAdjust;
 			guarantee = std::min(guarantee, stopFreq);
-			
-			// dump stage parameters:
-			std::cout << "Stage: " << 1 + i << "\n";
-			std::cout << "inputRate: " << newCi.inputSampleRate << "\n";
-			std::cout << "outputRate: " << newCi.outputSampleRate << "\n";
-			std::cout << "ft: " << ft << "\n";
-			std::cout << "stopFreq: " << stopFreq << "\n";
-			std::cout << "widthAdjust: " << widthAdjust << "\n";
-			std::cout << "guarantee: " << guarantee << "\n";
-			
+
 			// make the filter coefficients
 			std::vector<FloatType> filterTaps = makeFilterCoefficients<FloatType>(newCi, ratios[i]);
-			std::cout << "Generated Filter Size: " << filterTaps.size() << "\n";
-			
+
 			// make the filter
 			FIRFilter<FloatType> firFilter(filterTaps.data(), filterTaps.size());
 
+			if (ci.bShowStages) { // dump stage parameters:
+				std::cout << "Stage: " << 1 + i << "\n";
+				std::cout << "inputRate: " << newCi.inputSampleRate << "\n";
+				std::cout << "outputRate: " << newCi.outputSampleRate << "\n";
+				std::cout << "ft: " << ft << "\n";
+				std::cout << "stopFreq: " << stopFreq << "\n";
+				std::cout << "widthAdjust: " << widthAdjust << "\n";
+				std::cout << "guarantee: " << guarantee << "\n";
+				std::cout << "Generated Filter Size: " << filterTaps.size() << "\n";
+			}
+			
 			// make the ConvertStage:
 			Fraction f = ratios[i];
 			bool bypassMode = (f.numerator == 1 && f.denominator == 1);
@@ -379,9 +391,12 @@ private:
 				cumulativeDenominator *= ratios[j].denominator;
 			}
 			size_t outBufferSize = std::ceil(BUFFERSIZE * cumulativeNumerator / cumulativeDenominator);
-			std::cout << "Output Buffer Size: " << outBufferSize << "\n\n" << std::endl;
+			
+			if (ci.bShowStages) {
+				std::cout << "Output Buffer Size: " << outBufferSize << "\n\n" << std::endl;
+			}
 
-			// make the outputBuffer (last stage doesn't need one)
+			// make output buffer for this stage (last stage doesn't need one)
 			if (i != numStages - 1) {	
 				intermediateOutputBuffers.emplace_back(std::vector<FloatType>(outBufferSize, 0));
 			}
