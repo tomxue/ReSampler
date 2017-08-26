@@ -226,16 +226,16 @@ template <typename FloatType>
 class MultiStageResampler : public AbstractResampler<FloatType>
 {
 public:
-	MultiStageResampler(const ConversionInfo& ci) : AbstractResampler<FloatType>(ci), numStages(3), indexOfLastStage(2), lastOutputStage(0) {
+	MultiStageResampler(const ConversionInfo& ci) : AbstractResampler<FloatType>(ci), numStages(3), indexOfLastStage(2)  {
 		makeConversionParams();
 	}
 
 	void convert(FloatType* outBuffer, size_t& outBufferSize, const FloatType* inBuffer, const size_t& inBufferSize) {
 		const FloatType* in = inBuffer; // first stage reads directly from inBuffer. Subsequent stages read from output of previous stage
 		size_t inSize = inBufferSize;
+		size_t outSize;
 		for (int i = 0; i < numStages; i++) {
 			FloatType* out = (i == indexOfLastStage) ? outBuffer : intermediateOutputBuffers[i].data(); // last stage writes straight to outBuffer;
-			size_t outSize;
 			convertStages[i].convert(out, outSize, in, inSize);
 			in = out; // input of next stage is the output of this stage
 			inSize = outSize;
@@ -322,6 +322,7 @@ private:
 		Fraction masterConversionRatio = getSimplifiedFraction(ci.inputSampleRate, ci.outputSampleRate);
 		auto ratios = getPartialRatios(masterConversionRatio, 3);
 		numStages = ratios.size();
+		indexOfLastStage = numStages - 1;
 		int inputRate = ci.inputSampleRate;
 		double guarantee = inputRate / 2.0;
 		double ft = ci.lpfCutoff/100 * ci.outputSampleRate / 2.0;
