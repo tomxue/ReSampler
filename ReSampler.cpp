@@ -351,6 +351,9 @@ bool parseParameters(ConversionInfo& ci, bool& bBadParams, int argc, char* argv[
 	// noMetadata option:
 	ci.bWriteMetaData = !findCmdlineOption(argv, argv + argc, "--noMetadata");
 
+	// showStages option:
+	ci.bShowStages = findCmdlineOption(argv, argv + argc, "--showStages");
+
 	// test for bad parameters:
 	bBadParams = false;
 	if (ci.outputFilename.empty()) {
@@ -602,7 +605,6 @@ bool convert(ConversionInfo& ci, bool peakDetection)
 	sf_count_t inputSampleCount = infile.frames() * nChannels;
 
 	// determine conversion ratio:
-	//Fraction fOriginal = getSimplifiedFraction(ci.inputSampleRate, ci.outputSampleRate);
 	Fraction fraction = getSimplifiedFraction(ci.inputSampleRate, ci.outputSampleRate);
 
 	// set buffer sizes:

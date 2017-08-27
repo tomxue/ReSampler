@@ -60,4 +60,80 @@ std::vector<int> factorize(int n) {
 	return factors;
 }
 
+std::vector<Fraction> decomposeFraction(Fraction f, int maxStages) {
+	std::vector<int> numerators;
+	std::vector<int> denominators;
+
+	// to-do: improve algorithm and remove these special cases:
+	if (maxStages == 3 && f.numerator == 80) {
+		numerators = { 2, 4, 10 };
+	}
+	else if (maxStages == 3 && f.numerator == 160) {
+		numerators = { 2, 8, 10 };
+	}
+	else if (maxStages == 3 && f.numerator == 320) {
+		numerators = { 4, 8, 10 };
+	}
+	else if (maxStages == 3 && f.numerator == 640) {
+		numerators = { 4, 8, 20 };
+	}
+	else {
+		numerators = factorize(f.numerator);
+	}
+	//
+	if (maxStages == 3 && f.denominator == 80) {
+		denominators = { 2, 4, 10 };
+	}
+	else if (maxStages == 3 && f.denominator == 160) {
+		denominators = { 2, 8, 10 };
+	}
+	else if (maxStages == 3 && f.denominator == 320) {
+		denominators = { 4, 8, 10 };
+	}
+	else if (maxStages == 3 && f.denominator == 640) {
+		denominators = { 4, 8, 20 };
+	}
+	else {
+		denominators = factorize(f.denominator);
+	}
+
+	// if too many items, consolidate into maxStages items - to-do: algorithm is very crude and produces suboptimal results - fix !
+	while (numerators.size() > maxStages) {
+		numerators[maxStages - 1] *= numerators.back();
+		numerators.pop_back();
+	}
+	while (denominators.size() > maxStages) {
+		denominators[maxStages - 1] *= denominators.back();
+		denominators.pop_back();
+	}
+
+	int n = std::max(numerators.size(), denominators.size());
+	assert(n <= maxStages);
+
+	// if not enough items, fill with 1's at the front
+	if (numerators.size() < n) {
+		numerators.insert(numerators.begin(), n - numerators.size(), 1);
+	}
+	if (denominators.size() < n) {
+		denominators.insert(denominators.begin(), n - denominators.size(), 1);
+	}
+
+	assert(numerators.size() == denominators.size());
+
+	// pack numerators and denominators into vector of fractions
+	std::vector<Fraction> fractions;
+	for (int i = 0; i < n; i++) {
+		Fraction f;
+		f.numerator = numerators[i];
+		f.denominator = denominators[i];
+
+		std::cout << "numerator: " << f.numerator << std::endl;
+		std::cout << "denominator: " << f.denominator << std::endl;
+		fractions.push_back(f);
+	}
+
+	return fractions;
+}
+
+
 #endif // FRACTION_H
