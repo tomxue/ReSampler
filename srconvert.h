@@ -262,86 +262,11 @@ private:
 	int numStages;
 	int indexOfLastStage;
 	std::vector<std::vector<FloatType>> intermediateOutputBuffers;	// intermediate output buffer for each ConvertStage;
-	
-	std::vector<Fraction> getPartialRatios(Fraction f, int maxStages) {
-		std::vector<int> numerators;
-		std::vector<int> denominators;
-		
-		// to-do: improve algorithm and remove these special cases:
-		if (maxStages == 3  && f.numerator == 80) {
-			numerators = { 2, 4, 10 };
-		}
-		else if (maxStages == 3 && f.numerator == 160) {
-			numerators = { 2, 8, 10 };
-		}
-		else if (maxStages == 3 && f.numerator == 320) {
-			numerators = { 4, 8, 10 };
-		}
-		else if (maxStages == 3 && f.numerator == 640) {
-			numerators = { 4, 8, 20 };
-		}
-		else {
-			numerators = factorize(f.numerator);
-		}
-		//
-		if (maxStages == 3 && f.denominator == 80) {
-			denominators = { 2, 4, 10 };
-		}
-		else if (maxStages == 3 && f.denominator == 160) {
-			denominators = { 2, 8, 10 };
-		}
-		else if (maxStages == 3 && f.denominator == 320) {
-			denominators = { 4, 8, 10 };
-		}
-		else if (maxStages == 3 && f.denominator == 640) {
-			denominators = { 4, 8, 20 };
-		}
-		else {
-			denominators = factorize(f.denominator);
-		}
-
-		// if too many items, consolidate into maxStages items - to-do: algorithm is very crude and produces suboptimal results - fix !
-		while (numerators.size() > maxStages) {
-			numerators[maxStages - 1] *= numerators.back();
-			numerators.pop_back();
-		}
-		while (denominators.size() > maxStages) {
-			denominators[maxStages - 1] *= denominators.back();
-			denominators.pop_back();
-		}
-
-		int n = std::max(numerators.size(), denominators.size());
-		assert(n <= maxStages);
-
-		// if not enough items, fill with 1's at the front
-		if (numerators.size() < n) {
-			numerators.insert(numerators.begin(), n - numerators.size(), 1);
-		}
-		if (denominators.size() < n) {
-			denominators.insert(denominators.begin(), n - denominators.size(), 1);
-		}
-	
-		assert(numerators.size() == denominators.size());
-		
-		// pack numerators and denominators into vector of fractions
-		std::vector<Fraction> fractions;
-		for (int i = 0; i < n; i++) {
-			Fraction f;
-			f.numerator = numerators[i];
-			f.denominator = denominators[i];
-
-			std::cout << "numerator: " << f.numerator << std::endl;
-			std::cout << "denominator: " << f.denominator << std::endl;
-			fractions.push_back(f);
-		}
-
-		return fractions;
-	}
 
 	void makeConversionParams() {
 		Fraction masterConversionRatio = getSimplifiedFraction(ci.inputSampleRate, ci.outputSampleRate);
-		auto ratios = getPartialRatios(masterConversionRatio, 3);
-		numStages = ratios.size();
+		auto fractions = decomposeFraction(masterConversionRatio, 3);
+		numStages = fractions.size();
 		indexOfLastStage = numStages - 1;
 		int inputRate = ci.inputSampleRate;
 		double guarantee = inputRate / 2.0;
@@ -350,7 +275,7 @@ private:
 		for (int i = 0; i < numStages; i++) {
 			ConversionInfo newCi = ci;
 			newCi.inputSampleRate = inputRate;
-			newCi.outputSampleRate = inputRate * ratios[i].numerator / ratios[i].denominator;
+			newCi.outputSampleRate = inputRate * fractions[i].numerator / fractions[i].denominator;
 			decltype(newCi.inputSampleRate) minSampleRate = std::min(newCi.inputSampleRate, newCi.outputSampleRate);
 			double stopFreq = std::max(minSampleRate / 2.0, minSampleRate - guarantee);
 			double widthAdjust = ((stopFreq - ft) / (minSampleRate / 2.0 - ft));
@@ -358,7 +283,7 @@ private:
 			guarantee = std::min(guarantee, stopFreq);
 
 			// make the filter coefficients
-			std::vector<FloatType> filterTaps = makeFilterCoefficients<FloatType>(newCi, ratios[i]);
+			std::vector<FloatType> filterTaps = makeFilterCoefficients<FloatType>(newCi, fractions[i]);
 
 			// make the filter
 			FIRFilter<FloatType> firFilter(filterTaps.data(), filterTaps.size());
@@ -375,7 +300,7 @@ private:
 			}
 			
 			// make the ConvertStage:
-			Fraction f = ratios[i];
+			Fraction f = fractions[i];
 			bool bypassMode = (f.numerator == 1 && f.denominator == 1);
 			int overSamplingFactor = ci.bMinPhase && (f.numerator != f.denominator) && (f.numerator <= 4 || f.denominator <= 4) ? 8 : 1;
 			f.numerator *= overSamplingFactor;
@@ -392,8 +317,8 @@ private:
 			double cumulativeNumerator = 1.0;
 			double cumulativeDenominator = 1.0;
 			for (int j = 0; j <= i; j++) {
-				cumulativeNumerator *= ratios[j].numerator;
-				cumulativeDenominator *= ratios[j].denominator;
+				cumulativeNumerator *= fractions[j].numerator;
+				cumulativeDenominator *= fractions[j].denominator;
 			}
 			size_t outBufferSize = std::ceil(BUFFERSIZE * cumulativeNumerator / cumulativeDenominator);
 			
