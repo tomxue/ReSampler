@@ -777,7 +777,7 @@ bool convert(ConversionInfo& ci, bool peakDetection)
 		std::unique_ptr<SndfileHandle> outFile;
 
 		// make a vector of Resamplers
-//		std::vector<SingleStageResampler<FloatType>> converters;
+// 		std::vector<SingleStageResampler<FloatType>> converters;
 		std::vector<MultiStageResampler<FloatType>> converters;
 		for (int n = 0; n < nChannels; n++) {
 			converters.emplace_back(ci);
