@@ -351,6 +351,17 @@ bool parseParameters(ConversionInfo& ci, bool& bBadParams, int argc, char* argv[
 	// noMetadata option:
 	ci.bWriteMetaData = !findCmdlineOption(argv, argv + argc, "--noMetadata");
 
+	// maxStages:
+	if (findCmdlineOption(argv, argv + argc, "--maxStages")) {
+		getCmdlineParam(argv, argv + argc, "--maxStages", ci.maxStages);
+		if (ci.maxStages < 1)
+			ci.maxStages = 1;
+		if (ci.maxStages > 10)
+			ci.maxStages = 10;
+	} else {
+		ci.maxStages = 3; // default;
+	}
+
 	// showStages option:
 	ci.bShowStages = findCmdlineOption(argv, argv + argc, "--showStages");
 
