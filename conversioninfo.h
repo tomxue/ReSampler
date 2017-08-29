@@ -59,6 +59,7 @@ struct ConversionInfo
 	bool bRf64;
 	bool bNoPeakChunk;
 	bool bWriteMetaData;
+	int maxStages;
 	bool bShowStages;
 };
 

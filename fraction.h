@@ -82,16 +82,19 @@ std::vector<Fraction> decomposeFraction(Fraction f, int maxStages) {
 	}
 	//
 	if (maxStages == 3 && f.denominator == 80) {
-		denominators = { 2, 4, 10 };
+		denominators = { 4, 4, 5 };
 	}
 	else if (maxStages == 3 && f.denominator == 160) {
-		denominators = { 2, 8, 10 };
+		denominators = { 2, 8, 10 }; // still slower than single-stage
 	}
 	else if (maxStages == 3 && f.denominator == 320) {
-		denominators = { 4, 8, 10 };
+		denominators = { 4, 5, 16 };
 	}
 	else if (maxStages == 3 && f.denominator == 640) {
-		denominators = { 4, 8, 20 };
+		denominators = { 5, 8, 16 };
+	}
+	else if (maxStages == 3 && f.denominator == 64) {
+		denominators = { 4, 4, 4 };
 	}
 	else {
 		denominators = factorize(f.denominator);
