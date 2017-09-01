@@ -237,9 +237,14 @@ public:
 	}
 };
 
+
 template <typename FloatType>
 class MultiStageResampler : public AbstractResampler<FloatType>
 {
+	using AbstractResampler<FloatType>::ci;
+	using AbstractResampler<FloatType>::convertStages;
+	using AbstractResampler<FloatType>::groupDelay;
+
 public:
 	MultiStageResampler(const ConversionInfo& ci) : AbstractResampler<FloatType>(ci) {
 		makeConversionParams();
@@ -251,7 +256,7 @@ public:
 		size_t outSize;
 		for (int i = 0; i < numStages; i++) {
 			FloatType* out = (i == indexOfLastStage) ? outBuffer : intermediateOutputBuffers[i].data(); // last stage writes straight to outBuffer;
-			convertStages[i].convert(out, outSize, in, inSize);
+			AbstractResampler<FloatType>::convertStages[i].convert(out, outSize, in, inSize);
 			in = out; // input of next stage is the output of this stage
 			inSize = outSize;
 		}
@@ -264,6 +269,9 @@ private:
 	std::vector<std::vector<FloatType>> intermediateOutputBuffers;	// intermediate output buffer for each ConvertStage;
 
 	void makeConversionParams() {
+
+	
+
 		Fraction masterConversionRatio = getSimplifiedFraction(ci.inputSampleRate, ci.outputSampleRate);
 		auto fractions = decomposeFraction(masterConversionRatio, ci.maxStages);
 		numStages = fractions.size();
