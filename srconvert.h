@@ -215,6 +215,10 @@ protected:
 template <typename FloatType>
 class SingleStageResampler : public AbstractResampler<FloatType>
 {
+	using AbstractResampler<FloatType>::ci;
+	using AbstractResampler<FloatType>::convertStages;
+	using AbstractResampler<FloatType>::groupDelay;
+
 public:
 	SingleStageResampler(const ConversionInfo& ci) : AbstractResampler<FloatType>(ci) {
 		Fraction f = getSimplifiedFraction(ci.inputSampleRate, ci.outputSampleRate);
@@ -226,14 +230,14 @@ public:
 		f.denominator *= overSamplingFactor;
 
 		FIRFilter<FloatType> firFilter(filterTaps.data(), filterTaps.size());
-		AbstractResampler<FloatType>::convertStages.emplace_back(f.numerator, f.denominator, firFilter, bypassMode);
-		AbstractResampler<FloatType>::groupDelay = (ci.bMinPhase || !ci.bDelayTrim) ? 0 : (filterTaps.size() - 1) / 2 / f.denominator;
+		convertStages.emplace_back(f.numerator, f.denominator, firFilter, bypassMode);
+		groupDelay = (ci.bMinPhase || !ci.bDelayTrim) ? 0 : (filterTaps.size() - 1) / 2 / f.denominator;
 		if (f.numerator == 1 && f.denominator == 1) {
-			AbstractResampler<FloatType>::groupDelay = 0;
+			groupDelay = 0;
 		}
 	}
 	void convert(FloatType* outBuffer, size_t& outBufferSize, const FloatType* inBuffer, const size_t& inBufferSize) {
-		AbstractResampler<FloatType>::convertStages[0].convert(outBuffer, outBufferSize, inBuffer, inBufferSize);
+		convertStages[0].convert(outBuffer, outBufferSize, inBuffer, inBufferSize);
 	}
 };
 
@@ -256,7 +260,7 @@ public:
 		size_t outSize;
 		for (int i = 0; i < numStages; i++) {
 			FloatType* out = (i == indexOfLastStage) ? outBuffer : intermediateOutputBuffers[i].data(); // last stage writes straight to outBuffer;
-			AbstractResampler<FloatType>::convertStages[i].convert(out, outSize, in, inSize);
+			convertStages[i].convert(out, outSize, in, inSize);
 			in = out; // input of next stage is the output of this stage
 			inSize = outSize;
 		}
@@ -269,9 +273,6 @@ private:
 	std::vector<std::vector<FloatType>> intermediateOutputBuffers;	// intermediate output buffer for each ConvertStage;
 
 	void makeConversionParams() {
-
-	
-
 		Fraction masterConversionRatio = getSimplifiedFraction(ci.inputSampleRate, ci.outputSampleRate);
 		auto fractions = decomposeFraction(masterConversionRatio, ci.maxStages);
 		numStages = fractions.size();
