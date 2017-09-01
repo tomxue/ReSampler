@@ -15,17 +15,24 @@
 
 class RaiiTimer {
 public:
-    RaiiTimer() {
+    RaiiTimer(double msComparison = 0.0) : msComparison(msComparison) {
         beginTimer = std::chrono::high_resolution_clock::now();    
     }
     ~RaiiTimer() {
         endTimer = std::chrono::high_resolution_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTimer - beginTimer).count();
-        std::cout << "Time=" << duration << " ms" << std::endl;
+        std::cout << "Time=" << duration << " ms";
+        if(msComparison != 0.0) {
+            double relativeSpeed = msComparison / duration;
+            std::streamsize ss = std::cout.precision();
+            std::cout << " [" << std::setprecision(1) << relativeSpeed << "x]" << std::setprecision(ss);
+        } 
+        std::cout << std::endl;
     }
 private:
     std::chrono::time_point<std::chrono::high_resolution_clock> beginTimer;
     std::chrono::time_point<std::chrono::high_resolution_clock> endTimer;
+    double msComparison;
 };
 
 #endif // _RAIITIMER_H

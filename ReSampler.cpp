@@ -614,6 +614,7 @@ bool convert(ConversionInfo& ci, bool peakDetection)
 	int nChannels = infile.channels();
 	ci.inputSampleRate = infile.samplerate();
 	sf_count_t inputSampleCount = infile.frames() * nChannels;
+	double inputDuration = 1000.0 * infile.frames() / ci.inputSampleRate; // ms
 
 	// determine conversion ratio:
 	Fraction fraction = getSimplifiedFraction(ci.inputSampleRate, ci.outputSampleRate);
@@ -780,7 +781,7 @@ bool convert(ConversionInfo& ci, bool peakDetection)
 
 	FloatType peakOutputSample;
 	bool bClippingDetected;
-	RaiiTimer timer;
+	RaiiTimer timer(inputDuration);
 
 	do { // clipping detection loop (repeat if clipping detected)
 
