@@ -129,9 +129,6 @@ std::vector<Fraction> decomposeFraction(Fraction f, int maxStages) {
 		Fraction f;
 		f.numerator = numerators[i];
 		f.denominator = denominators[i];
-
-		std::cout << "numerator: " << f.numerator << std::endl;
-		std::cout << "denominator: " << f.denominator << std::endl;
 		fractions.push_back(f);
 	}
 
