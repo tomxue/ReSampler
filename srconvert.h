@@ -202,13 +202,13 @@ class AbstractResampler
 {
 public:
 	virtual void convert(FloatType* outBuffer, size_t& outBufferSize, const FloatType* inBuffer, const size_t& inBufferSize) = 0;
-	int getGroupDelay() {
+	double getGroupDelay() {
 		return groupDelay;
 	}
 protected:
-	AbstractResampler(const ConversionInfo& ci) : ci(ci), groupDelay(0) {}
+	AbstractResampler(const ConversionInfo& ci) : ci(ci), groupDelay(0.0) {}
 	ConversionInfo ci;
-	int groupDelay;
+	double groupDelay;
 	std::vector<ResamplingStage<FloatType>> convertStages;
 };
 
@@ -317,9 +317,9 @@ private:
 			convertStages.emplace_back(f.numerator, f.denominator, firFilter, bypassMode);
 			
 			// add Group Delay:
-			groupDelay += (ci.bMinPhase || !ci.bDelayTrim) ? 0 : (filterTaps.size() - 1) / 2 / f.denominator;
-			if (f.numerator == 1 && f.denominator == 1) {
-				groupDelay = 0;
+			if (!bypassMode) {
+				groupDelay *= (static_cast<double>(f.numerator) / f.denominator); // scale previous delay according to conversion ratio
+				groupDelay += (ci.bMinPhase || !ci.bDelayTrim) ? 0 : (filterTaps.size() - 1) / 2 / f.denominator; // add delay introduced by this stage
 			}
 
 			// calculate size of output buffer for this stage:
