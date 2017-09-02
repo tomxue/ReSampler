@@ -274,7 +274,8 @@ private:
 
 	void makeConversionParams() {
 		Fraction masterConversionRatio = getSimplifiedFraction(ci.inputSampleRate, ci.outputSampleRate);
-		auto fractions = decomposeFraction(masterConversionRatio, ci.maxStages);
+	//	auto fractions = decomposeFraction(masterConversionRatio, ci.maxStages);
+		auto fractions = getPresetFractions(masterConversionRatio, ci.maxStages);
 		numStages = fractions.size();
 		indexOfLastStage = numStages - 1;
 		int inputRate = ci.inputSampleRate;
