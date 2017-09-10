@@ -11,6 +11,7 @@
 #define FRACTION_H
 
 #include <vector>
+#include <set>
 
 // fraction.h
 // defines Fraction type, and functions for obtaining gcd, simplified fractions, and prime factors of integers
@@ -58,6 +59,37 @@ std::vector<int> factorize(int n) {
 
 	factors.push_back(n);
 	return factors;
+}
+
+// getnFactors() - given a vector of prime factors, consolidate into numFactors factors
+// and return a set of vectors representing possible solutions:
+std::set<std::vector<int>> getnFactors(std::vector<int> primeFactors, int numFactors) {
+
+    std::set<std::vector<int>> results;
+    std::vector<int> currentFactors(numFactors,1);
+
+    std::function<void(std::vector<int>, int)> recursivePart =
+    [&results, &currentFactors, &recursivePart](std::vector<int> primeFactors, int numFactors) {
+        if(numFactors == 1) { // leaf node
+            currentFactors[0] = std::accumulate(primeFactors.begin(), primeFactors.end(), 1, std::multiplies<int>());
+            std::vector<int> newFactors = currentFactors;
+            std::sort(newFactors.begin(), newFactors.end() , std::less<int>());
+            results.insert(newFactors);
+            return;
+        }
+
+        int maxFirstItems = primeFactors.size() - (numFactors - 1);
+        for(int j = 1; j <= maxFirstItems; j++) {
+            currentFactors[numFactors-1] = std::accumulate(primeFactors.begin(), primeFactors.begin() + j, 1, std::multiplies<int>());
+            std::vector<int> remainingItems(primeFactors.begin() + j, primeFactors.end());
+            recursivePart(remainingItems, numFactors - 1);
+        }
+        return;
+    }; // ends recursivePart
+
+    recursivePart(primeFactors, numFactors);
+
+    return results;
 }
 
 std::vector<Fraction> decomposeFraction(Fraction f, int maxStages) {
