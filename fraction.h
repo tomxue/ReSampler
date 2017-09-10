@@ -61,10 +61,11 @@ std::vector<int> factorize(int n) {
 	return factors;
 }
 
-// getnFactors() - given a vector of prime factors, consolidate into numFactors factors
-// and return a set of vectors representing possible solutions:
-std::set<std::vector<int>> getnFactors(std::vector<int> primeFactors, int numFactors) {
+// getnFactors() - factorize a number x into numFactors factors.
+// return a set of vectors representing possible solutions
+std::set<std::vector<int>> getnFactors(int x, int numFactors) {
 
+	std::vector<int> primes = factorize(x);
     std::set<std::vector<int>> results;
     std::vector<int> currentFactors(numFactors,1);
 
@@ -87,7 +88,7 @@ std::set<std::vector<int>> getnFactors(std::vector<int> primeFactors, int numFac
         return;
     }; // ends recursivePart
 
-    recursivePart(primeFactors, numFactors);
+    recursivePart(primes, numFactors);
 
     return results;
 }
