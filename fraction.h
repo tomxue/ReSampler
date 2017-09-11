@@ -12,6 +12,7 @@
 
 #include <vector>
 #include <set>
+#include <numeric>
 
 // fraction.h
 // defines Fraction type, and functions for obtaining gcd, simplified fractions, and prime factors of integers
@@ -193,7 +194,7 @@ std::vector<Fraction> getPresetFractions(Fraction f, int maxStages) {
 	
 	// hardcoded table of known presets
 	const std::vector<PresetFractionSet> presetList {
-		{{147,320}, {{3,4}, {7,5}, {7,16}}},
+		{{147,320}, {{3,5}, {7,8}, {7,8}}},
 		{{147,640 }, {{3,5},{7,8},{7,16}}},
 	};
 	

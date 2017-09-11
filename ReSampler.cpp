@@ -59,7 +59,7 @@ unsigned int fp_control_state = _controlfp(_EM_INEXACT, _MCW_EM);
 int main(int argc, char * argv[])
 {
 	ConversionInfo ci;
-	
+
 	// result of parseParameters() indicates whether to terminate, and 
 	// badParams indicates whether there was an error:
 	bool badParams = false;
