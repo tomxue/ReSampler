@@ -27,13 +27,13 @@ std::vector<FloatType> makeFilterCoefficients(const ConversionInfo& ci, Fraction
 	int overSamplingFactor = 1;
 	Fraction f = fraction;
 
-	/*
-	if (ci.bMinPhase && (fraction.numerator == 1 || fraction.denominator == 1)) { //oversample to improve filter performance
-		overSamplingFactor = 8;
-		f.numerator *= overSamplingFactor;
-		f.denominator *= overSamplingFactor;
-	}
-	*/
+	
+	//if (ci.bMinPhase && (fraction.numerator <= 5 || fraction.denominator <= 5)) { //oversample to improve filter performance
+	//	overSamplingFactor = 8;
+	//	f.numerator *= overSamplingFactor;
+	//	f.denominator *= overSamplingFactor;
+	//}
+	
 
 	//if ((fraction.numerator != fraction.denominator) && (fraction.numerator <= 4 || fraction.denominator <= 4)) { // simple ratios
 	//	baseFilterSize = FILTERSIZE_MEDIUM * std::max(fraction.denominator, fraction.numerator) / 2;
@@ -50,7 +50,7 @@ std::vector<FloatType> makeFilterCoefficients(const ConversionInfo& ci, Fraction
 	// determine cutoff frequency and steepness
 	double targetNyquist = std::min(ci.inputSampleRate, ci.outputSampleRate) / 2.0;
 	double ft = (ci.lpfCutoff / 100.0) * targetNyquist;
-	double steepness = steepness = 0.090909091 / (ci.lpfTransitionWidth / 100.0);
+	double steepness = 0.090909091 / (ci.lpfTransitionWidth / 100.0);
 
 	/*
 	// scale the filter size, according to selected options:
@@ -60,7 +60,7 @@ std::vector<FloatType> makeFilterCoefficients(const ConversionInfo& ci, Fraction
 	*/
 
 	int filterSize = 
-		std::min<int>(FILTERSIZE_BASE * overSamplingFactor * std::max(fraction.denominator, fraction.numerator) * steepness, FILTERSIZE_LIMIT)
+		std::min<int>(FILTERSIZE_BASE * overSamplingFactor * std::max(f.denominator, f.numerator) * steepness, FILTERSIZE_LIMIT)
 		| static_cast<int>(1);	// ensure that filter length is always odd
 
 	// determine sidelobe attenuation
@@ -76,12 +76,12 @@ std::vector<FloatType> makeFilterCoefficients(const ConversionInfo& ci, Fraction
 	applyKaiserWindow<FloatType>(pFilterTaps, filterSize, calcKaiserBeta(sidelobeAtten));
 
 	// conditionally convert filter coefficients to minimum-phase:
-	/**
+	
 	if (ci.bMinPhase) {
-		makeMinPhase<FloatType>(pFilterTaps, filterSize);
+	//	makeMinPhase<FloatType>(pFilterTaps, filterSize);
+		//return makeMinPhase2<FloatType>(pFilterTaps, filterSize);
 	}
-	*/
-
+	
 	return filterTaps;
 }
 
