@@ -193,8 +193,12 @@ std::vector<Fraction> getPresetFractions(Fraction f, int maxStages) {
 	}; 
 	
 	// hardcoded table of known presets
-	const std::vector<PresetFractionSet> presetList {
+	const std::vector<PresetFractionSet> presetList{
+		{ { 147,40 },{ { 3,2 },{ 7,4 },{ 7,5 } } },
+		{{147,80},{{3,2},{7,5},{7,8}}},
+		{{147,160},{{3,2},{7,8},{7,10}}},
 		{{147,320}, {{3,5}, {7,8}, {7,8}}},
+	//	{ { 147,320 },{ { 147,320 } }},
 		{{147,640 }, {{3,5},{7,8},{7,16}}},
 	};
 	

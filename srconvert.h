@@ -24,29 +24,43 @@ static_assert(std::is_copy_assignable<ConversionInfo>::value, "ConversionInfo ne
 
 template<typename FloatType>
 std::vector<FloatType> makeFilterCoefficients(const ConversionInfo& ci, Fraction fraction) {
-	// determine base filter size
-	int baseFilterSize;
 	int overSamplingFactor = 1;
 	Fraction f = fraction;
-	if ((fraction.numerator != fraction.denominator) && (fraction.numerator <= 4 || fraction.denominator <= 4)) { // simple ratios
-		baseFilterSize = FILTERSIZE_MEDIUM * std::max(fraction.denominator, fraction.numerator) / 2;
-		if (ci.bMinPhase) { // oversample to improve filter performance
-			overSamplingFactor = 8;
-			f.numerator *= overSamplingFactor;
-			f.denominator *= overSamplingFactor;
-		}
+
+	/*
+	if (ci.bMinPhase && (fraction.numerator == 1 || fraction.denominator == 1)) { //oversample to improve filter performance
+		overSamplingFactor = 8;
+		f.numerator *= overSamplingFactor;
+		f.denominator *= overSamplingFactor;
 	}
-	else { // complex ratios
-		baseFilterSize = FILTERSIZE_HUGE * std::max(fraction.denominator, fraction.numerator) / 320;
-	}
+	*/
+
+	//if ((fraction.numerator != fraction.denominator) && (fraction.numerator <= 4 || fraction.denominator <= 4)) { // simple ratios
+	//	baseFilterSize = FILTERSIZE_MEDIUM * std::max(fraction.denominator, fraction.numerator) / 2;
+	//	if (ci.bMinPhase) { // oversample to improve filter performance
+	//		overSamplingFactor = 8;
+	//		f.numerator *= overSamplingFactor;
+	//		f.denominator *= overSamplingFactor;
+	//	}
+	//}
+	//else { // complex ratios
+	//	baseFilterSize = FILTERSIZE_HUGE * std::max(fraction.denominator, fraction.numerator) / 320;
+	//}
 
 	// determine cutoff frequency and steepness
 	double targetNyquist = std::min(ci.inputSampleRate, ci.outputSampleRate) / 2.0;
 	double ft = (ci.lpfCutoff / 100.0) * targetNyquist;
 	double steepness = steepness = 0.090909091 / (ci.lpfTransitionWidth / 100.0);
 
+	/*
 	// scale the filter size, according to selected options:
 	int filterSize = std::min(static_cast<int>(overSamplingFactor * baseFilterSize * steepness), FILTERSIZE_LIMIT)
+		| static_cast<int>(1);	// ensure that filter length is always odd
+
+	*/
+
+	int filterSize = 
+		std::min<int>(FILTERSIZE_BASE * overSamplingFactor * std::max(fraction.denominator, fraction.numerator) * steepness, FILTERSIZE_LIMIT)
 		| static_cast<int>(1);	// ensure that filter length is always odd
 
 	// determine sidelobe attenuation
@@ -62,9 +76,11 @@ std::vector<FloatType> makeFilterCoefficients(const ConversionInfo& ci, Fraction
 	applyKaiserWindow<FloatType>(pFilterTaps, filterSize, calcKaiserBeta(sidelobeAtten));
 
 	// conditionally convert filter coefficients to minimum-phase:
+	/**
 	if (ci.bMinPhase) {
 		makeMinPhase<FloatType>(pFilterTaps, filterSize);
 	}
+	*/
 
 	return filterTaps;
 }
@@ -312,9 +328,9 @@ private:
 			// make the ConvertStage:
 			Fraction f = fractions[i];
 			bool bypassMode = (f.numerator == 1 && f.denominator == 1);
-			int overSamplingFactor = ci.bMinPhase && (f.numerator != f.denominator) && (f.numerator <= 4 || f.denominator <= 4) ? 8 : 1;
+	/*		int overSamplingFactor = ci.bMinPhase && (f.numerator != f.denominator) && (f.numerator <= 4 || f.denominator <= 4) ? 8 : 1;
 			f.numerator *= overSamplingFactor;
-			f.denominator *= overSamplingFactor;
+			f.denominator *= overSamplingFactor;*/
 			convertStages.emplace_back(f.numerator, f.denominator, firFilter, bypassMode);
 			
 			// add Group Delay:
