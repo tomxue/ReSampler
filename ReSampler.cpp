@@ -181,6 +181,7 @@ bool parseParameters(ConversionInfo& ci, bool& bBadParams, int argc, char* argv[
 		return false;
 	}
 
+	// compiler switch:
 	if (findCmdlineOption(argv, argv + argc, "--compiler")) {
 		showCompiler();
 		return false;
@@ -215,9 +216,6 @@ bool parseParameters(ConversionInfo& ci, bool& bBadParams, int argc, char* argv[
 	getCmdlineParam(argv, argv + argc, "-r", ci.outputSampleRate);
 	getCmdlineParam(argv, argv + argc, "-b", ci.outBitFormat);
 
-	// double precision switch:
-	ci.bUseDoublePrecision = findCmdlineOption(argv, argv + argc, "--doubleprecision");
-
 	// gain
 	if (findCmdlineOption(argv, argv + argc, "--gain")) {
 		getCmdlineParam(argv, argv + argc, "--gain", ci.gain);
@@ -225,6 +223,9 @@ bool parseParameters(ConversionInfo& ci, bool& bBadParams, int argc, char* argv[
 	else {
 		ci.gain = 1.0; // default
 	}
+
+	// double precision switch:
+	ci.bUseDoublePrecision = findCmdlineOption(argv, argv + argc, "--doubleprecision");
 
 	// normalize option and parameter:
 	ci.bNormalize = findCmdlineOption(argv, argv + argc, "-n");

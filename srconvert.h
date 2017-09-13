@@ -221,6 +221,7 @@ public:
 	double getGroupDelay() {
 		return groupDelay;
 	}
+
 protected:
 	AbstractResampler(const ConversionInfo& ci) : ci(ci), groupDelay(0.0) {}
 	ConversionInfo ci;
@@ -257,7 +258,6 @@ public:
 	}
 };
 
-
 template <typename FloatType>
 class MultiStageResampler : public AbstractResampler<FloatType>
 {
@@ -290,7 +290,6 @@ private:
 
 	void makeConversionParams() {
 		Fraction masterConversionRatio = getSimplifiedFraction(ci.inputSampleRate, ci.outputSampleRate);
-	//	auto fractions = decomposeFraction(masterConversionRatio, ci.maxStages);
 		auto fractions = getPresetFractions(masterConversionRatio, ci.maxStages);
 		numStages = fractions.size();
 		indexOfLastStage = numStages - 1;

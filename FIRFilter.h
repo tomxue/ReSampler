@@ -713,7 +713,7 @@ void makeMinPhase(FloatType* pFIRcoeffs, size_t length)
 	}
 }
 
-// makeMinPhase() : transform linear-phase FIR filter coefficients into minimum-phase (in-place)
+// makeMinPhase() : take linear-phase FIR filter coefficients, and return a new vector of minimum-phase coefficients
 template<typename FloatType>
 std::vector<FloatType> makeMinPhase2(FloatType* pFIRcoeffs, size_t length)
 {
@@ -776,7 +776,6 @@ std::vector<FloatType> makeMinPhase2(FloatType* pFIRcoeffs, size_t length)
 	return minPhaseCoeffs;
 }
 
-
 ///////////////////////////////////////////////////////////////////////
 // utility functions:
 
@@ -795,7 +794,7 @@ void dumpKaiserWindow(int Length, double Beta) {
 	}
 }
 
-// asserts that the two Kaiser Window formaulas agree with each other (within a specified tolerance)
+// asserts that the two Kaiser Window formulas agree with each other (within a specified tolerance)
 void assertKaiserWindow(int Length, double Beta) {
 
 	const double tolerance = 0.001;

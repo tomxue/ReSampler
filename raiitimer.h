@@ -13,11 +13,17 @@
 #include <iostream>
 #include <chrono>
 
+// class RaiiTimer : starts a high-resolution timer upon construction and prints elapsed time to stdout upon destruction
+// For convenience, a reference time value (in ms) for comparison may be provided using the parameter msComparison.
+
 class RaiiTimer {
 public:
+	
+
     RaiiTimer(double msComparison = 0.0) : msComparison(msComparison) {
         beginTimer = std::chrono::high_resolution_clock::now();    
     }
+
     ~RaiiTimer() {
         endTimer = std::chrono::high_resolution_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTimer - beginTimer).count();
@@ -29,6 +35,7 @@ public:
         } 
         std::cout << std::endl;
     }
+
 private:
     std::chrono::time_point<std::chrono::high_resolution_clock> beginTimer;
     std::chrono::time_point<std::chrono::high_resolution_clock> endTimer;

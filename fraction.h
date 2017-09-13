@@ -70,8 +70,8 @@ std::set<std::vector<int>> getnFactors(int x, int numFactors) {
     std::set<std::vector<int>> results;
     std::vector<int> currentFactors(numFactors,1);
 
-    std::function<void(std::vector<int>, int)> recursivePart =
-    [&results, &currentFactors, &recursivePart](std::vector<int> primeFactors, int numFactors) {
+    std::function<void(std::vector<int>, int)> recursiveFunc =
+    [&results, &currentFactors, &recursiveFunc](std::vector<int> primeFactors, int numFactors) {
         if(numFactors == 1) { // leaf node
             currentFactors[0] = std::accumulate(primeFactors.begin(), primeFactors.end(), 1, std::multiplies<int>());
             std::vector<int> newFactors = currentFactors;
@@ -84,12 +84,12 @@ std::set<std::vector<int>> getnFactors(int x, int numFactors) {
         for(int j = 1; j <= maxFirstItems; j++) {
             currentFactors[numFactors-1] = std::accumulate(primeFactors.begin(), primeFactors.begin() + j, 1, std::multiplies<int>());
             std::vector<int> remainingItems(primeFactors.begin() + j, primeFactors.end());
-            recursivePart(remainingItems, numFactors - 1);
+            recursiveFunc(remainingItems, numFactors - 1);
         }
         return;
-    }; // ends recursivePart
+    }; // ends recursiveFunc
 
-    recursivePart(primes, numFactors);
+    recursiveFunc(primes, numFactors);
 
     return results;
 }
@@ -144,40 +144,33 @@ std::vector<Fraction> decomposeFraction(Fraction f, int maxStages) {
 	return fractions;
 }
 
-//if (maxStages == 3 && f.numerator == 80) {
-//	numerators = { 2, 4, 10 };
-//}
-//else if (maxStages == 3 && f.numerator == 160) {
-//	numerators = { 2, 8, 10 };
-//}
-//else if (maxStages == 3 && f.numerator == 320) {
-//	numerators = { 4, 8, 10 };
-//}
-//else if (maxStages == 3 && f.numerator == 640) {
-//	numerators = { 4, 8, 20 };
-//}
-//else {
-//	numerators = factorize(f.numerator);
-//}
-////
-//if (maxStages == 3 && f.denominator == 80) {
-//	denominators = { 4, 4, 5 };
-//}
-//else if (maxStages == 3 && f.denominator == 160) {
-//	denominators = { 2, 8, 10 }; // still slower than single-stage
-//}
-//else if (maxStages == 3 && f.denominator == 320) {
-//	denominators = { 4, 5, 16 };
-//}
-//else if (maxStages == 3 && f.denominator == 640) {
-//	denominators = { 5, 8, 16 };
-//}
-//else if (maxStages == 3 && f.denominator == 64) {
-//	denominators = { 4, 4, 4 };
-//}
-//else {
-//	denominators = factorize(f.denominator);
-//}
+// getDecompositionCandidates() : returns a vector of groups of fractions, with
+// each group representing a possible decomposition of the input fraction into maxStages stages
+
+std::vector<std::vector<Fraction>> getDecompositionCandidates(Fraction f, int maxStages) {
+
+	auto numeratorGroups = getnFactors(f.numerator, maxStages);
+	auto denominatorGroups = getnFactors(f.denominator, maxStages);
+	std::vector<Fraction> tempFractionGroup(maxStages, Fraction{ 1,1 });
+	std::vector<std::vector<Fraction>> decompositionCandidates; // the return value
+	double minRatio = std::min(1.0, static_cast<double>(f.numerator) / f.denominator);
+
+	for (auto& numeratorGroup : numeratorGroups) {
+		for (auto& denominatorGroup : denominatorGroups) {
+			double ratio = 1.0;
+			for (int stage = 0; stage < maxStages; stage++) {
+				tempFractionGroup.at(stage) = Fraction{ numeratorGroup.at(stage), denominatorGroup.at(stage) };
+				ratio *= static_cast<double>(tempFractionGroup.at(stage).numerator) / tempFractionGroup.at(stage).denominator;
+				if (ratio >= minRatio) {
+					decompositionCandidates.push_back(tempFractionGroup);
+				}
+			}
+		}
+	}
+
+	return decompositionCandidates;
+}
+
 
 std::vector<Fraction> getPresetFractions(Fraction f, int maxStages) {
 

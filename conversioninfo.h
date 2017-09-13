@@ -23,7 +23,8 @@ typedef enum {
 	custom
 } LPFMode;
 
-// structure for holding all the parameters required for a conversion job:
+// struct ConversionInfo : structure for holding all the parameters required for a conversion job
+
 struct ConversionInfo
 {
 	std::string inputFilename;
