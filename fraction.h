@@ -153,7 +153,7 @@ std::vector<std::vector<Fraction>> getDecompositionCandidates(Fraction f, int ma
 	auto denominatorGroups = getnFactors(f.denominator, maxStages);
 	std::vector<Fraction> tempFractionGroup(maxStages, Fraction{ 1,1 });
 	std::vector<std::vector<Fraction>> decompositionCandidates; // the return value
-	double minRatio = std::min(1.0, static_cast<double>(f.numerator) / f.denominator);
+	double minRatio = std::min(1.0, static_cast<double>(f.numerator) / f.denominator); // to be a viable candidate, conversion ratio must be >= this value at all stages
 
 	for (auto& numeratorGroup : numeratorGroups) {
 		for (auto& denominatorGroup : denominatorGroups) {
