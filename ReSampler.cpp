@@ -60,6 +60,18 @@ int main(int argc, char * argv[])
 {
 	ConversionInfo ci;
 
+	/*Fraction x{ 147,640 };
+	auto stuff = getDecompositionCandidates(x, 0);
+	
+	for (auto& m : stuff) {
+		for (auto& n : m) {
+			std::cout << n.numerator << "/" << n.denominator << " , ";
+		}
+		std::cout << std::endl;
+	}
+
+	exit(0);*/
+
 	// result of parseParameters() indicates whether to terminate, and 
 	// badParams indicates whether there was an error:
 	bool badParams = false;

@@ -62,21 +62,20 @@ std::vector<int> factorize(int n) {
 	return factors;
 }
 
-// getnFactors() - factorize a number x into numFactors factors.
-// return a set of vectors representing possible solutions
-std::set<std::vector<int>> getnFactors(int x, int numFactors) {
+// getnFactors() - take a vector of prime factors, and consolidate into
+// a set of vectors of factors (each with size <= maxFactors) representing possible solutions
+std::set<std::vector<int>> getnFactors(std::vector<int> primes, int maxFactors) {
 
-	std::vector<int> primes = factorize(x);
-    std::set<std::vector<int>> results;
-    std::vector<int> currentFactors(numFactors,1);
+    std::set<std::vector<int>> solutions; // the retval
+    std::vector<int> currentFactors(maxFactors,1);
 
     std::function<void(std::vector<int>, int)> recursiveFunc =
-    [&results, &currentFactors, &recursiveFunc](std::vector<int> primeFactors, int numFactors) {
+    [&solutions, &currentFactors, &recursiveFunc](std::vector<int> primeFactors, int numFactors) {
         if(numFactors == 1) { // leaf node
             currentFactors[0] = std::accumulate(primeFactors.begin(), primeFactors.end(), 1, std::multiplies<int>());
             std::vector<int> newFactors = currentFactors;
             std::sort(newFactors.begin(), newFactors.end() , std::less<int>());
-            results.insert(newFactors);
+            solutions.insert(newFactors);
             return;
         }
 
@@ -89,9 +88,16 @@ std::set<std::vector<int>> getnFactors(int x, int numFactors) {
         return;
     }; // ends recursiveFunc
 
-    recursiveFunc(primes, numFactors);
+    recursiveFunc(primes, maxFactors);
 
-    return results;
+    return solutions;
+}
+
+// getnFactors() - factorize a number x into <= maxFactors factors.
+// return a set of vectors representing possible solutions
+std::set<std::vector<int>> getnFactors(int x, int maxFactors) {
+	std::vector<int> primes = factorize(x);
+	return getnFactors(primes, maxFactors);
 }
 
 std::vector<Fraction> decomposeFraction(Fraction f, int maxStages) {
@@ -145,29 +151,50 @@ std::vector<Fraction> decomposeFraction(Fraction f, int maxStages) {
 }
 
 // getDecompositionCandidates() : returns a vector of groups of fractions, with
-// each group representing a possible decomposition of the input fraction into maxStages stages
+// each group representing a possible decomposition of the input fraction into <= maxStages stages
+// may also return an empty set if suitable solution is not possible with given value of maxStages
 
 std::vector<std::vector<Fraction>> getDecompositionCandidates(Fraction f, int maxStages) {
+	auto numeratorPrimes = factorize(f.numerator);
+	auto denominatorPrimes = factorize(f.denominator);
+	int maxPossibleStages = std::max(numeratorPrimes.size(), denominatorPrimes.size()); // determines just how many stages can be formed
+	int numStages = std::max(1, std::min(maxStages, maxPossibleStages)); // determines exactly how many stages we will have 
+	
+	while (numeratorPrimes.size() < numStages) { // pad with 1s at front
+		numeratorPrimes.insert(numeratorPrimes.begin(), numStages - numeratorPrimes.size(), 1);
+	}
 
-	auto numeratorGroups = getnFactors(f.numerator, maxStages);
-	auto denominatorGroups = getnFactors(f.denominator, maxStages);
-	std::vector<Fraction> tempFractionGroup(maxStages, Fraction{ 1,1 });
+	while (denominatorPrimes.size() < numStages) { // pad with 1s at front
+		denominatorPrimes.insert(denominatorPrimes.begin(), numStages - denominatorPrimes.size(), 1);
+	}
+
+	auto numeratorGroups = getnFactors(numeratorPrimes, numStages);
+	auto denominatorGroups = getnFactors(denominatorPrimes, numStages);
+	std::vector<Fraction> tempFractionGroup(numStages, Fraction{ 1,1 });
 	std::vector<std::vector<Fraction>> decompositionCandidates; // the return value
 	double minRatio = std::min(1.0, static_cast<double>(f.numerator) / f.denominator); // to be a viable candidate, conversion ratio must be >= this value at all stages
 
 	for (auto& numeratorGroup : numeratorGroups) {
 		for (auto& denominatorGroup : denominatorGroups) {
 			double ratio = 1.0;
-			for (int stage = 0; stage < maxStages; stage++) {
+			bool badRatio = false;
+
+			for (int stage = 0; stage < numStages; stage++) {
 				tempFractionGroup.at(stage) = Fraction{ numeratorGroup.at(stage), denominatorGroup.at(stage) };
 				ratio *= static_cast<double>(tempFractionGroup.at(stage).numerator) / tempFractionGroup.at(stage).denominator;
-				if (ratio >= minRatio) {
-					decompositionCandidates.push_back(tempFractionGroup);
+				if (ratio < minRatio && stage != numStages - 1) {
+					badRatio = true;
+					break;
 				}
 			}
-		}
-	}
 
+			if (!badRatio) {
+				decompositionCandidates.push_back(tempFractionGroup);	
+			}
+
+		} // ends loop over denominatorGroups
+	} // ends loop over numeratorGroups
+	
 	return decompositionCandidates;
 }
 
