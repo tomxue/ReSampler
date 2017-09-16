@@ -93,62 +93,14 @@ std::set<std::vector<int>> getnFactors(std::vector<int> primes, int maxFactors) 
     return solutions;
 }
 
-// getnFactors() - factorize a number x into <= maxFactors factors.
+// getnFactors() - factorize a number x into maxFactors (or less) factors.
 // return a set of vectors representing possible solutions
 std::set<std::vector<int>> getnFactors(int x, int maxFactors) {
 	std::vector<int> primes = factorize(x);
 	return getnFactors(primes, maxFactors);
 }
 
-std::vector<Fraction> decomposeFraction(Fraction f, int maxStages) {
-	
-	std::vector<Fraction> fractions; // return value
-	if (maxStages <= 1) {
-		fractions.push_back(f);
-		return fractions;
-	}
-		
-	std::vector<int> numerators = factorize(f.numerator);
-	std::vector<int> denominators = factorize(f.denominator);
 
-	int n = std::max(numerators.size(), denominators.size());
-	assert(n <= maxStages);
-
-	// if not enough items, fill numerators with 1's at the end
-	if (numerators.size() < n) {
-	//	numerators.insert(numerators.begin(), n - numerators.size(), 1); // push front
-		numerators.push_back(1);
-	}
-
-	// if not enough items, file denominators with 1's at the end
-	if (denominators.size() < n) {
-		//denominators.insert(denominators.begin(), n - denominators.size(), 1); // push front
-		denominators.push_back(1);
-	}
-
-	assert(numerators.size() == denominators.size());
-
-	// if too many items, consolidate into maxStages items - to-do: algorithm is very crude and produces suboptimal results - fix !
-	while (numerators.size() > maxStages) {
-		numerators[maxStages - 1] *= numerators.back();
-		numerators.pop_back();
-	}
-	while (denominators.size() > maxStages) {
-		denominators[maxStages - 1] *= denominators.back();
-		denominators.pop_back();
-	}
-
-	// pack numerators and denominators into vector of fractions
-	
-	for (int i = 0; i < n; i++) {
-		Fraction f;
-		f.numerator = numerators[i];
-		f.denominator = denominators[i];
-		fractions.push_back(f);
-	}
-
-	return fractions;
-}
 
 // getDecompositionCandidates() : returns a vector of groups of fractions, with
 // each group representing a possible decomposition of the input fraction into <= maxStages stages
@@ -198,6 +150,18 @@ std::vector<std::vector<Fraction>> getDecompositionCandidates(Fraction f, int ma
 	return decompositionCandidates;
 }
 
+std::vector<Fraction> decomposeFraction(Fraction f, int maxStages) {
+
+	std::vector<Fraction> fractions; // return value
+	if (maxStages <= 1) {
+		fractions.push_back(f);
+		return fractions;
+	}
+
+	// select best solution
+	std::vector<std::vector<Fraction>> solutions = getDecompositionCandidates(f, maxStages);
+	return *solutions.rbegin();
+}
 
 std::vector<Fraction> getPresetFractions(Fraction f, int maxStages) {
 
