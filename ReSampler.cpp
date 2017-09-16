@@ -60,19 +60,28 @@ int main(int argc, char * argv[])
 {
 	ConversionInfo ci;
 
-	/*
-	//Fraction x{ 147, 320 };
-	Fraction x = getFractionFromSamplerates(96000, 44100);
-	auto stuff = getDecompositionCandidates(x, 3);
 	
-	for (auto& m : stuff) {
+	//Fraction x{ 147, 320 };
+	/*
+	int maxStages = 4;
+	std::cout << "candidates:\n";
+	Fraction x = getFractionFromSamplerates(2822400, 96000);
+	auto solutions = getDecompositionCandidates(x, maxStages);
+	
+	for (auto& m : solutions) {
 		for (auto& n : m) {
 			std::cout << n.numerator << "/" << n.denominator << " , ";
 		}
-		std::cout << std::endl;
+		std::cout << "\n";
 	}
 
-	exit(0);
+	auto best = decomposeFraction(x, maxStages);
+	std::cout << "\nbest:\n";
+	for (auto& fr : best) {
+		std::cout << fr.numerator << "/" << fr.denominator << " , ";
+	}
+	std::cout << std::endl;
+	//exit(0);
 	*/
 
 	// result of parseParameters() indicates whether to terminate, and 

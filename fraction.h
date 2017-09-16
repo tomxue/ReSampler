@@ -158,9 +158,18 @@ std::vector<Fraction> decomposeFraction(Fraction f, int maxStages) {
 		return fractions;
 	}
 
-	// select best solution
-	std::vector<std::vector<Fraction>> solutions = getDecompositionCandidates(f, maxStages);
-	return *solutions.rbegin();
+	std::vector<std::vector<Fraction>> solutions;
+
+	// large values of maxStages may not produce a solution. 
+	// Therefore, keep decreasing maxStages until solution is obtained
+	// (solution is guaranteed for maxStages <= 1)
+
+	do { 
+		solutions = getDecompositionCandidates(f, maxStages);
+		maxStages--;
+	} while (solutions.empty() && maxStages > 0);
+		
+	return *solutions.rbegin(); // last is best
 }
 
 std::vector<Fraction> getPresetFractions(Fraction f, int maxStages) {
@@ -178,11 +187,14 @@ std::vector<Fraction> getPresetFractions(Fraction f, int maxStages) {
 	
 	// hardcoded table of known presets
 	const std::vector<PresetFractionSet> presetList{
+		{{5,147},{{1,3},{1,7},{5,7}}},
+	//	{ { 5,147 },{ { 1,7 },{5,21} } },
+		{{1,64},{{1,64}}},
+	//	{ { 1,64 },{ { 1,4 },{1,4 },{1,4 }}},
 		{ { 147,40 },{ { 3,2 },{ 7,4 },{ 7,5 } } },
 		{{147,80},{{3,2},{7,5},{7,8}}},
 		{{147,160},{{3,2},{7,8},{7,10}}},
 		{{147,320}, {{3,5}, {7,8}, {7,8}}},
-	//	{ { 147,320 },{ { 147,320 } }},
 		{{147,640 }, {{3,5},{7,8},{7,16}}},
 	};
 	
