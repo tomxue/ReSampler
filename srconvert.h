@@ -238,7 +238,7 @@ class SingleStageResampler : public AbstractResampler<FloatType>
 
 public:
 	SingleStageResampler(const ConversionInfo& ci) : AbstractResampler<FloatType>(ci) {
-		Fraction f = getSimplifiedFraction(ci.inputSampleRate, ci.outputSampleRate);
+		Fraction f = getFractionFromSamplerates(ci.inputSampleRate, ci.outputSampleRate);
 		std::vector<FloatType> filterTaps = makeFilterCoefficients<FloatType>(ci, f);
 		bool bypassMode = (f.numerator == 1 && f.denominator == 1);
 
@@ -289,7 +289,7 @@ private:
 	std::vector<std::vector<FloatType>> intermediateOutputBuffers;	// intermediate output buffer for each ConvertStage;
 
 	void makeConversionParams() {
-		Fraction masterConversionRatio = getSimplifiedFraction(ci.inputSampleRate, ci.outputSampleRate);
+		Fraction masterConversionRatio = getFractionFromSamplerates(ci.inputSampleRate, ci.outputSampleRate);
 		auto fractions = getPresetFractions(masterConversionRatio, ci.maxStages);
 		numStages = fractions.size();
 		indexOfLastStage = numStages - 1;

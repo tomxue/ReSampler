@@ -34,13 +34,13 @@ int gcd(int a, int b) {
 	return a;
 }
 
-//  getSimplifiedFraction() - reduces a fraction to its simplest form:
+//  getFractionFromSamplerates() - reduces an input and output sample rate to a simplified faction
 // eg: 96000, 44100 => 147 / 320
-Fraction getSimplifiedFraction(int numerator, int denominator) 
+Fraction getFractionFromSamplerates(int inputRate, int outputRate) 
 {
 	Fraction f;
-	f.numerator = (denominator / gcd(numerator, denominator));		// L (eg 160)
-	f.denominator = (numerator / gcd(numerator, denominator));		// M (eg 147)
+	f.numerator = (outputRate / gcd(inputRate, outputRate));		// L (eg 147)
+	f.denominator = (inputRate / gcd(inputRate, outputRate));		// M (eg 320)
 	return f;
 }
 

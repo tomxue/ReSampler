@@ -60,8 +60,10 @@ int main(int argc, char * argv[])
 {
 	ConversionInfo ci;
 
-	/*Fraction x{ 147,640 };
-	auto stuff = getDecompositionCandidates(x, 0);
+	/*
+	//Fraction x{ 147, 320 };
+	Fraction x = getFractionFromSamplerates(96000, 44100);
+	auto stuff = getDecompositionCandidates(x, 3);
 	
 	for (auto& m : stuff) {
 		for (auto& n : m) {
@@ -70,7 +72,8 @@ int main(int argc, char * argv[])
 		std::cout << std::endl;
 	}
 
-	exit(0);*/
+	exit(0);
+	*/
 
 	// result of parseParameters() indicates whether to terminate, and 
 	// badParams indicates whether there was an error:
@@ -630,7 +633,7 @@ bool convert(ConversionInfo& ci, bool peakDetection)
 	double inputDuration = 1000.0 * infile.frames() / ci.inputSampleRate; // ms
 
 	// determine conversion ratio:
-	Fraction fraction = getSimplifiedFraction(ci.inputSampleRate, ci.outputSampleRate);
+	Fraction fraction = getFractionFromSamplerates(ci.inputSampleRate, ci.outputSampleRate);
 
 	// set buffer sizes:
 	size_t inputChannelBufferSize = BUFFERSIZE;
