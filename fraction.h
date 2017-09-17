@@ -100,8 +100,6 @@ std::set<std::vector<int>> getnFactors(int x, int maxFactors) {
 	return getnFactors(primes, maxFactors);
 }
 
-
-
 // getDecompositionCandidates() : returns a vector of groups of fractions, with
 // each group representing a possible decomposition of the input fraction into <= maxStages stages
 // may also return an empty set if suitable solution is not possible with given value of maxStages
