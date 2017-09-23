@@ -13,6 +13,7 @@
 #include <vector>
 #include <set>
 #include <numeric>
+#include <iostream>
 
 // fraction.h
 // defines Fraction type, and functions for obtaining gcd, simplified fractions, and prime factors of integers
@@ -207,5 +208,36 @@ std::vector<Fraction> getPresetFractions(Fraction f, int maxStages) {
 	return decomposeFraction(f, maxStages); // decompose algorithmically
 }
 
+// utility functions:
+void dumpFractionList(std::vector<Fraction> fractions) {
+	for(auto fractionIt = fractions.begin(); fractionIt != fractions.end(); fractionIt++) {
+		std::cout << fractionIt->numerator << "/" << fractionIt->denominator;
+		if (fractionIt != std::prev(fractions.end())) {
+			std::cout << " , ";
+		}
+	}
+	std::cout << "\n";
+}
+
+void dumpDecompositionCandidates(std::vector<std::vector<Fraction>> candidates) {
+	for (std::vector<Fraction>& candidate : candidates) {
+		dumpFractionList(candidate);
+		std::cout << "\n";
+	}
+}
+
+// test functions:
+void testDecomposition(int numStages) {
+	std::vector<int> fieldWidths{ 8,8,10,10,10 };
+	for (int i : {8000, 11025, 16000, 22050, 32000, 37800, 44056, 44100, 47250, 48000, 50000, 50400, 88200, 96000, 176400, 192000, 352800, 384000, 2822400, 5644800}) {
+		for (int o : {8000, 11025, 16000, 22050, 32000, 37800, 44056, 44100, 47250, 48000, 50000, 50400, 88200, 96000, 176400, 192000, 352800, 384000, 2822400, 5644800}) {
+			Fraction f = getFractionFromSamplerates(i, o);
+			std::cout << "Input Rate: " << i << " Output Rate: " << o << " Fraction: " << f.numerator << "/" << f.denominator << "\n";
+			dumpFractionList(decomposeFraction(f, numStages));
+			std::cout << "\n";
+		}
+	}
+	std::cout << std::endl;
+};
 
 #endif // FRACTION_H

@@ -59,30 +59,14 @@ unsigned int fp_control_state = _controlfp(_EM_INEXACT, _MCW_EM);
 int main(int argc, char * argv[])
 {
 	ConversionInfo ci;
-
 	
-	//Fraction x{ 147, 320 };
 	/*
-	int maxStages = 4;
-	std::cout << "candidates:\n";
-	Fraction x = getFractionFromSamplerates(2822400, 96000);
-	auto solutions = getDecompositionCandidates(x, maxStages);
-	
-	for (auto& m : solutions) {
-		for (auto& n : m) {
-			std::cout << n.numerator << "/" << n.denominator << " , ";
-		}
-		std::cout << "\n";
-	}
-
-	auto best = decomposeFraction(x, maxStages);
-	std::cout << "\nbest:\n";
-	for (auto& fr : best) {
-		std::cout << fr.numerator << "/" << fr.denominator << " , ";
-	}
-	std::cout << std::endl;
-	//exit(0);
+	testDecomposition(3);
+	exit(0);
 	*/
+
+
+	//
 
 	// result of parseParameters() indicates whether to terminate, and 
 	// badParams indicates whether there was an error:
