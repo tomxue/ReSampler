@@ -228,7 +228,6 @@ void dumpDecompositionCandidates(std::vector<std::vector<Fraction>> candidates) 
 
 // test functions:
 void testDecomposition(int numStages) {
-	std::vector<int> fieldWidths{ 8,8,10,10,10 };
 	for (int i : {8000, 11025, 16000, 22050, 32000, 37800, 44056, 44100, 47250, 48000, 50000, 50400, 88200, 96000, 176400, 192000, 352800, 384000, 2822400, 5644800}) {
 		for (int o : {8000, 11025, 16000, 22050, 32000, 37800, 44056, 44100, 47250, 48000, 50000, 50400, 88200, 96000, 176400, 192000, 352800, 384000, 2822400, 5644800}) {
 			Fraction f = getFractionFromSamplerates(i, o);
@@ -238,6 +237,6 @@ void testDecomposition(int numStages) {
 		}
 	}
 	std::cout << std::endl;
-};
+}
 
 #endif // FRACTION_H
