@@ -200,9 +200,6 @@ std::vector<Fraction> getPresetFractions(Fraction f, int maxStages) {
 	// hardcoded table of known presets
 	const std::vector<PresetFractionSet> presetList{
 		{{5,147},{{1,3},{1,7},{5,7}}},
-	//	{ { 5,147 },{ { 1,7 },{5,21} } },
-	//	{{1,64},{{1,64}}},
-	//	{ { 1,64 },{ { 1,4 },{1,4 },{1,4 }}},
 		{ { 147,40 },{ { 3,2 },{ 7,4 },{ 7,5 } } },
 	//	{{147,80},{{3,2},{7,5},{7,8}}}, // to-do: crash  (vector subscript out of range) !!! why ???
 		{{147,80},{{147,80}}},
@@ -269,7 +266,6 @@ void testDecomposition(int numStages, bool unique = true) {
 		std::set<Result, Cmp> u(decompositionList.begin(), decompositionList.end()); // sort & de-dupe
 		decompositionList.assign(u.begin(), u.end()); // convert back to vector again
 	}
-
 
 	for(auto& d : decompositionList) {
 		double r = static_cast<double>(d.fraction.numerator) / d.fraction.denominator;
