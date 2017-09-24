@@ -227,16 +227,47 @@ void dumpDecompositionCandidates(std::vector<std::vector<Fraction>> candidates) 
 }
 
 // test functions:
-void testDecomposition(int numStages) {
+void testDecomposition(int numStages, bool unique = true) {
 	std::vector<int> rates{8000, 11025, 16000, 22050, 32000, 37800, 44056, 44100, 47250, 48000, 50000, 50400, 88200, 96000, 176400, 192000, 352800, 384000, 2822400, 5644800};
+	struct Decomposition {
+		int inputRate;
+		int outputRate;
+		Fraction fraction;
+		std::vector<Fraction> fractionList;
+	};
+
+	std::vector<Decomposition> decompositionList; 
 	for (int i : rates) {
 		for (int o : rates) {
-			Fraction f = getFractionFromSamplerates(i, o);
-			std::cout << "Input Rate: " << i << " Output Rate: " << o << " Fraction: " << f.numerator << "/" << f.denominator << "\n";
-			dumpFractionList(decomposeFraction(f, numStages));
-			std::cout << "\n";
+			Decomposition d;
+			d.inputRate = i;
+			d.outputRate = o;
+			d.fraction = getFractionFromSamplerates(i, o);
+			d.fractionList = decomposeFraction(d.fraction, numStages);
+			decompositionList.push_back(d);
 		}
 	}
+
+	if (unique) {
+		struct Cmp {
+			bool operator()(const Decomposition& lhs, const Decomposition& rhs) const {
+				double r1 = static_cast<double>(lhs.fraction.numerator) / lhs.fraction.denominator;
+				double r2 = static_cast<double>(rhs.fraction.numerator) / rhs.fraction.denominator; 
+				return r1 < r2; 
+			}
+		};
+
+		std::set<Decomposition, Cmp> u(decompositionList.begin(), decompositionList.end());
+		decompositionList.assign(u.begin(), u.end());
+	}
+
+
+	for(auto& d : decompositionList) {
+		std::cout << "Input Rate: " << d.inputRate << " Output Rate: " << d.outputRate << " Fraction: " << d.fraction.numerator << "/" << d.fraction.denominator << "\n";
+		dumpFractionList(d.fractionList);
+		std::cout << "\n";
+	}
+
 	std::cout << std::endl;
 }
 
