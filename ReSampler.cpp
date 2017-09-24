@@ -59,7 +59,8 @@ unsigned int fp_control_state = _controlfp(_EM_INEXACT, _MCW_EM);
 int main(int argc, char * argv[])
 {
 	ConversionInfo ci;
-	/*	
+	
+	/*
 	testDecomposition(3);
 	exit(0);
 	*/

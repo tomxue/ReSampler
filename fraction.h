@@ -216,7 +216,6 @@ void dumpFractionList(std::vector<Fraction> fractions) {
 			std::cout << " , ";
 		}
 	}
-	std::cout << "\n";
 }
 
 void dumpDecompositionCandidates(std::vector<std::vector<Fraction>> candidates) {
@@ -229,19 +228,15 @@ void dumpDecompositionCandidates(std::vector<std::vector<Fraction>> candidates) 
 // test functions:
 void testDecomposition(int numStages, bool unique = true) {
 	std::vector<int> rates{8000, 11025, 16000, 22050, 32000, 37800, 44056, 44100, 47250, 48000, 50000, 50400, 88200, 96000, 176400, 192000, 352800, 384000, 2822400, 5644800};
-	struct Decomposition {
-		int inputRate;
-		int outputRate;
+	struct Result {
 		Fraction fraction;
 		std::vector<Fraction> fractionList;
 	};
 
-	std::vector<Decomposition> decompositionList; 
+	std::vector<Result> decompositionList; 
 	for (int i : rates) {
 		for (int o : rates) {
-			Decomposition d;
-			d.inputRate = i;
-			d.outputRate = o;
+			Result d;
 			d.fraction = getFractionFromSamplerates(i, o);
 			d.fractionList = decomposeFraction(d.fraction, numStages);
 			decompositionList.push_back(d);
@@ -249,23 +244,24 @@ void testDecomposition(int numStages, bool unique = true) {
 	}
 
 	if (unique) {
-		struct Cmp {
-			bool operator()(const Decomposition& lhs, const Decomposition& rhs) const {
+		struct Cmp { // comparison function object
+			bool operator()(const Result& lhs, const Result& rhs) const {
 				double r1 = static_cast<double>(lhs.fraction.numerator) / lhs.fraction.denominator;
 				double r2 = static_cast<double>(rhs.fraction.numerator) / rhs.fraction.denominator; 
 				return r1 < r2; 
 			}
 		};
 
-		std::set<Decomposition, Cmp> u(decompositionList.begin(), decompositionList.end());
-		decompositionList.assign(u.begin(), u.end());
+		std::set<Result, Cmp> u(decompositionList.begin(), decompositionList.end()); // sort & de-dupe
+		decompositionList.assign(u.begin(), u.end()); // convert back to vector again
 	}
 
 
 	for(auto& d : decompositionList) {
-		std::cout << "Input Rate: " << d.inputRate << " Output Rate: " << d.outputRate << " Fraction: " << d.fraction.numerator << "/" << d.fraction.denominator << "\n";
+		double r = static_cast<double>(d.fraction.numerator) / d.fraction.denominator;
+		std::cout << r << " , " << d.fraction.numerator << " , " << d.fraction.denominator << " , " << "\"";
 		dumpFractionList(d.fractionList);
-		std::cout << "\n";
+		std::cout << "\"\n";
 	}
 
 	std::cout << std::endl;
