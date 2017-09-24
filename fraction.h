@@ -18,6 +18,11 @@
 // fraction.h
 // defines Fraction type, and functions for obtaining gcd, simplified fractions, and prime factors of integers
 
+// single-stage policies
+static const bool singleStageOnDecimateOnly = true;
+static const bool singleStageOnInterpolateOnly = true;
+// ---
+
 struct Fraction {
 	int numerator;
 	int denominator;
@@ -173,11 +178,19 @@ std::vector<Fraction> decomposeFraction(Fraction f, int maxStages) {
 
 std::vector<Fraction> getPresetFractions(Fraction f, int maxStages) {
 
+	// apply single-stage policies:
 	if (maxStages <= 1) {
-		std::vector<Fraction> fractions;
-		fractions.push_back(f);
-		return fractions;
+		return std::vector<Fraction> {f}; // single-stage conversion
 	}
+	
+	if (f.numerator == 1 && singleStageOnDecimateOnly) {
+		return std::vector<Fraction> {f}; // single-stage conversion
+	}
+	
+	if (f.denominator == 1 && singleStageOnInterpolateOnly) {
+		return std::vector<Fraction> {f}; // single-stage conversion
+	}
+	// ---
 
 	struct PresetFractionSet {
 		Fraction master;
@@ -188,10 +201,11 @@ std::vector<Fraction> getPresetFractions(Fraction f, int maxStages) {
 	const std::vector<PresetFractionSet> presetList{
 		{{5,147},{{1,3},{1,7},{5,7}}},
 	//	{ { 5,147 },{ { 1,7 },{5,21} } },
-		{{1,64},{{1,64}}},
+	//	{{1,64},{{1,64}}},
 	//	{ { 1,64 },{ { 1,4 },{1,4 },{1,4 }}},
 		{ { 147,40 },{ { 3,2 },{ 7,4 },{ 7,5 } } },
-		{{147,80},{{3,2},{7,5},{7,8}}},
+	//	{{147,80},{{3,2},{7,5},{7,8}}}, // to-do: crash  (vector subscript out of range) !!! why ???
+		{{147,80},{{147,80}}},
 		{{147,160},{{3,2},{7,8},{7,10}}},
 		{{147,320}, {{3,5}, {7,8}, {7,8}}},
 		{{147,640 }, {{3,5},{7,8},{7,16}}},
