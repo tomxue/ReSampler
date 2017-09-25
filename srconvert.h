@@ -295,7 +295,7 @@ private:
 		indexOfLastStage = numStages - 1;
 		int inputRate = ci.inputSampleRate;
 		double guarantee = inputRate / 2.0; // no content above this frequency
-		double ft = ci.lpfCutoff/100 * ci.outputSampleRate / 2.0;
+		double ft = ci.lpfCutoff/100 * std::min(ci.inputSampleRate, ci.outputSampleRate) / 2.0;
 		
 		for (int i = 0; i < numStages; i++) {
 			ConversionInfo newCi = ci;
@@ -303,13 +303,8 @@ private:
 			newCi.outputSampleRate = inputRate * fractions[i].numerator / fractions[i].denominator;
 			decltype(newCi.inputSampleRate) minSampleRate = std::min(newCi.inputSampleRate, newCi.outputSampleRate);
 			double stopFreq = std::max(minSampleRate / 2.0, minSampleRate - guarantee);
-			//
 			assert (stopFreq > ft);
 			newCi.lpfTransitionWidth = 100.0 * (stopFreq - ft) / (newCi.outputSampleRate * 0.5);
-			//double widthScaling = newTransitionWidth / ci.lpfTransitionWidth;
-			//
-			//double widthAdjust = ((stopFreq - ft) / (minSampleRate / 2.0 - ft));
-			//newCi.lpfTransitionWidth *= widthAdjust;
 			assert(newCi.lpfTransitionWidth >= 0.0);
 			guarantee = std::min(guarantee, stopFreq);
 
