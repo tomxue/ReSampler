@@ -20,7 +20,7 @@
 
 // single-stage policies
 static const bool singleStageOnDecimateOnly = true;
-static const bool singleStageOnInterpolateOnly = true;
+static const bool singleStageOnInterpolateOnly = false;
 // ---
 
 struct Fraction {
