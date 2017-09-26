@@ -61,6 +61,13 @@ int main(int argc, char * argv[])
 	ConversionInfo ci;
 	
 	/*
+	dumpDecompositionCandidates(
+		getDecompositionCandidates(getFractionFromSamplerates(48000, 176400), 3));
+
+	exit(0);
+	*/
+
+	/*
 	testDecomposition(3);
 	exit(0);
 	*/
