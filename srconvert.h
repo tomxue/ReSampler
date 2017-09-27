@@ -24,10 +24,9 @@ static_assert(std::is_copy_assignable<ConversionInfo>::value, "ConversionInfo ne
 
 template<typename FloatType>
 std::vector<FloatType> makeFilterCoefficients(const ConversionInfo& ci, Fraction fraction) {
-	int overSamplingFactor = 1;
+	int overSamplingFactor =  1;
 	Fraction f = fraction;
 
-	
 	//if (ci.bMinPhase && (fraction.numerator <= 5 || fraction.denominator <= 5)) { //oversample to improve filter performance
 	//	overSamplingFactor = 8;
 	//	f.numerator *= overSamplingFactor;
@@ -38,9 +37,9 @@ std::vector<FloatType> makeFilterCoefficients(const ConversionInfo& ci, Fraction
 	//if ((fraction.numerator != fraction.denominator) && (fraction.numerator <= 4 || fraction.denominator <= 4)) { // simple ratios
 	//	baseFilterSize = FILTERSIZE_MEDIUM * std::max(fraction.denominator, fraction.numerator) / 2;
 	//	if (ci.bMinPhase) { // oversample to improve filter performance
-	//		overSamplingFactor = 8;
-	//		f.numerator *= overSamplingFactor;
-	//		f.denominator *= overSamplingFactor;
+		//	overSamplingFactor = 8;
+		//	f.numerator *= overSamplingFactor;
+		//	f.denominator *= overSamplingFactor;
 	//	}
 	//}
 	//else { // complex ratios
@@ -78,7 +77,7 @@ std::vector<FloatType> makeFilterCoefficients(const ConversionInfo& ci, Fraction
 	// conditionally convert filter coefficients to minimum-phase:
 	
 	if (ci.bMinPhase) {
-	//	makeMinPhase<FloatType>(pFilterTaps, filterSize);
+		makeMinPhase<FloatType>(pFilterTaps, filterSize);
 		//return makeMinPhase2<FloatType>(pFilterTaps, filterSize);
 	}
 	
@@ -328,9 +327,11 @@ private:
 			// make the ConvertStage:
 			Fraction f = fractions[i];
 			bool bypassMode = (f.numerator == 1 && f.denominator == 1);
-	/*		int overSamplingFactor = ci.bMinPhase && (f.numerator != f.denominator) && (f.numerator <= 4 || f.denominator <= 4) ? 8 : 1;
-			f.numerator *= overSamplingFactor;
-			f.denominator *= overSamplingFactor;*/
+			//
+			//int overSamplingFactor = ci.bMinPhase && (f.numerator != f.denominator) && (f.numerator <= 4 || f.denominator <= 4) ? 8 : 1;
+			//f.numerator *= overSamplingFactor;
+			//f.denominator *= overSamplingFactor;
+			//
 			convertStages.emplace_back(f.numerator, f.denominator, firFilter, bypassMode);
 			
 			// add Group Delay:
