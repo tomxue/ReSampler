@@ -70,6 +70,7 @@ int main(int argc, char * argv[])
 	if (!parseParameters(ci, badParams, argc, argv))
 		exit(badParams ? EXIT_FAILURE : EXIT_SUCCESS);
 
+	std::cout << "\n";
 	if (!showBuildVersion())
 		exit(EXIT_FAILURE); // can't continue (CPU / build mismatch)
 
@@ -801,7 +802,7 @@ bool convert(ConversionInfo& ci, bool peakDetection)
 		} 
 
 		int groupDelay = converters[0].getGroupDelay();
-		std::cout << "expected group delay " << groupDelay << std::endl;
+		//std::cout << "expected group delay " << groupDelay << std::endl;
 
 		try { // Open output file:
 
@@ -1001,6 +1002,7 @@ bool getMetaData(MetaData& metadata, SndfileHandle& infile) {
 		}
 		std::cout << "Input file contains a cart chunk" << std::endl;
 	}
+
 	return true;
 }
 
