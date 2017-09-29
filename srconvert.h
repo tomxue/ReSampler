@@ -286,6 +286,7 @@ private:
 	int numStages;
 	int indexOfLastStage;
 	std::vector<std::vector<FloatType>> intermediateOutputBuffers;	// intermediate output buffer for each ConvertStage;
+	std::vector<std::string> stageCommandLines;
 
 	void makeConversionParams() {
 		Fraction masterConversionRatio = getFractionFromSamplerates(ci.inputSampleRate, ci.outputSampleRate);
@@ -294,6 +295,7 @@ private:
 		indexOfLastStage = numStages - 1;
 		int inputRate = ci.inputSampleRate;
 		double guarantee = inputRate / 2.0; // no content above this frequency
+		std::string stageInputName(ci.inputFilename);
 		double ft = ci.lpfCutoff/100 * std::min(ci.inputSampleRate, ci.outputSampleRate) / 2.0;
 		
 		for (int i = 0; i < numStages; i++) {
@@ -302,6 +304,7 @@ private:
 			newCi.outputSampleRate = inputRate * fractions[i].numerator / fractions[i].denominator;
 			decltype(newCi.inputSampleRate) minSampleRate = std::min(newCi.inputSampleRate, newCi.outputSampleRate);
 			double stopFreq = std::max(minSampleRate / 2.0, minSampleRate - guarantee);
+			
 			assert (stopFreq > ft);
 			newCi.lpfTransitionWidth = 100.0 * (stopFreq - ft) / (newCi.outputSampleRate * 0.5);
 			assert(newCi.lpfTransitionWidth >= 0.0);
@@ -322,6 +325,24 @@ private:
 				std::cout << "transition width: " << newCi.lpfTransitionWidth << " %\n";
 				std::cout << "guarantee: " << guarantee << "\n";
 				std::cout << "Generated Filter Size: " << filterTaps.size() << "\n";
+				
+				newCi.maxStages = 1;
+				newCi.lpfMode = custom;
+				newCi.inputFilename = stageInputName;
+					 
+				if (i != numStages - 1) {
+					size_t lastDotPos = newCi.outputFilename.find_last_of(".");
+					if (lastDotPos != std::string::npos) {
+						std::string pathWithoutExt = newCi.outputFilename.substr(0, lastDotPos);
+						std::string ext = newCi.outputFilename.substr(lastDotPos);
+						newCi.outputFilename = pathWithoutExt + "-stage" + std::to_string(i + 1) + ext;
+					}
+					else {
+						newCi.outputFilename += "-stage" + std::to_string(i + 1);
+					}
+					stageInputName = newCi.outputFilename;
+				}
+				stageCommandLines.emplace_back(appName + " " + newCi.toCmdLineArgs());
 			}
 			
 			// make the ConvertStage:
@@ -360,9 +381,17 @@ private:
 			}
 			
 			// set input rate of next stage
-			inputRate = newCi.outputSampleRate; 
+			inputRate = newCi.outputSampleRate;
+		} // ends loop over i
+
+		if (ci.bShowStages) {
+			std::cout << "# Command lines to do this conversion in discreet steps:\n";
+			for (auto& cmdline : stageCommandLines) {
+				std::cout << cmdline << "\n";
+			}
+			std::cout << std::endl;
 		}
-	}
+	} // makeConversionParams()
 };
 
 

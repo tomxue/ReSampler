@@ -90,6 +90,18 @@ inline std::string ConversionInfo::toCmdLineArgs() {
 	if(bMinPhase)
 		args.push_back("--minphase");
 
+	if (lpfMode == custom) {
+		args.push_back("--lpf-cutoff");
+		args.push_back(std::to_string(lpfCutoff));
+		args.push_back("--lpf-transition");
+		args.push_back(std::to_string(lpfTransitionWidth));
+	}
+
+	if (maxStages == 1) {
+		args.push_back("--maxStages");
+		args.push_back(std::to_string(maxStages));
+	}
+
 	for(auto it = args.begin(); it != args.end(); it++) {
 		result.append(*it);
 		if(it != std::prev(args.end()))

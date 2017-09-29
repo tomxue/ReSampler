@@ -56,10 +56,15 @@ unsigned int fp_control_state = _controlfp(_EM_INEXACT, _MCW_EM);
 //                                                                                    //
 ////////////////////////////////////////////////////////////////////////////////////////
 
+
+static std::string appName;
+
 int main(int argc, char * argv[])
 {
 	ConversionInfo ci;
 	
+	appName = argv[0];
+
 	/*
 	dumpDecompositionCandidates(
 		getDecompositionCandidates(getFractionFromSamplerates(48000, 176400), 3));
