@@ -14,6 +14,7 @@
 // defines the ConversionInfo struct,
 // for holding conversion parameters.
 
+#include <vector>
 #include <string>
 
 typedef enum {
@@ -62,7 +63,42 @@ struct ConversionInfo
 	bool bWriteMetaData;
 	int maxStages;
 	bool bShowStages;
+
+	std::string toCmdLineArgs();
 };
+
+
+inline std::string ConversionInfo::toCmdLineArgs() {
+	std::vector<std::string> args;
+	std::string result;
+
+	args.push_back("-i");
+	args.push_back(inputFilename);
+	args.push_back("-o");
+	args.push_back(outputFilename);
+	args.push_back("-r");
+	args.push_back(std::to_string(outputSampleRate));
+
+	if(bUseDoublePrecision)
+		args.push_back("--doubleprecision");
+
+	if(bNormalize) {
+		args.push_back("-n");
+		args.push_back(std::to_string(normalizeAmount));
+	}
+
+	if(bMinPhase)
+		args.push_back("--minphase");
+
+	for(auto it = args.begin(); it != args.end(); it++) {
+		result.append(*it);
+		if(it != std::prev(args.end()))
+			result.append(" ");
+	}
+
+	return result;
+
+}
 
 #endif // CONVERSIONINFO_H
 
