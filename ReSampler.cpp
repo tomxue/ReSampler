@@ -56,16 +56,21 @@ unsigned int fp_control_state = _controlfp(_EM_INEXACT, _MCW_EM);
 //                                                                                    //
 ////////////////////////////////////////////////////////////////////////////////////////
 
+
 int main(int argc, char * argv[])
 {
-	ConversionInfo ci;
 	
+	ConversionInfo ci;
+	ci.appName = argv[0];
+	ci.overSamplingFactor = 1;
+
 	// result of parseParameters() indicates whether to terminate, and 
 	// badParams indicates whether there was an error:
 	bool badParams = false;
 	if (!parseParameters(ci, badParams, argc, argv))
 		exit(badParams ? EXIT_FAILURE : EXIT_SUCCESS);
 
+	std::cout << "\n";
 	if (!showBuildVersion())
 		exit(EXIT_FAILURE); // can't continue (CPU / build mismatch)
 
@@ -181,6 +186,7 @@ bool parseParameters(ConversionInfo& ci, bool& bBadParams, int argc, char* argv[
 		return false;
 	}
 
+	// compiler switch:
 	if (findCmdlineOption(argv, argv + argc, "--compiler")) {
 		showCompiler();
 		return false;
@@ -215,9 +221,6 @@ bool parseParameters(ConversionInfo& ci, bool& bBadParams, int argc, char* argv[
 	getCmdlineParam(argv, argv + argc, "-r", ci.outputSampleRate);
 	getCmdlineParam(argv, argv + argc, "-b", ci.outBitFormat);
 
-	// double precision switch:
-	ci.bUseDoublePrecision = findCmdlineOption(argv, argv + argc, "--doubleprecision");
-
 	// gain
 	if (findCmdlineOption(argv, argv + argc, "--gain")) {
 		getCmdlineParam(argv, argv + argc, "--gain", ci.gain);
@@ -225,6 +228,9 @@ bool parseParameters(ConversionInfo& ci, bool& bBadParams, int argc, char* argv[
 	else {
 		ci.gain = 1.0; // default
 	}
+
+	// double precision switch:
+	ci.bUseDoublePrecision = findCmdlineOption(argv, argv + argc, "--doubleprecision");
 
 	// normalize option and parameter:
 	ci.bNormalize = findCmdlineOption(argv, argv + argc, "-n");
@@ -614,9 +620,10 @@ bool convert(ConversionInfo& ci, bool peakDetection)
 	int nChannels = infile.channels();
 	ci.inputSampleRate = infile.samplerate();
 	sf_count_t inputSampleCount = infile.frames() * nChannels;
+	double inputDuration = 1000.0 * infile.frames() / ci.inputSampleRate; // ms
 
 	// determine conversion ratio:
-	Fraction fraction = getSimplifiedFraction(ci.inputSampleRate, ci.outputSampleRate);
+	Fraction fraction = getFractionFromSamplerates(ci.inputSampleRate, ci.outputSampleRate);
 
 	// set buffer sizes:
 	size_t inputChannelBufferSize = BUFFERSIZE;
@@ -780,7 +787,7 @@ bool convert(ConversionInfo& ci, bool peakDetection)
 
 	FloatType peakOutputSample;
 	bool bClippingDetected;
-	RaiiTimer timer;
+	RaiiTimer timer(inputDuration);
 
 	do { // clipping detection loop (repeat if clipping detected)
 
@@ -795,7 +802,7 @@ bool convert(ConversionInfo& ci, bool peakDetection)
 		} 
 
 		int groupDelay = converters[0].getGroupDelay();
-		std::cout << "expected group delay " << groupDelay << std::endl;
+		//std::cout << "expected group delay " << groupDelay << std::endl;
 
 		try { // Open output file:
 
@@ -995,6 +1002,7 @@ bool getMetaData(MetaData& metadata, SndfileHandle& infile) {
 		}
 		std::cout << "Input file contains a cart chunk" << std::endl;
 	}
+
 	return true;
 }
 

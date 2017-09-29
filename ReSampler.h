@@ -23,6 +23,7 @@ const std::string strUsage("usage: ReSampler -i <inputfile> [-o <outputfile>] -r
 const std::string strExtraOptions(
 	"--help\n"
 	"--version\n"
+	"--compiler\n"
 	"--sndfile-version\n"
 	"--listsubformats <ext>\n"
 	"--showDitherProfiles\n"
@@ -41,6 +42,8 @@ const std::string strExtraOptions(
 	"--rf64\n"
 	"--noPeakChunk\n"
 	"--noMetadata\n"
+	"--maxStages\n"
+	"--showStages\n"
 );
 const double clippingTrim = 1.0 - (1.0 / (1 << 24));
 

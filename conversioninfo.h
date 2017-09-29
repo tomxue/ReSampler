@@ -14,6 +14,7 @@
 // defines the ConversionInfo struct,
 // for holding conversion parameters.
 
+#include <vector>
 #include <string>
 
 typedef enum {
@@ -23,7 +24,8 @@ typedef enum {
 	custom
 } LPFMode;
 
-// structure for holding all the parameters required for a conversion job:
+// struct ConversionInfo : structure for holding all the parameters required for a conversion job
+
 struct ConversionInfo
 {
 	std::string inputFilename;
@@ -61,7 +63,62 @@ struct ConversionInfo
 	bool bWriteMetaData;
 	int maxStages;
 	bool bShowStages;
+	int overSamplingFactor;
+	std::string appName;
+
+	std::string toCmdLineArgs();
 };
+
+
+inline std::string ConversionInfo::toCmdLineArgs() {
+	std::vector<std::string> args;
+	std::string result;
+
+	args.push_back("-i");
+	args.push_back(inputFilename);
+	args.push_back("-o");
+	args.push_back(outputFilename);
+	args.push_back("-r");
+	args.push_back(std::to_string(outputSampleRate));
+
+	if(bUseDoublePrecision)
+		args.push_back("--doubleprecision");
+
+	if(bNormalize) {
+		args.push_back("-n");
+		args.push_back(std::to_string(normalizeAmount));
+	}
+
+	if(bMinPhase)
+		args.push_back("--minphase");
+
+	if (lpfMode == custom) {
+		args.push_back("--lpf-cutoff");
+		args.push_back(std::to_string(lpfCutoff));
+		args.push_back("--lpf-transition");
+		args.push_back(std::to_string(lpfTransitionWidth));
+	}
+
+	if (maxStages == 1) {
+		args.push_back("--maxStages");
+		args.push_back(std::to_string(maxStages));
+	}
+
+	for(auto it = args.begin(); it != args.end(); it++) {
+		result.append(*it);
+		if(it != std::prev(args.end()))
+			result.append(" ");
+	}
+
+	return result;
+
+}
+
+static_assert(std::is_copy_constructible<ConversionInfo>::value,
+	"ConversionInfo must be copy constructible");
+
+static_assert(std::is_copy_assignable<ConversionInfo>::value,
+	"ConversionInfo must be copy assignable");
 
 #endif // CONVERSIONINFO_H
 
