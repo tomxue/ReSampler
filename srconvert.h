@@ -315,7 +315,7 @@ private:
 					}
 					stageInputName = stageCi.outputFilename;
 				}
-				stageCommandLines.emplace_back(appName + " " + stageCi.toCmdLineArgs());
+				stageCommandLines.emplace_back(stageCi.appName + " " + stageCi.toCmdLineArgs());
 			}
 			
 			// make the ConvertStage:

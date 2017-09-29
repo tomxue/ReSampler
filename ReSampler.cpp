@@ -57,12 +57,11 @@ unsigned int fp_control_state = _controlfp(_EM_INEXACT, _MCW_EM);
 ////////////////////////////////////////////////////////////////////////////////////////
 
 
-static std::string appName;
-
 int main(int argc, char * argv[])
 {
-	appName = argv[0];
+	
 	ConversionInfo ci;
+	ci.appName = argv[0];
 	ci.overSamplingFactor = 1;
 
 	// result of parseParameters() indicates whether to terminate, and 

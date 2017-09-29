@@ -64,6 +64,7 @@ struct ConversionInfo
 	int maxStages;
 	bool bShowStages;
 	int overSamplingFactor;
+	std::string appName;
 
 	std::string toCmdLineArgs();
 };
@@ -112,6 +113,12 @@ inline std::string ConversionInfo::toCmdLineArgs() {
 	return result;
 
 }
+
+static_assert(std::is_copy_constructible<ConversionInfo>::value,
+	"ConversionInfo must be copy constructible");
+
+static_assert(std::is_copy_assignable<ConversionInfo>::value,
+	"ConversionInfo must be copy assignable");
 
 #endif // CONVERSIONINFO_H
 
