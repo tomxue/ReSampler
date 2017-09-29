@@ -63,6 +63,7 @@ struct ConversionInfo
 	bool bWriteMetaData;
 	int maxStages;
 	bool bShowStages;
+	int overSamplingFactor;
 
 	std::string toCmdLineArgs();
 };

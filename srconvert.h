@@ -24,42 +24,15 @@ static_assert(std::is_copy_assignable<ConversionInfo>::value, "ConversionInfo ne
 
 template<typename FloatType>
 std::vector<FloatType> makeFilterCoefficients(const ConversionInfo& ci, Fraction fraction) {
-	int overSamplingFactor =  1;
-	Fraction f = fraction;
-
-	//if (ci.bMinPhase && (fraction.numerator <= 5 || fraction.denominator <= 5)) { //oversample to improve filter performance
-	//	overSamplingFactor = 8;
-	//	f.numerator *= overSamplingFactor;
-	//	f.denominator *= overSamplingFactor;
-	//}
-	
-
-	//if ((fraction.numerator != fraction.denominator) && (fraction.numerator <= 4 || fraction.denominator <= 4)) { // simple ratios
-	//	baseFilterSize = FILTERSIZE_MEDIUM * std::max(fraction.denominator, fraction.numerator) / 2;
-	//	if (ci.bMinPhase) { // oversample to improve filter performance
-		//	overSamplingFactor = 8;
-		//	f.numerator *= overSamplingFactor;
-		//	f.denominator *= overSamplingFactor;
-	//	}
-	//}
-	//else { // complex ratios
-	//	baseFilterSize = FILTERSIZE_HUGE * std::max(fraction.denominator, fraction.numerator) / 320;
-	//}
 
 	// determine cutoff frequency and steepness
 	double targetNyquist = std::min(ci.inputSampleRate, ci.outputSampleRate) / 2.0;
 	double ft = (ci.lpfCutoff / 100.0) * targetNyquist;
 	double steepness = 0.090909091 / (ci.lpfTransitionWidth / 100.0);
 
-	/*
-	// scale the filter size, according to selected options:
-	int filterSize = std::min(static_cast<int>(overSamplingFactor * baseFilterSize * steepness), FILTERSIZE_LIMIT)
-		| static_cast<int>(1);	// ensure that filter length is always odd
-
-	*/
-
+	// determine filtersize
 	int filterSize = 
-		std::min<int>(FILTERSIZE_BASE * overSamplingFactor * std::max(f.denominator, f.numerator) * steepness, FILTERSIZE_LIMIT)
+		std::min<int>(FILTERSIZE_BASE * ci.overSamplingFactor * std::max(fraction.denominator, fraction.numerator) * steepness, FILTERSIZE_LIMIT)
 		| static_cast<int>(1);	// ensure that filter length is always odd
 
 	// determine sidelobe attenuation
@@ -68,14 +41,13 @@ std::vector<FloatType> makeFilterCoefficients(const ConversionInfo& ci, Fraction
 		160;
 
 	// Make some filter coefficients:
-	int overSampFreq = ci.inputSampleRate * f.numerator;
+	int sampFreq = ci.overSamplingFactor * ci.inputSampleRate * fraction.numerator;
 	std::vector<FloatType> filterTaps(filterSize, 0);
 	FloatType* pFilterTaps = &filterTaps[0];
-	makeLPF<FloatType>(pFilterTaps, filterSize, ft, overSampFreq);
+	makeLPF<FloatType>(pFilterTaps, filterSize, ft, sampFreq);
 	applyKaiserWindow<FloatType>(pFilterTaps, filterSize, calcKaiserBeta(sidelobeAtten));
 
 	// conditionally convert filter coefficients to minimum-phase:
-	
 	if (ci.bMinPhase) {
 		makeMinPhase<FloatType>(pFilterTaps, filterSize);
 		//return makeMinPhase2<FloatType>(pFilterTaps, filterSize);
@@ -266,7 +238,7 @@ class MultiStageResampler : public AbstractResampler<FloatType>
 
 public:
 	MultiStageResampler(const ConversionInfo& ci) : AbstractResampler<FloatType>(ci) {
-		makeConversionParams();
+		calculateConversionParams();
 	}
 
 	void convert(FloatType* outBuffer, size_t& outBufferSize, const FloatType* inBuffer, const size_t& inBufferSize) {
@@ -288,7 +260,7 @@ private:
 	std::vector<std::vector<FloatType>> intermediateOutputBuffers;	// intermediate output buffer for each ConvertStage;
 	std::vector<std::string> stageCommandLines;
 
-	void makeConversionParams() {
+	void calculateConversionParams() {
 		Fraction masterConversionRatio = getFractionFromSamplerates(ci.inputSampleRate, ci.outputSampleRate);
 		auto fractions = getPresetFractions(masterConversionRatio, ci.maxStages);
 		numStages = fractions.size();
@@ -299,60 +271,58 @@ private:
 		double ft = ci.lpfCutoff/100 * std::min(ci.inputSampleRate, ci.outputSampleRate) / 2.0;
 		
 		for (int i = 0; i < numStages; i++) {
-			ConversionInfo newCi = ci;
-			newCi.inputSampleRate = inputRate;
-			newCi.outputSampleRate = inputRate * fractions[i].numerator / fractions[i].denominator;
-			decltype(newCi.inputSampleRate) minSampleRate = std::min(newCi.inputSampleRate, newCi.outputSampleRate);
+			ConversionInfo stageCi = ci;
+			stageCi.overSamplingFactor = stageCi.bMinPhase ? 2 : 1;
+			stageCi.inputSampleRate = inputRate;
+			stageCi.outputSampleRate = inputRate * fractions[i].numerator / fractions[i].denominator;
+			decltype(stageCi.inputSampleRate) minSampleRate = std::min(stageCi.inputSampleRate, stageCi.outputSampleRate);
 			double stopFreq = std::max(minSampleRate / 2.0, minSampleRate - guarantee);
 			
 			assert (stopFreq > ft);
-			newCi.lpfTransitionWidth = 100.0 * (stopFreq - ft) / (newCi.outputSampleRate * 0.5);
-			assert(newCi.lpfTransitionWidth >= 0.0);
+			stageCi.lpfTransitionWidth = 100.0 * (stopFreq - ft) / (stageCi.outputSampleRate * 0.5);
+			assert(stageCi.lpfTransitionWidth >= 0.0);
 			guarantee = std::min(guarantee, stopFreq);
 
 			// make the filter coefficients
-			std::vector<FloatType> filterTaps = makeFilterCoefficients<FloatType>(newCi, fractions[i]);
+			std::vector<FloatType> filterTaps = makeFilterCoefficients<FloatType>(stageCi, fractions[i]);
 
 			// make the filter
 			FIRFilter<FloatType> firFilter(filterTaps.data(), filterTaps.size());
 
 			if (ci.bShowStages) { // dump stage parameters:
 				std::cout << "Stage: " << 1 + i << "\n";
-				std::cout << "inputRate: " << newCi.inputSampleRate << "\n";
-				std::cout << "outputRate: " << newCi.outputSampleRate << "\n";
+				std::cout << "inputRate: " << stageCi.inputSampleRate << "\n";
+				std::cout << "outputRate: " << stageCi.outputSampleRate << "\n";
 				std::cout << "ft: " << ft << "\n";
 				std::cout << "stopFreq: " << stopFreq << "\n";
-				std::cout << "transition width: " << newCi.lpfTransitionWidth << " %\n";
+				std::cout << "transition width: " << stageCi.lpfTransitionWidth << " %\n";
 				std::cout << "guarantee: " << guarantee << "\n";
 				std::cout << "Generated Filter Size: " << filterTaps.size() << "\n";
 				
-				newCi.maxStages = 1;
-				newCi.lpfMode = custom;
-				newCi.inputFilename = stageInputName;
+				stageCi.maxStages = 1;
+				stageCi.lpfMode = custom;
+				stageCi.inputFilename = stageInputName;
 					 
 				if (i != numStages - 1) {
-					size_t lastDotPos = newCi.outputFilename.find_last_of(".");
+					size_t lastDotPos = stageCi.outputFilename.find_last_of(".");
 					if (lastDotPos != std::string::npos) {
-						std::string pathWithoutExt = newCi.outputFilename.substr(0, lastDotPos);
-						std::string ext = newCi.outputFilename.substr(lastDotPos);
-						newCi.outputFilename = pathWithoutExt + "-stage" + std::to_string(i + 1) + ext;
+						std::string pathWithoutExt = stageCi.outputFilename.substr(0, lastDotPos);
+						std::string ext = stageCi.outputFilename.substr(lastDotPos);
+						stageCi.outputFilename = pathWithoutExt + "-stage" + std::to_string(i + 1) + ext;
 					}
 					else {
-						newCi.outputFilename += "-stage" + std::to_string(i + 1);
+						stageCi.outputFilename += "-stage" + std::to_string(i + 1);
 					}
-					stageInputName = newCi.outputFilename;
+					stageInputName = stageCi.outputFilename;
 				}
-				stageCommandLines.emplace_back(appName + " " + newCi.toCmdLineArgs());
+				stageCommandLines.emplace_back(appName + " " + stageCi.toCmdLineArgs());
 			}
 			
 			// make the ConvertStage:
 			Fraction f = fractions[i];
 			bool bypassMode = (f.numerator == 1 && f.denominator == 1);
-			//
-			//int overSamplingFactor = ci.bMinPhase && (f.numerator != f.denominator) && (f.numerator <= 4 || f.denominator <= 4) ? 8 : 1;
-			//f.numerator *= overSamplingFactor;
-			//f.denominator *= overSamplingFactor;
-			//
+			f.numerator *= stageCi.overSamplingFactor;
+			f.denominator *= stageCi.overSamplingFactor;
 			convertStages.emplace_back(f.numerator, f.denominator, firFilter, bypassMode);
 			
 			// add Group Delay:
@@ -377,11 +347,11 @@ private:
 
 			// make output buffer for this stage (last stage doesn't need one)
 			if (i != numStages - 1) {	
-				intermediateOutputBuffers.emplace_back(std::vector<FloatType>(outBufferSize, 0));
+				intermediateOutputBuffers.emplace_back(std::vector<FloatType>(outBufferSize, 0.0));
 			}
 			
 			// set input rate of next stage
-			inputRate = newCi.outputSampleRate;
+			inputRate = stageCi.outputSampleRate;
 		} // ends loop over i
 
 		if (ci.bShowStages) {
@@ -391,8 +361,7 @@ private:
 			}
 			std::cout << std::endl;
 		}
-	} // makeConversionParams()
+	} // calculateConversionParams()
 };
-
 
 #endif // SRCONVERT_H

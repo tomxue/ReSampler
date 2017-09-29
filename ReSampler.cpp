@@ -61,22 +61,9 @@ static std::string appName;
 
 int main(int argc, char * argv[])
 {
-	ConversionInfo ci;
-	
 	appName = argv[0];
-
-	/*
-	dumpDecompositionCandidates(
-		getDecompositionCandidates(getFractionFromSamplerates(48000, 176400), 3));
-
-	exit(0);
-	*/
-
-	/*
-	testDecomposition(3);
-	exit(0);
-	*/
-	//
+	ConversionInfo ci;
+	ci.overSamplingFactor = 1;
 
 	// result of parseParameters() indicates whether to terminate, and 
 	// badParams indicates whether there was an error:
