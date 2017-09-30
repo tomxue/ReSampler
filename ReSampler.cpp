@@ -802,7 +802,7 @@ bool convert(ConversionInfo& ci, bool peakDetection)
 		} 
 
 		int groupDelay = converters[0].getGroupDelay();
-		std::cout << "expected group delay " << groupDelay << std::endl;
+//		std::cout << "expected group delay " << groupDelay << std::endl;
 
 		try { // Open output file:
 
