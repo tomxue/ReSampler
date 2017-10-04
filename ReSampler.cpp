@@ -373,6 +373,9 @@ bool parseParameters(ConversionInfo& ci, bool& bBadParams, int argc, char* argv[
 		ci.maxStages = 3; // default;
 	}
 
+	// single stage:
+	ci.bSingleStage = findCmdlineOption(argv, argv + argc, "--singleStage");
+
 	// showStages option:
 	ci.bShowStages = findCmdlineOption(argv, argv + argc, "--showStages");
 
@@ -800,8 +803,7 @@ bool convert(ConversionInfo& ci)
 		std::unique_ptr<SndfileHandle> outFile;
 
 		// make a vector of Resamplers
-// 		std::vector<SingleStageResampler<FloatType>> converters;
-		std::vector<MultiStageResampler<FloatType>> converters;
+		std::vector<Converter<FloatType>> converters;
 		for (int n = 0; n < nChannels; n++) {
 			converters.emplace_back(ci);
 		} 

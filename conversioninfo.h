@@ -63,6 +63,7 @@ struct ConversionInfo
 	bool bNoPeakChunk;
 	bool bWriteMetaData;
 	int maxStages;
+	bool bSingleStage;
 	bool bShowStages;
 	int overSamplingFactor;
 	std::string appName;
