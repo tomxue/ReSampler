@@ -56,12 +56,12 @@ unsigned int fp_control_state = _controlfp(_EM_INEXACT, _MCW_EM);
 //                                                                                    //
 ////////////////////////////////////////////////////////////////////////////////////////
 
+static std::string appName;
 
 int main(int argc, char * argv[])
 {
-	
+	appName = argv[0];
 	ConversionInfo ci;
-	ci.appName = argv[0];
 	ci.overSamplingFactor = 1;
 
 	// result of parseParameters() indicates whether to terminate, and 
@@ -70,7 +70,6 @@ int main(int argc, char * argv[])
 	if (!parseParameters(ci, badParams, argc, argv))
 		exit(badParams ? EXIT_FAILURE : EXIT_SUCCESS);
 
-	std::cout << "\n";
 	if (!showBuildVersion())
 		exit(EXIT_FAILURE); // can't continue (CPU / build mismatch)
 
@@ -124,24 +123,30 @@ int main(int argc, char * argv[])
 		if (ci.bUseDoublePrecision) {
 			std::cout << "Using double precision for calculations." << std::endl;
 			if (ci.dsfInput) {
-				return convert<DsfFile, double>(ci, /* peakDetection = */ false) ? EXIT_SUCCESS : EXIT_FAILURE;
+				ci.bEnablePeakDetection = false;
+				return convert<DsfFile, double> (ci) ? EXIT_SUCCESS : EXIT_FAILURE;
 			}
 			else if (ci.dffInput) {
-				return convert<DffFile, double>(ci, /* peakDetection = */ false) ? EXIT_SUCCESS : EXIT_FAILURE;
+				ci.bEnablePeakDetection = false;
+				return convert<DffFile, double> (ci) ? EXIT_SUCCESS : EXIT_FAILURE;
 			}
 			else {
-				return convert<SndfileHandle, double>(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
+				ci.bEnablePeakDetection = true;
+				return convert<SndfileHandle, double> (ci) ? EXIT_SUCCESS : EXIT_FAILURE;
 			}
 		}
 		else {
 			if (ci.dsfInput) {
-				return convert<DsfFile, float>(ci, /* peakDetection = */ false) ? EXIT_SUCCESS : EXIT_FAILURE;
+				ci.bEnablePeakDetection = false;
+				return convert<DsfFile, float> (ci) ? EXIT_SUCCESS : EXIT_FAILURE;
 			}
 			else if (ci.dffInput) {
-				return convert<DffFile, float>(ci, /* peakDetection = */ false) ? EXIT_SUCCESS : EXIT_FAILURE;
+				ci.bEnablePeakDetection = false;
+				return convert<DffFile, float> (ci) ? EXIT_SUCCESS : EXIT_FAILURE;
 			}
 			else {
-				return convert<SndfileHandle, float>(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
+				ci.bEnablePeakDetection = true;
+				return convert<SndfileHandle, float> (ci) ? EXIT_SUCCESS : EXIT_FAILURE;
 			}
 		}
 	}
@@ -367,6 +372,9 @@ bool parseParameters(ConversionInfo& ci, bool& bBadParams, int argc, char* argv[
 	} else {
 		ci.maxStages = 3; // default;
 	}
+
+	// single stage:
+	ci.bSingleStage = findCmdlineOption(argv, argv + argc, "--singleStage");
 
 	// showStages option:
 	ci.bShowStages = findCmdlineOption(argv, argv + argc, "--showStages");
@@ -600,7 +608,7 @@ seek(position, whence)
 */
 
 template<typename FileReader, typename FloatType>
-bool convert(ConversionInfo& ci, bool peakDetection)
+bool convert(ConversionInfo& ci)
 {
 	bool multiThreaded = ci.bMultiThreaded;
 
@@ -674,9 +682,9 @@ bool convert(ConversionInfo& ci, bool peakDetection)
 	std::cout << "input sample rate: " << ci.inputSampleRate << "\noutput sample rate: " << ci.outputSampleRate << std::endl;
 
 	sf_count_t samplesRead;
-	sf_count_t totalSamplesRead = 0;
+	sf_count_t totalSamplesRead = 0LL;
 	FloatType peakInputSample;
-	if (peakDetection) {
+	if (ci.bEnablePeakDetection) {
 		peakInputSample = 0.0;
 		std::cout << "Scanning input file for peaks ...";
 
@@ -795,14 +803,13 @@ bool convert(ConversionInfo& ci, bool peakDetection)
 		std::unique_ptr<SndfileHandle> outFile;
 
 		// make a vector of Resamplers
-// 		std::vector<SingleStageResampler<FloatType>> converters;
-		std::vector<MultiStageResampler<FloatType>> converters;
+		std::vector<Converter<FloatType>> converters;
 		for (int n = 0; n < nChannels; n++) {
 			converters.emplace_back(ci);
 		} 
 
 		int groupDelay = converters[0].getGroupDelay();
-		//std::cout << "expected group delay " << groupDelay << std::endl;
+//		std::cout << "expected group delay " << groupDelay << std::endl;
 
 		try { // Open output file:
 
@@ -1002,7 +1009,6 @@ bool getMetaData(MetaData& metadata, SndfileHandle& infile) {
 		}
 		std::cout << "Input file contains a cart chunk" << std::endl;
 	}
-
 	return true;
 }
 

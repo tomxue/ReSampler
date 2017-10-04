@@ -185,37 +185,52 @@ private:
 };
 
 template <typename FloatType>
-class AbstractResampler
+class Converter
 {
 public:
-	virtual void convert(FloatType* outBuffer, size_t& outBufferSize, const FloatType* inBuffer, const size_t& inBufferSize) = 0;
+	Converter(const ConversionInfo& ci) : ci(ci), groupDelay(0.0) {
+		if (ci.bSingleStage) {
+			isMultistage = false;
+			std::cout << "using single-stage conversion engine" << std::endl;
+			initSinglestage();
+		}
+		else {
+			isMultistage = true;
+			std::cout << "using multi-stage conversion engine" << std::endl;
+			initMultistage();
+		}
+	}
+
+	void convert(FloatType* outBuffer, size_t& outBufferSize, const FloatType* inBuffer, const size_t& inBufferSize) {
+		if (isMultistage) {
+			const FloatType* in = inBuffer; // first stage reads directly from inBuffer. Subsequent stages read from output of previous stage
+			size_t inSize = inBufferSize;
+			size_t outSize;
+			for (int i = 0; i < numStages; i++) {
+				FloatType* out = (i == indexOfLastStage) ? outBuffer : intermediateOutputBuffers[i].data(); // last stage writes straight to outBuffer;
+				convertStages[i].convert(out, outSize, in, inSize);
+				in = out; // input of next stage is the output of this stage
+				inSize = outSize;
+			}
+			outBufferSize = outSize;
+		}
+		else {
+			convertStages[0].convert(outBuffer, outBufferSize, inBuffer, inBufferSize);
+		}
+	}
+
 	double getGroupDelay() {
 		return groupDelay;
 	}
 
-protected:
-	AbstractResampler(const ConversionInfo& ci) : ci(ci), groupDelay(0.0) {}
-	ConversionInfo ci;
-	double groupDelay;
-	std::vector<ResamplingStage<FloatType>> convertStages;
-};
-
-template <typename FloatType>
-class SingleStageResampler : public AbstractResampler<FloatType>
-{
-	using AbstractResampler<FloatType>::ci;
-	using AbstractResampler<FloatType>::convertStages;
-	using AbstractResampler<FloatType>::groupDelay;
-
-public:
-	SingleStageResampler(const ConversionInfo& ci) : AbstractResampler<FloatType>(ci) {
+private:
+	void initSinglestage() {
 		Fraction f = getFractionFromSamplerates(ci.inputSampleRate, ci.outputSampleRate);
+		ci.overSamplingFactor = ci.bMinPhase && (f.numerator != f.denominator) && (f.numerator <= 4 || f.denominator <= 4) ? 8 : 1;
 		std::vector<FloatType> filterTaps = makeFilterCoefficients<FloatType>(ci, f);
 		bool bypassMode = (f.numerator == 1 && f.denominator == 1);
-
-		int overSamplingFactor = ci.bMinPhase && (f.numerator != f.denominator) && (f.numerator <= 4 || f.denominator <= 4) ? 8 : 1;
-		f.numerator *= overSamplingFactor;
-		f.denominator *= overSamplingFactor;
+		f.numerator *= ci.overSamplingFactor;
+		f.denominator *= ci.overSamplingFactor;
 
 		FIRFilter<FloatType> firFilter(filterTaps.data(), filterTaps.size());
 		convertStages.emplace_back(f.numerator, f.denominator, firFilter, bypassMode);
@@ -224,43 +239,8 @@ public:
 			groupDelay = 0;
 		}
 	}
-	void convert(FloatType* outBuffer, size_t& outBufferSize, const FloatType* inBuffer, const size_t& inBufferSize) {
-		convertStages[0].convert(outBuffer, outBufferSize, inBuffer, inBufferSize);
-	}
-};
 
-template <typename FloatType>
-class MultiStageResampler : public AbstractResampler<FloatType>
-{
-	using AbstractResampler<FloatType>::ci;
-	using AbstractResampler<FloatType>::convertStages;
-	using AbstractResampler<FloatType>::groupDelay;
-
-public:
-	MultiStageResampler(const ConversionInfo& ci) : AbstractResampler<FloatType>(ci) {
-		calculateConversionParams();
-	}
-
-	void convert(FloatType* outBuffer, size_t& outBufferSize, const FloatType* inBuffer, const size_t& inBufferSize) {
-		const FloatType* in = inBuffer; // first stage reads directly from inBuffer. Subsequent stages read from output of previous stage
-		size_t inSize = inBufferSize;
-		size_t outSize;
-		for (int i = 0; i < numStages; i++) {
-			FloatType* out = (i == indexOfLastStage) ? outBuffer : intermediateOutputBuffers[i].data(); // last stage writes straight to outBuffer;
-			convertStages[i].convert(out, outSize, in, inSize);
-			in = out; // input of next stage is the output of this stage
-			inSize = outSize;
-		}
-		outBufferSize = outSize;
-	}
-
-private:
-	int numStages;
-	int indexOfLastStage;
-	std::vector<std::vector<FloatType>> intermediateOutputBuffers;	// intermediate output buffer for each ConvertStage;
-	std::vector<std::string> stageCommandLines;
-
-	void calculateConversionParams() {
+	void initMultistage() {
 		Fraction masterConversionRatio = getFractionFromSamplerates(ci.inputSampleRate, ci.outputSampleRate);
 		auto fractions = getPresetFractions(masterConversionRatio, ci.maxStages);
 		numStages = fractions.size();
@@ -268,8 +248,8 @@ private:
 		int inputRate = ci.inputSampleRate;
 		double guarantee = inputRate / 2.0; // no content above this frequency
 		std::string stageInputName(ci.inputFilename);
-		double ft = ci.lpfCutoff/100 * std::min(ci.inputSampleRate, ci.outputSampleRate) / 2.0;
-		
+		double ft = ci.lpfCutoff / 100 * std::min(ci.inputSampleRate, ci.outputSampleRate) / 2.0;
+
 		for (int i = 0; i < numStages; i++) {
 			ConversionInfo stageCi = ci;
 			stageCi.overSamplingFactor = stageCi.bMinPhase ? 2 : 1;
@@ -277,8 +257,8 @@ private:
 			stageCi.outputSampleRate = inputRate * fractions[i].numerator / fractions[i].denominator;
 			decltype(stageCi.inputSampleRate) minSampleRate = std::min(stageCi.inputSampleRate, stageCi.outputSampleRate);
 			double stopFreq = std::max(minSampleRate / 2.0, minSampleRate - guarantee);
-			
-			assert (stopFreq > ft);
+
+			assert(stopFreq > ft);
 			stageCi.lpfTransitionWidth = 100.0 * (stopFreq - ft) / (stageCi.outputSampleRate * 0.5);
 			assert(stageCi.lpfTransitionWidth >= 0.0);
 			guarantee = std::min(guarantee, stopFreq);
@@ -298,11 +278,11 @@ private:
 				std::cout << "transition width: " << stageCi.lpfTransitionWidth << " %\n";
 				std::cout << "guarantee: " << guarantee << "\n";
 				std::cout << "Generated Filter Size: " << filterTaps.size() << "\n";
-				
+
 				stageCi.maxStages = 1;
 				stageCi.lpfMode = custom;
 				stageCi.inputFilename = stageInputName;
-					 
+
 				if (i != numStages - 1) {
 					size_t lastDotPos = stageCi.outputFilename.find_last_of(".");
 					if (lastDotPos != std::string::npos) {
@@ -317,14 +297,14 @@ private:
 				}
 				stageCommandLines.emplace_back(stageCi.appName + " " + stageCi.toCmdLineArgs());
 			}
-			
+
 			// make the ConvertStage:
 			Fraction f = fractions[i];
 			bool bypassMode = (f.numerator == 1 && f.denominator == 1);
 			f.numerator *= stageCi.overSamplingFactor;
 			f.denominator *= stageCi.overSamplingFactor;
 			convertStages.emplace_back(f.numerator, f.denominator, firFilter, bypassMode);
-			
+
 			// add Group Delay:
 			if (!bypassMode) {
 				groupDelay *= (static_cast<double>(f.numerator) / f.denominator); // scale previous delay according to conversion ratio
@@ -339,29 +319,40 @@ private:
 				cumulativeDenominator *= fractions[j].denominator;
 			}
 			size_t outBufferSize = std::ceil(BUFFERSIZE * cumulativeNumerator / cumulativeDenominator);
-			
+
 			if (ci.bShowStages) {
 				std::cout << cumulativeNumerator << " / " << cumulativeDenominator << "\n";
 				std::cout << "Output Buffer Size: " << outBufferSize << "\n\n" << std::endl;
 			}
 
 			// make output buffer for this stage (last stage doesn't need one)
-			if (i != numStages - 1) {	
+			if (i != numStages - 1) {
 				intermediateOutputBuffers.emplace_back(std::vector<FloatType>(outBufferSize, 0.0));
 			}
-			
+
 			// set input rate of next stage
 			inputRate = stageCi.outputSampleRate;
 		} // ends loop over i
 
 		if (ci.bShowStages) {
-			std::cout << "# Command lines to do this conversion in discreet steps:\n";
+			std::cout << "Command lines to do this conversion in discreet steps:\n";
 			for (auto& cmdline : stageCommandLines) {
 				std::cout << cmdline << "\n";
 			}
 			std::cout << std::endl;
 		}
-	} // calculateConversionParams()
+	} // initMultistage()
+
+private:
+	ConversionInfo ci;
+	double groupDelay;
+	std::vector<ResamplingStage<FloatType>> convertStages;
+	int numStages;
+	int indexOfLastStage;
+	std::vector<std::vector<FloatType>> intermediateOutputBuffers;	// intermediate output buffer for each ConvertStage;
+	std::vector<std::string> stageCommandLines;
+	bool isMultistage;
+
 };
 
 #endif // SRCONVERT_H

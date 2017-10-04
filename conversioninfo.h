@@ -57,15 +57,16 @@ struct ConversionInfo
 	int seed;
 	bool dsfInput;
 	bool dffInput;
+	bool bEnablePeakDetection;
 	bool bMultiThreaded;
 	bool bRf64;
 	bool bNoPeakChunk;
 	bool bWriteMetaData;
 	int maxStages;
+	bool bSingleStage;
 	bool bShowStages;
 	int overSamplingFactor;
 	std::string appName;
-
 	std::string toCmdLineArgs();
 };
 
