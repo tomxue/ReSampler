@@ -682,7 +682,7 @@ bool convert(ConversionInfo& ci)
 	std::cout << "input sample rate: " << ci.inputSampleRate << "\noutput sample rate: " << ci.outputSampleRate << std::endl;
 
 	sf_count_t samplesRead;
-	sf_count_t totalSamplesRead = 0;
+	sf_count_t totalSamplesRead = 0LL;
 	FloatType peakInputSample;
 	if (ci.bEnablePeakDetection) {
 		peakInputSample = 0.0;
