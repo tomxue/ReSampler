@@ -56,7 +56,6 @@ unsigned int fp_control_state = _controlfp(_EM_INEXACT, _MCW_EM);
 //                                                                                    //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-
 static std::string appName;
 
 int main(int argc, char * argv[])
@@ -124,24 +123,30 @@ int main(int argc, char * argv[])
 		if (ci.bUseDoublePrecision) {
 			std::cout << "Using double precision for calculations." << std::endl;
 			if (ci.dsfInput) {
-				return convert<DsfFile, double>(ci, /* peakDetection = */ false) ? EXIT_SUCCESS : EXIT_FAILURE;
+				ci.bEnablePeakDetection = false;
+				return convert<DsfFile, double> (ci) ? EXIT_SUCCESS : EXIT_FAILURE;
 			}
 			else if (ci.dffInput) {
-				return convert<DffFile, double>(ci, /* peakDetection = */ false) ? EXIT_SUCCESS : EXIT_FAILURE;
+				ci.bEnablePeakDetection = false;
+				return convert<DffFile, double> (ci) ? EXIT_SUCCESS : EXIT_FAILURE;
 			}
 			else {
-				return convert<SndfileHandle, double>(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
+				ci.bEnablePeakDetection = true;
+				return convert<SndfileHandle, double> (ci) ? EXIT_SUCCESS : EXIT_FAILURE;
 			}
 		}
 		else {
 			if (ci.dsfInput) {
-				return convert<DsfFile, float>(ci, /* peakDetection = */ false) ? EXIT_SUCCESS : EXIT_FAILURE;
+				ci.bEnablePeakDetection = false;
+				return convert<DsfFile, float> (ci) ? EXIT_SUCCESS : EXIT_FAILURE;
 			}
 			else if (ci.dffInput) {
-				return convert<DffFile, float>(ci, /* peakDetection = */ false) ? EXIT_SUCCESS : EXIT_FAILURE;
+				ci.bEnablePeakDetection = false;
+				return convert<DffFile, float> (ci) ? EXIT_SUCCESS : EXIT_FAILURE;
 			}
 			else {
-				return convert<SndfileHandle, float>(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
+				ci.bEnablePeakDetection = true;
+				return convert<SndfileHandle, float> (ci) ? EXIT_SUCCESS : EXIT_FAILURE;
 			}
 		}
 	}
@@ -600,7 +605,7 @@ seek(position, whence)
 */
 
 template<typename FileReader, typename FloatType>
-bool convert(ConversionInfo& ci, bool peakDetection)
+bool convert(ConversionInfo& ci)
 {
 	bool multiThreaded = ci.bMultiThreaded;
 
@@ -676,7 +681,7 @@ bool convert(ConversionInfo& ci, bool peakDetection)
 	sf_count_t samplesRead;
 	sf_count_t totalSamplesRead = 0;
 	FloatType peakInputSample;
-	if (peakDetection) {
+	if (ci.bEnablePeakDetection) {
 		peakInputSample = 0.0;
 		std::cout << "Scanning input file for peaks ...";
 

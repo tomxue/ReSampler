@@ -57,6 +57,7 @@ struct ConversionInfo
 	int seed;
 	bool dsfInput;
 	bool dffInput;
+	bool bEnablePeakDetection;
 	bool bMultiThreaded;
 	bool bRf64;
 	bool bNoPeakChunk;
@@ -65,7 +66,6 @@ struct ConversionInfo
 	bool bShowStages;
 	int overSamplingFactor;
 	std::string appName;
-
 	std::string toCmdLineArgs();
 };
 
