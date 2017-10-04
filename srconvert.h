@@ -237,7 +237,7 @@ class MultiStageResampler : public AbstractResampler<FloatType>
 
 public:
 	MultiStageResampler(const ConversionInfo& ci) : AbstractResampler<FloatType>(ci) {
-		calculateConversionParams();
+		initMultistage();
 	}
 
 	void convert(FloatType* outBuffer, size_t& outBufferSize, const FloatType* inBuffer, const size_t& inBufferSize) {
@@ -259,7 +259,7 @@ private:
 	std::vector<std::vector<FloatType>> intermediateOutputBuffers;	// intermediate output buffer for each ConvertStage;
 	std::vector<std::string> stageCommandLines;
 
-	void calculateConversionParams() {
+	void initMultistage() {
 		Fraction masterConversionRatio = getFractionFromSamplerates(ci.inputSampleRate, ci.outputSampleRate);
 		auto fractions = getPresetFractions(masterConversionRatio, ci.maxStages);
 		numStages = fractions.size();
@@ -360,7 +360,7 @@ private:
 			}
 			std::cout << std::endl;
 		}
-	} // calculateConversionParams()
+	} // initMultistage()
 };
 
 #endif // SRCONVERT_H
