@@ -137,7 +137,7 @@ typedef struct
 bool checkSSE2();
 bool checkAVX();
 bool showBuildVersion();
-bool parseParameters(ConversionInfo & ci, bool & bBadParams, int argc, char * argv[]);
+bool parseGlobalOptions(int argc, char * argv[]);
 bool determineBestBitFormat(std::string & BitFormat, const std::string & inFilename, const std::string & outFilename);
 int determineOutputFormat(const std::string & outFileExt, const std::string & bitFormat);
 void listSubFormats(const std::string & f);

@@ -61,15 +61,23 @@ static std::string appName;
 int main(int argc, char * argv[])
 {
 	appName = argv[0];
+	
+	// test for global options
+	if (parseGlobalOptions(argc, argv)) {
+		exit(EXIT_SUCCESS);
+	}
+
+	// ConversionInfo instance to hold parameters
 	ConversionInfo ci;
 	ci.overSamplingFactor = 1;
 
-	// result of parseParameters() indicates whether to terminate, and 
-	// badParams indicates whether there was an error:
-	bool badParams = false;
-	if (!parseParameters(ci, badParams, argc, argv))
-		exit(badParams ? EXIT_FAILURE : EXIT_SUCCESS);
-
+	// get conversion parameters
+	ci.fromCmdLineArgs(argc, argv);
+	if (ci.bBadParams) {
+		exit(EXIT_FAILURE);
+	}
+	
+	// query build version AND cpu
 	if (!showBuildVersion())
 		exit(EXIT_FAILURE); // can't continue (CPU / build mismatch)
 
@@ -157,44 +165,26 @@ int main(int argc, char * argv[])
 	}
 }
 
-// parseParameters()
-// Return value indicates whether caller should continue execution (ie true: continue, false: terminate)
-// Some commandline options (eg --version) should result in termination, but not error.
-// unacceptable parameters are indicated by setting bBadParams to true
-
-bool parseParameters(ConversionInfo& ci, bool& bBadParams, int argc, char* argv[]) {
-	// initialize defaults:
-	ci.inputFilename.clear();
-	ci.outputFilename.clear();
-	ci.outBitFormat.clear();
-	ci.outputFormat = 0;
-	ci.outputSampleRate = 44100;
-	ci.normalizeAmount = 1.0;
-	ci.ditherAmount = 1.0;
-	ci.flacCompressionLevel = 5;
-	ci.vorbisQuality = 3;
-	ci.ditherProfileID = DitherProfileID::standard;
-
-	//////////////////////////////////////////////////////////////
-	// terminating switch options: // 
+// parseGlobalOptions() - result indicates whether to terminate.
+bool parseGlobalOptions(int argc, char * argv[]) {
 
 	// help switch:
 	if (findCmdlineOption(argv, argv + argc, "--help") || findCmdlineOption(argv, argv + argc, "-h")) {
 		std::cout << strUsage << std::endl;
 		std::cout << "Additional options:\n\n" << strExtraOptions << std::endl;
-		return false;
+		return true;
 	}
 
 	// version switch:
 	if (findCmdlineOption(argv, argv + argc, "--version")) {
 		std::cout << strVersion << std::endl;
-		return false;
+		return true;
 	}
 
 	// compiler switch:
 	if (findCmdlineOption(argv, argv + argc, "--compiler")) {
 		showCompiler();
-		return false;
+		return true;
 	}
 
 	// sndfile-version switch:
@@ -202,219 +192,24 @@ bool parseParameters(ConversionInfo& ci, bool& bBadParams, int argc, char* argv[
 		char s[128];
 		sf_command(nullptr, SFC_GET_LIB_VERSION, s, sizeof(s));
 		std::cout << s << std::endl;
-		return false;
+		return true;
 	}
-	
+
 	// listsubformats
 	if (findCmdlineOption(argv, argv + argc, "--listsubformats")) {
 		std::string filetype;
 		getCmdlineParam(argv, argv + argc, "--listsubformats", filetype);
 		listSubFormats(filetype);
-		return false;
+		return true;
 	}
 
 	// showDitherProfiles
 	if (findCmdlineOption(argv, argv + argc, "--showDitherProfiles")) {
 		showDitherProfiles();
-		return false;
+		return true;
 	}
 
-	////////////////////////////////////////////////////////////////////
-	// core parameters:
-	getCmdlineParam(argv, argv + argc, "-i", ci.inputFilename);
-	getCmdlineParam(argv, argv + argc, "-o", ci.outputFilename);
-	getCmdlineParam(argv, argv + argc, "-r", ci.outputSampleRate);
-	getCmdlineParam(argv, argv + argc, "-b", ci.outBitFormat);
-
-	// gain
-	if (findCmdlineOption(argv, argv + argc, "--gain")) {
-		getCmdlineParam(argv, argv + argc, "--gain", ci.gain);
-	}
-	else {
-		ci.gain = 1.0; // default
-	}
-
-	// double precision switch:
-	ci.bUseDoublePrecision = findCmdlineOption(argv, argv + argc, "--doubleprecision");
-
-	// normalize option and parameter:
-	ci.bNormalize = findCmdlineOption(argv, argv + argc, "-n");
-	if (ci.bNormalize) {
-		getCmdlineParam(argv, argv + argc, "-n", ci.normalizeAmount);
-		if (ci.normalizeAmount <= 0.0)
-			ci.normalizeAmount = 1.0;
-		if (ci.normalizeAmount > 1.0)
-			std::cout << "\nWarning: Normalization factor greater than 1.0 - THIS WILL CAUSE CLIPPING !!\n" << std::endl;
-		ci.limit = ci.normalizeAmount;
-	}
-	else {
-		ci.limit = 1.0; // default
-	}
-
-	// dither option and parameter:
-	ci.bDither = findCmdlineOption(argv, argv + argc, "--dither");
-	if (ci.bDither) {
-		getCmdlineParam(argv, argv + argc, "--dither", ci.ditherAmount);
-		if (ci.ditherAmount <= 0.0)
-			ci.ditherAmount = 1.0;
-	}
-
-	// auto-blanking option (for dithering):
-	ci.bAutoBlankingEnabled = findCmdlineOption(argv, argv + argc, "--autoblank");
-
-	// ns option to determine dither Profile:
-	if (findCmdlineOption(argv, argv + argc, "--ns")) {
-		getCmdlineParam(argv, argv + argc, "--ns", ci.ditherProfileID);
-		if (ci.ditherProfileID < 0)
-			ci.ditherProfileID = 0;
-		if (ci.ditherProfileID >= DitherProfileID::end)
-			ci.ditherProfileID = getDefaultNoiseShape(ci.outputSampleRate);
-	}
-	else {
-		ci.ditherProfileID = getDefaultNoiseShape(ci.outputSampleRate);
-	}
-
-	// --flat-tpdf option (takes precedence over --ns)
-	if (findCmdlineOption(argv, argv + argc, "--flat-tpdf")) {
-		ci.ditherProfileID = DitherProfileID::flat;
-	}
-
-	// seed option and parameter:
-	ci.bUseSeed = findCmdlineOption(argv, argv + argc, "--seed");
-	ci.seed = 0;
-	if (ci.bUseSeed) {
-		getCmdlineParam(argv, argv + argc, "--seed", ci.seed);
-	}
-
-	// delay trim (group delay compensation)
-	ci.bDelayTrim = !findCmdlineOption(argv, argv + argc, "--noDelayTrim");
-
-	// minimum-phase option:
-	ci.bMinPhase = findCmdlineOption(argv, argv + argc, "--minphase");
-
-	// flacCompression option and parameter:
-	ci.bSetFlacCompression = findCmdlineOption(argv, argv + argc, "--flacCompression");
-	if (ci.bSetFlacCompression) {
-		getCmdlineParam(argv, argv + argc, "--flacCompression", ci.flacCompressionLevel);
-		if (ci.flacCompressionLevel < 0)
-			ci.flacCompressionLevel = 0;
-		if (ci.flacCompressionLevel > 8)
-			ci.flacCompressionLevel = 8;
-	}
-
-	// vorbisQuality option and parameter:
-	ci.bSetVorbisQuality = findCmdlineOption(argv, argv + argc, "--vorbisQuality");
-	if (ci.bSetVorbisQuality) {
-		getCmdlineParam(argv, argv + argc, "--vorbisQuality", ci.vorbisQuality);
-		if (ci.vorbisQuality < -1)
-			ci.vorbisQuality = -1;
-		if (ci.vorbisQuality > 10)
-			ci.vorbisQuality = 10;
-	}
-
-	// noClippingProtection option:
-	ci.disableClippingProtection = findCmdlineOption(argv, argv + argc, "--noClippingProtection");
-
-	// default cutoff and transition width:
-	ci.lpfMode = normal;
-	ci.lpfCutoff = 100.0 * (10.0 / 11.0);
-	ci.lpfTransitionWidth = 100.0 - ci.lpfCutoff;
-
-	// relaxedLPF option:
-	if (findCmdlineOption(argv, argv + argc, "--relaxedLPF")) {
-		ci.lpfMode = relaxed;
-		ci.lpfCutoff = 100.0 * (21.0 / 22.0);				// late cutoff
-		ci.lpfTransitionWidth = 2 * (100.0 - ci.lpfCutoff); // wide transition (double-width)  
-	}
-	
-	// steepLPF option:
-	if (findCmdlineOption(argv, argv + argc, "--steepLPF")) {
-		ci.lpfMode = steep;
-		ci.lpfCutoff = 100.0 * (21.0 / 22.0);				// late cutoff
-		ci.lpfTransitionWidth = 100.0 - ci.lpfCutoff;       // steep transition  
-	}
-
-	// custom LPF cutoff frequency:
-	if (findCmdlineOption(argv, argv + argc, "--lpf-cutoff")) {
-		getCmdlineParam(argv, argv + argc, "--lpf-cutoff", ci.lpfCutoff);
-		ci.lpfMode = custom;
-		ci.lpfCutoff = std::max(1.0, std::min(ci.lpfCutoff, 99.9));
-
-		// custom LPF transition width:
-		if (findCmdlineOption(argv, argv + argc, "--lpf-transition")) {
-			getCmdlineParam(argv, argv + argc, "--lpf-transition", ci.lpfTransitionWidth);
-		}
-		else {
-			ci.lpfTransitionWidth = 100 - ci.lpfCutoff; // auto mode
-		}
-		ci.lpfTransitionWidth = std::max(0.1, std::min(ci.lpfTransitionWidth, 400.0));
-	}
-	
-	// multithreaded option:
-	ci.bMultiThreaded = findCmdlineOption(argv, argv + argc, "--mt");
-
-	// rf64 option:
-	ci.bRf64 = findCmdlineOption(argv, argv + argc, "--rf64");
-
-	// noPeakChunk option:
-	ci.bNoPeakChunk = findCmdlineOption(argv, argv + argc, "--noPeakChunk");
-
-	// noMetadata option:
-	ci.bWriteMetaData = !findCmdlineOption(argv, argv + argc, "--noMetadata");
-
-	// maxStages:
-	if (findCmdlineOption(argv, argv + argc, "--maxStages")) {
-		getCmdlineParam(argv, argv + argc, "--maxStages", ci.maxStages);
-		if (ci.maxStages < 1)
-			ci.maxStages = 1;
-		if (ci.maxStages > 10)
-			ci.maxStages = 10;
-	} else {
-		ci.maxStages = 3; // default;
-	}
-
-	// single stage:
-	ci.bSingleStage = findCmdlineOption(argv, argv + argc, "--singleStage");
-
-	// showStages option:
-	ci.bShowStages = findCmdlineOption(argv, argv + argc, "--showStages");
-
-	// test for bad parameters:
-	bBadParams = false;
-	if (ci.outputFilename.empty()) {
-		if (ci.inputFilename.empty()) {
-			std::cout << "Error: Input filename not specified" << std::endl;
-			bBadParams = true;
-		}
-		else {
-			std::cout << "Output filename not specified" << std::endl;
-			ci.outputFilename = ci.inputFilename;
-			if (ci.outputFilename.find(".") != std::string::npos) {
-				auto dot = ci.outputFilename.find_last_of(".");
-				ci.outputFilename.insert(dot, "(converted)");
-			}
-			else {
-				ci.outputFilename.append("(converted)");
-			}
-			std::cout << "defaulting to: " << ci.outputFilename << "\n" << std::endl;
-		}
-	}
-
-	else if (ci.outputFilename == ci.inputFilename) {
-		std::cout << "\nError: Input and Output filenames cannot be the same" << std::endl;
-		bBadParams = true;
-	}
-
-	if (ci.outputSampleRate == 0) {
-		std::cout << "Error: Target sample rate not specified" << std::endl;
-		bBadParams = true;
-	}
-
-	if (bBadParams) {
-		std::cout << strUsage << std::endl;
-		return false;
-	}
-	return true;
+	return false;
 }
 
 // determineBestBitFormat() : determines the most appropriate bit format for the output file, through the following process:
@@ -1151,49 +946,6 @@ bool getMetaData(MetaData& metadata, const DffFile& f) {
 bool getMetaData(MetaData& metadata, const DsfFile& f) {
 	// stub - to-do
 	return true;
-}
-
-// The following functions are used for parsing commandline parameters:
-
-void getCmdlineParam(char** begin, char** end, const std::string& optionName, std::string& Parameter)
-{
-	Parameter.clear();
-	char** it = std::find(begin, end, optionName);
-	if (it != end)	// found option
-		if (++it != end) // found parameter after option
-			Parameter = *it;
-}
-
-void getCmdlineParam(char** begin, char** end, const std::string& optionName, unsigned int& nParameter)
-{
-	nParameter = 0;
-	char** it = std::find(begin, end, optionName);
-	if (it != end)	// found option
-		if (++it != end) // found parameter after option
-			nParameter = atoi(*it);
-}
-
-void getCmdlineParam(char** begin, char** end, const std::string& optionName, int& nParameter)
-{
-	nParameter = 0;
-	char** it = std::find(begin, end, optionName);
-	if (it != end)	// found option
-		if (++it != end) // found parameter after option
-			nParameter = atoi(*it);
-}
-
-
-void getCmdlineParam(char** begin, char** end, const std::string& optionName, double& Parameter)
-{
-	Parameter = 0.0;
-	char** it = std::find(begin, end, optionName);
-	if (it != end)	// found option
-		if (++it != end) // found parameter after option
-			Parameter = atof(*it);
-}
-
-bool findCmdlineOption(char** begin, char** end, const std::string& option) {
-	return (std::find(begin, end, option) != end);
 }
 
 bool checkSSE2() {
