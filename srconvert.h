@@ -191,12 +191,12 @@ public:
 	Converter(const ConversionInfo& ci) : ci(ci), groupDelay(0.0) {
 		if (ci.bSingleStage) {
 			isMultistage = false;
-			std::cout << "using single-stage conversion engine" << std::endl;
+			// std::cout << "using single-stage conversion engine" << std::endl;
 			initSinglestage();
 		}
 		else {
 			isMultistage = true;
-			std::cout << "using multi-stage conversion engine" << std::endl;
+			// std::cout << "using multi-stage conversion engine" << std::endl;
 			initMultistage();
 		}
 	}

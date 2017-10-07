@@ -56,12 +56,8 @@ unsigned int fp_control_state = _controlfp(_EM_INEXACT, _MCW_EM);
 //                                                                                    //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-static std::string appName;
-
 int main(int argc, char * argv[])
 {
-	appName = argv[0];
-	
 	// test for global options
 	if (parseGlobalOptions(argc, argv)) {
 		exit(EXIT_SUCCESS);
@@ -69,6 +65,7 @@ int main(int argc, char * argv[])
 
 	// ConversionInfo instance to hold parameters
 	ConversionInfo ci;
+	ci.appName = argv[0];
 	ci.overSamplingFactor = 1;
 
 	// get conversion parameters
@@ -422,8 +419,9 @@ bool convert(ConversionInfo& ci)
 	// read file properties:
 	int nChannels = infile.channels();
 	ci.inputSampleRate = infile.samplerate();
-	sf_count_t inputSampleCount = infile.frames() * nChannels;
-	double inputDuration = 1000.0 * infile.frames() / ci.inputSampleRate; // ms
+	sf_count_t inputFrames = infile.frames();
+	sf_count_t inputSampleCount = inputFrames * nChannels;
+	double inputDuration = 1000.0 * inputFrames / ci.inputSampleRate; // ms
 
 	// determine conversion ratio:
 	Fraction fraction = getFractionFromSamplerates(ci.inputSampleRate, ci.outputSampleRate);
@@ -476,23 +474,30 @@ bool convert(ConversionInfo& ci)
 	std::cout << "source file channels: " << nChannels << std::endl;
 	std::cout << "input sample rate: " << ci.inputSampleRate << "\noutput sample rate: " << ci.outputSampleRate << std::endl;
 
+	FloatType peakInputSample;
+	sf_count_t peakInputPosition = 0LL;
 	sf_count_t samplesRead;
 	sf_count_t totalSamplesRead = 0LL;
-	FloatType peakInputSample;
+	
 	if (ci.bEnablePeakDetection) {
 		peakInputSample = 0.0;
 		std::cout << "Scanning input file for peaks ...";
 
 		do {
 			samplesRead = infile.read(inputBlock.data(), inputBlockSize);
-			totalSamplesRead += samplesRead;
 			for (unsigned int s = 0; s < samplesRead; ++s) { // read all samples, without caring which channel they belong to
-				peakInputSample = std::max(peakInputSample, std::abs(inputBlock[s]));
+				if (std::abs(inputBlock[s]) > peakInputSample) {
+					peakInputSample = std::abs(inputBlock[s]);
+					peakInputPosition = totalSamplesRead + s;
+				}
 			}
+			totalSamplesRead += samplesRead;
 		} while (samplesRead > 0);
 
 		std::cout << "Done\n";
-		std::cout << "Peak input sample: " << std::fixed << peakInputSample << " (" << 20 * log10(peakInputSample) << " dBFS)" << std::endl;
+		std::cout << "Peak input sample: " << std::fixed << peakInputSample << " (" << 20 * log10(peakInputSample) << " dBFS) at ";
+		printSamplePosAsTime(peakInputPosition, ci.inputSampleRate);
+		std::cout << std::endl;
 		infile.seek(0, SEEK_SET); // rewind back to start of file
 	}
 
@@ -926,6 +931,16 @@ std::string fmtNumberWithCommas(uint64_t n) {
 		insertPosition -= 3;
 	}
 	return s;
+}
+
+void printSamplePosAsTime(sf_count_t samplePos, unsigned int sampleRate) {
+	double seconds = static_cast<double>(samplePos) / sampleRate;
+	int h = seconds / 3600;
+	int m = (seconds - (h * 3600)) / 60;
+	double s = seconds - (h * 3600) - (m * 60);
+	std::ios::fmtflags f(std::cout.flags());
+	std::cout << std::setprecision(0) << h << ":" << m << ":" << std::setprecision(6) << s;
+	std::cout.flags(f);
 }
 
 bool testSetMetaData(DsfFile& outfile) {

@@ -152,6 +152,7 @@ void showDitherProfiles();
 int getSfBytesPerSample(int format);
 bool checkWarnOutputSize(uint64_t inputSamples, int bytesPerSample, int numerator, int denominator);
 std::string fmtNumberWithCommas(uint64_t n);
+void printSamplePosAsTime(sf_count_t samplePos, unsigned int sampleRate);
 bool getMetaData(MetaData& metadata, SndfileHandle& infile);
 bool setMetaData(const MetaData& metadata, SndfileHandle& outfile);
 void showCompiler();
