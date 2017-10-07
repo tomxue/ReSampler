@@ -56,12 +56,8 @@ unsigned int fp_control_state = _controlfp(_EM_INEXACT, _MCW_EM);
 //                                                                                    //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-static std::string appName;
-
 int main(int argc, char * argv[])
 {
-	appName = argv[0];
-	
 	// test for global options
 	if (parseGlobalOptions(argc, argv)) {
 		exit(EXIT_SUCCESS);
@@ -69,6 +65,7 @@ int main(int argc, char * argv[])
 
 	// ConversionInfo instance to hold parameters
 	ConversionInfo ci;
+	ci.appName = argv[0];
 	ci.overSamplingFactor = 1;
 
 	// get conversion parameters
