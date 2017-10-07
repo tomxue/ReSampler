@@ -419,9 +419,9 @@ bool convert(ConversionInfo& ci)
 	// read file properties:
 	int nChannels = infile.channels();
 	ci.inputSampleRate = infile.samplerate();
-	sf_count_t inputFames = infile.frames();
-	sf_count_t inputSampleCount = inputFames * nChannels;
-	double inputDuration = 1000.0 * inputFames / ci.inputSampleRate; // ms
+	sf_count_t inputFrames = infile.frames();
+	sf_count_t inputSampleCount = inputFrames * nChannels;
+	double inputDuration = 1000.0 * inputFrames / ci.inputSampleRate; // ms
 
 	// determine conversion ratio:
 	Fraction fraction = getFractionFromSamplerates(ci.inputSampleRate, ci.outputSampleRate);
