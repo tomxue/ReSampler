@@ -583,8 +583,16 @@ bool convert(ConversionInfo& ci)
 		ditherers.emplace_back(outputSignalBits, ci.ditherAmount, ci.bAutoBlankingEnabled, n + seed, static_cast<DitherProfileID>(ci.ditherProfileID));
 	}
 
+	// make a vector of Resamplers
+	std::vector<Converter<FloatType>> converters;
+	for (int n = 0; n < nChannels; n++) {
+		converters.emplace_back(ci);
+	} 
+
+	//std::cout << "Converter getGain(): " << converters[0].getGain() << std::endl;
+
 	// Calculate initial gain:
-	FloatType gain = ci.gain *
+	FloatType gain = ci.gain * converters[0].getGain() * 
 		(ci.bNormalize ? fraction.numerator * (ci.limit / peakInputSample) : fraction.numerator * ci.limit);
 
 	if (ci.bDither) { // allow headroom for dithering:
@@ -592,6 +600,9 @@ bool convert(ConversionInfo& ci)
 			(pow(2, outputSignalBits - 1) - pow(2, ci.ditherAmount - 1)) / pow(2, outputSignalBits - 1); // eg 32767/32768 = 0.999969 (-0.00027 dB)
 		gain *= ditherCompensation;
 	}
+
+	int groupDelay = converters[0].getGroupDelay();
+	// std::cout << "expected group delay " << groupDelay << std::endl;
 
 	FloatType peakOutputSample;
 	bool bClippingDetected;
@@ -601,15 +612,6 @@ bool convert(ConversionInfo& ci)
 
 		bClippingDetected = false;
 		std::unique_ptr<SndfileHandle> outFile;
-
-		// make a vector of Resamplers
-		std::vector<Converter<FloatType>> converters;
-		for (int n = 0; n < nChannels; n++) {
-			converters.emplace_back(ci);
-		} 
-
-		int groupDelay = converters[0].getGroupDelay();
-//		std::cout << "expected group delay " << groupDelay << std::endl;
 
 		try { // Open output file:
 
@@ -769,7 +771,10 @@ bool convert(ConversionInfo& ci)
 					ditherer.reset();
 				}
 			}
-			converters.clear();
+			
+			for (auto& converter : converters) {
+				converter.reset();
+			}
 		}
 
 	} while (!ci.disableClippingProtection && bClippingDetected);

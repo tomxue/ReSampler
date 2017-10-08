@@ -75,6 +75,10 @@ public:
 		SetConvertFunction();
 	}
 
+	void reset() {
+		filter.reset();
+	}
+
 private:
     int L;	// interpoLation factor
     int M;	// deciMation factor
@@ -188,7 +192,7 @@ template <typename FloatType>
 class Converter
 {
 public:
-	Converter(const ConversionInfo& ci) : ci(ci), groupDelay(0.0) {
+	Converter(const ConversionInfo& ci) : ci(ci), groupDelay(0.0), gain(1.0) {
 		if (ci.bSingleStage) {
 			isMultistage = false;
 			// std::cout << "using single-stage conversion engine" << std::endl;
@@ -223,10 +227,26 @@ public:
 		return groupDelay;
 	}
 
+	double getGain() {
+		return gain;
+	}
+
+	void reset() {
+		for (int i = 0; i < numStages; i++) {
+			convertStages[i].reset();
+			if (i != indexOfLastStage) {
+				std::fill(intermediateOutputBuffers[i].begin(), intermediateOutputBuffers[i].end(), 0.0);
+			}
+		}
+	}
+
 private:
 	void initSinglestage() {
 		Fraction f = getFractionFromSamplerates(ci.inputSampleRate, ci.outputSampleRate);
 		ci.overSamplingFactor = ci.bMinPhase && (f.numerator != f.denominator) && (f.numerator <= 4 || f.denominator <= 4) ? 8 : 1;
+		if (ci.overSamplingFactor != 1) {
+			gain *= ci.overSamplingFactor;
+		}
 		std::vector<FloatType> filterTaps = makeFilterCoefficients<FloatType>(ci, f);
 		bool bypassMode = (f.numerator == 1 && f.denominator == 1);
 		f.numerator *= ci.overSamplingFactor;
@@ -255,6 +275,9 @@ private:
 			stageCi.overSamplingFactor = stageCi.bMinPhase ? 2 : 1;
 			stageCi.inputSampleRate = inputRate;
 			stageCi.outputSampleRate = inputRate * fractions[i].numerator / fractions[i].denominator;
+			if (stageCi.overSamplingFactor != 1) {
+				gain *= stageCi.overSamplingFactor;
+			}
 			decltype(stageCi.inputSampleRate) minSampleRate = std::min(stageCi.inputSampleRate, stageCi.outputSampleRate);
 			double stopFreq = std::max(minSampleRate / 2.0, minSampleRate - guarantee);
 
@@ -352,6 +375,7 @@ private:
 	std::vector<std::vector<FloatType>> intermediateOutputBuffers;	// intermediate output buffer for each ConvertStage;
 	std::vector<std::string> stageCommandLines;
 	bool isMultistage;
+	double gain;
 
 };
 
