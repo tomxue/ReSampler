@@ -281,7 +281,9 @@ private:
 			double stopFreq = std::max(minSampleRate / 2.0, minSampleRate - guarantee);
 
 			assert(stopFreq > ft);
-			stageCi.lpfTransitionWidth = 100.0 * (stopFreq - ft) / (stageCi.outputSampleRate * 0.5);
+			const double stdTransitionWidth = 9.090909;
+			double transWidthScaling = ci.lpfTransitionWidth / stdTransitionWidth;
+			stageCi.lpfTransitionWidth = transWidthScaling * 100.0 * (stopFreq - ft) / (stageCi.outputSampleRate * 0.5);
 			assert(stageCi.lpfTransitionWidth >= 0.0);
 			guarantee = std::min(guarantee, stopFreq);
 

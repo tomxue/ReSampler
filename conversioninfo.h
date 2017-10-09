@@ -242,8 +242,8 @@ inline bool ConversionInfo::fromCmdLineArgs(int argc, char* argv[]) {
 	constrainInt(flacCompressionLevel, 0, 8);
 	constrainDouble(vorbisQuality, -1, 10);
 	constrainInt(maxStages, 1, 10);
-//	constrainDouble(lpfCutoff, 1.0, 99.9);
-//	constrainDouble(lpfTransitionWidth, 0.1, 400.0);
+	constrainDouble(lpfCutoff, 1.0, 99.9);
+	constrainDouble(lpfTransitionWidth, 0.1, 400.0);
 
 	if (bNormalize) {
 		if (normalizeAmount <= 0.0)
