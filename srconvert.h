@@ -193,14 +193,14 @@ class Converter
 {
 public:
 	Converter(const ConversionInfo& ci) : ci(ci), groupDelay(0.0), gain(1.0) {
+		if(ci.outputSampleRate == ci.inputSampleRate)
+			Converter::ci.bSingleStage = true;
+		
 		if (ci.bSingleStage) {
 			isMultistage = false;
-			// std::cout << "using single-stage conversion engine" << std::endl;
 			initSinglestage();
-		}
-		else {
+		} else {
 			isMultistage = true;
-			// std::cout << "using multi-stage conversion engine" << std::endl;
 			initMultistage();
 		}
 	}
@@ -244,20 +244,19 @@ private:
 	void initSinglestage() {
 		Fraction f = getFractionFromSamplerates(ci.inputSampleRate, ci.outputSampleRate);
 		ci.overSamplingFactor = ci.bMinPhase && (f.numerator != f.denominator) && (f.numerator <= 4 || f.denominator <= 4) ? 8 : 1;
-		if (ci.overSamplingFactor != 1) {
+		if (ci.overSamplingFactor != 1)
 			gain *= ci.overSamplingFactor;
-		}
+
 		std::vector<FloatType> filterTaps = makeFilterCoefficients<FloatType>(ci, f);
-		bool bypassMode = (f.numerator == 1 && f.denominator == 1);
 		f.numerator *= ci.overSamplingFactor;
 		f.denominator *= ci.overSamplingFactor;
 
+		bool bypassMode = (ci.outputSampleRate == ci.inputSampleRate);
 		FIRFilter<FloatType> firFilter(filterTaps.data(), filterTaps.size());
 		convertStages.emplace_back(f.numerator, f.denominator, firFilter, bypassMode);
 		groupDelay = (ci.bMinPhase || !ci.bDelayTrim) ? 0 : (filterTaps.size() - 1) / 2 / f.denominator;
-		if (f.numerator == 1 && f.denominator == 1) {
+		if (bypassMode)
 			groupDelay = 0;
-		}
 	}
 
 	void initMultistage() {
@@ -323,16 +322,13 @@ private:
 
 			// make the ConvertStage:
 			Fraction f = fractions[i];
-			bool bypassMode = (f.numerator == 1 && f.denominator == 1);
 			f.numerator *= stageCi.overSamplingFactor;
 			f.denominator *= stageCi.overSamplingFactor;
-			convertStages.emplace_back(f.numerator, f.denominator, firFilter, bypassMode);
+			convertStages.emplace_back(f.numerator, f.denominator, firFilter, false);
 
 			// add Group Delay:
-			if (!bypassMode) {
-				groupDelay *= (static_cast<double>(f.numerator) / f.denominator); // scale previous delay according to conversion ratio
-				groupDelay += (ci.bMinPhase || !ci.bDelayTrim) ? 0 : (filterTaps.size() - 1) / 2 / f.denominator; // add delay introduced by this stage
-			}
+			groupDelay *= (static_cast<double>(f.numerator) / f.denominator); // scale previous delay according to conversion ratio
+			groupDelay += (ci.bMinPhase || !ci.bDelayTrim) ? 0 : (filterTaps.size() - 1) / 2 / f.denominator; // add delay introduced by this stage
 
 			// calculate size of output buffer for this stage:
 			double cumulativeNumerator = 1.0;
