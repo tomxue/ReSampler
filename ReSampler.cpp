@@ -166,26 +166,26 @@ int main(int argc, char * argv[])
 bool parseGlobalOptions(int argc, char * argv[]) {
 
 	// help switch:
-	if (findCmdlineOption(argv, argv + argc, "--help") || findCmdlineOption(argv, argv + argc, "-h")) {
+	if (getCmdlineParam(argv, argv + argc, "--help") || getCmdlineParam(argv, argv + argc, "-h")) {
 		std::cout << strUsage << std::endl;
 		std::cout << "Additional options:\n\n" << strExtraOptions << std::endl;
 		return true;
 	}
 
 	// version switch:
-	if (findCmdlineOption(argv, argv + argc, "--version")) {
+	if (getCmdlineParam(argv, argv + argc, "--version")) {
 		std::cout << strVersion << std::endl;
 		return true;
 	}
 
 	// compiler switch:
-	if (findCmdlineOption(argv, argv + argc, "--compiler")) {
+	if (getCmdlineParam(argv, argv + argc, "--compiler")) {
 		showCompiler();
 		return true;
 	}
 
 	// sndfile-version switch:
-	if (findCmdlineOption(argv, argv + argc, "--sndfile-version")) {
+	if (getCmdlineParam(argv, argv + argc, "--sndfile-version")) {
 		char s[128];
 		sf_command(nullptr, SFC_GET_LIB_VERSION, s, sizeof(s));
 		std::cout << s << std::endl;
@@ -193,7 +193,7 @@ bool parseGlobalOptions(int argc, char * argv[]) {
 	}
 
 	// listsubformats
-	if (findCmdlineOption(argv, argv + argc, "--listsubformats")) {
+	if (getCmdlineParam(argv, argv + argc, "--listsubformats")) {
 		std::string filetype;
 		getCmdlineParam(argv, argv + argc, "--listsubformats", filetype);
 		listSubFormats(filetype);
@@ -201,7 +201,7 @@ bool parseGlobalOptions(int argc, char * argv[]) {
 	}
 
 	// showDitherProfiles
-	if (findCmdlineOption(argv, argv + argc, "--showDitherProfiles")) {
+	if (getCmdlineParam(argv, argv + argc, "--showDitherProfiles")) {
 		showDitherProfiles();
 		return true;
 	}

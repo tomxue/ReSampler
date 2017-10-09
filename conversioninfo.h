@@ -26,47 +26,38 @@ typedef enum {
 	custom
 } LPFMode;
 
-// The following functions are used for parsing commandline parameters:
+// The following functions are used for fetching commandline parameters:
 
-void getCmdlineParam(char** begin, char** end, const std::string& optionName, std::string& parameter)
-{
-	parameter.clear();
+// for numbers:
+template<typename T>
+bool getCmdlineParam(char** begin, char** end, const std::string& optionName, T& parameter) {
+	bool found = false;
 	char** it = std::find(begin, end, optionName);
-	if (it != end)	// found option
-		if (++it != end) // found parameter after option
-			parameter = *it;
-}
-
-void getCmdlineParam(char** begin, char** end, const std::string& optionName, unsigned int& nParameter)
-{
-	nParameter = 0;
-	char** it = std::find(begin, end, optionName);
-	if (it != end)	// found option
-		if (++it != end) // found parameter after option
-			nParameter = atoi(*it);
-}
-
-void getCmdlineParam(char** begin, char** end, const std::string& optionName, int& nParameter)
-{
-	nParameter = 0;
-	char** it = std::find(begin, end, optionName);
-	if (it != end)	// found option
-		if (++it != end) // found parameter after option
-			nParameter = atoi(*it);
-}
-
-
-void getCmdlineParam(char** begin, char** end, const std::string& optionName, double& parameter)
-{
-	parameter = 0.0;
-	char** it = std::find(begin, end, optionName);
-	if (it != end)	// found option
-		if (++it != end) // found parameter after option
+	if (it != end) {
+		found = true;
+		if (++it != end)
 			parameter = atof(*it);
+	}
+	return found;
 }
 
-bool findCmdlineOption(char** begin, char** end, const std::string& option) {
-	return (std::find(begin, end, option) != end);
+// for strings:
+bool getCmdlineParam(char** begin, char** end, const std::string& optionName, std::string& parameter)
+{
+	bool found = false;
+	char** it = std::find(begin, end, optionName);
+	if (it != end) {
+		found = true;
+		if (++it != end)
+			parameter = *it;
+	}
+	return found;
+}
+
+// switch only (no parameter)
+bool getCmdlineParam(char** begin, char** end, const std::string& optionName)
+{
+	return (std::find(begin, end, optionName) != end);
 }
 
 // struct ConversionInfo : structure for holding all the parameters required for a conversion job
@@ -168,178 +159,109 @@ inline std::string ConversionInfo::toCmdLineArgs() {
 // unacceptable parameters are indicated by setting bBadParams to true
 
 inline bool ConversionInfo::fromCmdLineArgs(int argc, char* argv[]) {
+	
 	// initialize defaults:
 	inputFilename.clear();
 	outputFilename.clear();
 	outBitFormat.clear();
 	outputFormat = 0;
-	outputSampleRate = 44100;
+	outputSampleRate = 0;
 	normalizeAmount = 1.0;
+	limit = 1.0;
 	ditherAmount = 1.0;
+	ditherProfileID = DitherProfileID::standard;
 	flacCompressionLevel = 5;
 	vorbisQuality = 3;
-	ditherProfileID = DitherProfileID::standard;
+	gain = 1.0;
+	seed = 0;
+	maxStages = 3;
+	lpfMode = normal;
+	lpfCutoff = 100.0 * (10.0 / 11.0);
+	lpfTransitionWidth = 100.0 - lpfCutoff;
+	dsfInput = false;
+	dffInput = false;
 
-	////////////////////////////////////////////////////////////////////
-	// core parameters:
+	// get core parameters:
 	getCmdlineParam(argv, argv + argc, "-i", inputFilename);
 	getCmdlineParam(argv, argv + argc, "-o", outputFilename);
 	getCmdlineParam(argv, argv + argc, "-r", outputSampleRate);
 	getCmdlineParam(argv, argv + argc, "-b", outBitFormat);
 
-	// gain
-	if (findCmdlineOption(argv, argv + argc, "--gain")) {
-		getCmdlineParam(argv, argv + argc, "--gain", gain);
-	}
-	else {
-		gain = 1.0; // default
+	// get extended parameters
+	getCmdlineParam(argv, argv + argc, "--gain", gain);
+	bUseDoublePrecision = getCmdlineParam(argv, argv + argc, "--doubleprecision");
+	bNormalize = getCmdlineParam(argv, argv + argc, "-n", normalizeAmount);
+	bDither = getCmdlineParam(argv, argv + argc, "--dither", ditherAmount);
+	ditherProfileID = getDefaultNoiseShape(outputSampleRate);
+	getCmdlineParam(argv, argv + argc, "--ns", ditherProfileID);
+	ditherProfileID = getCmdlineParam(argv, argv + argc, "--flat-tpdf") ? DitherProfileID::flat : ditherProfileID;
+	bAutoBlankingEnabled = getCmdlineParam(argv, argv + argc, "--autoblank");
+	bUseSeed = getCmdlineParam(argv, argv + argc, "--seed", seed);
+	bDelayTrim = !getCmdlineParam(argv, argv + argc, "--noDelayTrim");
+	bMinPhase = getCmdlineParam(argv, argv + argc, "--minphase");
+	bSetFlacCompression = getCmdlineParam(argv, argv + argc, "--flacCompression", flacCompressionLevel);
+	bSetVorbisQuality = getCmdlineParam(argv, argv + argc, "--vorbisQuality", vorbisQuality);
+	bMultiThreaded = getCmdlineParam(argv, argv + argc, "--mt");
+	bRf64 = getCmdlineParam(argv, argv + argc, "--rf64");
+	bNoPeakChunk = getCmdlineParam(argv, argv + argc, "--noPeakChunk");
+	bWriteMetaData = !getCmdlineParam(argv, argv + argc, "--noMetadata");
+	getCmdlineParam(argv, argv + argc, "--maxStages", maxStages);
+	bSingleStage = getCmdlineParam(argv, argv + argc, "--singleStage");
+	bShowStages = getCmdlineParam(argv, argv + argc, "--showStages");
+
+	// LPFilter settings:
+	if (getCmdlineParam(argv, argv + argc, "--relaxedLPF")) {
+		lpfMode = relaxed;
+		lpfCutoff = 100.0 * (21.0 / 22.0);				// late cutoff
+		lpfTransitionWidth = 2 * (100.0 - lpfCutoff); // wide transition (double-width)  
 	}
 
-	// double precision switch:
-	bUseDoublePrecision = findCmdlineOption(argv, argv + argc, "--doubleprecision");
+	if (getCmdlineParam(argv, argv + argc, "--steepLPF")) {
+		lpfMode = steep;
+		lpfCutoff = 100.0 * (21.0 / 22.0);				// late cutoff
+		lpfTransitionWidth = 100.0 - lpfCutoff;       // steep transition  
+	}
 
-	// normalize option and parameter:
-	bNormalize = findCmdlineOption(argv, argv + argc, "-n");
+	if (getCmdlineParam(argv, argv + argc, "--lpf-cutoff", lpfCutoff)) { // custom LPF cutoff frequency
+		lpfMode = custom;
+		if (!getCmdlineParam(argv, argv + argc, "--lpf-transition", lpfTransitionWidth)) {
+			lpfTransitionWidth = 100 - lpfCutoff; // auto mode
+		}
+	}
+
+	// constraining functions:
+	auto constrainDouble = [](double& val, double minVal, double maxVal) {
+		val = std::max(minVal, std::min(val, maxVal));
+	};
+
+	auto constrainInt = [](int& val, int minVal, int maxVal) {
+		val = std::max(minVal, std::min(val, maxVal));
+	};
+
+	// set constraints:
+	constrainInt(flacCompressionLevel, 0, 8);
+	constrainDouble(vorbisQuality, -1, 10);
+	constrainInt(maxStages, 1, 10);
+//	constrainDouble(lpfCutoff, 1.0, 99.9);
+//	constrainDouble(lpfTransitionWidth, 0.1, 400.0);
+
 	if (bNormalize) {
-		getCmdlineParam(argv, argv + argc, "-n", normalizeAmount);
 		if (normalizeAmount <= 0.0)
 			normalizeAmount = 1.0;
 		if (normalizeAmount > 1.0)
 			std::cout << "\nWarning: Normalization factor greater than 1.0 - THIS WILL CAUSE CLIPPING !!\n" << std::endl;
 		limit = normalizeAmount;
 	}
-	else {
-		limit = 1.0; // default
-	}
-
-	// dither option and parameter:
-	bDither = findCmdlineOption(argv, argv + argc, "--dither");
+	
 	if (bDither) {
-		getCmdlineParam(argv, argv + argc, "--dither", ditherAmount);
 		if (ditherAmount <= 0.0)
 			ditherAmount = 1.0;
 	}
-
-	// auto-blanking option (for dithering):
-	bAutoBlankingEnabled = findCmdlineOption(argv, argv + argc, "--autoblank");
-
-	// ns option to determine dither Profile:
-	if (findCmdlineOption(argv, argv + argc, "--ns")) {
-		getCmdlineParam(argv, argv + argc, "--ns", ditherProfileID);
-		if (ditherProfileID < 0)
-			ditherProfileID = 0;
-		if (ditherProfileID >= DitherProfileID::end)
-			ditherProfileID = getDefaultNoiseShape(outputSampleRate);
-	}
-	else {
+	
+	if (ditherProfileID < 0)
+		ditherProfileID = 0;
+	if (ditherProfileID >= DitherProfileID::end)
 		ditherProfileID = getDefaultNoiseShape(outputSampleRate);
-	}
-
-	// --flat-tpdf option (takes precedence over --ns)
-	if (findCmdlineOption(argv, argv + argc, "--flat-tpdf")) {
-		ditherProfileID = DitherProfileID::flat;
-	}
-
-	// seed option and parameter:
-	bUseSeed = findCmdlineOption(argv, argv + argc, "--seed");
-	seed = 0;
-	if (bUseSeed) {
-		getCmdlineParam(argv, argv + argc, "--seed", seed);
-	}
-
-	// delay trim (group delay compensation)
-	bDelayTrim = !findCmdlineOption(argv, argv + argc, "--noDelayTrim");
-
-	// minimum-phase option:
-	bMinPhase = findCmdlineOption(argv, argv + argc, "--minphase");
-
-	// flacCompression option and parameter:
-	bSetFlacCompression = findCmdlineOption(argv, argv + argc, "--flacCompression");
-	if (bSetFlacCompression) {
-		getCmdlineParam(argv, argv + argc, "--flacCompression", flacCompressionLevel);
-		if (flacCompressionLevel < 0)
-			flacCompressionLevel = 0;
-		if (flacCompressionLevel > 8)
-			flacCompressionLevel = 8;
-	}
-
-	// vorbisQuality option and parameter:
-	bSetVorbisQuality = findCmdlineOption(argv, argv + argc, "--vorbisQuality");
-	if (bSetVorbisQuality) {
-		getCmdlineParam(argv, argv + argc, "--vorbisQuality", vorbisQuality);
-		if (vorbisQuality < -1)
-			vorbisQuality = -1;
-		if (vorbisQuality > 10)
-			vorbisQuality = 10;
-	}
-
-	// noClippingProtection option:
-	disableClippingProtection = findCmdlineOption(argv, argv + argc, "--noClippingProtection");
-
-	// default cutoff and transition width:
-	lpfMode = normal;
-	lpfCutoff = 100.0 * (10.0 / 11.0);
-	lpfTransitionWidth = 100.0 - lpfCutoff;
-
-	// relaxedLPF option:
-	if (findCmdlineOption(argv, argv + argc, "--relaxedLPF")) {
-		lpfMode = relaxed;
-		lpfCutoff = 100.0 * (21.0 / 22.0);				// late cutoff
-		lpfTransitionWidth = 2 * (100.0 - lpfCutoff); // wide transition (double-width)  
-	}
-
-	// steepLPF option:
-	if (findCmdlineOption(argv, argv + argc, "--steepLPF")) {
-		lpfMode = steep;
-		lpfCutoff = 100.0 * (21.0 / 22.0);				// late cutoff
-		lpfTransitionWidth = 100.0 - lpfCutoff;       // steep transition  
-	}
-
-	// custom LPF cutoff frequency:
-	if (findCmdlineOption(argv, argv + argc, "--lpf-cutoff")) {
-		getCmdlineParam(argv, argv + argc, "--lpf-cutoff", lpfCutoff);
-		lpfMode = custom;
-		lpfCutoff = std::max(1.0, std::min(lpfCutoff, 99.9));
-
-		// custom LPF transition width:
-		if (findCmdlineOption(argv, argv + argc, "--lpf-transition")) {
-			getCmdlineParam(argv, argv + argc, "--lpf-transition", lpfTransitionWidth);
-		}
-		else {
-			lpfTransitionWidth = 100 - lpfCutoff; // auto mode
-		}
-		lpfTransitionWidth = std::max(0.1, std::min(lpfTransitionWidth, 400.0));
-	}
-
-	// multithreaded option:
-	bMultiThreaded = findCmdlineOption(argv, argv + argc, "--mt");
-
-	// rf64 option:
-	bRf64 = findCmdlineOption(argv, argv + argc, "--rf64");
-
-	// noPeakChunk option:
-	bNoPeakChunk = findCmdlineOption(argv, argv + argc, "--noPeakChunk");
-
-	// noMetadata option:
-	bWriteMetaData = !findCmdlineOption(argv, argv + argc, "--noMetadata");
-
-	// maxStages:
-	if (findCmdlineOption(argv, argv + argc, "--maxStages")) {
-		getCmdlineParam(argv, argv + argc, "--maxStages", maxStages);
-		if (maxStages < 1)
-			maxStages = 1;
-		if (maxStages > 10)
-			maxStages = 10;
-	}
-	else {
-		maxStages = 3; // default;
-	}
-
-	// single stage:
-	bSingleStage = findCmdlineOption(argv, argv + argc, "--singleStage");
-
-	// showStages option:
-	bShowStages = findCmdlineOption(argv, argv + argc, "--showStages");
 
 	// test for bad parameters:
 	bBadParams = false;
