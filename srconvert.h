@@ -265,7 +265,8 @@ private:
 		numStages = fractions.size();
 		indexOfLastStage = numStages - 1;
 		int inputRate = ci.inputSampleRate;
-		double guarantee = inputRate / 2.0; // no content above this frequency
+		double stretch = (ci.lpfCutoff + ci.lpfTransitionWidth) / 100.0;
+		double guarantee = stretch * inputRate / 2.0; // no content above this frequency
 		std::string stageInputName(ci.inputFilename);
 		double ft = ci.lpfCutoff / 100 * std::min(ci.inputSampleRate, ci.outputSampleRate) / 2.0;
 
@@ -278,14 +279,10 @@ private:
 				gain *= stageCi.overSamplingFactor;
 			}
 			decltype(stageCi.inputSampleRate) minSampleRate = std::min(stageCi.inputSampleRate, stageCi.outputSampleRate);
-			double stopFreq = std::max(minSampleRate / 2.0, minSampleRate - guarantee);
+			double stopFreq = std::max(stretch * minSampleRate / 2.0, minSampleRate - guarantee);
 
 			assert(stopFreq > ft);
-		//	const double stdTransitionWidth = 9.090909;
-		//	double transWidthScaling = ci.lpfTransitionWidth / stdTransitionWidth;
-			double transWidthScaling = 1.0;
-		
-			stageCi.lpfTransitionWidth = transWidthScaling * 100.0 * (stopFreq - ft) / (stageCi.outputSampleRate * 0.5);
+			stageCi.lpfTransitionWidth = 100.0 * (stopFreq - ft) / (stageCi.outputSampleRate * 0.5);
 			assert(stageCi.lpfTransitionWidth >= 0.0);
 			guarantee = std::min(guarantee, stopFreq);
 
