@@ -29,6 +29,18 @@ typedef enum {
 
 // The following functions are used for fetching commandline parameters:
 
+// proposal to make the parser more permissive:
+// lhs: --flatTpdf
+// rhs: --flat-tpdf
+
+// on both sides,
+// remove all hyphens after first alphanum character
+// convert to lowercase
+
+// lhs: --flattpdf
+// rhs: --flattpdf
+
+
 // for numbers:
 template<typename T>
 bool getCmdlineParam(char** begin, char** end, const std::string& optionName, T& parameter) {
