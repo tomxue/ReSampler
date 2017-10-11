@@ -341,7 +341,7 @@ private:
 			size_t outBufferSize = std::ceil(BUFFERSIZE * cumulativeNumerator / cumulativeDenominator);
 
 			if (ci.bShowStages) {
-				std::cout << cumulativeNumerator << " / " << cumulativeDenominator << "\n";
+				//std::cout << cumulativeNumerator << " / " << cumulativeDenominator << "\n";
 				std::cout << "Output Buffer Size: " << outBufferSize << "\n\n" << std::endl;
 			}
 
