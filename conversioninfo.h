@@ -19,6 +19,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <algorithm>
 
 typedef enum {
 	relaxed,
@@ -29,49 +30,68 @@ typedef enum {
 
 // The following functions are used for fetching commandline parameters:
 
-// proposal to make the parser more permissive:
-// lhs: --flatTpdf
-// rhs: --flat-tpdf
+// sanitize() : function to allow more permissive parsing.
+// Removes hyphens after first non-hyphen character and converts to lowercase.
+// examples:
+//  --flatTPDF  => --flattpdf
+//  --flat-tpdf => --flattpdf
 
-// on both sides,
-// remove all hyphens after first alphanum character
-// convert to lowercase
+std::string sanitize(const std::string& str) {
+	std::string r(str);
+	auto s = r.find_first_not_of("-"); // get position of first non-hyphen
+	r.erase(std::remove(r.begin() + s, r.end(), '-'), r.end()); // remove all hyphens after the first non-hyphen
+	std::transform(r.begin(), r.end(), r.begin(), ::tolower); // change to lower-case
+	return r;
+}
 
-// lhs: --flattpdf
-// rhs: --flattpdf
-
-
-// for numbers:
+// for numeric parameter values:
 template<typename T>
-bool getCmdlineParam(char** begin, char** end, const std::string& optionName, T& parameter) {
+bool getCmdlineParam(char** begin, char** end, const std::string& option, T& parameter) {
+	std::vector<std::string> args(begin, end);
 	bool found = false;
-	char** it = std::find(begin, end, optionName);
-	if (it != end) {
-		found = true;
-		if (++it != end)
-			parameter = atof(*it);
+	for (auto it = args.begin(); it != args.end(); it++) {
+		if (sanitize(*it) == sanitize(option)) {
+			found = true;
+			auto next = std::next(it);
+			if (next != args.end())
+				parameter = std::stof(*next);
+			break;
+		}
 	}
 	return found;
 }
 
-// for strings:
-bool getCmdlineParam(char** begin, char** end, const std::string& optionName, std::string& parameter)
+// for string parameter values:
+bool getCmdlineParam(char** begin, char** end, const std::string& option, std::string& parameter)
 {
+	std::vector<std::string> args(begin, end);
 	bool found = false;
-	char** it = std::find(begin, end, optionName);
-	if (it != end) {
-		found = true;
-		if (++it != end)
-			parameter = *it;
+	for (auto it = args.begin(); it != args.end(); it++) {
+		if (sanitize(*it) == sanitize(option)) {
+			found = true;
+			auto next = std::next(it);
+			if (next != args.end())
+				parameter = *next;
+			break;
+		}
 	}
 	return found;
 }
 
-// switch only (no parameter)
-bool getCmdlineParam(char** begin, char** end, const std::string& optionName)
+// switch only (no parameter value)
+bool getCmdlineParam(char** begin, char** end, const std::string& option)
 {
-	return (std::find(begin, end, optionName) != end);
+	bool found = false;
+	std::vector<std::string> args(begin, end);
+	for (auto it = args.begin(); it != args.end(); it++) {
+		if (sanitize(*it) == sanitize(option)) {
+			found = true;
+			break;
+		}
+	}
+	return found;
 }
+// --
 
 // struct ConversionInfo : structure for holding all the parameters required for a conversion job
 
