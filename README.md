@@ -90,7 +90,9 @@ from the command line, the main options are as follows:
 
 **--showDitherProfiles** (since 1.3.1) shows a list of all available dither profiles.
 
-**--gain &lt;amount&gt;** (since 1.3.4) adjust the gain (amplification factor). 1.0 = unity gain (no amplification), -1.0 = invert signal, 0 = silence. Note: if clipping protection is enabled, gain will be automatically re-adjusted after the first pass if clipping occurs.
+**--gain &lt;amount&gt;** (since 1.3.4) adjust the gain (amplification factor). 1.0 = unity gain (no amplification), -1.0 = invert signal, 0 = silence. Note: if clipping protection is enabled, gain will be automatically re-adjusted after the first pass if clipping occurs. 
+
+Note: Setting the gain differs from applying normalization in that normalization is a type of *automatic* gain control, which sets the gain to whatever it needs to be to achieve the requested output level.
 
 **--doubleprecision** forces ReSampler to use double-precision (64-bit floating point) arithmetic for its *internal calculations* and is independent of the output format.
 
