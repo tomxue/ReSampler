@@ -5,7 +5,7 @@ XCode
 
 # building ReSampler (tested on macOS 10.12 - Sierra)
 
-Building on linux is fairly straightforward and consists of the following 3 steps:
+Building on Mac is fairly straightforward and consists of the following 3 steps:
 
 - install fftw library
 - install libsndfile library
