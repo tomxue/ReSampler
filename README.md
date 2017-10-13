@@ -247,6 +247,16 @@ Resampler was developed on Visual C++ 2015, as it uses some C++11 features. (Por
 
 ----------
 
+## compiling ReSampler
+
+[Windows](windows-build.md)
+
+[Linux](linux-build.md)
+
+[Mac](mac-build.md)
+
+----------
+
 ## Description of Binaries included in distribution
 
 **ReSampler/Release/ReSampler.exe** : 32-bit Windows with **SSE2** instruction set
