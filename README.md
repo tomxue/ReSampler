@@ -75,6 +75,9 @@ from the command line, the main options are as follows:
 
 ### Additional options: ###
 
+*Note: as of version 2.0, command-line options are more "forgiving" - they are now case insensitive, and allow hyphens within the text of the option to be ommitted. (However, the hyphens preceding the option are still required). This allows for variations such as the following to be possible:
+**--steep-lpf** **--steeplpf** **--steep-LPF** etc*
+
 **--help** shows usage and lists additional commandline options
 
 **--version** displays the version number of the program
@@ -217,7 +220,7 @@ The FIR filter class written for this project uses SSE SIMD instructions when us
 
 (Additionally, some progress has been made recently with a build of the project using AVX instructions, on supported CPUs / OSes, to perform 8 single-precision or 4 double-precision multiply/accumulate operations at a time.) 
 
-Resampler was developed on Visual C++ 2015, as it uses some C++11 features. (Porting to other environments is intended in the future).
+Resampler was originally developed on Visual C++ 2015, but also compiles just as well on gcc and clang.
 
 #### explanation of source code files:
 
