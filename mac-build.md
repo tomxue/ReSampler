@@ -52,7 +52,31 @@ standard 64-bit build:
 g++ -pthread -std=c++11 ReSampler.cpp -lfftw3 -lsndfile -o ReSampler -O3 -L/usr/local/lib -I/usr/local/include
 ~~~
 
-AVX Build **(NOT TESTED YET !)**:
+AVX Build:
 ~~~
 g++ -pthread -std=c++11 ReSampler.cpp -lfftw3 -lsndfile -o ReSampler -O3 -DUSE_AVX -mavx -L/usr/local/lib -I/usr/local/include
+~~~
+
+# miscellaneous
+
+## compiling sndfile-tools 
+
+~~~
+brew install autoconf
+brew install automake
+brew install libtool
+brew install pkg-config
+brew install libsamplerate
+brew install Cairo
+
+git clone https://github.com/erikd/sndfile-tools.git
+cd sndfile-tools
+
+./configure
+make
+
+cp sndfile-spectrogram /usr/local/bin
+cp sndfile-waveform /usr/local/bin
+cp sndfile-resample /usr/local/bin
+cp sndfile-mix-to-mono /usr/local/bin
 ~~~
