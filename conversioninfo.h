@@ -20,6 +20,7 @@
 #include <vector>
 #include <string>
 #include <algorithm>
+#include <stdexcept>
 
 typedef enum {
 	relaxed,
@@ -53,8 +54,14 @@ bool getCmdlineParam(char** begin, char** end, const std::string& option, T& par
 		if (sanitize(*it) == sanitize(option)) {
 			found = true;
 			auto next = std::next(it);
-			if (next != args.end())
-				parameter = std::stof(*next);
+			if (next != args.end()) {
+				try {
+					parameter = std::stof(*next);
+				}
+				catch (std::invalid_argument e) {
+					// leave parameter unchanged
+				}
+			}
 			break;
 		}
 	}
@@ -213,6 +220,8 @@ inline bool ConversionInfo::fromCmdLineArgs(int argc, char* argv[]) {
 	lpfTransitionWidth = 100.0 - lpfCutoff;
 	dsfInput = false;
 	dffInput = false;
+	bEnablePeakDetection = true;
+	disableClippingProtection = false;
 
 	// get core parameters:
 	getCmdlineParam(argv, argv + argc, "-i", inputFilename);
