@@ -2,12 +2,12 @@
 ## Synopsis
 ReSampler is a high-performance command-line audio sample rate conversion tool which can convert audio file formats with a variety of different bit-depths and audio channel configurations.
 
-ReSampler was originally developed on [Windows](windows-build.md), but has also been successfully compiled on [Linux](linux-build.md) and [macOS](mac-build.md)
+ReSampler was *originally* developed on [Windows](windows-build.md), but also compiles and runs well on [Linux](linux-build.md) and [macOS](mac-build.md)
 
 ReSampler is intended to produce outstanding quality sound files, keeping aliasing and other unwanted artifacts to a minimum, as the following actual measurement graphs show:
 
 ![FIR Filter response - downsample 96k->44k](147_160_FIR_Frequency-response-2016-03-30-KAISER_WINDOW.JPG)   
-*Typical frequency response when downsampling from 96kHz to 44.1kHz*
+*Typical frequency response when downsampling from 96kHz to 44.1kHz with standard (default) LPF*
 
 ![spectrogram: 0-48khz sweep ](96khz_sweep-3dBFS_64f(to44k)-dp.png)  
 *Spectrogram of 0-48kHz Sine Sweep @96kHz sample rate, after having been downsampled to 44kHz sample rate*
@@ -94,7 +94,7 @@ from the command line, the main options are as follows:
 
 Note: Setting the gain differs from applying normalization in that normalization is a type of *automatic* gain control, which sets the gain to whatever it needs to be to achieve the requested output level.
 
-**--doubleprecision** : force ReSampler to use double-precision (64-bit floating point) arithmetic for its *internal calculations* and is independent of the output format.
+**--doubleprecision** : force ReSampler to use double-precision (64-bit floating point) arithmetic for its *internal calculations.*
 
 **--dither [&lt;amount&gt;]** : generate **+/-amount** *bits* of dither. Dithering deliberately adds a small amount of a particular type of noise (triangular pdf with noise-shaping) prior to quantization to the output file. The goal of dithering is to reduce distortion, and allow extremely quiet passages to be preserved when they would otherwise be below the threshold of the target bit depth. Usually, it only makes sense to add dither when you are converting to a lower bit depth, for example:
  
@@ -112,7 +112,7 @@ ReSampler was originally developed on Windows, but has also been successfully co
 
 **--flat-tpdf** : when specified in conjunction with **--dither** , causes the dithering to use flat tpdf noise with no noise-shaping.
 
-**--seed &lt;n&gt;** : when specified in conjunction with **--dither** , causes the pseudo-random number generator used to generate dither noise to generate a specific sequence of noise associated with the number n.
+**--seed &lt;n&gt;** : when specified in conjunction with **--dither** , causes the pseudo-random number generator used to generate dither noise to generate a specific (repeatable) sequence of noise associated with the number n.
 Using the same value of n on subsequent conversions should reproduce precisely the same result. n is a signed integer in the range -2,147,483,648 through 2,147,483,647.  
 
 **--noDelayTrim** : deactivate correction of [delay due to the linear-phase FIR anti-aliasing filter.](./GroupDelayCorrection/delayCorrection.md)
