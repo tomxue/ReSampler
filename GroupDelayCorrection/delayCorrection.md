@@ -23,7 +23,7 @@ To correct the timing due to the delay, ReSampler discards (ie does not write to
 
 This behavior appears to be the accepted practice for sample rate converters, but can nevertheless be disabled using the **--noDelayTrim** option.  
 
-The **--noDelayTrim** option has no effect when used in conjunction with Minimum Phase, since a minimum-phase FIR, by its very nature, should not introduce delay.
+The **--noDelayTrim** option has no effect when used in conjunction with Minimum Phase, since a minimum-phase FIR should not introduce delay.
 
 *Note: In a realtime system, removing the delay would not be possible because it would require the ability to go back in time!* 
 
