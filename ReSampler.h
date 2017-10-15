@@ -42,6 +42,7 @@ const std::string strExtraOptions(
 	"--rf64\n"
 	"--noPeakChunk\n"
 	"--noMetadata\n"
+	"--singleStage\n"
 	"--maxStages\n"
 	"--showStages\n"
 );
