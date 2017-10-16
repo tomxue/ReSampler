@@ -32,7 +32,7 @@ public:
             std::streamsize ss = std::cout.precision();
             std::cout << " [" << std::setprecision(1) << relativeSpeed << "x]" << std::setprecision(ss);
         } 
-        std::cout << std::endl;
+        std::cout << "\n" << std::endl;
     }
 
 private:

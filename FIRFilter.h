@@ -751,18 +751,18 @@ std::vector<FloatType> makeMinPhase2(FloatType* pFIRcoeffs, size_t length)
 
 	assert(complexInput.size() == fftLength); // make sure padding worked properly.
 
-											  // Formula is as follows:
+	// Formula is as follows:
 
-											  // take the reversed array of
-											  // the real parts of
-											  // the ifft of
-											  // e to the power of
-											  // the Analytic Signal of
-											  // the real parts of 
-											  // the log of
-											  // the dynamic-ranged limited version of
-											  // the fft of 
-											  // the original filter
+	// take the reversed array of
+	// the real parts of
+	// the ifft of
+	// e to the power of
+	// the Analytic Signal of
+	// the real parts of 
+	// the log of
+	// the dynamic-ranged limited version of
+	// the fft of 
+	// the original filter
 
 	complexOutput = realV(ifftV(expV(AnalyticSignalV(realV(logV(limitDynRangeV(fftV(complexInput), -190)))))));
 	std::reverse(complexOutput.begin(), complexOutput.end());

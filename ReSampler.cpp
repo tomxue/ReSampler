@@ -525,7 +525,7 @@ bool convert(ConversionInfo& ci)
 
 	// echo conversion ratio to user:
 	FloatType resamplingFactor = static_cast<FloatType>(ci.outputSampleRate) / ci.inputSampleRate;
-	std::cout << "\nConversion ratio: " << resamplingFactor
+	std::cout << "Conversion ratio: " << resamplingFactor
 		<< " (" << fraction.numerator << ":" << fraction.denominator << ")" << std::endl;
 
 	// if the outputFormat is zero, it means "No change to file format"
@@ -778,6 +778,7 @@ bool convert(ConversionInfo& ci)
 		}
 
 	} while (!ci.disableClippingProtection && bClippingDetected);
+	
 	return true;
 } // ends convert()
 

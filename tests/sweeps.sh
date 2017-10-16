@@ -45,9 +45,9 @@ $resampler_path -i $input_path/96khz_sweep-3dBFS_32f.wav -o $output_path/96khz_s
 $resampler_path -i $input_path/96khz_sweep-3dBFS_32f.wav -o $output_path/96khz_sweep-3dBFS_32f-to192k-dp-steep.wav -r 192000 --noPeakChunk --doubleprecision --steepLPF --mt
 
 # 32-bit float, double-precision sweeps, relaxed LPF
-$resampler_path -i $input_path/96khz_sweep-3dBFS_32f.wav -o $output_path/96khz_sweep-3dBFS_32f-to22k-dp-relaxed.wav -r 22050 --noPeakChunk --doubleprecision --relaxedLPF -b 16
+$resampler_path -i $input_path/96khz_sweep-3dBFS_32f.wav -o $output_path/96khz_sweep-3dBFS_32f-to22k-dp-relaxed.wav -r 22050 --noPeakChunk --doubleprecision --relaxedLPF
 $resampler_path -i $input_path/96khz_sweep-3dBFS_32f.wav -o $output_path/96khz_sweep-3dBFS_32f-to32k-dp-relaxed.wav -r 32000 --noPeakChunk --doubleprecision --relaxedLPF --mt
-$resampler_path -i $input_path/96khz_sweep-3dBFS_32f.wav -o $output_path/96khz_sweep-3dBFS_32f-to44k-dp-relaxed.wav -r 44100 --noPeakChunk --doubleprecision --relaxedLPF -b 16
+$resampler_path -i $input_path/96khz_sweep-3dBFS_32f.wav -o $output_path/96khz_sweep-3dBFS_32f-to44k-dp-relaxed.wav -r 44100 --noPeakChunk --doubleprecision --relaxedLPF
 $resampler_path -i $input_path/96khz_sweep-3dBFS_32f.wav -o $output_path/96khz_sweep-3dBFS_32f-to48k-dp-relaxed.wav -r 48000 --noPeakChunk --doubleprecision --relaxedLPF --mt
 $resampler_path -i $input_path/96khz_sweep-3dBFS_32f.wav -o $output_path/96khz_sweep-3dBFS_32f-to88k-dp-relaxed.wav -r 88200 --noPeakChunk --doubleprecision --relaxedLPF
 $resampler_path -i $input_path/96khz_sweep-3dBFS_32f.wav -o $output_path/96khz_sweep-3dBFS_32f-to96k-dp-relaxed.wav -r 96000 --noPeakChunk --doubleprecision --relaxedLPF --mt
