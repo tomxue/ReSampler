@@ -614,6 +614,7 @@ bool convert(ConversionInfo& ci)
 
 	do { // clipping detection loop (repeat if clipping detected)
 
+		peakInputSample = 0.0;
 		bClippingDetected = false;
 		std::unique_ptr<SndfileHandle> outFile;
 

@@ -77,6 +77,7 @@ public:
 
 	void reset() {
 		filter.reset();
+		m = 0;
 	}
 
 private:
