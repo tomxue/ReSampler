@@ -82,6 +82,10 @@ int main(int argc, char * argv[])
 	std::cout << "Input file: " << ci.inputFilename << std::endl;
 	std::cout << "Output file: " << ci.outputFilename << std::endl;
 
+	if (ci.disableClippingProtection) {
+		std::cout << "clipping protection disabled " << std::endl;
+	}
+
 	// Isolate the file extensions
 	std::string inFileExt;
 	std::string outFileExt;
