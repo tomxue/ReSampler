@@ -31,11 +31,14 @@ rm ./spectrograms/*.*
 
 echo $(tput setaf 2)generating spectrograms ...$(tput setaf 1)
 
-#series
-#find ./outputs -type f ! -name '*.png' ! -name '*.txt' -exec $spectrogram_tool --dyn-range=190 '{}' 1200 960 '{}'.png \;
-
-#parallel
-find ./outputs -type f ! -name '*.png' ! -name '*.txt' ! -name '*.sd2' ! -name '*.raw' -print0 | xargs -i --null -n 1 -P $numThreads $spectrogram_tool --dyn-range=190 {} 1200 960 {}.png 
+if [[ "$OSTYPE" == "darwin"* ]]; 
+then 
+    #series
+    find ./outputs -type f ! -name '*.png' ! -name '*.txt' -exec $spectrogram_tool --dyn-range=190 '{}' 1200 960 '{}'.png \;
+else 
+    #parallel
+    find ./outputs -type f ! -name '*.png' ! -name '*.txt' ! -name '*.sd2' ! -name '*.raw' -print0 | xargs -i --null -n 1 -P $numThreads $spectrogram_tool --dyn-range=190 {} 1200 960 {}.png 
+fi
 
 echo $(tput setaf 2)moving spectrograms to ./spectrograms folder$(tput setaf 7)
 mv ./outputs/*.png ./spectrograms

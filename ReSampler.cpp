@@ -82,6 +82,10 @@ int main(int argc, char * argv[])
 	std::cout << "Input file: " << ci.inputFilename << std::endl;
 	std::cout << "Output file: " << ci.outputFilename << std::endl;
 
+	if (ci.disableClippingProtection) {
+		std::cout << "clipping protection disabled " << std::endl;
+	}
+
 	// Isolate the file extensions
 	std::string inFileExt;
 	std::string outFileExt;
@@ -430,7 +434,7 @@ bool convert(ConversionInfo& ci)
 	size_t inputChannelBufferSize = BUFFERSIZE;
 	size_t inputBlockSize = BUFFERSIZE * nChannels;
 	size_t outputChannelBufferSize = std::ceil(BUFFERSIZE * static_cast<double>(fraction.numerator) / static_cast<double>(fraction.denominator));
-	size_t outputBlockSize = nChannels * outputChannelBufferSize;
+	size_t outputBlockSize = nChannels * (1 + outputChannelBufferSize);
 	
 	// allocate buffers:
 	std::vector<FloatType> inputBlock(inputBlockSize, 0);		// input buffer for storing interleaved samples from input file
@@ -525,7 +529,7 @@ bool convert(ConversionInfo& ci)
 
 	// echo conversion ratio to user:
 	FloatType resamplingFactor = static_cast<FloatType>(ci.outputSampleRate) / ci.inputSampleRate;
-	std::cout << "\nConversion ratio: " << resamplingFactor
+	std::cout << "Conversion ratio: " << resamplingFactor
 		<< " (" << fraction.numerator << ":" << fraction.denominator << ")" << std::endl;
 
 	// if the outputFormat is zero, it means "No change to file format"
@@ -610,6 +614,7 @@ bool convert(ConversionInfo& ci)
 
 	do { // clipping detection loop (repeat if clipping detected)
 
+		peakInputSample = 0.0;
 		bClippingDetected = false;
 		std::unique_ptr<SndfileHandle> outFile;
 
@@ -778,6 +783,7 @@ bool convert(ConversionInfo& ci)
 		}
 
 	} while (!ci.disableClippingProtection && bClippingDetected);
+	
 	return true;
 } // ends convert()
 

@@ -20,6 +20,7 @@
 #include <vector>
 #include <string>
 #include <algorithm>
+#include <stdexcept>
 
 typedef enum {
 	relaxed,
@@ -53,8 +54,14 @@ bool getCmdlineParam(char** begin, char** end, const std::string& option, T& par
 		if (sanitize(*it) == sanitize(option)) {
 			found = true;
 			auto next = std::next(it);
-			if (next != args.end())
-				parameter = std::stof(*next);
+			if (next != args.end()) {
+				try {
+					parameter = std::stof(*next);
+				}
+				catch (std::invalid_argument e) {
+					// leave parameter unchanged
+				}
+			}
 			break;
 		}
 	}
@@ -91,6 +98,7 @@ bool getCmdlineParam(char** begin, char** end, const std::string& option)
 	}
 	return found;
 }
+
 // --
 
 // struct ConversionInfo : structure for holding all the parameters required for a conversion job
@@ -192,27 +200,48 @@ inline std::string ConversionInfo::toCmdLineArgs() {
 // unacceptable parameters are indicated by setting bBadParams to true
 
 inline bool ConversionInfo::fromCmdLineArgs(int argc, char* argv[]) {
-	
-	// initialize defaults:
+
+	// set defaults for EVERYTHING: 
 	inputFilename.clear();
 	outputFilename.clear();
-	outBitFormat.clear();
-	outputFormat = 0;
+	inputSampleRate = 0;
 	outputSampleRate = 0;
-	normalizeAmount = 1.0;
+	gain = 1.0;
 	limit = 1.0;
+	bUseDoublePrecision - false;
+	bNormalize = false;
+	normalizeAmount = 1.0;
+	outputFormat = 0;
+	outBitFormat.clear();
+	bDither = false;
 	ditherAmount = 1.0;
 	ditherProfileID = DitherProfileID::standard;
+	bAutoBlankingEnabled = false;
+	bDelayTrim = true;
+	bMinPhase = false;
+	bSetFlacCompression = false;
 	flacCompressionLevel = 5;
+	bSetVorbisQuality = 5;
 	vorbisQuality = 3;
-	gain = 1.0;
-	seed = 0;
-	maxStages = 3;
+	disableClippingProtection = false;
 	lpfMode = normal;
 	lpfCutoff = 100.0 * (10.0 / 11.0);
 	lpfTransitionWidth = 100.0 - lpfCutoff;
+	bUseSeed - false;
+	seed = 0;
 	dsfInput = false;
 	dffInput = false;
+	bEnablePeakDetection = true;
+	bMultiThreaded = false;
+	bRf64 = false;
+	bNoPeakChunk = false;
+	bWriteMetaData = true;
+	maxStages = 3;
+	bSingleStage = false;
+	bShowStages = false;
+	overSamplingFactor = 1.0;
+	bBadParams = false;
+	appName.clear();
 
 	// get core parameters:
 	getCmdlineParam(argv, argv + argc, "-i", inputFilename);
@@ -223,6 +252,7 @@ inline bool ConversionInfo::fromCmdLineArgs(int argc, char* argv[]) {
 	// get extended parameters
 	getCmdlineParam(argv, argv + argc, "--gain", gain);
 	bUseDoublePrecision = getCmdlineParam(argv, argv + argc, "--doubleprecision");
+	disableClippingProtection = getCmdlineParam(argv, argv + argc, "--noClippingProtection");
 	bNormalize = getCmdlineParam(argv, argv + argc, "-n", normalizeAmount);
 	bDither = getCmdlineParam(argv, argv + argc, "--dither", ditherAmount);
 	ditherProfileID = getDefaultNoiseShape(outputSampleRate);

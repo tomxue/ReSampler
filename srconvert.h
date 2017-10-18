@@ -77,6 +77,7 @@ public:
 
 	void reset() {
 		filter.reset();
+		m = 0;
 	}
 
 private:
@@ -192,11 +193,13 @@ template <typename FloatType>
 class Converter
 {
 public:
-	Converter(const ConversionInfo& ci) : ci(ci), groupDelay(0.0), gain(1.0) {
-		if(ci.outputSampleRate == ci.inputSampleRate)
+	Converter(const ConversionInfo& ci) : ci(ci), groupDelay(0.0), gain(1.0), isBypassMode(false) {
+		if (ci.outputSampleRate == ci.inputSampleRate) {
+			isBypassMode = true;
 			Converter::ci.bSingleStage = true;
+		}
 		
-		if (ci.bSingleStage) {
+		if (Converter::ci.bSingleStage) {
 			isMultistage = false;
 			initSinglestage();
 		} else {
@@ -251,11 +254,10 @@ private:
 		f.numerator *= ci.overSamplingFactor;
 		f.denominator *= ci.overSamplingFactor;
 
-		bool bypassMode = (ci.outputSampleRate == ci.inputSampleRate);
 		FIRFilter<FloatType> firFilter(filterTaps.data(), filterTaps.size());
-		convertStages.emplace_back(f.numerator, f.denominator, firFilter, bypassMode);
+		convertStages.emplace_back(f.numerator, f.denominator, firFilter, isBypassMode);
 		groupDelay = (ci.bMinPhase || !ci.bDelayTrim) ? 0 : (filterTaps.size() - 1) / 2 / f.denominator;
-		if (bypassMode)
+		if (isBypassMode)
 			groupDelay = 0;
 	}
 
@@ -372,6 +374,7 @@ private:
 	std::vector<std::vector<FloatType>> intermediateOutputBuffers;	// intermediate output buffer for each ConvertStage;
 	std::vector<std::string> stageCommandLines;
 	bool isMultistage;
+	bool isBypassMode;
 	double gain;
 
 };
