@@ -434,7 +434,7 @@ bool convert(ConversionInfo& ci)
 	size_t inputChannelBufferSize = BUFFERSIZE;
 	size_t inputBlockSize = BUFFERSIZE * nChannels;
 	size_t outputChannelBufferSize = std::ceil(BUFFERSIZE * static_cast<double>(fraction.numerator) / static_cast<double>(fraction.denominator));
-	size_t outputBlockSize = nChannels * outputChannelBufferSize;
+	size_t outputBlockSize = nChannels * (1 + outputChannelBufferSize);
 	
 	// allocate buffers:
 	std::vector<FloatType> inputBlock(inputBlockSize, 0);		// input buffer for storing interleaved samples from input file
