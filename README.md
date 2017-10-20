@@ -240,7 +240,7 @@ Resampler was originally developed on Visual C++ 2015, but also compiles just as
  
 **srconvert.h** : the heart of the sample rate conversion process
 
-**Biquad.h** : IIR Filter (used in dithering)
+**biquad.h** : IIR Filter (used in dithering)
 
 **ditherer.h** : defines ditherer class, for adding dither
 
