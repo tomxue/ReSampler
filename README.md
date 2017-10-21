@@ -254,6 +254,8 @@ Resampler was originally developed on Visual C++ 2015, but also compiles just as
 
 **osspecific.h** : contains macro definitions for specific target operating systems
 
+**raiitimer.h** : simple timer which displays elapsed time upon going out of scope
+
 *(the class implementations are header-only)*
 
 ----------
