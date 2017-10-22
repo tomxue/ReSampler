@@ -286,7 +286,8 @@ private:
 			assert(stopFreq > ft);
 			stageCi.lpfTransitionWidth = 100.0 * (stopFreq - ft) / (stageCi.outputSampleRate * 0.5);
 			assert(stageCi.lpfTransitionWidth >= 0.0);
-			guarantee = std::min(guarantee, stopFreq);
+	//		guarantee = std::min(guarantee, stopFreq);
+			guarantee = stopFreq;
 
 			// make the filter coefficients
 			std::vector<FloatType> filterTaps = makeFilterCoefficients<FloatType>(stageCi, fractions[i]);
