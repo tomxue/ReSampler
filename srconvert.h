@@ -268,7 +268,7 @@ private:
 		indexOfLastStage = numStages - 1;
 		int inputRate = ci.inputSampleRate;
 		double stretch = (ci.lpfCutoff + ci.lpfTransitionWidth) / 100.0;
-		double guarantee = stretch * inputRate / 2.0; // no content above this frequency
+		double lastStopFreq = stretch * inputRate / 2.0; // no content above this frequency
 		std::string stageInputName(ci.inputFilename);
 		double ft = ci.lpfCutoff / 100 * std::min(ci.inputSampleRate, ci.outputSampleRate) / 2.0;
 
@@ -281,13 +281,15 @@ private:
 				gain *= stageCi.overSamplingFactor;
 			}
 			decltype(stageCi.inputSampleRate) minSampleRate = std::min(stageCi.inputSampleRate, stageCi.outputSampleRate);
-			double stopFreq = std::max(stretch * minSampleRate / 2.0, minSampleRate - guarantee);
+			double stopFreq = std::max(stretch * minSampleRate / 2.0, minSampleRate - lastStopFreq);
 
 			assert(stopFreq > ft);
+			// To-Do: This needs to be set as percentage !!!
+			stageCi.lpfCutoff = 100 * ft / (minSampleRate / 2.0); 
+			//
 			stageCi.lpfTransitionWidth = 100.0 * (stopFreq - ft) / (stageCi.outputSampleRate * 0.5);
 			assert(stageCi.lpfTransitionWidth >= 0.0);
-	//		guarantee = std::min(guarantee, stopFreq);
-			guarantee = stopFreq;
+			lastStopFreq = stopFreq;
 
 			// make the filter coefficients
 			std::vector<FloatType> filterTaps = makeFilterCoefficients<FloatType>(stageCi, fractions[i]);
@@ -302,7 +304,7 @@ private:
 				std::cout << "ft: " << ft << "\n";
 				std::cout << "stopFreq: " << stopFreq << "\n";
 				std::cout << "transition width: " << stageCi.lpfTransitionWidth << " %\n";
-				std::cout << "guarantee: " << guarantee << "\n";
+				std::cout << "guarantee: " << lastStopFreq << "\n";
 				std::cout << "Generated Filter Size: " << filterTaps.size() << "\n";
 
 				stageCi.maxStages = 1;
