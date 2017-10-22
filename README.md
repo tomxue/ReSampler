@@ -235,10 +235,16 @@ Resampler was originally developed on Visual C++ 2015, but also compiles just as
 **FIRFilter.h** : FIR Filter DSP code
 
 **FIRFilterAVX.h** : AVX-specific DSP code (conditional #include in AVX build)
- 
-**Biquad.h** : IIR Filter (used in dithering)
 
-**Ditherer.h** : defines ditherer class, for adding dither
+**fraction.h** : defines Fraction type, and functions for obtaining gcd, simplified fractions, and prime factors of integers
+ 
+**srconvert.h** : the heart of the sample rate conversion process
+
+**biquad.h** : IIR Filter (used in dithering)
+
+**ditherer.h** : defines ditherer class, for adding dither
+
+**noiseshape.h** : contains definitions of noise-shaping curves
 
 **dff.h** : module for reading dff files
 
@@ -247,6 +253,8 @@ Resampler was originally developed on Visual C++ 2015, but also compiles just as
 **alignedmalloc.h** : simple function for dynamically allocating aligned memory (AVX requires 32-byte alignment)
 
 **osspecific.h** : contains macro definitions for specific target operating systems
+
+**raiitimer.h** : simple timer which displays elapsed time upon going out of scope
 
 *(the class implementations are header-only)*
 

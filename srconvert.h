@@ -268,25 +268,39 @@ private:
 		indexOfLastStage = numStages - 1;
 		int inputRate = ci.inputSampleRate;
 		double stretch = (ci.lpfCutoff + ci.lpfTransitionWidth) / 100.0;
-		double guarantee = stretch * inputRate / 2.0; // no content above this frequency
+		double lastStopFreq = stretch * inputRate / 2.0;
 		std::string stageInputName(ci.inputFilename);
 		double ft = ci.lpfCutoff / 100 * std::min(ci.inputSampleRate, ci.outputSampleRate) / 2.0;
 
 		for (int i = 0; i < numStages; i++) {
+
+			// copy ConversionInfo for this stage from master:
 			ConversionInfo stageCi = ci;
-			stageCi.overSamplingFactor = stageCi.bMinPhase ? 2 : 1;
+
+			// set input & output rates of this stage:
 			stageCi.inputSampleRate = inputRate;
 			stageCi.outputSampleRate = inputRate * fractions[i].numerator / fractions[i].denominator;
+
+			// decide whether to oversample this stage:
+			stageCi.overSamplingFactor = stageCi.bMinPhase ? 2 : 1;
 			if (stageCi.overSamplingFactor != 1) {
 				gain *= stageCi.overSamplingFactor;
 			}
-			decltype(stageCi.inputSampleRate) minSampleRate = std::min(stageCi.inputSampleRate, stageCi.outputSampleRate);
-			double stopFreq = std::max(stretch * minSampleRate / 2.0, minSampleRate - guarantee);
 
-			assert(stopFreq > ft);
+			// set minSampleRate and minNyquist for this stage:
+			decltype(stageCi.inputSampleRate) minSampleRate = std::min(stageCi.inputSampleRate, stageCi.outputSampleRate);
+			decltype(stageCi.inputSampleRate) minNyquist = minSampleRate / 2.0;
+
+			// determine transition frequency (cutoff) and stop frequency for this stage:
+			double stopFreq = std::max(stretch * minNyquist, minSampleRate - lastStopFreq);
+			assert(stopFreq > ft); // should always be the case for a LPF
+
+			// set transition frequency (cutoff) and transition width for this stage (they are stored as percentage values)
+			stageCi.lpfCutoff = 100 * ft / minNyquist;
 			stageCi.lpfTransitionWidth = 100.0 * (stopFreq - ft) / (stageCi.outputSampleRate * 0.5);
-			assert(stageCi.lpfTransitionWidth >= 0.0);
-			guarantee = std::min(guarantee, stopFreq);
+		//	stageCi.lpfTransitionWidth = 100.0 * (stopFreq - ft) / minNyquist;
+			assert(stageCi.lpfTransitionWidth > 0.0);
+			lastStopFreq = stopFreq; // keep this value for calculation of next stage's stopFreq
 
 			// make the filter coefficients
 			std::vector<FloatType> filterTaps = makeFilterCoefficients<FloatType>(stageCi, fractions[i]);
@@ -301,14 +315,15 @@ private:
 				std::cout << "ft: " << ft << "\n";
 				std::cout << "stopFreq: " << stopFreq << "\n";
 				std::cout << "transition width: " << stageCi.lpfTransitionWidth << " %\n";
-				std::cout << "guarantee: " << guarantee << "\n";
+				std::cout << "guarantee: " << lastStopFreq << "\n";
 				std::cout << "Generated Filter Size: " << filterTaps.size() << "\n";
 
 				stageCi.maxStages = 1;
+				// stageCi.bSingleStage = true; // to-do: use single-stage engine vs. multi w/ maxStages= 1 ??
 				stageCi.lpfMode = custom;
 				stageCi.inputFilename = stageInputName;
 
-				if (i != numStages - 1) {
+				if (i != indexOfLastStage) {
 					size_t lastDotPos = stageCi.outputFilename.find_last_of(".");
 					if (lastDotPos != std::string::npos) {
 						std::string pathWithoutExt = stageCi.outputFilename.substr(0, lastDotPos);
@@ -342,13 +357,14 @@ private:
 			}
 			size_t outBufferSize = std::ceil(BUFFERSIZE * cumulativeNumerator / cumulativeDenominator);
 
+			// conditionally show outpout buffer size
 			if (ci.bShowStages) {
 				//std::cout << cumulativeNumerator << " / " << cumulativeDenominator << "\n";
 				std::cout << "Output Buffer Size: " << outBufferSize << "\n\n" << std::endl;
 			}
 
 			// make output buffer for this stage (last stage doesn't need one)
-			if (i != numStages - 1) {
+			if (i != indexOfLastStage) {
 				intermediateOutputBuffers.emplace_back(std::vector<FloatType>(outBufferSize, 0.0));
 			}
 
