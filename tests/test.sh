@@ -24,9 +24,6 @@ fi
 rm $output_path/*.*
 rm $output_path/._*
 
-$resampler_path -i $input_path/96khz_sweep-3dBFS_32f.wav -o ~/44khz_sweep-3dBFS_32f -r 44100 --noPeakChunk --single-stage --double-precision
-
-
 # 32-bit float sweeps
 $resampler_path -i $input_path/96khz_sweep-3dBFS_32f.wav -o $output_path/96khz_sweep-3dBFS_32f-to22k.wav -r 22050 --noPeakChunk
 $resampler_path -i $input_path/96khz_sweep-3dBFS_32f.wav -o $output_path/96khz_sweep-3dBFS_32f-to32k.wav -r 32000 --noPeakChunk --mt
