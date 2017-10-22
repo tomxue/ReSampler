@@ -58,20 +58,33 @@ unsigned int fp_control_state = _controlfp(_EM_INEXACT, _MCW_EM);
 
 int main(int argc, char * argv[])
 {
-	ConversionInfo ci;
-	
-	// result of parseParameters() indicates whether to terminate, and 
-	// badParams indicates whether there was an error:
-	bool badParams = false;
-	if (!parseParameters(ci, badParams, argc, argv))
-		exit(badParams ? EXIT_FAILURE : EXIT_SUCCESS);
+	// test for global options
+	if (parseGlobalOptions(argc, argv)) {
+		exit(EXIT_SUCCESS);
+	}
 
+	// ConversionInfo instance to hold parameters
+	ConversionInfo ci;
+	ci.appName = argv[0];
+	ci.overSamplingFactor = 1;
+
+	// get conversion parameters
+	ci.fromCmdLineArgs(argc, argv);
+	if (ci.bBadParams) {
+		exit(EXIT_FAILURE);
+	}
+	
+	// query build version AND cpu
 	if (!showBuildVersion())
 		exit(EXIT_FAILURE); // can't continue (CPU / build mismatch)
 
 	// echo filenames to user
 	std::cout << "Input file: " << ci.inputFilename << std::endl;
 	std::cout << "Output file: " << ci.outputFilename << std::endl;
+
+	if (ci.disableClippingProtection) {
+		std::cout << "clipping protection disabled " << std::endl;
+	}
 
 	// Isolate the file extensions
 	std::string inFileExt;
@@ -119,24 +132,30 @@ int main(int argc, char * argv[])
 		if (ci.bUseDoublePrecision) {
 			std::cout << "Using double precision for calculations." << std::endl;
 			if (ci.dsfInput) {
-				return convert<DsfFile, double>(ci, /* peakDetection = */ false) ? EXIT_SUCCESS : EXIT_FAILURE;
+				ci.bEnablePeakDetection = false;
+				return convert<DsfFile, double> (ci) ? EXIT_SUCCESS : EXIT_FAILURE;
 			}
 			else if (ci.dffInput) {
-				return convert<DffFile, double>(ci, /* peakDetection = */ false) ? EXIT_SUCCESS : EXIT_FAILURE;
+				ci.bEnablePeakDetection = false;
+				return convert<DffFile, double> (ci) ? EXIT_SUCCESS : EXIT_FAILURE;
 			}
 			else {
-				return convert<SndfileHandle, double>(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
+				ci.bEnablePeakDetection = true;
+				return convert<SndfileHandle, double> (ci) ? EXIT_SUCCESS : EXIT_FAILURE;
 			}
 		}
 		else {
 			if (ci.dsfInput) {
-				return convert<DsfFile, float>(ci, /* peakDetection = */ false) ? EXIT_SUCCESS : EXIT_FAILURE;
+				ci.bEnablePeakDetection = false;
+				return convert<DsfFile, float> (ci) ? EXIT_SUCCESS : EXIT_FAILURE;
 			}
 			else if (ci.dffInput) {
-				return convert<DffFile, float>(ci, /* peakDetection = */ false) ? EXIT_SUCCESS : EXIT_FAILURE;
+				ci.bEnablePeakDetection = false;
+				return convert<DffFile, float> (ci) ? EXIT_SUCCESS : EXIT_FAILURE;
 			}
 			else {
-				return convert<SndfileHandle, float>(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
+				ci.bEnablePeakDetection = true;
+				return convert<SndfileHandle, float> (ci) ? EXIT_SUCCESS : EXIT_FAILURE;
 			}
 		}
 	}
@@ -147,246 +166,51 @@ int main(int argc, char * argv[])
 	}
 }
 
-// parseParameters()
-// Return value indicates whether caller should continue execution (ie true: continue, false: terminate)
-// Some commandline options (eg --version) should result in termination, but not error.
-// unacceptable parameters are indicated by setting bBadParams to true
-
-bool parseParameters(ConversionInfo& ci, bool& bBadParams, int argc, char* argv[]) {
-	// initialize defaults:
-	ci.inputFilename.clear();
-	ci.outputFilename.clear();
-	ci.outBitFormat.clear();
-	ci.outputFormat = 0;
-	ci.outputSampleRate = 44100;
-	ci.normalizeAmount = 1.0;
-	ci.ditherAmount = 1.0;
-	ci.flacCompressionLevel = 5;
-	ci.vorbisQuality = 3;
-	ci.ditherProfileID = DitherProfileID::standard;
-
-	//////////////////////////////////////////////////////////////
-	// terminating switch options: // 
+// parseGlobalOptions() - result indicates whether to terminate.
+bool parseGlobalOptions(int argc, char * argv[]) {
 
 	// help switch:
-	if (findCmdlineOption(argv, argv + argc, "--help") || findCmdlineOption(argv, argv + argc, "-h")) {
+	if (getCmdlineParam(argv, argv + argc, "--help") || getCmdlineParam(argv, argv + argc, "-h")) {
 		std::cout << strUsage << std::endl;
 		std::cout << "Additional options:\n\n" << strExtraOptions << std::endl;
-		return false;
+		return true;
 	}
 
 	// version switch:
-	if (findCmdlineOption(argv, argv + argc, "--version")) {
+	if (getCmdlineParam(argv, argv + argc, "--version")) {
 		std::cout << strVersion << std::endl;
-		return false;
+		return true;
 	}
 
-	if (findCmdlineOption(argv, argv + argc, "--compiler")) {
+	// compiler switch:
+	if (getCmdlineParam(argv, argv + argc, "--compiler")) {
 		showCompiler();
-		return false;
+		return true;
 	}
 
 	// sndfile-version switch:
-	if (findCmdlineOption(argv, argv + argc, "--sndfile-version")) {
+	if (getCmdlineParam(argv, argv + argc, "--sndfile-version")) {
 		char s[128];
 		sf_command(nullptr, SFC_GET_LIB_VERSION, s, sizeof(s));
 		std::cout << s << std::endl;
-		return false;
+		return true;
 	}
-	
+
 	// listsubformats
-	if (findCmdlineOption(argv, argv + argc, "--listsubformats")) {
+	if (getCmdlineParam(argv, argv + argc, "--listsubformats")) {
 		std::string filetype;
 		getCmdlineParam(argv, argv + argc, "--listsubformats", filetype);
 		listSubFormats(filetype);
-		return false;
+		return true;
 	}
 
 	// showDitherProfiles
-	if (findCmdlineOption(argv, argv + argc, "--showDitherProfiles")) {
+	if (getCmdlineParam(argv, argv + argc, "--showDitherProfiles")) {
 		showDitherProfiles();
-		return false;
+		return true;
 	}
 
-	////////////////////////////////////////////////////////////////////
-	// core parameters:
-	getCmdlineParam(argv, argv + argc, "-i", ci.inputFilename);
-	getCmdlineParam(argv, argv + argc, "-o", ci.outputFilename);
-	getCmdlineParam(argv, argv + argc, "-r", ci.outputSampleRate);
-	getCmdlineParam(argv, argv + argc, "-b", ci.outBitFormat);
-
-	// double precision switch:
-	ci.bUseDoublePrecision = findCmdlineOption(argv, argv + argc, "--doubleprecision");
-
-	// gain
-	if (findCmdlineOption(argv, argv + argc, "--gain")) {
-		getCmdlineParam(argv, argv + argc, "--gain", ci.gain);
-	}
-	else {
-		ci.gain = 1.0; // default
-	}
-
-	// normalize option and parameter:
-	ci.bNormalize = findCmdlineOption(argv, argv + argc, "-n");
-	if (ci.bNormalize) {
-		getCmdlineParam(argv, argv + argc, "-n", ci.normalizeAmount);
-		if (ci.normalizeAmount <= 0.0)
-			ci.normalizeAmount = 1.0;
-		if (ci.normalizeAmount > 1.0)
-			std::cout << "\nWarning: Normalization factor greater than 1.0 - THIS WILL CAUSE CLIPPING !!\n" << std::endl;
-		ci.limit = ci.normalizeAmount;
-	}
-	else {
-		ci.limit = 1.0; // default
-	}
-
-	// dither option and parameter:
-	ci.bDither = findCmdlineOption(argv, argv + argc, "--dither");
-	if (ci.bDither) {
-		getCmdlineParam(argv, argv + argc, "--dither", ci.ditherAmount);
-		if (ci.ditherAmount <= 0.0)
-			ci.ditherAmount = 1.0;
-	}
-
-	// auto-blanking option (for dithering):
-	ci.bAutoBlankingEnabled = findCmdlineOption(argv, argv + argc, "--autoblank");
-
-	// ns option to determine dither Profile:
-	if (findCmdlineOption(argv, argv + argc, "--ns")) {
-		getCmdlineParam(argv, argv + argc, "--ns", ci.ditherProfileID);
-		if (ci.ditherProfileID < 0)
-			ci.ditherProfileID = 0;
-		if (ci.ditherProfileID >= DitherProfileID::end)
-			ci.ditherProfileID = getDefaultNoiseShape(ci.outputSampleRate);
-	}
-	else {
-		ci.ditherProfileID = getDefaultNoiseShape(ci.outputSampleRate);
-	}
-
-	// --flat-tpdf option (takes precedence over --ns)
-	if (findCmdlineOption(argv, argv + argc, "--flat-tpdf")) {
-		ci.ditherProfileID = DitherProfileID::flat;
-	}
-
-	// seed option and parameter:
-	ci.bUseSeed = findCmdlineOption(argv, argv + argc, "--seed");
-	ci.seed = 0;
-	if (ci.bUseSeed) {
-		getCmdlineParam(argv, argv + argc, "--seed", ci.seed);
-	}
-
-	// delay trim (group delay compensation)
-	ci.bDelayTrim = !findCmdlineOption(argv, argv + argc, "--noDelayTrim");
-
-	// minimum-phase option:
-	ci.bMinPhase = findCmdlineOption(argv, argv + argc, "--minphase");
-
-	// flacCompression option and parameter:
-	ci.bSetFlacCompression = findCmdlineOption(argv, argv + argc, "--flacCompression");
-	if (ci.bSetFlacCompression) {
-		getCmdlineParam(argv, argv + argc, "--flacCompression", ci.flacCompressionLevel);
-		if (ci.flacCompressionLevel < 0)
-			ci.flacCompressionLevel = 0;
-		if (ci.flacCompressionLevel > 8)
-			ci.flacCompressionLevel = 8;
-	}
-
-	// vorbisQuality option and parameter:
-	ci.bSetVorbisQuality = findCmdlineOption(argv, argv + argc, "--vorbisQuality");
-	if (ci.bSetVorbisQuality) {
-		getCmdlineParam(argv, argv + argc, "--vorbisQuality", ci.vorbisQuality);
-		if (ci.vorbisQuality < -1)
-			ci.vorbisQuality = -1;
-		if (ci.vorbisQuality > 10)
-			ci.vorbisQuality = 10;
-	}
-
-	// noClippingProtection option:
-	ci.disableClippingProtection = findCmdlineOption(argv, argv + argc, "--noClippingProtection");
-
-	// default cutoff and transition width:
-	ci.lpfMode = normal;
-	ci.lpfCutoff = 100.0 * (10.0 / 11.0);
-	ci.lpfTransitionWidth = 100.0 - ci.lpfCutoff;
-
-	// relaxedLPF option:
-	if (findCmdlineOption(argv, argv + argc, "--relaxedLPF")) {
-		ci.lpfMode = relaxed;
-		ci.lpfCutoff = 100.0 * (21.0 / 22.0);				// late cutoff
-		ci.lpfTransitionWidth = 2 * (100.0 - ci.lpfCutoff); // wide transition (double-width)  
-	}
-	
-	// steepLPF option:
-	if (findCmdlineOption(argv, argv + argc, "--steepLPF")) {
-		ci.lpfMode = steep;
-		ci.lpfCutoff = 100.0 * (21.0 / 22.0);				// late cutoff
-		ci.lpfTransitionWidth = 100.0 - ci.lpfCutoff;       // steep transition  
-	}
-
-	// custom LPF cutoff frequency:
-	if (findCmdlineOption(argv, argv + argc, "--lpf-cutoff")) {
-		getCmdlineParam(argv, argv + argc, "--lpf-cutoff", ci.lpfCutoff);
-		ci.lpfMode = custom;
-		ci.lpfCutoff = std::max(1.0, std::min(ci.lpfCutoff, 99.9));
-
-		// custom LPF transition width:
-		if (findCmdlineOption(argv, argv + argc, "--lpf-transition")) {
-			getCmdlineParam(argv, argv + argc, "--lpf-transition", ci.lpfTransitionWidth);
-		}
-		else {
-			ci.lpfTransitionWidth = 100 - ci.lpfCutoff; // auto mode
-		}
-		ci.lpfTransitionWidth = std::max(0.1, std::min(ci.lpfTransitionWidth, 400.0));
-	}
-	
-	// multithreaded option:
-	ci.bMultiThreaded = findCmdlineOption(argv, argv + argc, "--mt");
-
-	// rf64 option:
-	ci.bRf64 = findCmdlineOption(argv, argv + argc, "--rf64");
-
-	// noPeakChunk option:
-	ci.bNoPeakChunk = findCmdlineOption(argv, argv + argc, "--noPeakChunk");
-
-	// noMetadata option:
-	ci.bWriteMetaData = !findCmdlineOption(argv, argv + argc, "--noMetadata");
-
-	// test for bad parameters:
-	bBadParams = false;
-	if (ci.outputFilename.empty()) {
-		if (ci.inputFilename.empty()) {
-			std::cout << "Error: Input filename not specified" << std::endl;
-			bBadParams = true;
-		}
-		else {
-			std::cout << "Output filename not specified" << std::endl;
-			ci.outputFilename = ci.inputFilename;
-			if (ci.outputFilename.find(".") != std::string::npos) {
-				auto dot = ci.outputFilename.find_last_of(".");
-				ci.outputFilename.insert(dot, "(converted)");
-			}
-			else {
-				ci.outputFilename.append("(converted)");
-			}
-			std::cout << "defaulting to: " << ci.outputFilename << "\n" << std::endl;
-		}
-	}
-
-	else if (ci.outputFilename == ci.inputFilename) {
-		std::cout << "\nError: Input and Output filenames cannot be the same" << std::endl;
-		bBadParams = true;
-	}
-
-	if (ci.outputSampleRate == 0) {
-		std::cout << "Error: Target sample rate not specified" << std::endl;
-		bBadParams = true;
-	}
-
-	if (bBadParams) {
-		std::cout << strUsage << std::endl;
-		return false;
-	}
-	return true;
+	return false;
 }
 
 // determineBestBitFormat() : determines the most appropriate bit format for the output file, through the following process:
@@ -580,7 +404,7 @@ seek(position, whence)
 */
 
 template<typename FileReader, typename FloatType>
-bool convert(ConversionInfo& ci, bool peakDetection)
+bool convert(ConversionInfo& ci)
 {
 	bool multiThreaded = ci.bMultiThreaded;
 
@@ -599,17 +423,18 @@ bool convert(ConversionInfo& ci, bool peakDetection)
 	// read file properties:
 	int nChannels = infile.channels();
 	ci.inputSampleRate = infile.samplerate();
-	sf_count_t inputSampleCount = infile.frames() * nChannels;
+	sf_count_t inputFrames = infile.frames();
+	sf_count_t inputSampleCount = inputFrames * nChannels;
+	double inputDuration = 1000.0 * inputFrames / ci.inputSampleRate; // ms
 
 	// determine conversion ratio:
-	//Fraction fOriginal = getSimplifiedFraction(ci.inputSampleRate, ci.outputSampleRate);
-	Fraction fraction = getSimplifiedFraction(ci.inputSampleRate, ci.outputSampleRate);
+	Fraction fraction = getFractionFromSamplerates(ci.inputSampleRate, ci.outputSampleRate);
 
 	// set buffer sizes:
 	size_t inputChannelBufferSize = BUFFERSIZE;
 	size_t inputBlockSize = BUFFERSIZE * nChannels;
 	size_t outputChannelBufferSize = std::ceil(BUFFERSIZE * static_cast<double>(fraction.numerator) / static_cast<double>(fraction.denominator));
-	size_t outputBlockSize = nChannels * outputChannelBufferSize;
+	size_t outputBlockSize = nChannels * (1 + outputChannelBufferSize);
 	
 	// allocate buffers:
 	std::vector<FloatType> inputBlock(inputBlockSize, 0);		// input buffer for storing interleaved samples from input file
@@ -653,23 +478,30 @@ bool convert(ConversionInfo& ci, bool peakDetection)
 	std::cout << "source file channels: " << nChannels << std::endl;
 	std::cout << "input sample rate: " << ci.inputSampleRate << "\noutput sample rate: " << ci.outputSampleRate << std::endl;
 
-	sf_count_t samplesRead;
-	sf_count_t totalSamplesRead = 0;
 	FloatType peakInputSample;
-	if (peakDetection) {
+	sf_count_t peakInputPosition = 0LL;
+	sf_count_t samplesRead;
+	sf_count_t totalSamplesRead = 0LL;
+	
+	if (ci.bEnablePeakDetection) {
 		peakInputSample = 0.0;
 		std::cout << "Scanning input file for peaks ...";
 
 		do {
 			samplesRead = infile.read(inputBlock.data(), inputBlockSize);
-			totalSamplesRead += samplesRead;
 			for (unsigned int s = 0; s < samplesRead; ++s) { // read all samples, without caring which channel they belong to
-				peakInputSample = std::max(peakInputSample, std::abs(inputBlock[s]));
+				if (std::abs(inputBlock[s]) > peakInputSample) {
+					peakInputSample = std::abs(inputBlock[s]);
+					peakInputPosition = totalSamplesRead + s;
+				}
 			}
+			totalSamplesRead += samplesRead;
 		} while (samplesRead > 0);
 
 		std::cout << "Done\n";
-		std::cout << "Peak input sample: " << std::fixed << peakInputSample << " (" << 20 * log10(peakInputSample) << " dBFS)" << std::endl;
+		std::cout << "Peak input sample: " << std::fixed << peakInputSample << " (" << 20 * log10(peakInputSample) << " dBFS) at ";
+		printSamplePosAsTime(peakInputPosition, ci.inputSampleRate);
+		std::cout << std::endl;
 		infile.seek(0, SEEK_SET); // rewind back to start of file
 	}
 
@@ -697,7 +529,7 @@ bool convert(ConversionInfo& ci, bool peakDetection)
 
 	// echo conversion ratio to user:
 	FloatType resamplingFactor = static_cast<FloatType>(ci.outputSampleRate) / ci.inputSampleRate;
-	std::cout << "\nConversion ratio: " << resamplingFactor
+	std::cout << "Conversion ratio: " << resamplingFactor
 		<< " (" << fraction.numerator << ":" << fraction.denominator << ")" << std::endl;
 
 	// if the outputFormat is zero, it means "No change to file format"
@@ -755,8 +587,16 @@ bool convert(ConversionInfo& ci, bool peakDetection)
 		ditherers.emplace_back(outputSignalBits, ci.ditherAmount, ci.bAutoBlankingEnabled, n + seed, static_cast<DitherProfileID>(ci.ditherProfileID));
 	}
 
+	// make a vector of Resamplers
+	std::vector<Converter<FloatType>> converters;
+	for (int n = 0; n < nChannels; n++) {
+		converters.emplace_back(ci);
+	} 
+
+	//std::cout << "Converter getGain(): " << converters[0].getGain() << std::endl;
+
 	// Calculate initial gain:
-	FloatType gain = ci.gain *
+	FloatType gain = ci.gain * converters[0].getGain() * 
 		(ci.bNormalize ? fraction.numerator * (ci.limit / peakInputSample) : fraction.numerator * ci.limit);
 
 	if (ci.bDither) { // allow headroom for dithering:
@@ -765,22 +605,18 @@ bool convert(ConversionInfo& ci, bool peakDetection)
 		gain *= ditherCompensation;
 	}
 
+	int groupDelay = converters[0].getGroupDelay();
+	// std::cout << "expected group delay " << groupDelay << std::endl;
+
 	FloatType peakOutputSample;
 	bool bClippingDetected;
-	RaiiTimer timer;
+	RaiiTimer timer(inputDuration);
 
 	do { // clipping detection loop (repeat if clipping detected)
 
+		peakInputSample = 0.0;
 		bClippingDetected = false;
 		std::unique_ptr<SndfileHandle> outFile;
-
-		// make a vector of singleStageResamplers
-		std::vector<SingleStageResampler<FloatType>> converters;
-		for (int n = 0; n < nChannels; n++) {
-			converters.emplace_back(ci);
-		} 
-		int groupDelay = converters[0].getGroupDelay();
-		// std::cout << "expected group delay " << groupDelay << std::endl;
 
 		try { // Open output file:
 
@@ -940,10 +776,14 @@ bool convert(ConversionInfo& ci, bool peakDetection)
 					ditherer.reset();
 				}
 			}
-			converters.clear();
+			
+			for (auto& converter : converters) {
+				converter.reset();
+			}
 		}
 
 	} while (!ci.disableClippingProtection && bClippingDetected);
+	
 	return true;
 } // ends convert()
 
@@ -1104,6 +944,16 @@ std::string fmtNumberWithCommas(uint64_t n) {
 	return s;
 }
 
+void printSamplePosAsTime(sf_count_t samplePos, unsigned int sampleRate) {
+	double seconds = static_cast<double>(samplePos) / sampleRate;
+	int h = seconds / 3600;
+	int m = (seconds - (h * 3600)) / 60;
+	double s = seconds - (h * 3600) - (m * 60);
+	std::ios::fmtflags f(std::cout.flags());
+	std::cout << std::setprecision(0) << h << ":" << m << ":" << std::setprecision(6) << s;
+	std::cout.flags(f);
+}
+
 bool testSetMetaData(DsfFile& outfile) {
 	// stub - to-do
 	return true;
@@ -1122,49 +972,6 @@ bool getMetaData(MetaData& metadata, const DffFile& f) {
 bool getMetaData(MetaData& metadata, const DsfFile& f) {
 	// stub - to-do
 	return true;
-}
-
-// The following functions are used for parsing commandline parameters:
-
-void getCmdlineParam(char** begin, char** end, const std::string& optionName, std::string& Parameter)
-{
-	Parameter.clear();
-	char** it = std::find(begin, end, optionName);
-	if (it != end)	// found option
-		if (++it != end) // found parameter after option
-			Parameter = *it;
-}
-
-void getCmdlineParam(char** begin, char** end, const std::string& optionName, unsigned int& nParameter)
-{
-	nParameter = 0;
-	char** it = std::find(begin, end, optionName);
-	if (it != end)	// found option
-		if (++it != end) // found parameter after option
-			nParameter = atoi(*it);
-}
-
-void getCmdlineParam(char** begin, char** end, const std::string& optionName, int& nParameter)
-{
-	nParameter = 0;
-	char** it = std::find(begin, end, optionName);
-	if (it != end)	// found option
-		if (++it != end) // found parameter after option
-			nParameter = atoi(*it);
-}
-
-
-void getCmdlineParam(char** begin, char** end, const std::string& optionName, double& Parameter)
-{
-	Parameter = 0.0;
-	char** it = std::find(begin, end, optionName);
-	if (it != end)	// found option
-		if (++it != end) // found parameter after option
-			Parameter = atof(*it);
-}
-
-bool findCmdlineOption(char** begin, char** end, const std::string& option) {
-	return (std::find(begin, end, option) != end);
 }
 
 bool checkSSE2() {

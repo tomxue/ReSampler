@@ -18,11 +18,12 @@
 
 struct ConversionInfo;
 
-const std::string strVersion("1.3.7");
+const std::string strVersion("2.0.0-pre-release");
 const std::string strUsage("usage: ReSampler -i <inputfile> [-o <outputfile>] -r <samplerate> [-b <bitformat>] [-n [<normalization factor>]]\n");
 const std::string strExtraOptions(
 	"--help\n"
 	"--version\n"
+	"--compiler\n"
 	"--sndfile-version\n"
 	"--listsubformats <ext>\n"
 	"--showDitherProfiles\n"
@@ -41,8 +42,11 @@ const std::string strExtraOptions(
 	"--rf64\n"
 	"--noPeakChunk\n"
 	"--noMetadata\n"
+	"--singleStage\n"
+	"--maxStages\n"
+	"--showStages\n"
 );
-const double clippingTrim = 1.0 - (1.0 / (1 << 24));
+const double clippingTrim = 1.0 - (1.0 / (1 << 23));
 
 #define BUFFERSIZE 32768 // buffer size for file reads
 #define MAXCHANNELS 64
@@ -134,21 +138,17 @@ typedef struct
 bool checkSSE2();
 bool checkAVX();
 bool showBuildVersion();
-bool parseParameters(ConversionInfo & ci, bool & bBadParams, int argc, char * argv[]);
+bool parseGlobalOptions(int argc, char * argv[]);
 bool determineBestBitFormat(std::string & BitFormat, const std::string & inFilename, const std::string & outFilename);
 int determineOutputFormat(const std::string & outFileExt, const std::string & bitFormat);
 void listSubFormats(const std::string & f);
-void getCmdlineParam(char ** begin, char ** end, const std::string & OptionName, std::string & Parameter);
-void getCmdlineParam(char ** begin, char ** end, const std::string & OptionName, unsigned int & nParameter);
-void getCmdlineParam(char ** begin, char ** end, const std::string & OptionName, int & nParameter);
-void getCmdlineParam(char ** begin, char ** end, const std::string & OptionName, double & Parameter);
-bool findCmdlineOption(char ** begin, char ** end, const std::string & option);
-template<typename FileReader, typename FloatType> bool convert(ConversionInfo & ci, bool peakDetection = true);
+template<typename FileReader, typename FloatType> bool convert(ConversionInfo & ci);
 int getDefaultNoiseShape(int sampleRate);
 void showDitherProfiles();
 int getSfBytesPerSample(int format);
 bool checkWarnOutputSize(uint64_t inputSamples, int bytesPerSample, int numerator, int denominator);
 std::string fmtNumberWithCommas(uint64_t n);
+void printSamplePosAsTime(sf_count_t samplePos, unsigned int sampleRate);
 bool getMetaData(MetaData& metadata, SndfileHandle& infile);
 bool setMetaData(const MetaData& metadata, SndfileHandle& outfile);
 void showCompiler();
