@@ -19,7 +19,7 @@
 // defines Fraction type, and functions for obtaining gcd, simplified fractions, and prime factors of integers
 
 // single-stage policies
-static const bool singleStageOnDecimateOnly = true;
+static const bool singleStageOnDecimateOnly = false;
 static const bool singleStageOnInterpolateOnly = false;
 // ---
 
