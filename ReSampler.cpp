@@ -507,8 +507,9 @@ bool convert(ConversionInfo& ci)
 
 	else { // no peak detection
 		peakInputSample = ci.bNormalize ?
-			0.5 /* ... a guess, since we haven't actually measured the peak (in the case of DSD, it is a good guess.) */ :
-			1.0;
+			0.5 / fraction.numerator /* ... a guess, since we haven't actually measured the peak (in the case of DSD, it is a good guess.) */ :
+			0.5 / fraction.numerator;
+		std::cout << "peak input set to " << peakInputSample << "\n";
 	}
 
 	if (ci.bNormalize) { // echo Normalization settings to user
@@ -593,11 +594,13 @@ bool convert(ConversionInfo& ci)
 		converters.emplace_back(ci);
 	} 
 
-	//std::cout << "Converter getGain(): " << converters[0].getGain() << std::endl;
+	std::cout << "Converter getGain(): " << converters[0].getGain() << std::endl;
 
 	// Calculate initial gain:
 	FloatType gain = ci.gain * converters[0].getGain() * 
 		(ci.bNormalize ? fraction.numerator * (ci.limit / peakInputSample) : fraction.numerator * ci.limit);
+
+	std::cout << "Gain: " << gain << std::endl;
 
 	if (ci.bDither) { // allow headroom for dithering:
 		FloatType ditherCompensation =
@@ -606,7 +609,6 @@ bool convert(ConversionInfo& ci)
 	}
 
 	int groupDelay = converters[0].getGroupDelay();
-	// std::cout << "expected group delay " << groupDelay << std::endl;
 
 	FloatType peakOutputSample;
 	bool bClippingDetected;
