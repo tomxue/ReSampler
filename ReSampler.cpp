@@ -480,7 +480,7 @@ bool convert(ConversionInfo& ci)
 
 	FloatType peakInputSample;
 	sf_count_t peakInputPosition = 0LL;
-	sf_count_t samplesRead;
+	sf_count_t samplesRead = 0LL;
 	sf_count_t totalSamplesRead = 0LL;
 	
 	if (ci.bEnablePeakDetection) {
@@ -509,7 +509,6 @@ bool convert(ConversionInfo& ci)
 		peakInputSample = ci.bNormalize ?
 			0.5  /* ... a guess, since we haven't actually measured the peak (in the case of DSD, it is a good guess.) */ :
 			1.0;
-		std::cout << "peak input set to " << peakInputSample << "\n";
 	}
 
 	if (ci.bNormalize) { // echo Normalization settings to user
@@ -595,8 +594,9 @@ bool convert(ConversionInfo& ci)
 	} 
 
 	// Calculate initial gain:
+	
 	FloatType gain = ci.gain * converters[0].getGain() * 
-		(ci.bNormalize ? fraction.numerator * (ci.limit / peakInputSample) : fraction.numerator * ci.limit);
+		(ci.bNormalize ? fraction.numerator * (ci.limit / peakInputSample) : fraction.numerator * ci.limit );
 
 	if (ci.bDither) { // allow headroom for dithering:
 		FloatType ditherCompensation =

@@ -199,7 +199,8 @@ std::vector<Fraction> getPresetFractions(Fraction f, int maxStages) {
 	
 	// hardcoded table of known presets
 	const std::vector<PresetFractionSet> presetList{
-		{{5,147},{{1,3},{1,7},{5,7}}},
+
+		{ { 5,147 },{ { 1,3 },{ 1,7 },{ 5,7 } } },
 		{ { 147,40 },{ { 3,2 },{ 7,2 },{ 7,10 } } },
 		//{ { 147,40 },{ { 3,2 },{ 7,4 },{ 7,5 } } }, // has some artifacts
 		{ { 147,80 },{ { 3,2 },{ 7,4 },{ 7,10 } } }, // cleanest 3-stage
