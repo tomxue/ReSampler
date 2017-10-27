@@ -99,8 +99,6 @@ bool getCmdlineParam(char** begin, char** end, const std::string& option)
 	return found;
 }
 
-// --
-
 // struct ConversionInfo : structure for holding all the parameters required for a conversion job
 
 struct ConversionInfo
