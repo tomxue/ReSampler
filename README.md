@@ -196,7 +196,7 @@ When *Double Precision* is engaged (using the **--doubleprecision** option), all
     </tbody>
 </table>
 
-*In the above comparison, the "blue haze" seen in the single-precision conversion is the result of quantization noise from rounding errors in single-precision arithmetic. The double-precision conversion is noticeably "cleaner". Please note, however, that even with single precision, the noise is sitting about 150dB down, and will not be reproduced by any real-world DAC, and therefore will not be audible.*
+*In the above comparison, the "blue haze" seen in the single-precision conversion is the result of quantization noise from rounding errors in single-precision arithmetic. The double-precision conversion is noticeably cleaner. Please note, however, that even with single precision, the noise is sitting about 150dB down, and will not be reproduced by any real-world DAC, and therefore will not be audible.*
 
 There is a penalty in processing speed for converting using double precision, and it is to be expected that double-precision conversions take longer to process.  
 

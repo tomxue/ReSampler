@@ -594,7 +594,6 @@ bool convert(ConversionInfo& ci)
 	} 
 
 	// Calculate initial gain:
-	
 	FloatType gain = ci.gain * converters[0].getGain() * 
 		(ci.bNormalize ? fraction.numerator * (ci.limit / peakInputSample) : fraction.numerator * ci.limit );
 

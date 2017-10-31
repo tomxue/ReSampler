@@ -205,7 +205,6 @@ std::vector<Fraction> getPresetFractions(Fraction f, int maxStages) {
 		//{ { 147,40 },{ { 3,2 },{ 7,4 },{ 7,5 } } }, // has some artifacts
 		{ { 147,80 },{ { 3,2 },{ 7,4 },{ 7,10 } } }, // cleanest 3-stage
 		//	{{147,80},{{147,80}}}, // the cleanest (of course !), but also slowest
-		//	{{147,80},{{3,2},{7,5},{7,8}}}, // has some artifacts in top-end
 		{{147,160},{{3,2},{7,8},{7,10}}},
 		{{147,320}, {{3,5}, {7,8}, {7,8}}},
 		{{147,640 }, {{3,5},{7,8},{7,16}}},

@@ -3,6 +3,7 @@
 
 #macOS files
 .DS_Store
+tests/.DS_Store
 
 # database files
 *.VC.db
