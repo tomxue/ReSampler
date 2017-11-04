@@ -153,4 +153,4 @@ bool getMetaData(MetaData& metadata, SndfileHandle& infile);
 bool setMetaData(const MetaData& metadata, SndfileHandle& outfile);
 void showCompiler();
 
-#endif // !RESAMPLER_H
+#endif // RESAMPLER_H

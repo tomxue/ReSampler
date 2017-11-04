@@ -21,4 +21,4 @@ typedef uint64_t __int64;
 #define stricmp strcasecmp
 #endif // ends Non-Windows
 
-#endif // !OSSPECIFIC_H
+#endif // OSSPECIFIC_H

@@ -413,4 +413,4 @@ private:
 	}
 };
 
-#endif // !DITHERER_H
+#endif // DITHERER_H

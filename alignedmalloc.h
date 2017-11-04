@@ -46,4 +46,4 @@ inline void aligned_free(void *ptr) {
 #endif
 }
 
-#endif
+#endif // alignedmalloc_H
