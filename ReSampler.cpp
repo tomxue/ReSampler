@@ -28,6 +28,9 @@ unsigned int fp_control_state = _controlfp(_EM_INEXACT, _MCW_EM);
 #include <cstdio>
 #include <cstring>
 
+#include <libproc.h>
+#include <unistd.h>
+
 #include "ReSampler.h"
 #include "conversioninfo.h"
 #include "osspecific.h"
@@ -65,7 +68,18 @@ int main(int argc, char * argv[])
 
 	// ConversionInfo instance to hold parameters
 	ConversionInfo ci;
+
+	// get path/name of this app
+#ifdef __APPLE__
+    char pathBuf[PROC_PIDPATHINFO_MAXSIZE];
+    pid_t pid = getpid();
+    if ( proc_pidpath (pid, pathBuf, sizeof(pathBuf)) == 0 ) {
+		ci.appName.assign(pathBuf);
+    }
+#else
 	ci.appName = argv[0];
+#endif
+
 	ci.overSamplingFactor = 1;
 
 	// get conversion parameters
