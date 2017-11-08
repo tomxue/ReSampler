@@ -73,11 +73,11 @@ int main(int argc, char * argv[])
 
 	// get path/name of this app
 #ifdef __APPLE__
-    char pathBuf[PROC_PIDPATHINFO_MAXSIZE];
-    pid_t pid = getpid();
-    if ( proc_pidpath (pid, pathBuf, sizeof(pathBuf)) == 0 ) {
+	char pathBuf[PROC_PIDPATHINFO_MAXSIZE];
+	pid_t pid = getpid();
+	if ( proc_pidpath (pid, pathBuf, sizeof(pathBuf)) == 0 ) {
 		ci.appName.assign(pathBuf);
-    }
+	}
 #else
 	ci.appName = argv[0];
 #endif
