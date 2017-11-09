@@ -28,8 +28,6 @@ This project arose out of:
 * Command-line options selected by the user should be echoed to the user in the converter's console output, to confirm the acceptance and application of the options
 * The introduction of new features to the converter should not change the basic behaviour of the converter, or the sound of files produced by the converter, UNLESS the user explicitly invokes the new features.
 
-Future versions of this project are anticipated to receive a dramatic speed improvement through the discovery of new optimizations, but as stated above, never at the expense of output file quality. 
-
 ## Usage
 
 from the command line, the main options are as follows:

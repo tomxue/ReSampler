@@ -389,6 +389,7 @@ void listSubFormats(const std::string& f)
 			break;
 		}
 	}
+	
 	if (bFileExtFound) {
 		SF_INFO sfinfo;
 		memset(&sfinfo, 0, sizeof(sfinfo));

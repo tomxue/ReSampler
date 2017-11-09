@@ -2,7 +2,6 @@
 
 XCode
 
-
 # building ReSampler (tested on macOS 10.12 - Sierra)
 
 Building on Mac is fairly straightforward and consists of the following 3 steps:
