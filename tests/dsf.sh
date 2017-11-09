@@ -36,15 +36,15 @@ $resampler_path -i $input_path/sweep-176400hz-0-22050hz-20s-D64-2.8mhz.dsf -o $o
 $resampler_path -i $input_path/sweep-176400hz-0-22050hz-20s-D64-2.8mhz.dsf -o $output_path/96khz_sweep-3dBFS_32f-to192k-dp.wav -b 32f -r 192000 --noPeakChunk --doubleprecision --mt
 
 # 32-bit float, double-precision sweeps
-$resampler_path -singlestage -i $input_path/sweep-176400hz-0-22050hz-20s-D64-2.8mhz.dsf -o $output_path/96khz_sweep-3dBFS_32f-to22k-SSdp.wav -b 32f -r 22050 --noPeakChunk --doubleprecision
-$resampler_path -singlestage -i $input_path/sweep-176400hz-0-22050hz-20s-D64-2.8mhz.dsf -o $output_path/96khz_sweep-3dBFS_32f-to32k-SSdp.wav -b 32f -r 32000 --noPeakChunk --doubleprecision --mt
-$resampler_path -singlestage -i $input_path/sweep-176400hz-0-22050hz-20s-D64-2.8mhz.dsf -o $output_path/96khz_sweep-3dBFS_32f-to32k-SSdp.wav -b 32f -r 32000 --noPeakChunk --doubleprecision --mt
-$resampler_path -singlestage -i $input_path/sweep-176400hz-0-22050hz-20s-D64-2.8mhz.dsf -o $output_path/96khz_sweep-3dBFS_32f-to44k-SSdp.wav -b 32f -r 44100 --noPeakChunk --doubleprecision
-$resampler_path -singlestage -i $input_path/sweep-176400hz-0-22050hz-20s-D64-2.8mhz.dsf -o $output_path/96khz_sweep-3dBFS_32f-to48k-SSdp.wav -b 32f -r 48000 --noPeakChunk --doubleprecision --mt
-$resampler_path -singlestage -i $input_path/sweep-176400hz-0-22050hz-20s-D64-2.8mhz.dsf -o $output_path/96khz_sweep-3dBFS_32f-to88k-SSdp.wav -b 32f -r 88200 --noPeakChunk --doubleprecision
-$resampler_path -singlestage -i $input_path/sweep-176400hz-0-22050hz-20s-D64-2.8mhz.dsf -o $output_path/96khz_sweep-3dBFS_32f-to96k-SSdp.wav -b 32f -r 96000 --noPeakChunk --doubleprecision --mt
-$resampler_path -singlestage -i $input_path/sweep-176400hz-0-22050hz-20s-D64-2.8mhz.dsf -o $output_path/96khz_sweep-3dBFS_32f-to176k-SSdp.wav -b 32f -r 176400 --noPeakChunk --doubleprecision
-$resampler_path -singlestage -i $input_path/sweep-176400hz-0-22050hz-20s-D64-2.8mhz.dsf -o $output_path/96khz_sweep-3dBFS_32f-to192k-SSdp.wav -b 32f -r 192000 --noPeakChunk --doubleprecision --mt
+$resampler_path --singlestage -i $input_path/sweep-176400hz-0-22050hz-20s-D64-2.8mhz.dsf -o $output_path/96khz_sweep-3dBFS_32f-to22k-SSdp.wav -b 32f -r 22050 --noPeakChunk --doubleprecision
+$resampler_path --singlestage -i $input_path/sweep-176400hz-0-22050hz-20s-D64-2.8mhz.dsf -o $output_path/96khz_sweep-3dBFS_32f-to32k-SSdp.wav -b 32f -r 32000 --noPeakChunk --doubleprecision --mt
+$resampler_path --singlestage -i $input_path/sweep-176400hz-0-22050hz-20s-D64-2.8mhz.dsf -o $output_path/96khz_sweep-3dBFS_32f-to32k-SSdp.wav -b 32f -r 32000 --noPeakChunk --doubleprecision --mt
+$resampler_path --singlestage -i $input_path/sweep-176400hz-0-22050hz-20s-D64-2.8mhz.dsf -o $output_path/96khz_sweep-3dBFS_32f-to44k-SSdp.wav -b 32f -r 44100 --noPeakChunk --doubleprecision
+$resampler_path --singlestage -i $input_path/sweep-176400hz-0-22050hz-20s-D64-2.8mhz.dsf -o $output_path/96khz_sweep-3dBFS_32f-to48k-SSdp.wav -b 32f -r 48000 --noPeakChunk --doubleprecision --mt
+$resampler_path --singlestage -i $input_path/sweep-176400hz-0-22050hz-20s-D64-2.8mhz.dsf -o $output_path/96khz_sweep-3dBFS_32f-to88k-SSdp.wav -b 32f -r 88200 --noPeakChunk --doubleprecision
+$resampler_path --singlestage -i $input_path/sweep-176400hz-0-22050hz-20s-D64-2.8mhz.dsf -o $output_path/96khz_sweep-3dBFS_32f-to96k-SSdp.wav -b 32f -r 96000 --noPeakChunk --doubleprecision --mt
+$resampler_path --singlestage -i $input_path/sweep-176400hz-0-22050hz-20s-D64-2.8mhz.dsf -o $output_path/96khz_sweep-3dBFS_32f-to176k-SSdp.wav -b 32f -r 176400 --noPeakChunk --doubleprecision
+$resampler_path --singlestage -i $input_path/sweep-176400hz-0-22050hz-20s-D64-2.8mhz.dsf -o $output_path/96khz_sweep-3dBFS_32f-to192k-SSdp.wav -b 32f -r 192000 --noPeakChunk --doubleprecision --mt
 
-# make spectrograms
+# make spectrogr--ms
 ./make-spectrograms.sh
