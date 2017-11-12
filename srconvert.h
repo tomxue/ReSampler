@@ -245,6 +245,7 @@ public:
 
 private:
 	void initSinglestage() {
+		numStages = 1;
 		Fraction f = getFractionFromSamplerates(ci.inputSampleRate, ci.outputSampleRate);
 		ci.overSamplingFactor = ci.bMinPhase && (f.numerator != f.denominator) && (f.numerator <= 4 || f.denominator <= 4) ? 8 : 1;
 		if (ci.overSamplingFactor != 1)
