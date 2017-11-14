@@ -59,39 +59,39 @@ CMAKE_SOURCE_DIR = E:\CPP_Projects\ReSampler\ReSampler
 CMAKE_BINARY_DIR = E:\CPP_Projects\ReSampler\ReSampler\cmake-build-debug
 
 #=============================================================================
-# Target rules for target CMakeFiles/ReSampler.dir
+# Target rules for target CMakeFiles/ReSampler.exe.dir
 
 # All Build rule for target.
-CMakeFiles/ReSampler.dir/all:
-	$(MAKE) -f CMakeFiles\ReSampler.dir\build.make CMakeFiles/ReSampler.dir/depend
-	$(MAKE) -f CMakeFiles\ReSampler.dir\build.make CMakeFiles/ReSampler.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=E:\CPP_Projects\ReSampler\ReSampler\cmake-build-debug\CMakeFiles --progress-num=1,2 "Built target ReSampler"
-.PHONY : CMakeFiles/ReSampler.dir/all
+CMakeFiles/ReSampler.exe.dir/all:
+	$(MAKE) -f CMakeFiles\ReSampler.exe.dir\build.make CMakeFiles/ReSampler.exe.dir/depend
+	$(MAKE) -f CMakeFiles\ReSampler.exe.dir\build.make CMakeFiles/ReSampler.exe.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=E:\CPP_Projects\ReSampler\ReSampler\cmake-build-debug\CMakeFiles --progress-num=1,2 "Built target ReSampler.exe"
+.PHONY : CMakeFiles/ReSampler.exe.dir/all
 
 # Include target in all.
-all: CMakeFiles/ReSampler.dir/all
+all: CMakeFiles/ReSampler.exe.dir/all
 
 .PHONY : all
 
 # Build rule for subdir invocation for target.
-CMakeFiles/ReSampler.dir/rule: cmake_check_build_system
+CMakeFiles/ReSampler.exe.dir/rule: cmake_check_build_system
 	$(CMAKE_COMMAND) -E cmake_progress_start E:\CPP_Projects\ReSampler\ReSampler\cmake-build-debug\CMakeFiles 2
-	$(MAKE) -f CMakeFiles\Makefile2 CMakeFiles/ReSampler.dir/all
+	$(MAKE) -f CMakeFiles\Makefile2 CMakeFiles/ReSampler.exe.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start E:\CPP_Projects\ReSampler\ReSampler\cmake-build-debug\CMakeFiles 0
-.PHONY : CMakeFiles/ReSampler.dir/rule
+.PHONY : CMakeFiles/ReSampler.exe.dir/rule
 
 # Convenience name for target.
-ReSampler: CMakeFiles/ReSampler.dir/rule
+ReSampler.exe: CMakeFiles/ReSampler.exe.dir/rule
 
-.PHONY : ReSampler
-
-# clean rule for target.
-CMakeFiles/ReSampler.dir/clean:
-	$(MAKE) -f CMakeFiles\ReSampler.dir\build.make CMakeFiles/ReSampler.dir/clean
-.PHONY : CMakeFiles/ReSampler.dir/clean
+.PHONY : ReSampler.exe
 
 # clean rule for target.
-clean: CMakeFiles/ReSampler.dir/clean
+CMakeFiles/ReSampler.exe.dir/clean:
+	$(MAKE) -f CMakeFiles\ReSampler.exe.dir\build.make CMakeFiles/ReSampler.exe.dir/clean
+.PHONY : CMakeFiles/ReSampler.exe.dir/clean
+
+# clean rule for target.
+clean: CMakeFiles/ReSampler.exe.dir/clean
 
 .PHONY : clean
 

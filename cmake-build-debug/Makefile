@@ -110,17 +110,17 @@ depend:
 .PHONY : depend
 
 #=============================================================================
-# Target rules for targets named ReSampler
+# Target rules for targets named ReSampler.exe
 
 # Build rule for target.
-ReSampler: cmake_check_build_system
-	$(MAKE) -f CMakeFiles\Makefile2 ReSampler
-.PHONY : ReSampler
+ReSampler.exe: cmake_check_build_system
+	$(MAKE) -f CMakeFiles\Makefile2 ReSampler.exe
+.PHONY : ReSampler.exe
 
 # fast build rule for target.
-ReSampler/fast:
-	$(MAKE) -f CMakeFiles\ReSampler.dir\build.make CMakeFiles/ReSampler.dir/build
-.PHONY : ReSampler/fast
+ReSampler.exe/fast:
+	$(MAKE) -f CMakeFiles\ReSampler.exe.dir\build.make CMakeFiles/ReSampler.exe.dir/build
+.PHONY : ReSampler.exe/fast
 
 ReSampler.obj: ReSampler.cpp.obj
 
@@ -128,7 +128,7 @@ ReSampler.obj: ReSampler.cpp.obj
 
 # target to build an object file
 ReSampler.cpp.obj:
-	$(MAKE) -f CMakeFiles\ReSampler.dir\build.make CMakeFiles/ReSampler.dir/ReSampler.cpp.obj
+	$(MAKE) -f CMakeFiles\ReSampler.exe.dir\build.make CMakeFiles/ReSampler.exe.dir/ReSampler.cpp.obj
 .PHONY : ReSampler.cpp.obj
 
 ReSampler.i: ReSampler.cpp.i
@@ -137,7 +137,7 @@ ReSampler.i: ReSampler.cpp.i
 
 # target to preprocess a source file
 ReSampler.cpp.i:
-	$(MAKE) -f CMakeFiles\ReSampler.dir\build.make CMakeFiles/ReSampler.dir/ReSampler.cpp.i
+	$(MAKE) -f CMakeFiles\ReSampler.exe.dir\build.make CMakeFiles/ReSampler.exe.dir/ReSampler.cpp.i
 .PHONY : ReSampler.cpp.i
 
 ReSampler.s: ReSampler.cpp.s
@@ -146,7 +146,7 @@ ReSampler.s: ReSampler.cpp.s
 
 # target to generate assembly for a file
 ReSampler.cpp.s:
-	$(MAKE) -f CMakeFiles\ReSampler.dir\build.make CMakeFiles/ReSampler.dir/ReSampler.cpp.s
+	$(MAKE) -f CMakeFiles\ReSampler.exe.dir\build.make CMakeFiles/ReSampler.exe.dir/ReSampler.cpp.s
 .PHONY : ReSampler.cpp.s
 
 # Help Target
@@ -155,8 +155,8 @@ help:
 	@echo ... all (the default if no target is provided)
 	@echo ... clean
 	@echo ... depend
+	@echo ... ReSampler.exe
 	@echo ... edit_cache
-	@echo ... ReSampler
 	@echo ... rebuild_cache
 	@echo ... ReSampler.obj
 	@echo ... ReSampler.i

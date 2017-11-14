@@ -4,7 +4,6 @@
 #CLion files
 .idea/
 
-
 #macOS files
 .DS_Store
 tests/.DS_Store
