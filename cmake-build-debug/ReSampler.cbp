@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6"/>
+	<Project>
+		<Option title="ReSampler"/>
+		<Option makefile_is_custom="1"/>
+		<Option compiler="gcc"/>
+		<Option virtualFolders="CMake Files\;"/>
+		<Build>
+			<Target title="all">
+				<Option working_dir="E:/CPP_Projects/ReSampler/ReSampler/cmake-build-debug"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="C:/PROGRA~2/MINGW-~1/I686-5~1.0-P/mingw32/bin/mingw32-make.exe -f &quot;E:/CPP_Projects/ReSampler/ReSampler/cmake-build-debug/Makefile&quot;  VERBOSE=1 all"/>
+					<CompileFile command="C:/PROGRA~2/MINGW-~1/I686-5~1.0-P/mingw32/bin/mingw32-make.exe -f &quot;E:/CPP_Projects/ReSampler/ReSampler/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="C:/PROGRA~2/MINGW-~1/I686-5~1.0-P/mingw32/bin/mingw32-make.exe -f &quot;E:/CPP_Projects/ReSampler/ReSampler/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="C:/PROGRA~2/MINGW-~1/I686-5~1.0-P/mingw32/bin/mingw32-make.exe -f &quot;E:/CPP_Projects/ReSampler/ReSampler/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="edit_cache">
+				<Option working_dir="E:/CPP_Projects/ReSampler/ReSampler/cmake-build-debug"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="C:/PROGRA~2/MINGW-~1/I686-5~1.0-P/mingw32/bin/mingw32-make.exe -f &quot;E:/CPP_Projects/ReSampler/ReSampler/cmake-build-debug/Makefile&quot;  VERBOSE=1 edit_cache"/>
+					<CompileFile command="C:/PROGRA~2/MINGW-~1/I686-5~1.0-P/mingw32/bin/mingw32-make.exe -f &quot;E:/CPP_Projects/ReSampler/ReSampler/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="C:/PROGRA~2/MINGW-~1/I686-5~1.0-P/mingw32/bin/mingw32-make.exe -f &quot;E:/CPP_Projects/ReSampler/ReSampler/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="C:/PROGRA~2/MINGW-~1/I686-5~1.0-P/mingw32/bin/mingw32-make.exe -f &quot;E:/CPP_Projects/ReSampler/ReSampler/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="ReSampler">
+				<Option output="E:/CPP_Projects/ReSampler/ReSampler/cmake-build-debug/ReSampler.exe" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="E:/CPP_Projects/ReSampler/ReSampler/cmake-build-debug"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="E:/CPP_Projects/ReSampler/ReSampler/libsndfile/include"/>
+					<Add directory="E:/CPP_Projects/ReSampler/ReSampler/fftw64"/>
+					<Add directory="C:/Program Files (x86)/mingw-w64/i686-5.3.0-posix-dwarf-rt_v4-rev0/mingw32/bin/../lib/gcc/i686-w64-mingw32/5.3.0/include"/>
+					<Add directory="C:/Program Files (x86)/mingw-w64/i686-5.3.0-posix-dwarf-rt_v4-rev0/mingw32/bin/../lib/gcc/i686-w64-mingw32/5.3.0/include-fixed"/>
+					<Add directory="C:/Program Files (x86)/mingw-w64/i686-5.3.0-posix-dwarf-rt_v4-rev0/mingw32/bin/../lib/gcc/i686-w64-mingw32/5.3.0/../../../../i686-w64-mingw32/include"/>
+					<Add directory="C:/Program Files (x86)/mingw-w64/i686-5.3.0-posix-dwarf-rt_v4-rev0/mingw32/lib/gcc/../../i686-w64-mingw32/include/c++"/>
+					<Add directory="C:/Program Files (x86)/mingw-w64/i686-5.3.0-posix-dwarf-rt_v4-rev0/mingw32/lib/gcc/../../i686-w64-mingw32/include/c++/i686-w64-mingw32"/>
+					<Add directory="C:/Program Files (x86)/mingw-w64/i686-5.3.0-posix-dwarf-rt_v4-rev0/mingw32/lib/gcc/../../i686-w64-mingw32/include/c++/backward"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="C:/PROGRA~2/MINGW-~1/I686-5~1.0-P/mingw32/bin/mingw32-make.exe -f &quot;E:/CPP_Projects/ReSampler/ReSampler/cmake-build-debug/Makefile&quot;  VERBOSE=1 ReSampler"/>
+					<CompileFile command="C:/PROGRA~2/MINGW-~1/I686-5~1.0-P/mingw32/bin/mingw32-make.exe -f &quot;E:/CPP_Projects/ReSampler/ReSampler/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="C:/PROGRA~2/MINGW-~1/I686-5~1.0-P/mingw32/bin/mingw32-make.exe -f &quot;E:/CPP_Projects/ReSampler/ReSampler/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="C:/PROGRA~2/MINGW-~1/I686-5~1.0-P/mingw32/bin/mingw32-make.exe -f &quot;E:/CPP_Projects/ReSampler/ReSampler/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="ReSampler/fast">
+				<Option output="E:/CPP_Projects/ReSampler/ReSampler/cmake-build-debug/ReSampler.exe" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="E:/CPP_Projects/ReSampler/ReSampler/cmake-build-debug"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="E:/CPP_Projects/ReSampler/ReSampler/libsndfile/include"/>
+					<Add directory="E:/CPP_Projects/ReSampler/ReSampler/fftw64"/>
+					<Add directory="C:/Program Files (x86)/mingw-w64/i686-5.3.0-posix-dwarf-rt_v4-rev0/mingw32/bin/../lib/gcc/i686-w64-mingw32/5.3.0/include"/>
+					<Add directory="C:/Program Files (x86)/mingw-w64/i686-5.3.0-posix-dwarf-rt_v4-rev0/mingw32/bin/../lib/gcc/i686-w64-mingw32/5.3.0/include-fixed"/>
+					<Add directory="C:/Program Files (x86)/mingw-w64/i686-5.3.0-posix-dwarf-rt_v4-rev0/mingw32/bin/../lib/gcc/i686-w64-mingw32/5.3.0/../../../../i686-w64-mingw32/include"/>
+					<Add directory="C:/Program Files (x86)/mingw-w64/i686-5.3.0-posix-dwarf-rt_v4-rev0/mingw32/lib/gcc/../../i686-w64-mingw32/include/c++"/>
+					<Add directory="C:/Program Files (x86)/mingw-w64/i686-5.3.0-posix-dwarf-rt_v4-rev0/mingw32/lib/gcc/../../i686-w64-mingw32/include/c++/i686-w64-mingw32"/>
+					<Add directory="C:/Program Files (x86)/mingw-w64/i686-5.3.0-posix-dwarf-rt_v4-rev0/mingw32/lib/gcc/../../i686-w64-mingw32/include/c++/backward"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="C:/PROGRA~2/MINGW-~1/I686-5~1.0-P/mingw32/bin/mingw32-make.exe -f &quot;E:/CPP_Projects/ReSampler/ReSampler/cmake-build-debug/Makefile&quot;  VERBOSE=1 ReSampler/fast"/>
+					<CompileFile command="C:/PROGRA~2/MINGW-~1/I686-5~1.0-P/mingw32/bin/mingw32-make.exe -f &quot;E:/CPP_Projects/ReSampler/ReSampler/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="C:/PROGRA~2/MINGW-~1/I686-5~1.0-P/mingw32/bin/mingw32-make.exe -f &quot;E:/CPP_Projects/ReSampler/ReSampler/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="C:/PROGRA~2/MINGW-~1/I686-5~1.0-P/mingw32/bin/mingw32-make.exe -f &quot;E:/CPP_Projects/ReSampler/ReSampler/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="rebuild_cache">
+				<Option working_dir="E:/CPP_Projects/ReSampler/ReSampler/cmake-build-debug"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="C:/PROGRA~2/MINGW-~1/I686-5~1.0-P/mingw32/bin/mingw32-make.exe -f &quot;E:/CPP_Projects/ReSampler/ReSampler/cmake-build-debug/Makefile&quot;  VERBOSE=1 rebuild_cache"/>
+					<CompileFile command="C:/PROGRA~2/MINGW-~1/I686-5~1.0-P/mingw32/bin/mingw32-make.exe -f &quot;E:/CPP_Projects/ReSampler/ReSampler/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="C:/PROGRA~2/MINGW-~1/I686-5~1.0-P/mingw32/bin/mingw32-make.exe -f &quot;E:/CPP_Projects/ReSampler/ReSampler/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="C:/PROGRA~2/MINGW-~1/I686-5~1.0-P/mingw32/bin/mingw32-make.exe -f &quot;E:/CPP_Projects/ReSampler/ReSampler/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+		</Build>
+		<Unit filename="E:/CPP_Projects/ReSampler/ReSampler/FIRFilter.h">
+			<Option target="ReSampler"/>
+		</Unit>
+		<Unit filename="E:/CPP_Projects/ReSampler/ReSampler/FIRFilterAVX.h">
+			<Option target="ReSampler"/>
+		</Unit>
+		<Unit filename="E:/CPP_Projects/ReSampler/ReSampler/ReSampler.cpp">
+			<Option target="ReSampler"/>
+		</Unit>
+		<Unit filename="E:/CPP_Projects/ReSampler/ReSampler/ReSampler.h">
+			<Option target="ReSampler"/>
+		</Unit>
+		<Unit filename="E:/CPP_Projects/ReSampler/ReSampler/alignedmalloc.h">
+			<Option target="ReSampler"/>
+		</Unit>
+		<Unit filename="E:/CPP_Projects/ReSampler/ReSampler/biquad.h">
+			<Option target="ReSampler"/>
+		</Unit>
+		<Unit filename="E:/CPP_Projects/ReSampler/ReSampler/conversioninfo.h">
+			<Option target="ReSampler"/>
+		</Unit>
+		<Unit filename="E:/CPP_Projects/ReSampler/ReSampler/dff.h">
+			<Option target="ReSampler"/>
+		</Unit>
+		<Unit filename="E:/CPP_Projects/ReSampler/ReSampler/ditherer.h">
+			<Option target="ReSampler"/>
+		</Unit>
+		<Unit filename="E:/CPP_Projects/ReSampler/ReSampler/dsf.h">
+			<Option target="ReSampler"/>
+		</Unit>
+		<Unit filename="E:/CPP_Projects/ReSampler/ReSampler/fftw64/fftw3.h">
+			<Option target="ReSampler"/>
+		</Unit>
+		<Unit filename="E:/CPP_Projects/ReSampler/ReSampler/fraction.h">
+			<Option target="ReSampler"/>
+		</Unit>
+		<Unit filename="E:/CPP_Projects/ReSampler/ReSampler/libsndfile/include/sndfile.h">
+			<Option target="ReSampler"/>
+		</Unit>
+		<Unit filename="E:/CPP_Projects/ReSampler/ReSampler/libsndfile/include/sndfile.hh">
+			<Option target="ReSampler"/>
+		</Unit>
+		<Unit filename="E:/CPP_Projects/ReSampler/ReSampler/noiseshape.h">
+			<Option target="ReSampler"/>
+		</Unit>
+		<Unit filename="E:/CPP_Projects/ReSampler/ReSampler/osspecific.h">
+			<Option target="ReSampler"/>
+		</Unit>
+		<Unit filename="E:/CPP_Projects/ReSampler/ReSampler/raiitimer.h">
+			<Option target="ReSampler"/>
+		</Unit>
+		<Unit filename="E:/CPP_Projects/ReSampler/ReSampler/srconvert.h">
+			<Option target="ReSampler"/>
+		</Unit>
+		<Unit filename="E:/CPP_Projects/ReSampler/ReSampler/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\"/>
+		</Unit>
+	</Project>
+</CodeBlocks_project_file>
