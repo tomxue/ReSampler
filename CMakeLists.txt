@@ -7,9 +7,10 @@ include_directories(/usr/local/include)
 link_directories(/usr/local/lib)
 link_libraries(-lfftw3 -lsndfile)
 
-add_compile_options(-pthread -O3)
-
 set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_FLAGS "-Wall -pthread")
+set(CMAKE_CXX_FLAGS_DEBUG "-g")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -flto -DNDEBUG")
 
 set(SOURCE_FILES
         /usr/local/include/sndfile.h
