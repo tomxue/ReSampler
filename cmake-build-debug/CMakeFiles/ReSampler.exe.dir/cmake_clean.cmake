@@ -1,9 +1,7 @@
 file(REMOVE_RECURSE
-  "CMakeFiles/ReSampler.exe.dir/ReSampler.cpp.obj"
+  "CMakeFiles/ReSampler.exe.dir/ReSampler.cpp.o"
   "ReSampler.exe.pdb"
-  "ReSampler.exe.exe"
-  "ReSampler.exe.exe.manifest"
-  "libReSampler.exe.dll.a"
+  "ReSampler.exe"
 )
 
 # Per-language clean rules from dependency scanning.

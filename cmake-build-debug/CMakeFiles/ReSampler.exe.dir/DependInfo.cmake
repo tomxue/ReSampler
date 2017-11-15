@@ -4,9 +4,9 @@ set(CMAKE_DEPENDS_LANGUAGES
   )
 # The set of files for implicit dependencies of each language:
 set(CMAKE_DEPENDS_CHECK_CXX
-  "E:/CPP_Projects/ReSampler/ReSampler/ReSampler.cpp" "E:/CPP_Projects/ReSampler/ReSampler/cmake-build-debug/CMakeFiles/ReSampler.exe.dir/ReSampler.cpp.obj"
+  "/Users/newuser/ReSampler/ReSampler.cpp" "/Users/newuser/ReSampler/cmake-build-debug/CMakeFiles/ReSampler.exe.dir/ReSampler.cpp.o"
   )
-set(CMAKE_CXX_COMPILER_ID "GNU")
+set(CMAKE_CXX_COMPILER_ID "AppleClang")
 
 # The include file search paths:
 set(CMAKE_CXX_TARGET_INCLUDE_PATH

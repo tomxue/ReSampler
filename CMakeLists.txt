@@ -1,18 +1,20 @@
 cmake_minimum_required(VERSION 3.8)
 project(ReSampler)
 
-include_directories(libsndfile/include fftw64)
-#link_directories(libsndfile/lib fftw64)
-#link_libraries(-llibsndfile-1 libfftw3-3.lib)
+#g++ -pthread -std=c++11 ReSampler.cpp -lfftw3 -lsndfile -o ReSampler -O3 -L/usr/local/lib -I/usr/local/include
 
-add_compile_options(-pthread -std=c++11 -O3 -Lfftw64 -llibfftw3-3 -Llibsndfile/lib -llibsndfile-1)
+include_directories(/usr/local/include)
+link_directories(/usr/local/lib)
+link_libraries(-lfftw3 -lsndfile)
+
+add_compile_options(-pthread -O3)
 
 set(CMAKE_CXX_STANDARD 11)
 
 set(SOURCE_FILES
-        libsndfile/include/sndfile.h
-        libsndfile/include/sndfile.hh
-        fftw64/fftw3.h
+        /usr/local/include/sndfile.h
+        /usr/local/include/sndfile.hh
+        /usr/local/include/fftw3.h
         alignedmalloc.h
         biquad.h
         conversioninfo.h
@@ -29,4 +31,4 @@ set(SOURCE_FILES
         ReSampler.h
         srconvert.h)
 
-add_executable(ReSampler.exe ${SOURCE_FILES})
+add_executable(ReSampler ${SOURCE_FILES})

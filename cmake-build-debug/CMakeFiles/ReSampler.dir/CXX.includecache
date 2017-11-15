@@ -6,29 +6,7 @@
 
 #IncludeRegexTransform: 
 
-../fftw64/fftw3.h
-stdio.h
--
-stddef.h
--
-
-../libsndfile/include/sndfile.h
-stdio.h
--
-stdint.h
--
-sys/types.h
--
-
-../libsndfile/include/sndfile.hh
-sndfile.h
--
-string
--
-new
--
-
-E:/CPP_Projects/ReSampler/ReSampler/FIRFilter.h
+/Users/newuser/ReSampler/FIRFilter.h
 typeinfo
 -
 algorithm
@@ -44,11 +22,11 @@ xmmintrin.h
 fftw3.h
 -
 alignedmalloc.h
-E:/CPP_Projects/ReSampler/ReSampler/alignedmalloc.h
+/Users/newuser/ReSampler/alignedmalloc.h
 FIRFilterAVX.h
-E:/CPP_Projects/ReSampler/ReSampler/FIRFilterAVX.h
+/Users/newuser/ReSampler/FIRFilterAVX.h
 
-E:/CPP_Projects/ReSampler/ReSampler/FIRFilterAVX.h
+/Users/newuser/ReSampler/FIRFilterAVX.h
 immintrin.h
 -
 typeinfo
@@ -58,9 +36,9 @@ cstdint
 cassert
 -
 alignedmalloc.h
-E:/CPP_Projects/ReSampler/ReSampler/alignedmalloc.h
+/Users/newuser/ReSampler/alignedmalloc.h
 
-E:/CPP_Projects/ReSampler/ReSampler/ReSampler.cpp
+/Users/newuser/ReSampler/ReSampler.cpp
 float.h
 -
 math.h
@@ -90,51 +68,51 @@ unistd.h
 libproc.h
 -
 ReSampler.h
-E:/CPP_Projects/ReSampler/ReSampler/ReSampler.h
+/Users/newuser/ReSampler/ReSampler.h
 conversioninfo.h
-E:/CPP_Projects/ReSampler/ReSampler/conversioninfo.h
+/Users/newuser/ReSampler/conversioninfo.h
 osspecific.h
-E:/CPP_Projects/ReSampler/ReSampler/osspecific.h
+/Users/newuser/ReSampler/osspecific.h
 ctpl/ctpl_stl.h
-E:/CPP_Projects/ReSampler/ReSampler/ctpl/ctpl_stl.h
+/Users/newuser/ReSampler/ctpl/ctpl_stl.h
 ditherer.h
-E:/CPP_Projects/ReSampler/ReSampler/ditherer.h
+/Users/newuser/ReSampler/ditherer.h
 biquad.h
-E:/CPP_Projects/ReSampler/ReSampler/biquad.h
+/Users/newuser/ReSampler/biquad.h
 dsf.h
-E:/CPP_Projects/ReSampler/ReSampler/dsf.h
+/Users/newuser/ReSampler/dsf.h
 dff.h
-E:/CPP_Projects/ReSampler/ReSampler/dff.h
+/Users/newuser/ReSampler/dff.h
 raiitimer.h
-E:/CPP_Projects/ReSampler/ReSampler/raiitimer.h
+/Users/newuser/ReSampler/raiitimer.h
 fraction.h
-E:/CPP_Projects/ReSampler/ReSampler/fraction.h
+/Users/newuser/ReSampler/fraction.h
 srconvert.h
-E:/CPP_Projects/ReSampler/ReSampler/srconvert.h
+/Users/newuser/ReSampler/srconvert.h
 sndfile.hh
-E:/CPP_Projects/ReSampler/ReSampler/sndfile.hh
+/Users/newuser/ReSampler/sndfile.hh
 
-E:/CPP_Projects/ReSampler/ReSampler/ReSampler.h
+/Users/newuser/ReSampler/ReSampler.h
 sndfile.h
-E:/CPP_Projects/ReSampler/ReSampler/sndfile.h
+/Users/newuser/ReSampler/sndfile.h
 sndfile.hh
-E:/CPP_Projects/ReSampler/ReSampler/sndfile.hh
+/Users/newuser/ReSampler/sndfile.hh
 string
 -
 map
 -
 
-E:/CPP_Projects/ReSampler/ReSampler/alignedmalloc.h
+/Users/newuser/ReSampler/alignedmalloc.h
 malloc.h
 -
 stdlib.h
 -
 
-E:/CPP_Projects/ReSampler/ReSampler/biquad.h
+/Users/newuser/ReSampler/biquad.h
 
-E:/CPP_Projects/ReSampler/ReSampler/conversioninfo.h
+/Users/newuser/ReSampler/conversioninfo.h
 ditherer.h
-E:/CPP_Projects/ReSampler/ReSampler/ditherer.h
+/Users/newuser/ReSampler/ditherer.h
 iostream
 -
 vector
@@ -146,7 +124,7 @@ algorithm
 stdexcept
 -
 
-E:/CPP_Projects/ReSampler/ReSampler/ctpl/ctpl_stl.h
+/Users/newuser/ReSampler/ctpl/ctpl_stl.h
 functional
 -
 thread
@@ -166,7 +144,7 @@ mutex
 queue
 -
 
-E:/CPP_Projects/ReSampler/ReSampler/dff.h
+/Users/newuser/ReSampler/dff.h
 iostream
 -
 cassert
@@ -178,19 +156,19 @@ string
 fstream
 -
 osspecific.h
-E:/CPP_Projects/ReSampler/ReSampler/osspecific.h
+/Users/newuser/ReSampler/osspecific.h
 
-E:/CPP_Projects/ReSampler/ReSampler/ditherer.h
+/Users/newuser/ReSampler/ditherer.h
 cmath
 -
 random
 -
 biquad.h
-E:/CPP_Projects/ReSampler/ReSampler/biquad.h
+/Users/newuser/ReSampler/biquad.h
 noiseshape.h
-E:/CPP_Projects/ReSampler/ReSampler/noiseshape.h
+/Users/newuser/ReSampler/noiseshape.h
 
-E:/CPP_Projects/ReSampler/ReSampler/dsf.h
+/Users/newuser/ReSampler/dsf.h
 cassert
 -
 cstdint
@@ -200,9 +178,9 @@ string
 fstream
 -
 osspecific.h
-E:/CPP_Projects/ReSampler/ReSampler/osspecific.h
+/Users/newuser/ReSampler/osspecific.h
 
-E:/CPP_Projects/ReSampler/ReSampler/fraction.h
+/Users/newuser/ReSampler/fraction.h
 vector
 -
 set
@@ -212,21 +190,43 @@ numeric
 iostream
 -
 
-E:/CPP_Projects/ReSampler/ReSampler/noiseshape.h
+/Users/newuser/ReSampler/noiseshape.h
 
-E:/CPP_Projects/ReSampler/ReSampler/osspecific.h
+/Users/newuser/ReSampler/osspecific.h
 
-E:/CPP_Projects/ReSampler/ReSampler/raiitimer.h
+/Users/newuser/ReSampler/raiitimer.h
 iostream
 -
 chrono
 -
 
-E:/CPP_Projects/ReSampler/ReSampler/srconvert.h
+/Users/newuser/ReSampler/srconvert.h
 FIRFilter.h
-E:/CPP_Projects/ReSampler/ReSampler/FIRFilter.h
+/Users/newuser/ReSampler/FIRFilter.h
 conversioninfo.h
-E:/CPP_Projects/ReSampler/ReSampler/conversioninfo.h
+/Users/newuser/ReSampler/conversioninfo.h
 fraction.h
-E:/CPP_Projects/ReSampler/ReSampler/fraction.h
+/Users/newuser/ReSampler/fraction.h
+
+/usr/local/include/fftw3.h
+stdio.h
+-
+stddef.h
+-
+
+/usr/local/include/sndfile.h
+stdio.h
+-
+stdint.h
+-
+sys/types.h
+-
+
+/usr/local/include/sndfile.hh
+sndfile.h
+-
+string
+-
+new
+-
 
