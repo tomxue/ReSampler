@@ -1,8 +1,6 @@
 cmake_minimum_required(VERSION 3.8)
 project(ReSampler)
 
-#g++ -pthread -std=c++11 ReSampler.cpp -lfftw3 -lsndfile -o ReSampler -O3 -L/usr/local/lib -I/usr/local/include
-
 include_directories(/usr/local/include)
 link_directories(/usr/local/lib)
 link_libraries(-lfftw3 -lsndfile)
