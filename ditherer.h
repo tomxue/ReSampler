@@ -21,22 +21,22 @@
 #include "biquad.h"
 #include "noiseshape.h"
 
-typedef enum {
+enum FilterType {
 	bypass,
 	cascadedBiquad,
 	fir
-} FilterType;
+};
 
-typedef enum {
+enum NoiseGeneratorType {
 	flatTPDF,
 	slopedTPDF,
 	RPDF,
 	GPDF,
 	impulse,
 	legacyTPDF
-} NoiseGeneratorType;
+};
 
-typedef enum {
+enum DitherProfileID {
 	flat,
 	legacy,
 	flat_f,
@@ -52,9 +52,9 @@ typedef enum {
 	High32,
 	Blue,
 	end
-} DitherProfileID;
+};
 
-typedef struct {
+struct DitherProfile {
 	DitherProfileID id;
 	const char* name;
 	NoiseGeneratorType noiseGeneratorType;
@@ -63,7 +63,7 @@ typedef struct {
 	int N;
 	const double* coeffs;
 	bool bUseFeedback;
-} DitherProfile;
+};
 
 DitherProfile ditherProfileList[] = {
 

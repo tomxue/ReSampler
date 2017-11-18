@@ -23,54 +23,54 @@
 
 #pragma pack(push, r1, 1)
 
-typedef struct {
+struct dffChunkHeader {
 	uint32_t ckID; // chunkid
 	uint64_t ckDataSize; // chunk data size, in bytes
-} dffChunkHeader;
+};
 
-typedef struct {
+struct FormatVersionChunk {
 	uint32_t ckID; // 'FVER'
 	uint64_t ckDataSize; // 4
 	uint32_t version; // 0x01050000 version 1.5.0.0 DSDIFF
-} FormatVersionChunk;
+};
 
-typedef struct {
+struct SampleRateChunk {
 	uint32_t ckID; // 'FS '
 	uint64_t ckDataSize; // 4
 	uint32_t sampleRate; // sample rate in [Hz]
-} SampleRateChunk;
+};
 
-typedef struct {
+struct ChannelsChunk {
 	uint32_t ckID; // 'CHNL'
 	uint64_t ckDataSize;
 	uint16_t numChannels; // number of audio channels
 	uint32_t channelID[DFF_MAX_CHANNELS]; // channels ID's
-} ChannelsChunk;
+};
 
-typedef struct {
+struct CompressionTypeChunk {
 	uint32_t ckID; // 'CMPR'
 	uint64_t CkDataSize;
 	uint32_t compressionType; // compression ID code
 	uint8_t Count; // length of the compression name
 	char compressionName[257]; // human readable type name
-} CompressionTypeChunk;
+};
 
-typedef struct {
+struct AbsoluteStartTimeChunk {
 	uint32_t ckID; // 'ABSS'
 	uint64_t ckDataSize;
 	uint16_t hours; // hours
 	uint8_t minutes; // minutes
 	uint8_t seconds; // seconds
 	uint32_t samples; // samples
-} AbsoluteStartTimeChunk;
+};
 
-typedef struct {
+struct LoudspeakerConfigurationChunk {
 	uint32_t ckID; // 'LSCO'
 	uint64_t ckDataSize; // 2
 	uint16_t lsConfig; // loudspeaker configuration
-} LoudspeakerConfigurationChunk;
+};
 
-typedef struct {
+struct PropertyChunk {
 	uint32_t ckID; // 'PROP'
 	uint64_t ckDataSize;
 	uint32_t propType; // 'SND '
@@ -79,21 +79,21 @@ typedef struct {
 	CompressionTypeChunk compressionTypeChunk;
 	AbsoluteStartTimeChunk absoluteStartTimeChunk;
 	LoudspeakerConfigurationChunk loudspeakerConfigurationChunk;
-} PropertyChunk;
+};
 
-typedef struct {
+struct DSDSoundDataHeader {
 	uint32_t ckID; // 'DSD '
 	uint64_t ckDataSize;
-} DSDSoundDataHeader;
+};
 
-typedef struct {
+struct FormDSDChunk {
 	uint32_t ckID; // 'FRM8'
 	uint64_t ckDataSize; // FORM's data size, in bytes
 	uint32_t formType; // 'DSD '
 	FormatVersionChunk formatVersionChunk;
 	PropertyChunk propertyChunk;
 	DSDSoundDataHeader dsdSoundDataHeader;
-} FormDSDChunk;
+};
 
 #pragma pack(pop, r1)
 
@@ -120,10 +120,10 @@ typedef struct {
 #define CKID_DIAR 0x44494152
 #define CKID_DITI 0x44495449
 
-typedef enum {
+enum dffOpenMode {
 	dff_read,
 	dff_write
-} dffOpenMode;
+};
 
 // DffFile interface:
 

@@ -23,14 +23,14 @@
 #define DSF_FORMAT 0x00310000 // note: take care to make sure this doesn't clash with future libsndfile formats (unlikely)
 
 #pragma pack(push, r1, 1)
-typedef struct {
+struct DsfDSDChunk {
 	uint32_t header;	// expected: "DSD "
 	uint64_t length;	// expected: 28
 	uint64_t filesize;
 	uint64_t metadataPtr;
-} DsfDSDChunk;
+};
 
-typedef enum {
+enum DsfChannelType {
 	mono = 1,
 	stereo,
 	ch3,
@@ -38,9 +38,9 @@ typedef enum {
 	ch4,
 	ch5,
 	ch51
-} DsfChannelType;
+};
 
-typedef struct {
+struct DsfFmtChunk {
 	uint32_t header;	// expected: "fmt "
 	uint64_t length;	// expected: 52
 	uint32_t version;	// expected: 1
@@ -56,18 +56,18 @@ typedef struct {
 	uint64_t numSamples;
 	uint32_t blockSize;	// expected: 4096
 	uint32_t reserved;	// expected: zero
-} DsfFmtChunk;
+};
 
-typedef struct {
+struct DsfDataChunk {
 	uint32_t header;	// expected: "data"
 	uint64_t length;	// expected: 12 + sample data length
-} DsfDataChunk;
+};
 #pragma pack(pop, r1)
 
-typedef enum {
+enum OpenMode {
 	dsf_read,
 	dsf_write
-} OpenMode;
+};
 
 #define DSF_ID_DSD 0x20445344
 #define DSF_ID_FMT 0x20746d66
