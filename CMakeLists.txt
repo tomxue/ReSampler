@@ -33,7 +33,7 @@ if(WIN32)
     link_libraries(libsndfile-1  libfftw3-3)
     add_executable(ReSampler.exe ${SOURCE_FILES})
 
-else()
+elseif (APPLE)
     include_directories(/usr/local/include)
     link_directories(/usr/local/lib)
     link_libraries(-lfftw3 -lsndfile)
@@ -59,5 +59,30 @@ else()
             srconvert.h)
 
     add_executable(ReSampler ${SOURCE_FILES})
+else ()
+    include_directories(/usr/include)
+    link_directories(/usr/lib)
+    link_libraries(-lfftw3 -lsndfile)
 
+    set(SOURCE_FILES
+            /usr/include/sndfile.h
+            /usr/include/sndfile.hh
+            /usr/include/fftw3.h
+            alignedmalloc.h
+            biquad.h
+            conversioninfo.h
+            dff.h
+            ditherer.h
+            dsf.h
+            FIRFilter.h
+            FIRFilterAVX.h
+            fraction.h
+            noiseshape.h
+            osspecific.h
+            raiitimer.h
+            ReSampler.cpp
+            ReSampler.h
+            srconvert.h)
+
+    add_executable(ReSampler ${SOURCE_FILES})
 endif()
