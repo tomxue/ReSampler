@@ -4,6 +4,7 @@
 #CLion files
 .idea/
 cmake-build*/
+CMakeCache.txt
 
 #macOS files
 .DS_Store
