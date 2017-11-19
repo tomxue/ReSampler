@@ -18,8 +18,8 @@
 
 class RaiiTimer {
 public:
-	
-    RaiiTimer(double msComparison = 0.0) : msComparison(msComparison) {
+
+    explicit RaiiTimer(double msComparison = 0.0) : msComparison(msComparison) {
         beginTimer = std::chrono::high_resolution_clock::now();    
     }
 

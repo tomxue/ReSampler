@@ -123,7 +123,8 @@ int main(int argc, char * argv[])
 			std::cout << "Changing output bit format to " << ci.outBitFormat << std::endl;
 		else { // user-supplied bit format not valid; try choosing appropriate format
 			determineBestBitFormat(ci.outBitFormat, ci.inputFilename, ci.outputFilename);
-			if (ci.outputFormat = determineOutputFormat(outFileExt, ci.outBitFormat))
+			ci.outputFormat = determineOutputFormat(outFileExt, ci.outBitFormat);
+			if (ci.outputFormat)
 				std::cout << "Changing output bit format to " << ci.outBitFormat << std::endl;
 			else {
 				std::cout << "Warning: NOT Changing output file bit format !" << std::endl;
@@ -377,7 +378,6 @@ int determineOutputFormat(const std::string& outFileExt, const std::string& bitF
 void listSubFormats(const std::string& f)
 {
 	SF_FORMAT_INFO	info;
-	int format = 0;
 	int major_count;
 	memset(&info, 0, sizeof(info));
 	sf_command(nullptr, SFC_GET_FORMAT_MAJOR_COUNT, &major_count, sizeof(int));
@@ -660,7 +660,7 @@ bool convert(ConversionInfo& ci)
 			// if the minor (sub) format of outputFileFormat is flac, and user has requested a specific compression level, set compression level:
 			if (((outputFileFormat & SF_FORMAT_FLAC) == SF_FORMAT_FLAC) && ci.bSetFlacCompression) {
 				std::cout << "setting flac compression level to " << ci.flacCompressionLevel << std::endl;
-				double cl = static_cast<double>(ci.flacCompressionLevel / 8.0); // there are 9 flac compression levels from 0-8. Normalize to 0-1.0
+				double cl = ci.flacCompressionLevel / 8.0; // there are 9 flac compression levels from 0-8. Normalize to 0-1.0
 				outFile->command(SFC_SET_COMPRESSION_LEVEL, &cl, sizeof(cl));
 			}
 
@@ -672,7 +672,7 @@ bool convert(ConversionInfo& ci)
 				std::cout << "setting vorbis quality level to " << ci.vorbisQuality << std::endl;
 				std::cout.precision(prec);
 
-				double cl = static_cast<double>((1.0 - ci.vorbisQuality) / 11.0); // Normalize from (-1 to 10), to (1.0 to 0) ... why is it backwards ?
+				double cl = (1.0 - ci.vorbisQuality) / 11.0; // Normalize from (-1 to 10), to (1.0 to 0) ... why is it backwards ?
 				outFile->command(SFC_SET_COMPRESSION_LEVEL, &cl, sizeof(cl));
 			}
 		}
@@ -896,15 +896,6 @@ int getDefaultNoiseShape(int sampleRate) {
 	}
 	else if (sampleRate <= 48000) {
 		return DitherProfileID::standard;
-	}
-	else if (sampleRate <= 88200) {
-		return DitherProfileID::flat_f;
-	}
-	else if (sampleRate <= 96000) {
-		return DitherProfileID::flat_f;
-	}
-	else if (sampleRate <= 176400) {
-		return DitherProfileID::flat_f;
 	}
 	else {
 		return DitherProfileID::flat_f;

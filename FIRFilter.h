@@ -46,7 +46,6 @@ public:
 		size(size), CurrentIndex(size-1), LastPut(0), Signal(nullptr),
 		Kernel0(nullptr),Kernel1(nullptr), Kernel2(nullptr), Kernel3(nullptr)
 	{
-		assert(nullptr == NULL);
 
 		// allocate buffers:
 		allocateBuffers();

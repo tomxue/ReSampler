@@ -10,6 +10,7 @@
 #ifndef FRACTION_H
 #define FRACTION_H
 
+#include <utility>
 #include <vector>
 #include <set>
 #include <numeric>
@@ -94,7 +95,7 @@ std::set<std::vector<int>> getnFactors(std::vector<int> primes, int maxFactors) 
         return;
     }; // ends recursiveFunc
 
-    recursiveFunc(primes, maxFactors);
+    recursiveFunc(std::move(primes), maxFactors);
 
     return solutions;
 }

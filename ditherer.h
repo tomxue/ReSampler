@@ -346,7 +346,7 @@ private:
 	// It also has the advantage of only calcluating one random number on each iteration, instead of two.
 	FloatType noiseGeneratorSlopedTPDF() {
 		int newRandom = dist(randGenerator);
-		FloatType tpdfNoise = static_cast<FloatType>(newRandom - oldRandom);
+        auto tpdfNoise = static_cast<FloatType>(newRandom - oldRandom);
 		oldRandom = newRandom;
 		return tpdfNoise;
 	}
@@ -377,7 +377,7 @@ private:
 
 	FloatType noiseGeneratorLegacy() { // legacy noise generator (from previous version of ReSampler) - applies filter to noise _before_ injection into dither engine
 		int newRandom = dist(randGenerator);
-		FloatType tpdfNoise = static_cast<FloatType>(newRandom - oldRandom); // sloped TDPF
+        auto tpdfNoise = static_cast<FloatType>(newRandom - oldRandom); // sloped TDPF
 		oldRandom = newRandom;
 		return f2.filter(f1.filter(tpdfNoise));
 	}

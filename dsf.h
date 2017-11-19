@@ -258,9 +258,9 @@ private:
 	double samplTbl[256][8];
 	
 	void assertSizes() {
-		assert(sizeof(dsfDSDChunk) == 28);
-		assert(sizeof(dsfFmtChunk) == 52);
-		assert(sizeof(dsfDataChunk) == 12);
+		static_assert(sizeof(dsfDSDChunk) == 28, "");
+		static_assert(sizeof(dsfFmtChunk) == 52, "");
+		static_assert(sizeof(dsfDataChunk) == 12, "");
 	}
 
 	// checkWarnChunkSize() :

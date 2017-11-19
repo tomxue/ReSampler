@@ -131,7 +131,7 @@ class DffFile
 {
 public:
 	// Construction / destruction
-	DffFile(const std::string& path, dffOpenMode mode = dff_read) : path(path), mode(mode)
+    explicit DffFile(const std::string& path, dffOpenMode mode = dff_read) : path(path), mode(mode)
 	{
 		file.exceptions(std::ifstream::failbit | std::ifstream::badbit);
 
@@ -274,7 +274,7 @@ public:
 	}
 
 private:
-	FormDSDChunk formDSDChunk;
+	FormDSDChunk formDSDChunk{};
 	std::string path;
 	dffOpenMode mode;
 	std::fstream file;
@@ -282,18 +282,18 @@ private:
 	const uint32_t blockSize = 4096;
 	uint32_t endOfBlock;
 	uint64_t bufferSize;
-	uint64_t totalSoundDataBytes;
+	uint64_t totalSoundDataBytes{};
 	uint64_t totalBytesRead;
-	uint32_t numChannels;
-	uint32_t _sampleRate;
-	uint64_t numSamples;
-	uint64_t numFrames;
+	uint32_t numChannels{};
+	uint32_t _sampleRate{};
+	uint64_t numSamples{};
+	uint64_t numFrames{};
 	uint8_t* inputBuffer;
 	uint64_t bufferIndex;
 	uint32_t currentChannel;
 	uint32_t currentBit;
-	uint64_t startOfData;
-	double samplTbl[256][8];
+	uint64_t startOfData{};
+	double samplTbl[256][8]{};
 
 	void getChunkHeader(dffChunkHeader* chunkHeader) {
 		chunkHeader->ckID = bigEndianRead32();

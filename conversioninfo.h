@@ -39,7 +39,7 @@ typedef enum {
 
 std::string sanitize(const std::string& str) {
 	std::string r(str);
-	auto s = r.find_first_not_of("-"); // get position of first non-hyphen
+	auto s = r.find_first_not_of('-'); // get position of first non-hyphen
 	r.erase(std::remove(r.begin() + s, r.end(), '-'), r.end()); // remove all hyphens after the first non-hyphen
 	std::transform(r.begin(), r.end(), r.begin(), ::tolower); // change to lower-case
 	return r;
@@ -90,8 +90,8 @@ bool getCmdlineParam(char** begin, char** end, const std::string& option)
 {
 	bool found = false;
 	std::vector<std::string> args(begin, end);
-	for (auto it = args.begin(); it != args.end(); it++) {
-		if (sanitize(*it) == sanitize(option)) {
+	for (auto &arg : args) {
+		if (sanitize(arg) == sanitize(option)) {
 			found = true;
 			break;
 		}
@@ -153,33 +153,33 @@ inline std::string ConversionInfo::toCmdLineArgs() {
 	std::vector<std::string> args;
 	std::string result;
 
-	args.push_back("-i");
+	args.emplace_back("-i");
 	args.push_back(inputFilename);
-	args.push_back("-o");
+	args.emplace_back("-o");
 	args.push_back(outputFilename);
-	args.push_back("-r");
+	args.emplace_back("-r");
 	args.push_back(std::to_string(outputSampleRate));
 
 	if(bUseDoublePrecision)
-		args.push_back("--doubleprecision");
+		args.emplace_back("--doubleprecision");
 
 	if(bNormalize) {
-		args.push_back("-n");
+		args.emplace_back("-n");
 		args.push_back(std::to_string(normalizeAmount));
 	}
 
 	if(bMinPhase)
-		args.push_back("--minphase");
+		args.emplace_back("--minphase");
 
 	if (lpfMode == custom) {
-		args.push_back("--lpf-cutoff");
+		args.emplace_back("--lpf-cutoff");
 		args.push_back(std::to_string(lpfCutoff));
-		args.push_back("--lpf-transition");
+		args.emplace_back("--lpf-transition");
 		args.push_back(std::to_string(lpfTransitionWidth));
 	}
 
 	if (maxStages == 1) {
-		args.push_back("--maxStages");
+		args.emplace_back("--maxStages");
 		args.push_back(std::to_string(maxStages));
 	}
 
@@ -206,7 +206,7 @@ inline bool ConversionInfo::fromCmdLineArgs(int argc, char* argv[]) {
 	outputSampleRate = 0;
 	gain = 1.0;
 	limit = 1.0;
-	bUseDoublePrecision - false;
+	bUseDoublePrecision = false;
 	bNormalize = false;
 	normalizeAmount = 1.0;
 	outputFormat = 0;
@@ -219,13 +219,13 @@ inline bool ConversionInfo::fromCmdLineArgs(int argc, char* argv[]) {
 	bMinPhase = false;
 	bSetFlacCompression = false;
 	flacCompressionLevel = 5;
-	bSetVorbisQuality = 5;
+	bSetVorbisQuality = true;
 	vorbisQuality = 3;
 	disableClippingProtection = false;
 	lpfMode = normal;
 	lpfCutoff = 100.0 * (10.0 / 11.0);
 	lpfTransitionWidth = 100.0 - lpfCutoff;
-	bUseSeed - false;
+	bUseSeed = false;
 	seed = 0;
 	dsfInput = false;
 	dffInput = false;
@@ -334,8 +334,8 @@ inline bool ConversionInfo::fromCmdLineArgs(int argc, char* argv[]) {
 		else {
 			std::cout << "Output filename not specified" << std::endl;
 			outputFilename = inputFilename;
-			if (outputFilename.find(".") != std::string::npos) {
-				auto dot = outputFilename.find_last_of(".");
+			if (outputFilename.find('.') != std::string::npos) {
+				auto dot = outputFilename.find_last_of('.');
 				outputFilename.insert(dot, "(converted)");
 			}
 			else {
