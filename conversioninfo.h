@@ -58,7 +58,7 @@ bool getCmdlineParam(char** begin, char** end, const std::string& option, T& par
 				try {
 					parameter = std::stof(*next);
 				}
-				catch (std::invalid_argument e) {
+				catch (std::invalid_argument& e) {
 					// leave parameter unchanged
 				}
 			}

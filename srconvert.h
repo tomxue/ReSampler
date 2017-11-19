@@ -193,7 +193,7 @@ template <typename FloatType>
 class Converter
 {
 public:
-	Converter(const ConversionInfo& ci) : ci(ci), groupDelay(0.0), gain(1.0), isBypassMode(false) {
+	explicit Converter(const ConversionInfo& ci) : ci(ci), groupDelay(0.0), gain(1.0), isBypassMode(false) {
 		if (ci.outputSampleRate == ci.inputSampleRate) {
 			isBypassMode = true;
 			Converter::ci.bSingleStage = true;
@@ -325,7 +325,7 @@ private:
 				stageCi.inputFilename = stageInputName;
 
 				if (i != indexOfLastStage) {
-					size_t lastDotPos = stageCi.outputFilename.find_last_of(".");
+					size_t lastDotPos = stageCi.outputFilename.find_last_of('.');
 					if (lastDotPos != std::string::npos) {
 						std::string pathWithoutExt = stageCi.outputFilename.substr(0, lastDotPos);
 						std::string ext = stageCi.outputFilename.substr(lastDotPos);

@@ -16,7 +16,7 @@ unsigned int fp_control_state = _controlfp(_EM_INEXACT, _MCW_EM);
 #endif
 
 #define _USE_MATH_DEFINES
-#include <math.h>
+#include <cmath>
 #include <iostream>
 #include <ostream>
 #include <cassert>
@@ -108,10 +108,10 @@ int main(int argc, char * argv[])
 	// Isolate the file extensions
 	std::string inFileExt;
 	std::string outFileExt;
-	if (ci.inputFilename.find_last_of(".") != std::string::npos)
-		inFileExt = ci.inputFilename.substr(ci.inputFilename.find_last_of(".") + 1);
-	if (ci.outputFilename.find_last_of(".") != std::string::npos)
-		outFileExt = ci.outputFilename.substr(ci.outputFilename.find_last_of(".") + 1);
+	if (ci.inputFilename.find_last_of('.') != std::string::npos)
+		inFileExt = ci.inputFilename.substr(ci.inputFilename.find_last_of('.') + 1);
+	if (ci.outputFilename.find_last_of('.') != std::string::npos)
+		outFileExt = ci.outputFilename.substr(ci.outputFilename.find_last_of('.') + 1);
 
 	// detect dsf or dff format
 	ci.dsfInput = (inFileExt == "dsf");
@@ -242,8 +242,8 @@ bool determineBestBitFormat(std::string& BitFormat, const std::string& inFilenam
 {
 	// get infile's extension from filename:
 	std::string inFileExt;
-	if (inFilename.find_last_of(".") != std::string::npos)
-		inFileExt = inFilename.substr(inFilename.find_last_of(".") + 1);
+	if (inFilename.find_last_of('.') != std::string::npos)
+		inFileExt = inFilename.substr(inFilename.find_last_of('.') + 1);
 
 	bool dsfInput = false;
 	bool dffInput = false;
@@ -286,8 +286,8 @@ bool determineBestBitFormat(std::string& BitFormat, const std::string& inFilenam
 
 	// get outfile's extension:
 	std::string outFileExt;
-	if (outFilename.find_last_of(".") != std::string::npos)
-		outFileExt = outFilename.substr(outFilename.find_last_of(".") + 1);
+	if (outFilename.find_last_of('.') != std::string::npos)
+		outFileExt = outFilename.substr(outFilename.find_last_of('.') + 1);
 	
 	// when the input file is dsf/dff, use default output subformat:
 	if (dsfInput || dffInput) { // choose default output subformat for chosen output file format
@@ -598,7 +598,7 @@ bool convert(ConversionInfo& ci)
 
 	// make a vector of ditherers (one ditherer for each channel):
 	std::vector<Ditherer<FloatType>> ditherers;
-	int seed = ci.bUseSeed ? ci.seed : time(0);
+	int seed = ci.bUseSeed ? ci.seed : time(nullptr);
 
 	for (int n = 0; n < nChannels; n++) {
 		// to-do: explore other seed-generation options (remote possibility of overlap)
