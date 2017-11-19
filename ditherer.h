@@ -97,20 +97,21 @@ public:
 	// filterID: noise-shaping filter to use
 
 	Ditherer(unsigned int signalBits, FloatType ditherBits, bool bAutoBlankingEnabled, int seed, DitherProfileID ditherProfileID = standard) :
-		signalBits(signalBits),
-		ditherBits(ditherBits),
-		bAutoBlankingEnabled(bAutoBlankingEnabled),
-		selectedDitherProfile(ditherProfileList[ditherProfileID]),
-		seed(seed),
-		Z1(0),
-		randGenerator(seed),		// initialize (seed) RNG
-		dist(0, randMax),		// set the range of the random number distribution
-		gain(1.0),
-		bUseErrorFeedback(ditherProfileList[ditherProfileID].bUseFeedback),
-		bPulseEmitted(false),
-		masterVolume(1.0)
+        seed(seed),
+        Z1(0),
+        masterVolume(1.0),
+        randGenerator(seed),		// initialize (seed) RNG
+        dist(0, randMax),		// set the range of the random number distribution
+        signalBits(signalBits),
+        ditherBits(ditherBits),
+        selectedDitherProfile(ditherProfileList[ditherProfileID]),
+        gain(1.0),
+        bUseErrorFeedback(ditherProfileList[ditherProfileID].bUseFeedback),
+        bPulseEmitted(false),
+        bAutoBlankingEnabled(bAutoBlankingEnabled)
+
 	{
-		// general parameters:
+        // general parameters:
 		maxSignalMagnitude = static_cast<FloatType>((1 << (signalBits - 1)) - 1); // note the -1 : match 32767 scaling factor for 16 bit !
 		reciprocalSignalMagnitude = 1.0 / maxSignalMagnitude; // value of LSB in target format
 		maxDitherScaleFactor = static_cast<FloatType>(pow(2, ditherBits - 1)) / maxSignalMagnitude / static_cast<FloatType>(randMax);
@@ -293,8 +294,8 @@ private:
 	int oldRandom;
 	int seed;
 	FloatType Z1;				// last Quantization error
-	FloatType maxSignalMagnitude;	// maximum integral value for signal target bit depth (for quantizing) 
-	FloatType reciprocalSignalMagnitude; // for normalizing quantized signal back to +/- 1.0 
+	FloatType maxSignalMagnitude;	// maximum integral value for signal target bit depth (for quantizing)
+	FloatType reciprocalSignalMagnitude; // for normalizing quantized signal back to +/- 1.0
 	FloatType maxDitherScaleFactor, ditherScaleFactor;	// maximum integral value for dither target bit depth
 	FloatType masterVolume;
 	int64_t zeroCount; // number of consecutive zeroes in input;
