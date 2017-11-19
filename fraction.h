@@ -71,7 +71,7 @@ std::vector<int> factorize(int n) {
 
 // getnFactors() - take a vector of prime factors, and consolidate into
 // a set of vectors of factors (each with size <= maxFactors) representing possible solutions
-std::set<std::vector<int>> getnFactors(std::vector<int> primes, int maxFactors) {
+std::set<std::vector<int>> getnFactors(const std::vector<int> &primes, int maxFactors) {
 
     std::set<std::vector<int>> solutions; // the retval
     std::vector<int> currentFactors(maxFactors,1);

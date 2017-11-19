@@ -81,7 +81,7 @@ public:
 	}
 
 	// move constructor:
-	FIRFilter(FIRFilter&& other) :
+	FIRFilter(FIRFilter&& other) noexcept :
 		size(other.size), CurrentIndex(other.CurrentIndex), LastPut(other.LastPut),
 		Signal(other.Signal), Kernel0(other.Kernel0), 
 		Kernel1(other.Kernel1), Kernel2(other.Kernel2), Kernel3(other.Kernel3)
@@ -108,7 +108,7 @@ public:
 	}
 
 	// move assignment:
-	FIRFilter& operator= (FIRFilter&& other)
+	FIRFilter& operator= (FIRFilter&& other) noexcept
 	{
 		if(this!=&other) // prevent self-assignment
 		{
@@ -662,7 +662,7 @@ void makeMinPhase(FloatType* pFIRcoeffs, size_t length)
 	size_t backPaddingLength = fftLength - frontPaddingLength - length;
 	
 	for (size_t n = 0; n < frontPaddingLength; ++n) {
-		complexInput.push_back({ 0, 0 });
+		complexInput.emplace_back(0, 0);
 	}
 
 	for (size_t n = 0; n < length; ++n) {
@@ -670,7 +670,7 @@ void makeMinPhase(FloatType* pFIRcoeffs, size_t length)
 	}
 
 	for (size_t n = 0; n < backPaddingLength; ++n) {
-		complexInput.push_back({ 0, 0 });
+		complexInput.emplace_back(0, 0);
 	}
 
 	/*
@@ -727,7 +727,7 @@ std::vector<FloatType> makeMinPhase2(FloatType* pFIRcoeffs, size_t length)
 	size_t backPaddingLength = fftLength - frontPaddingLength - length;
 
 	for (size_t n = 0; n < frontPaddingLength; ++n) {
-		complexInput.push_back({ 0, 0 });
+		complexInput.emplace_back(0, 0);
 	}
 
 	for (size_t n = 0; n < length; ++n) {
@@ -735,7 +735,7 @@ std::vector<FloatType> makeMinPhase2(FloatType* pFIRcoeffs, size_t length)
 	}
 
 	for (size_t n = 0; n < backPaddingLength; ++n) {
-		complexInput.push_back({ 0, 0 });
+		complexInput.emplace_back(0, 0);
 	}
 
 	/*
@@ -849,7 +849,7 @@ void dumpFFT(FloatType* data, size_t length)
 		if (n<length)
 			complexInput.push_back({ data[n], 0 });
 		else
-			complexInput.push_back({ 0, 0 }); // pad remainder with zeros (to-do: does it mattter where the zeros are put ?)
+			complexInput.emplace_back(0, 0); // pad remainder with zeros (to-do: does it mattter where the zeros are put ?)
 	}
 	
 	complexOutput = fftV(complexInput);
@@ -869,8 +869,7 @@ void testSinAccuracy() {
 	double maxError = 0.0;
 	double worstT = 0.0;
 
-	for (int i = 0; i < numSteps; ++i, t += inc) {
-
+	for (int i = 0; i < numSteps; ++i ) {
 		// calc relative error of
 		// |(sin 2t - 2 * sint * cost) / sin 2t|
 		// (double-angle identity)
@@ -881,6 +880,7 @@ void testSinAccuracy() {
 			worstT = t;
 			maxError = e;
 		}
+		t += inc;
 	}
 	std::cout << "maxError: " << std::setprecision(33) << maxError << std::endl;
 	std::cout << "worstT: " << worstT << std::endl;

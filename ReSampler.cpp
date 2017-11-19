@@ -18,18 +18,14 @@ unsigned int fp_control_state = _controlfp(_EM_INEXACT, _MCW_EM);
 #define _USE_MATH_DEFINES
 #include <cmath>
 #include <iostream>
-#include <ostream>
-#include <cassert>
 #include <vector>
 #include <algorithm>
 #include <memory>
 #include <iomanip>
 #include <mutex>
-#include <cstdio>
 #include <cstring>
 
 #ifndef _MSC_VER
-#include <unistd.h>
 #endif
 
 #ifdef __APPLE__
@@ -40,8 +36,6 @@ unsigned int fp_control_state = _controlfp(_EM_INEXACT, _MCW_EM);
 #include "conversioninfo.h"
 #include "osspecific.h"
 #include "ctpl/ctpl_stl.h"
-#include "ditherer.h"
-#include "biquad.h"
 #include "dsf.h"
 #include "dff.h"
 #include "raiitimer.h"
@@ -60,7 +54,6 @@ unsigned int fp_control_state = _controlfp(_EM_INEXACT, _MCW_EM);
 // fftw
 // http://www.fftw.org/
 // 
-#include "sndfile.hh"
 //                                                                                    //
 ////////////////////////////////////////////////////////////////////////////////////////
 
