@@ -25,10 +25,8 @@ unsigned int fp_control_state = _controlfp(_EM_INEXACT, _MCW_EM);
 #include <mutex>
 #include <cstring>
 
-#ifndef _MSC_VER
-#endif
-
 #ifdef __APPLE__
+#include <unistd.h>
 #include <libproc.h>
 #endif 
 
