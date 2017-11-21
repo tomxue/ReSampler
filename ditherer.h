@@ -100,7 +100,7 @@ public:
         seed(seed),
         Z1(0),
         masterVolume(1.0),
-        randGenerator(seed),		// initialize (seed) RNG
+        randGenerator(static_cast<unsigned int>(seed)),		// initialize (seed) RNG
         dist(0, randMax),		// set the range of the random number distribution
         signalBits(signalBits),
         ditherBits(ditherBits),
@@ -223,7 +223,7 @@ public:
 		memset(FIRHistory, 0, MAX_FIR_FILTER_SIZE * sizeof(FloatType));
 		
 		// re-seed PRNG
-		randGenerator.seed(seed);
+		randGenerator.seed(static_cast<unsigned int>(seed));
 		oldRandom = 0;
 		Z1 = 0;
 		zeroCount = 0;

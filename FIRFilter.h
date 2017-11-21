@@ -779,34 +779,34 @@ std::vector<FloatType> makeMinPhase2(FloatType* pFIRcoeffs, size_t length)
 // utility functions:
 
 // dumpKaiserWindow() - utility function for displaying Kaiser Window:
-void dumpKaiserWindow(int Length, double Beta) {
-	std::vector<double> f(Length, 1);
-	applyKaiserWindow<double>(f.data(), Length, Beta);
-	for (int i = 0; i < Length; ++i) {
+void dumpKaiserWindow(size_t length, double Beta) {
+	std::vector<double> f(length, 1);
+	applyKaiserWindow<double>(f.data(), length, Beta);
+	for (int i = 0; i < length; ++i) {
 		std::cout << i << ": " << f[i] << std::endl;
 	}
 
-	std::vector<double> g(Length, 1);
-	applyKaiserWindow<double>(g.data(), Length, Beta);
-	for (int i = 0; i < Length; ++i) {
+	std::vector<double> g(length, 1);
+	applyKaiserWindow<double>(g.data(), length, Beta);
+	for (int i = 0; i < length; ++i) {
 		std::cout << i << ": " << g[i] << std::endl;
 	}
 }
 
 // asserts that the two Kaiser Window formulas agree with each other (within a specified tolerance)
-void assertKaiserWindow(int Length, double Beta) {
+void assertKaiserWindow(size_t length, double Beta) {
 
 	const double tolerance = 0.001;
 	const double upper = 1.0 + tolerance;
 	const double lower = 1.0 - tolerance;
 
-	std::vector<double> f(Length, 1);
-	applyKaiserWindow2<double>(f.data(), Length, Beta);
+	std::vector<double> f(length, 1);
+	applyKaiserWindow2<double>(f.data(), length, Beta);
 
-	std::vector<double> g(Length, 1);
-	applyKaiserWindow<double>(g.data(), Length, Beta);
+	std::vector<double> g(length, 1);
+	applyKaiserWindow<double>(g.data(), length, Beta);
 
-	for (int i = 0; i < Length; ++i) {
+	for (int i = 0; i < length; ++i) {
 		double ratio = f[i] / g[i];
 		assert(ratio < upper && ratio > lower);
 	}

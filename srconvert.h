@@ -31,9 +31,10 @@ std::vector<FloatType> makeFilterCoefficients(const ConversionInfo& ci, Fraction
 	double steepness = 0.090909091 / (ci.lpfTransitionWidth / 100.0);
 
 	// determine filtersize
-	int filterSize = 
-		std::min<int>(FILTERSIZE_BASE * ci.overSamplingFactor * std::max(fraction.denominator, fraction.numerator) * steepness, FILTERSIZE_LIMIT)
-		| static_cast<int>(1);	// ensure that filter length is always odd
+	size_t filterSize = static_cast<size_t>(
+        std::min<int>(FILTERSIZE_BASE * ci.overSamplingFactor * std::max(fraction.denominator, fraction.numerator) * steepness, FILTERSIZE_LIMIT)
+		| static_cast<int>(1) // ensure that filter length is always odd
+    );
 
 	// determine sidelobe attenuation
 	int sidelobeAtten = ((fraction.numerator == 1) || (fraction.denominator == 1)) ?
@@ -265,9 +266,9 @@ private:
 	void initMultistage() {
 		Fraction masterConversionRatio = getFractionFromSamplerates(ci.inputSampleRate, ci.outputSampleRate);
 		auto fractions = getPresetFractions(masterConversionRatio, ci.maxStages);
-		numStages = fractions.size();
+		numStages = static_cast<int>(fractions.size());
 		indexOfLastStage = numStages - 1;
-		int inputRate = ci.inputSampleRate;
+		unsigned int inputRate = ci.inputSampleRate;
 		double stretch = (ci.lpfCutoff + ci.lpfTransitionWidth) / 100.0;
 		double lastStopFreq = stretch * inputRate / 2.0;
 		std::string stageInputName(ci.inputFilename);
@@ -290,7 +291,7 @@ private:
 
 			// set minSampleRate and minNyquist for this stage:
 			decltype(stageCi.inputSampleRate) minSampleRate = std::min(stageCi.inputSampleRate, stageCi.outputSampleRate);
-			decltype(stageCi.inputSampleRate) minNyquist = minSampleRate / 2.0;
+			decltype(stageCi.inputSampleRate) minNyquist = static_cast<unsigned int>(minSampleRate / 2.0);
 
 			// determine transition frequency (cutoff) and stop frequency for this stage:
 			double stopFreq = std::max(stretch * minNyquist, minSampleRate - lastStopFreq);

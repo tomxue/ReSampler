@@ -443,8 +443,8 @@ bool convert(ConversionInfo& ci)
 
 	// set buffer sizes:
 	size_t inputChannelBufferSize = BUFFERSIZE;
-	size_t inputBlockSize = BUFFERSIZE * nChannels;
-	size_t outputChannelBufferSize = std::ceil(BUFFERSIZE * static_cast<double>(fraction.numerator) / static_cast<double>(fraction.denominator));
+	size_t inputBlockSize = static_cast<size_t>(BUFFERSIZE * nChannels);
+	size_t outputChannelBufferSize = static_cast<size_t>(std::ceil(BUFFERSIZE * static_cast<double>(fraction.numerator) / static_cast<double>(fraction.denominator)));
 	size_t outputBlockSize = nChannels * (1 + outputChannelBufferSize);
 	
 	// allocate buffers:
@@ -589,7 +589,7 @@ bool convert(ConversionInfo& ci)
 
 	// make a vector of ditherers (one ditherer for each channel):
 	std::vector<Ditherer<FloatType>> ditherers;
-	int seed = ci.bUseSeed ? ci.seed : time(nullptr);
+	int seed = static_cast<int>(ci.bUseSeed ? ci.seed : time(nullptr));
 
 	for (int n = 0; n < nChannels; n++) {
 		// to-do: explore other seed-generation options (remote possibility of overlap)
@@ -935,7 +935,7 @@ bool checkWarnOutputSize(uint64_t inputSamples, int bytesPerSample, int numerato
 
 std::string fmtNumberWithCommas(uint64_t n) {
 	std::string s = std::to_string(n);
-	int insertPosition = s.length() - 3;
+	auto insertPosition = s.length() - 3;
 	while (insertPosition > 0) {
 		s.insert(insertPosition, ",");
 		insertPosition -= 3;

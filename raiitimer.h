@@ -29,8 +29,9 @@ public:
         std::cout << "Time=" << duration << " ms";
         if(msComparison != 0.0) {
             double relativeSpeed = msComparison / duration;
-            std::streamsize ss = std::cout.precision();
-            std::cout << " [" << std::setprecision(1) << relativeSpeed << "x]" << std::setprecision(ss);
+            auto ss = std::cout.precision();
+            std::cout << " [" << std::setprecision(1) << relativeSpeed << "x]" << std::setprecision(
+                    static_cast<int>(ss));
         } 
         std::cout << "\n" << std::endl;
     }
