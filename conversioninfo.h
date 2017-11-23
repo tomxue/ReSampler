@@ -139,6 +139,7 @@ struct ConversionInfo
 	bool bWriteMetaData;
 	int maxStages;
 	bool bSingleStage;
+	bool bMultiStage;
 	bool bShowStages;
 	int overSamplingFactor;
 	bool bBadParams;
@@ -235,9 +236,10 @@ inline bool ConversionInfo::fromCmdLineArgs(int argc, char* argv[]) {
 	bNoPeakChunk = false;
 	bWriteMetaData = true;
 	maxStages = 3;
-	bSingleStage = false;
+	bSingleStage = true;
+	bMultiStage = false;
 	bShowStages = false;
-	overSamplingFactor = 1.0;
+	overSamplingFactor = 1;
 	bBadParams = false;
 	appName.clear();
 
@@ -268,6 +270,23 @@ inline bool ConversionInfo::fromCmdLineArgs(int argc, char* argv[]) {
 	bWriteMetaData = !getCmdlineParam(argv, argv + argc, "--noMetadata");
 	getCmdlineParam(argv, argv + argc, "--maxStages", maxStages);
 	bSingleStage = getCmdlineParam(argv, argv + argc, "--singleStage");
+	bMultiStage = getCmdlineParam(argv, argv + argc, "--multiStage");
+
+	/* resolve conflicts between singleStage and multiStage, according to this table:
+	IN   OUT
+	s m  S M
+	==== ===
+	F F  T F
+	F T  F T (no change)
+	T F  T F (no change)
+	T T  F T 
+	*/
+
+	if (!bMultiStage && !bSingleStage)
+		bSingleStage = true;
+	else if (bMultiStage && bSingleStage)
+		bSingleStage = false;
+
 	bShowStages = getCmdlineParam(argv, argv + argc, "--showStages");
 
 	// LPFilter settings:
