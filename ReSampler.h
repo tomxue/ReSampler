@@ -18,7 +18,7 @@
 
 struct ConversionInfo;
 
-const std::string strVersion("2.0.1-beta");
+const std::string strVersion("2.0.1-beta2");
 const std::string strUsage("usage: ReSampler -i <inputfile> [-o <outputfile>] -r <samplerate> [-b <bitformat>] [-n [<normalization factor>]]\n");
 const std::string strExtraOptions(
 	"--help\n"
