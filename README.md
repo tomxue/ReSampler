@@ -149,7 +149,9 @@ On a multi-core system, this makes better use of available CPU resources and res
 *By default, ReSampler will attempt to copy native metadata from the input file to the output file, provided the input and output file types support metadata 
 (ie: wav, aiff, caf, flac, oga, rf64)*
 
-**--singleStage** : use single-stage conversion engine (significantly less efficient and therefore slower, but potentially slightly cleaner conversion)
+**--singleStage** : use single-stage conversion engine (significantly less efficient and therefore slower, but cleaner conversion)
+
+**--multiStage** : use multi-stage conversion engine
 
 #### Example
 
