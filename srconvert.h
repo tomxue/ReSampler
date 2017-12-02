@@ -213,7 +213,7 @@ public:
 		if (isMultistage) {
 			const FloatType* in = inBuffer; // first stage reads directly from inBuffer. Subsequent stages read from output of previous stage
 			size_t inSize = inBufferSize;
-			size_t outSize;
+			size_t outSize = 0;
 			for (int i = 0; i < numStages; i++) {
 				FloatType* out = (i == indexOfLastStage) ? outBuffer : intermediateOutputBuffers[i].data(); // last stage writes straight to outBuffer;
 				convertStages[i].convert(out, outSize, in, inSize);

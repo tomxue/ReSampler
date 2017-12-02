@@ -112,7 +112,7 @@ const std::map<std::string, std::string> defaultSubFormats = {
 #define MAX_CART_TAG_TEXT_SIZE 16384
 typedef SF_CART_INFO_VAR(MAX_CART_TAG_TEXT_SIZE) LargeSFCartInfo;
 
-typedef struct
+struct MetaData
 {
 	std::string title;
 	std::string copyright;
@@ -133,7 +133,7 @@ typedef struct
 	bool has_cart_chunk;
 	LargeSFCartInfo cartInfo;
 
-} MetaData;
+};
 
 bool checkSSE2();
 bool checkAVX();
@@ -147,7 +147,7 @@ int getDefaultNoiseShape(int sampleRate);
 void showDitherProfiles();
 int getSfBytesPerSample(int format);
 bool checkWarnOutputSize(sf_count_t inputSamples, int bytesPerSample, int numerator, int denominator);
-std::string fmtNumberWithCommas(uint64_t n);
+template<typename IntType> std::string fmtNumberWithCommas(IntType n);
 void printSamplePosAsTime(sf_count_t samplePos, unsigned int sampleRate);
 bool getMetaData(MetaData& metadata, SndfileHandle& infile);
 bool setMetaData(const MetaData& metadata, SndfileHandle& outfile);
