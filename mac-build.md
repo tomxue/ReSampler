@@ -46,7 +46,6 @@ clang++ -pthread -std=c++11 ReSampler.cpp -lfftw3 -lsndfile -o ReSampler-clang -
 
 #### using gcc:
 
-standard 64-bit build:
 ~~~
 g++ -pthread -std=c++11 ReSampler.cpp -lfftw3 -lsndfile -o ReSampler -O3 -L/usr/local/lib -I/usr/local/include
 ~~~
