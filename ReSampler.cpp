@@ -921,11 +921,11 @@ int getSfBytesPerSample(int format) {
 	}
 }
 
-bool checkWarnOutputSize(uint64_t inputSamples, int bytesPerSample, int numerator, int denominator)
+bool checkWarnOutputSize(sf_count_t inputSamples, int bytesPerSample, int numerator, int denominator)
 {
-	uint64_t outputDataSize = inputSamples * bytesPerSample * numerator / denominator;
+	sf_count_t outputDataSize = inputSamples * bytesPerSample * numerator / denominator;
 
-	const uint64_t limit4G = 1ULL << 32;
+	const sf_count_t limit4G = 1ULL << 32;
 	if (outputDataSize >= limit4G) {
 		std::cout << "Warning: output file ( " << fmtNumberWithCommas(outputDataSize) << " bytes of data ) will exceed 4GB limit"  << std::endl;
 		return true;
