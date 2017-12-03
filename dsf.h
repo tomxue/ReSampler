@@ -338,7 +338,7 @@ private:
 			std::cout << "bitstream in MSB-first format" << std::endl;
 		}
 
-		startOfData = file.tellg();
+		startOfData = static_cast<uint64_t>(file.tellg());
 		endOfData = dsfDSDChunk.length + dsfFmtChunk.length + dsfDataChunk.length;
 
 		assert( // metadata tag either non-existent or at end of data

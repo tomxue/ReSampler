@@ -397,7 +397,7 @@ private:
 			
 			getChunkHeader(&nextChunkHeader);
 			
-			int64_t dataSize = nextChunkHeader.ckDataSize;
+			uint64_t dataSize = nextChunkHeader.ckDataSize;
 			
 			switch (nextChunkHeader.ckID) {
 			case CKID_FS:
@@ -475,7 +475,7 @@ private:
 		do {
 			getChunkHeader(&nextChunkHeader);
 
-			int64_t dataSize = nextChunkHeader.ckDataSize;
+			uint64_t dataSize = nextChunkHeader.ckDataSize;
 			
 			switch (nextChunkHeader.ckID) {
 			case CKID_FVER:
@@ -505,7 +505,7 @@ private:
 			} 
 		} while (nextChunkHeader.ckID != CKID_DSD);
 
-		startOfData = file.tellg(); // should be ready to read data stream now ...
+		startOfData = static_cast<uint64_t>(file.tellg()); // should be ready to read data stream now ...
 	}
 
 	uint32_t readBlocks() {
@@ -516,7 +516,7 @@ private:
 		uint64_t bytesRemaining = totalSoundDataBytes - totalBytesRead;
 		uint64_t bytesToRead = std::min(bufferSize, bytesRemaining);
 		file.read((char*)inputBuffer, bytesToRead);
-		uint64_t bytesActuallyRead = file.gcount();
+		uint64_t bytesActuallyRead = static_cast<uint64_t>(file.gcount());
 		totalBytesRead += bytesActuallyRead;
 		return bytesActuallyRead;
 	}
