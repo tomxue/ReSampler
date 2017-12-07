@@ -280,7 +280,7 @@ private:
 	std::fstream file;
 	bool err;
 	const uint32_t blockSize = 4096;
-	uint32_t endOfBlock;
+	uint64_t endOfBlock;
 	uint64_t bufferSize;
 	uint64_t totalSoundDataBytes{};
 	uint64_t totalBytesRead;
@@ -508,7 +508,7 @@ private:
 		startOfData = static_cast<uint64_t>(file.tellg()); // should be ready to read data stream now ...
 	}
 
-	uint32_t readBlocks() {
+	uint64_t readBlocks() {
 		if (file.eof()) {
 			return 0;
 		}

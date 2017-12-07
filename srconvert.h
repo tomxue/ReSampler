@@ -357,7 +357,7 @@ private:
 				cumulativeNumerator *= fractions[j].numerator;
 				cumulativeDenominator *= fractions[j].denominator;
 			}
-			size_t outBufferSize = std::ceil(BUFFERSIZE * cumulativeNumerator / cumulativeDenominator);
+			size_t outBufferSize = static_cast<size_t>(std::ceil(BUFFERSIZE * cumulativeNumerator / cumulativeDenominator));
 
 			// conditionally show outpout buffer size
 			if (ci.bShowStages) {

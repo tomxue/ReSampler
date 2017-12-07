@@ -54,7 +54,7 @@ Fraction getFractionFromSamplerates(int inputRate, int outputRate)
 // factorize(n) - returns a vector of prime factors of n
 std::vector<int> factorize(int n) {
 	std::vector<int> factors;
-	int maxFactor = std::sqrt(n);
+	int maxFactor = static_cast<int>(std::sqrt(n));
 
 	for (int factor = 2; factor <= maxFactor; factor++) {
 		while (n % factor == 0) {
@@ -86,7 +86,7 @@ std::set<std::vector<int>> getnFactors(const std::vector<int> &primes, int maxFa
             return;
         }
 
-        int maxFirstItems = primeFactors.size() - (numFactors - 1);
+        int maxFirstItems = static_cast<int>(primeFactors.size() - (numFactors - 1));
         for(int j = 1; j <= maxFirstItems; j++) {
             currentFactors[numFactors-1] = std::accumulate(primeFactors.begin(), primeFactors.begin() + j, 1, std::multiplies<int>());
             std::vector<int> remainingItems(primeFactors.begin() + j, primeFactors.end());
@@ -114,7 +114,7 @@ std::set<std::vector<int>> getnFactors(int x, int maxFactors) {
 std::vector<std::vector<Fraction>> getDecompositionCandidates(Fraction f, int maxStages) {
 	auto numeratorPrimes = factorize(f.numerator);
 	auto denominatorPrimes = factorize(f.denominator);
-	int maxPossibleStages = std::max(numeratorPrimes.size(), denominatorPrimes.size()); // determines just how many stages can be formed
+	int maxPossibleStages = (int) std::max(numeratorPrimes.size(), denominatorPrimes.size()); // determines just how many stages can be formed
 	int numStages = std::max(1, std::min(maxStages, maxPossibleStages)); // determines exactly how many stages we will have 
 	
 	while (numeratorPrimes.size() < numStages) { // pad with 1s at front
