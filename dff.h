@@ -515,7 +515,7 @@ private:
 
 		uint64_t bytesRemaining = totalSoundDataBytes - totalBytesRead;
 		uint64_t bytesToRead = std::min(bufferSize, bytesRemaining);
-		file.read((char*)inputBuffer, bytesToRead);
+		file.read((char*)inputBuffer, static_cast<std::streamsize>(bytesToRead));
 		uint64_t bytesActuallyRead = static_cast<uint64_t>(file.gcount());
 		totalBytesRead += bytesActuallyRead;
 		return bytesActuallyRead;
