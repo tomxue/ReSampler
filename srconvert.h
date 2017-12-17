@@ -298,9 +298,10 @@ private:
 			assert(stopFreq > ft); // should always be the case for a LPF
 
 			// set transition frequency (cutoff) and transition width for this stage (they are stored as percentage values)
-			stageCi.lpfCutoff = 100 * ft / minNyquist;
-			stageCi.lpfTransitionWidth = 100.0 * (stopFreq - ft) / (stageCi.outputSampleRate * 0.5);
-		//	stageCi.lpfTransitionWidth = 100.0 * (stopFreq - ft) / minNyquist;
+			double widthReduction = (i == indexOfLastStage) ? 1.0 : 2.0;
+			stageCi.lpfTransitionWidth = 100.0 * (stopFreq - ft) / (stageCi.outputSampleRate * 0.5) / widthReduction;
+			stageCi.lpfCutoff = 100 - stageCi.lpfTransitionWidth;
+
 			assert(stageCi.lpfTransitionWidth > 0.0);
 			lastStopFreq = stopFreq; // keep this value for calculation of next stage's stopFreq
 
