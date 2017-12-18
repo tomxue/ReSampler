@@ -236,8 +236,8 @@ inline bool ConversionInfo::fromCmdLineArgs(int argc, char* argv[]) {
 	bNoPeakChunk = false;
 	bWriteMetaData = true;
 	maxStages = 3;
-	bSingleStage = true;
-	bMultiStage = false;
+	bSingleStage = false;
+	bMultiStage = true;
 	bShowStages = false;
 	overSamplingFactor = 1;
 	bBadParams = false;

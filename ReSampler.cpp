@@ -80,7 +80,7 @@ int main(int argc, char * argv[])
 	if (ci.bBadParams) {
 		exit(EXIT_FAILURE);
 	}
-	
+
 	// query build version AND cpu
 	if (!showBuildVersion())
 		exit(EXIT_FAILURE); // can't continue (CPU / build mismatch)
