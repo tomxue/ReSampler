@@ -276,14 +276,14 @@ inline bool ConversionInfo::fromCmdLineArgs(int argc, char* argv[]) {
 	IN   OUT
 	s m  S M
 	==== ===
-	F F  T F
+	F F  F T
 	F T  F T (no change)
 	T F  T F (no change)
 	T T  F T 
 	*/
 
 	if (!bMultiStage && !bSingleStage)
-		bSingleStage = true;
+		bMultiStage = true;
 	else if (bMultiStage && bSingleStage)
 		bSingleStage = false;
 
