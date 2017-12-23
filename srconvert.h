@@ -300,7 +300,7 @@ private:
 			// set transition frequency (cutoff) and transition width for this stage (they are stored as percentage values)
 			double widthReduction = (i == indexOfLastStage) ? 1.0 : 2.0;
 			stageCi.lpfTransitionWidth = 100.0 * (stopFreq - ft) / (stageCi.outputSampleRate * 0.5) / widthReduction;
-			stageCi.lpfCutoff = 100 - stageCi.lpfTransitionWidth;
+			stageCi.lpfCutoff = (i == indexOfLastStage) ? ci.lpfCutoff : 100 - stageCi.lpfTransitionWidth;
 
 			assert(stageCi.lpfTransitionWidth > 0.0);
 			lastStopFreq = stopFreq; // keep this value for calculation of next stage's stopFreq
