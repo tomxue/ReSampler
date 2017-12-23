@@ -670,11 +670,12 @@ bool convert(ConversionInfo& ci)
 			return false;
 		}
 
+		std::string stageness(ci.bMultiStage ? "multi-stage" : "single-stage");
 		if (multiThreaded) {
-			std::cout << "Converting (multi-threaded) ...";
+			std::cout << "Converting (" << stageness <<  ", multi-threaded) ...";
 		}
 		else {
-			std::cout << "Converting ...";
+			std::cout << "Converting (" << stageness << ") ...";
 		}
 
 		peakOutputSample = 0.0;
