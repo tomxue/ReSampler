@@ -670,14 +670,11 @@ bool convert(ConversionInfo& ci)
 			return false;
 		}
 
+		// echo conversion mode to user (multi-stage/single-stage, multi-threaded/single-sthread)
 		std::string stageness(ci.bMultiStage ? "multi-stage" : "single-stage");
-		if (multiThreaded) {
-			std::cout << "Converting (" << stageness <<  ", multi-threaded) ...";
-		}
-		else {
-			std::cout << "Converting (" << stageness << ") ...";
-		}
-
+		std::string threadedness(ci.bMultiThreaded ? ", multi-threaded" : "");
+		std::cout << "Converting (" << stageness << threadedness << ") ..." << std::endl;
+	
 		peakOutputSample = 0.0;
 		totalSamplesRead = 0;
 		sf_count_t incrementalProgressThreshold = inputSampleCount / 10;
