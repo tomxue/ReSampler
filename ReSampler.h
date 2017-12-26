@@ -43,6 +43,7 @@ const std::string strExtraOptions(
 	"--noPeakChunk\n"
 	"--noMetadata\n"
 	"--singleStage\n"
+    "--multiStage\n"
 	"--maxStages\n"
 	"--showStages\n"
 );
