@@ -21,6 +21,7 @@ unsigned int fp_control_state = _controlfp(_EM_INEXACT, _MCW_EM);
 #include <vector>
 #include <iomanip>
 #include <cstring>
+#include <cstdio>
 
 #ifdef __APPLE__
 #include <unistd.h>
@@ -416,6 +417,9 @@ bool convert(ConversionInfo& ci)
 {
 	bool multiThreaded = ci.bMultiThreaded;
 
+	// list to keep track of temp files used during the conversion
+	std::vector<SndfileHandle*> tmpFiles;
+
 	// Open input file:
 	FileReader infile(ci.inputFilename);
 
@@ -670,7 +674,20 @@ bool convert(ConversionInfo& ci)
 			return false;
 		}
 
-		// echo conversion mode to user (multi-stage/single-stage, multi-threaded/single-sthread)
+		// conditionally open tmp file
+		if (ci.bTmpFile) {
+			std::string tmpName(std::tmpnam(nullptr));
+			std::cout << "Temp File: " << tmpName << "\n";
+			tmpFiles.push_back(new SndfileHandle(ci.outputFilename, SFM_WRITE, outputFileFormat, nChannels, ci.outputSampleRate));
+
+			if (int e = infile.error()) {
+				std::cout << "Error: Couldn't Open Temporary File (" << sf_error_number(e) << ")\n";
+				std::cout << "Disabling further attempts to use temp files." << std::endl;
+				ci.bTmpFile = false;
+			}
+		}
+
+		// echo conversion mode to user (multi-stage/single-stage, multi-threaded/single-threaded)
 		std::string stageness(ci.bMultiStage ? "multi-stage" : "single-stage");
 		std::string threadedness(ci.bMultiThreaded ? ", multi-threaded" : "");
 		std::cout << "Converting (" << stageness << threadedness << ") ..." << std::endl;
@@ -787,6 +804,11 @@ bool convert(ConversionInfo& ci)
 
 	} while (!ci.disableClippingProtection && bClippingDetected);
 	
+	// clean-up temp files:
+	for (auto& tmpFile : tmpFiles) {
+		delete tmpFile;
+	}
+
 	return true;
 } // ends convert()
 

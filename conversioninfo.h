@@ -144,6 +144,7 @@ struct ConversionInfo
 	int overSamplingFactor;
 	bool bBadParams;
 	std::string appName;
+	bool bTmpFile;
 
 	bool fromCmdLineArgs(int argc, char* argv[]);
 	std::string toCmdLineArgs();
@@ -242,6 +243,7 @@ inline bool ConversionInfo::fromCmdLineArgs(int argc, char* argv[]) {
 	overSamplingFactor = 1;
 	bBadParams = false;
 	appName.clear();
+	bTmpFile = true;
 
 	// get core parameters:
 	getCmdlineParam(argv, argv + argc, "-i", inputFilename);
