@@ -423,6 +423,9 @@ bool convert(ConversionInfo& ci)
 	// pointer for temp file;
 	SndfileHandle* tmpFile = nullptr;
 
+	// filename for temp file:
+	std::string tmpFilename;
+
 	if (int e = infile.error()) {
 		std::cout << "Error: Couldn't Open Input File (" << sf_error_number(e) << ")" << std::endl; // to-do: make this more specific (?)
 		return false;
@@ -686,9 +689,9 @@ bool convert(ConversionInfo& ci)
 				tmpFileFormat = SF_FORMAT_WAV | SF_FORMAT_FLOAT;
 			}
 			 
-			std::string tmpName(std::string(std::tmpnam(nullptr)) + ".wav");
-			std::cout << "Temp File: " << tmpName << "\n";
-			tmpFile = new SndfileHandle(tmpName, SFM_RDWR, tmpFileFormat, nChannels, ci.outputSampleRate);
+			tmpFilename = std::string(std::string(std::tmpnam(nullptr)) + ".wav");
+			std::cout << "Temp File: " << tmpFilename << "\n";
+			tmpFile = new SndfileHandle(tmpFilename, SFM_RDWR, tmpFileFormat, nChannels, ci.outputSampleRate);
 
 			if (int e = infile.error()) {
 				std::cout << "Error: Couldn't Open Temporary File (" << sf_error_number(e) << ")\n";
@@ -854,7 +857,6 @@ bool convert(ConversionInfo& ci)
 
 				// de-interleave into channels, apply gain, add dither, and save to output buffer
 				size_t i = 0;
-				
 				for (size_t s = 0; s < samplesRead; s += nChannels) {
 					for (int ch = 0; ch < nChannels; ++ch) {
 						FloatType smpl = ci.bDither ? ditherers[ch].dither(gainAdjustment * inputBlock[i++]) : gainAdjustment * inputBlock[i++];
@@ -885,10 +887,11 @@ bool convert(ConversionInfo& ci)
 
 
 	} while (!ci.disableClippingProtection && bClippingDetected);
-	
-	// clean-up temp files:
-	delete tmpFile;
 
+	// clean-up temp file:
+	delete tmpFile; // dealllocate SndFileHandle
+	std::remove(tmpFilename.c_str()); // actually remove the temp file from disk
+	
 	return true;
 } // ends convert()
 
