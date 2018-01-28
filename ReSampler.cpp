@@ -417,25 +417,24 @@ bool convert(ConversionInfo& ci)
 {
 	bool multiThreaded = ci.bMultiThreaded;
 
-	// Open input file:
-	FileReader infile(ci.inputFilename);
-
 	// pointer for temp file;
 	SndfileHandle* tmpFile = nullptr;
 
 	// filename for temp file:
 	std::string tmpFilename;
 
+	// Open input file:
+	FileReader infile(ci.inputFilename);
 	if (int e = infile.error()) {
 		std::cout << "Error: Couldn't Open Input File (" << sf_error_number(e) << ")" << std::endl; // to-do: make this more specific (?)
 		return false;
 	}
-
-	// read metadata:
+	
+	// read input file metadata:
 	MetaData m;
 	getMetaData(m, infile);
 	
-	// read file properties:
+	// read input file properties:
 	int nChannels = infile.channels();
 	ci.inputSampleRate = infile.samplerate();
 	sf_count_t inputFrames = infile.frames();
@@ -624,7 +623,7 @@ bool convert(ConversionInfo& ci)
 	bool bClippingDetected;
 	RaiiTimer timer(inputDuration);
 
-	do { // clipping detection loop (repeat if clipping detected)
+	do { // clipping detection loop (repeats if clipping detected AND not using a temp file)
 
 		peakInputSample = 0.0;
 		bClippingDetected = false;
@@ -690,7 +689,7 @@ bool convert(ConversionInfo& ci)
 			}
 			 
 			tmpFilename = std::string(std::string(std::tmpnam(nullptr)) + ".wav");
-			std::cout << "Temp File: " << tmpFilename << "\n";
+			// std::cout << "Temp File: " << tmpFilename << "\n";
 			tmpFile = new SndfileHandle(tmpFilename, SFM_RDWR, tmpFileFormat, nChannels, ci.outputSampleRate);
 
 			if (int e = infile.error()) {
@@ -719,7 +718,8 @@ bool convert(ConversionInfo& ci)
 		sf_count_t nextProgressThreshold = incrementalProgressThreshold;
 
 		int outStartOffset = std::min(groupDelay * nChannels, static_cast<int>(outputBlockSize) - nChannels);
-		do {
+		
+		do { // central conversion loop (the heart of the matter ...) 
 
 			// Grab a block of interleaved samples from file:
 			samplesRead = infile.read(inputBlock.data(), inputBlockSize);
@@ -799,7 +799,7 @@ bool convert(ConversionInfo& ci)
 				nextProgressThreshold += incrementalProgressThreshold;
 			}
 
-		} while (samplesRead > 0);
+		} while (samplesRead > 0); // ends central conversion loop
 
 		if (!ci.bTmpFile) {
 			// notify user:
@@ -817,7 +817,14 @@ bool convert(ConversionInfo& ci)
 			gainAdjustment = static_cast<FloatType>(clippingTrim) * ci.limit / peakOutputSample;
 			gain *= gainAdjustment;
 			std::cout << "\nClipping detected !" << std::endl;
-			std::cout << "Re-doing with " << 20 * log10(gainAdjustment) << " dB gain adjustment" << std::endl;
+
+			// echo gain adjustment to user - use slightly differnt message is using temp file:
+			if (ci.bTmpFile) {
+				std::cout << "Adjusting gain by " << 20 * log10(gainAdjustment) << " dB" << std::endl;
+			}
+			else {
+				std::cout << "Re-doing with " << 20 * log10(gainAdjustment) << " dB gain adjustment" << std::endl;
+			}
 
 			// reset the ditherers
 			if (ci.bDither) {
@@ -838,8 +845,9 @@ bool convert(ConversionInfo& ci)
 			
 		} // ends test for clipping
 
-		// if using tmp file, write to outFile
+		// if using temp file, write to outFile
 		if (ci.bTmpFile) {
+			std::cout << "Writing to output file ...\n";
 			std::vector<FloatType> outBuf(inputBlockSize, 0);
 			peakOutputSample = 0.0;
 			totalSamplesRead = 0;
