@@ -240,10 +240,11 @@ inline bool ConversionInfo::fromCmdLineArgs(int argc, char* argv[]) {
 	bSingleStage = false;
 	bMultiStage = true;
 	bShowStages = false;
+	bTmpFile = true;
 	overSamplingFactor = 1;
 	bBadParams = false;
 	appName.clear();
-	bTmpFile = true;
+
 
 	// get core parameters:
 	getCmdlineParam(argv, argv + argc, "-i", inputFilename);
@@ -273,6 +274,7 @@ inline bool ConversionInfo::fromCmdLineArgs(int argc, char* argv[]) {
 	getCmdlineParam(argv, argv + argc, "--maxStages", maxStages);
 	bSingleStage = getCmdlineParam(argv, argv + argc, "--singleStage");
 	bMultiStage = getCmdlineParam(argv, argv + argc, "--multiStage");
+	bTmpFile = !getCmdlineParam(argv, argv + argc, "--noTempFile");
 
 	/* resolve conflicts between singleStage and multiStage, according to this table:
 	IN   OUT

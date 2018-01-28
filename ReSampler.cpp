@@ -687,14 +687,16 @@ bool convert(ConversionInfo& ci)
 			else {
 				tmpFileFormat = SF_FORMAT_WAV | SF_FORMAT_FLOAT;
 			}
-			 
+			
+			//tmpFilename = "x:\\bollocks.wav"; // (test what happens on temp file fail)
+			
 			tmpFilename = std::string(std::string(std::tmpnam(nullptr)) + ".wav");
 			// std::cout << "Temp File: " << tmpFilename << "\n";
 			tmpFile = new SndfileHandle(tmpFilename, SFM_RDWR, tmpFileFormat, nChannels, ci.outputSampleRate);
 
-			if (int e = infile.error()) {
+			if (int e = tmpFile->error()) {
 				std::cout << "Error: Couldn't Open Temporary File (" << sf_error_number(e) << ")\n";
-				std::cout << "Disabling further attempts to use temp files." << std::endl;
+				std::cout << "Disabling temp file mode." << std::endl;
 				ci.bTmpFile = false;
 			}	
 
