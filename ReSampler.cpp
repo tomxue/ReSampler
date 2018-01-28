@@ -860,7 +860,6 @@ bool convert(ConversionInfo& ci)
 			tmpFile->seek(0, SEEK_SET);
 
 			do {
-				size_t outputBlockIndex = 0;
 				// Grab a block of interleaved samples from temp file:
 				samplesRead = tmpFile->read(inputBlock.data(), inputBlockSize);
 				totalSamplesRead += samplesRead;
@@ -869,14 +868,14 @@ bool convert(ConversionInfo& ci)
 				size_t i = 0;
 				for (size_t s = 0; s < samplesRead; s += nChannels) {
 					for (int ch = 0; ch < nChannels; ++ch) {
-						FloatType smpl = ci.bDither ? ditherers[ch].dither(gainAdjustment * inputBlock[i++]) : gainAdjustment * inputBlock[i++];
+						FloatType smpl = ci.bDither ? ditherers[ch].dither(gainAdjustment * inputBlock[i]) : gainAdjustment * inputBlock[i];
 						peakOutputSample = std::max(std::abs(smpl), peakOutputSample);
-						outBuf[outputBlockIndex++] = smpl;
+						outBuf[i++] = smpl;
 					}
 				}
 
 				// write output buffer to outfile
-				outFile->write(outBuf.data(), outputBlockIndex);
+				outFile->write(outBuf.data(), i);
 
 				// conditionally send progress update:
 				if (totalSamplesRead > nextProgressThreshold) {
