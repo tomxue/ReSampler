@@ -155,6 +155,8 @@ On a multi-core system, this makes better use of available CPU resources and res
 
 **--showStages** : show details about the parameters used for each conversion stage.
 
+**--noTempFile** : disable the use of a temporary file during conversion
+
 #### Example
 
 To convert 24-bit, 96kHz .wav input file to 16-bit, 44.1kHz .flac output file, with steep lowpass filter and dithering:
