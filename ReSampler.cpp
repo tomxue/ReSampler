@@ -863,6 +863,9 @@ bool convert(ConversionInfo& ci)
 				// SEEK to start of tmpFile;
 				tmpFile->seek(0, SEEK_SET);
 
+				// SEEK to start of outFile:
+				outFile->seek(0, SEEK_SET);
+
 				do {// Grab a block of interleaved samples from temp file:
 					samplesRead = tmpFile->read(inputBlock.data(), inputBlockSize);
 					totalSamplesRead += samplesRead;
