@@ -813,44 +813,39 @@ bool convert(ConversionInfo& ci)
 		}
 
 		FloatType gainAdjustment = 1.0;
-		auto testForClipping = [&] {
+		// test for clipping:
+		if (!ci.disableClippingProtection && peakOutputSample > ci.limit) {
 
+			// calculate gain adjustment
+			gainAdjustment = static_cast<FloatType>(clippingTrim) * ci.limit / peakOutputSample;
+			gain *= gainAdjustment;
+			std::cout << "\nClipping detected !" << std::endl;
+
+			// echo gain adjustment to user - use slightly differnt message is using temp file:
+			if (ci.bTmpFile) {
+				std::cout << "Adjusting gain by " << 20 * log10(gainAdjustment) << " dB" << std::endl;
+			} else {
+				std::cout << "Re-doing with " << 20 * log10(gainAdjustment) << " dB gain adjustment" << std::endl;
+			}
+
+			// reset the ditherers
+			if (ci.bDither) {
+				for (auto &ditherer : ditherers) {
+					ditherer.adjustGain(gainAdjustment);
+					ditherer.reset();
+				}
+			}
+
+			// reset the converters
+			for (auto &converter : converters) {
+				converter.reset();
+			}
+
+			// signal another round of conversion
 			bClippingDetected = true;
-			
-			if (!ci.disableClippingProtection && peakOutputSample > ci.limit) {
 
-				// calculate gain adjustment
-				gainAdjustment = static_cast<FloatType>(clippingTrim) * ci.limit / peakOutputSample;
-				gain *= gainAdjustment;
-				std::cout << "\nClipping detected !" << std::endl;
-
-				// echo gain adjustment to user - use slightly differnt message is using temp file:
-				if (ci.bTmpFile) {
-					std::cout << "Adjusting gain by " << 20 * log10(gainAdjustment) << " dB" << std::endl;
-				} else {
-					std::cout << "Re-doing with " << 20 * log10(gainAdjustment) << " dB gain adjustment" << std::endl;
-				}
-
-				// reset the ditherers
-				if (ci.bDither) {
-					for (auto &ditherer : ditherers) {
-						ditherer.adjustGain(gainAdjustment);
-						ditherer.reset();
-					}
-				}
-
-				// reset the converters
-				for (auto &converter : converters) {
-					converter.reset();
-				}
-
-				// signal another round of conversion
-				bClippingDetected = true;
-
-			} // ends test for clipping
-		};
-
-		testForClipping();
+		} // ends test for clipping
+	
 
 		// if using temp file, write to outFile
 		if (ci.bTmpFile) {
