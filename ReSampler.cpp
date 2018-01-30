@@ -812,9 +812,11 @@ bool convert(ConversionInfo& ci)
 			std::cout.precision(prec);
 		}
 
-
 		FloatType gainAdjustment = 1.0;
 		auto testForClipping = [&] {
+
+			bClippingDetected = true;
+			
 			if (!ci.disableClippingProtection && peakOutputSample > ci.limit) {
 
 				// calculate gain adjustment
@@ -852,50 +854,45 @@ bool convert(ConversionInfo& ci)
 
 		// if using temp file, write to outFile
 		if (ci.bTmpFile) {
-			do { // process until no clipping
-				std::cout << "Writing to output file ...\n";
-				std::vector<FloatType> outBuf(inputBlockSize, 0);
-				peakOutputSample = 0.0;
-				totalSamplesRead = 0;
-				sf_count_t incrementalProgressThreshold = inputSampleCount / 10;
-				sf_count_t nextProgressThreshold = incrementalProgressThreshold;
+			
+			std::cout << "Writing to output file ...\n";
+			std::vector<FloatType> outBuf(inputBlockSize, 0);
+			peakOutputSample = 0.0;
+			totalSamplesRead = 0;
+			sf_count_t incrementalProgressThreshold = inputSampleCount / 10;
+			sf_count_t nextProgressThreshold = incrementalProgressThreshold;
 
-				// SEEK to start of tmpFile;
-				tmpFile->seek(0, SEEK_SET);
+			tmpFile->seek(0, SEEK_SET);
+			outFile->seek(0, SEEK_SET);
 
-				// SEEK to start of outFile:
-				outFile->seek(0, SEEK_SET);
+			do {// Grab a block of interleaved samples from temp file:
+				samplesRead = tmpFile->read(inputBlock.data(), inputBlockSize);
+				totalSamplesRead += samplesRead;
 
-				do {// Grab a block of interleaved samples from temp file:
-					samplesRead = tmpFile->read(inputBlock.data(), inputBlockSize);
-					totalSamplesRead += samplesRead;
-
-					// de-interleave into channels, apply gain, add dither, and save to output buffer
-					size_t i = 0;
-					for (size_t s = 0; s < samplesRead; s += nChannels) {
-						for (int ch = 0; ch < nChannels; ++ch) {
-							FloatType smpl = ci.bDither ? ditherers[ch].dither(gainAdjustment * inputBlock[i]) :
-											 gainAdjustment * inputBlock[i];
-							peakOutputSample = std::max(std::abs(smpl), peakOutputSample);
-							outBuf[i++] = smpl;
-						}
+				// de-interleave into channels, apply gain, add dither, and save to output buffer
+				size_t i = 0;
+				for (size_t s = 0; s < samplesRead; s += nChannels) {
+					for (int ch = 0; ch < nChannels; ++ch) {
+						FloatType smpl = ci.bDither ? ditherers[ch].dither(gainAdjustment * inputBlock[i]) :
+											gainAdjustment * inputBlock[i];
+						peakOutputSample = std::max(std::abs(smpl), peakOutputSample);
+						outBuf[i++] = smpl;
 					}
+				}
 
-					// write output buffer to outfile
-					outFile->write(outBuf.data(), i);
+				// write output buffer to outfile
+				outFile->write(outBuf.data(), i);
 
-					// conditionally send progress update:
-					if (totalSamplesRead > nextProgressThreshold) {
-						int progressPercentage = std::min(static_cast<int>(99),
-														  static_cast<int>(100 * totalSamplesRead / inputSampleCount));
-						std::cout << progressPercentage << "%\b\b\b" << std::flush;
-						nextProgressThreshold += incrementalProgressThreshold;
-					}
+				// conditionally send progress update:
+				if (totalSamplesRead > nextProgressThreshold) {
+					int progressPercentage = std::min(static_cast<int>(99),
+														static_cast<int>(100 * totalSamplesRead / inputSampleCount));
+					std::cout << progressPercentage << "%\b\b\b" << std::flush;
+					nextProgressThreshold += incrementalProgressThreshold;
+				}
 
-				} while (samplesRead > 0);
-				testForClipping();
-			} while (bClippingDetected);
-
+			} while (samplesRead > 0);
+			
 			std::cout << "Done" << std::endl;
 			auto prec = std::cout.precision();
 			std::cout << "Peak output sample: " << std::setprecision(6) << peakOutputSample << " (" << 20 * log10(peakOutputSample) << " dBFS)" << std::endl;
