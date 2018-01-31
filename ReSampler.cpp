@@ -1056,7 +1056,7 @@ bool checkWarnOutputSize(sf_count_t inputSamples, int bytesPerSample, int numera
 template<typename IntType>
 std::string fmtNumberWithCommas(IntType n) {
 	std::string s = std::to_string(n);
-	auto insertPosition = s.length() - 3;
+	int64_t insertPosition = s.length() - 3;
 	while (insertPosition > 0) {
 		s.insert(insertPosition, ",");
 		insertPosition -= 3;
