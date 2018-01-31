@@ -566,6 +566,13 @@ bool convert(ConversionInfo& ci)
 		}
 	}
 
+	// note: libsndfile has an rf64 auto-downgrade mode:
+	// http://www.mega-nerd.com/libsndfile/command.html#SFC_RF64_AUTO_DOWNGRADE
+	// However, I feel that rf64 auto-downgrade is more appropriate for recording applications
+	// (where the final file size cannot be known until the recording has stopped)
+	// In the case of sample-rate conversions, the output file size (and therefore the decision to promote to rf64)
+	// can be determined at the outset.
+
 	// determine number of bits in output format (used for Dithering purposes):
 	int outputSignalBits;
 	switch (outputFileFormat & SF_FORMAT_SUBMASK) {
@@ -680,13 +687,15 @@ bool convert(ConversionInfo& ci)
 		// conditionally open temp file:
 		if (ci.bTmpFile) {
 
-			// set format for temp file:
-			int tmpFileFormat;
+			// set major format of temp file (inherit rf64-ness from output file):
+			int tmpFileFormat = (outputFileFormat & SF_FORMAT_RF64) ? SF_FORMAT_RF64 : SF_FORMAT_WAV;
+
+			// set appropriate floating-point subformat:
 			if (sizeof(FloatType) == 8) {
-				tmpFileFormat = SF_FORMAT_WAV | SF_FORMAT_DOUBLE;
+				tmpFileFormat |= SF_FORMAT_DOUBLE;
 			}
 			else {
-				tmpFileFormat = SF_FORMAT_WAV | SF_FORMAT_FLOAT;
+				tmpFileFormat |= SF_FORMAT_FLOAT;
 			}
 			
 			//tmpFilename = "x:\\bollocks.wav"; // (test what happens on temp file fail)
