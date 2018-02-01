@@ -698,8 +698,6 @@ bool convert(ConversionInfo& ci)
 				tmpFileFormat |= SF_FORMAT_FLOAT;
 			}
 			
-			//tmpFilename = "x:\\bollocks.wav"; // (test what happens on temp file fail)
-			
 			tmpFilename = std::string(std::string(std::tmpnam(nullptr)) + ".wav");
 			// std::cout << "Temp File: " << tmpFilename << "\n";
 			tmpFile = new SndfileHandle(tmpFilename, SFM_RDWR, tmpFileFormat, nChannels, ci.outputSampleRate);
