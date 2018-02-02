@@ -20,8 +20,6 @@ unsigned int fp_control_state = _controlfp(_EM_INEXACT, _MCW_EM);
 #include <iostream>
 #include <vector>
 #include <iomanip>
-#include <cstring>
-#include <cstdio>
 
 #ifdef __APPLE__
 #include <unistd.h>
