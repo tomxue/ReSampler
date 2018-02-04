@@ -47,7 +47,9 @@ const std::string strExtraOptions(
 	"--maxStages\n"
 	"--showStages\n"
 );
+
 const double clippingTrim = 1.0 - (1.0 / (1 << 23));
+const int maxClippingProtectionAttempts = 3;
 
 #define BUFFERSIZE 32768 // buffer size for file reads
 #define MAXCHANNELS 64
