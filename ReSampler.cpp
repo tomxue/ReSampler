@@ -906,6 +906,11 @@ bool convert(ConversionInfo& ci)
 			if (bClippingDetected)
 				clippingProtectionAttempts++;
 
+			// explanation of 'while' loops:
+			// 1. when clipping is detected and temp file is in use, go back to re-adjusting gain, resetting ditherers etc and repeat
+			// 2. when clipping is detected and temp file NOT used, go all the way back to reading the input file, and running the whole conversion again
+			// (This whole control structure might be better served with good old gotos ...)
+
 		} while (ci.bTmpFile && !ci.disableClippingProtection && bClippingDetected && clippingProtectionAttempts < maxClippingProtectionAttempts); // if using temp file, do another round if clipping detected
 	} while (!ci.bTmpFile && !ci.disableClippingProtection && bClippingDetected && clippingProtectionAttempts < maxClippingProtectionAttempts); // if NOT using temp file, do another round if clipping detected
 
