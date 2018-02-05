@@ -22,7 +22,6 @@
 // single-stage policies
 static const bool singleStageOnDecimateOnly = false;
 static const bool singleStageOnInterpolateOnly = false;
-// ---
 
 struct Fraction {
 	int numerator;
@@ -191,7 +190,6 @@ std::vector<Fraction> getPresetFractions(Fraction f, int maxStages) {
 	if (f.denominator == 1 && singleStageOnInterpolateOnly) {
 		return std::vector<Fraction> {f}; // single-stage conversion
 	}
-	// ---
 
 	struct PresetFractionSet {
 		Fraction master;
@@ -201,9 +199,9 @@ std::vector<Fraction> getPresetFractions(Fraction f, int maxStages) {
 	// hardcoded table of known presets
 	const std::vector<PresetFractionSet> presetList{
 
-		{ { 5,147 },{ { 1,3 },{ 1,7 },{ 5,7 } } },
-		{ { 147,40 },{ { 3,2 },{ 7,2 },{ 7,10 } } },
-		{ { 147,80 },{ { 3,2 },{ 7,4 },{ 7,10 } } }, // cleanest 3-stage
+		{{5,147},{{1,3},{1,7},{5,7}}},
+		{{147,40},{{3,2},{7,2},{7,10}}},
+		{{147,80},{{3,2},{7,4},{7,10}}}, // cleanest 3-stage
 		{{147,160},{{3,2},{7,8},{7,10}}},
 		{{147,320}, {{3,5}, {7,8}, {7,8}}},
 		{{147,640 }, {{3,5},{7,8},{7,16}}},
