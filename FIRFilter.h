@@ -23,8 +23,6 @@
 #include "alignedmalloc.h"
 
 #define FILTERSIZE_LIMIT 131071
-#define FILTERSIZE_HUGE 32767
-#define FILTERSIZE_MEDIUM 255
 #define FILTERSIZE_BASE 103
 
 #define SSE_ALIGNMENT_SIZE 16
