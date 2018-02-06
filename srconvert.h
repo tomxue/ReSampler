@@ -62,7 +62,7 @@ class ResamplingStage
 {
 public:
     ResamplingStage(int L, int M, FIRFilter<FloatType>& filter, bool bypassMode = false)
-        : L(L), M(M), filter(filter), bypassMode(bypassMode), m(0)
+        : L(L), M(M),  m(0), filter(filter), bypassMode(bypassMode)
     {
 		SetConvertFunction();
     }
@@ -194,7 +194,7 @@ template <typename FloatType>
 class Converter
 {
 public:
-	explicit Converter(const ConversionInfo& ci) : ci(ci), groupDelay(0.0), gain(1.0), isBypassMode(false) {
+	explicit Converter(const ConversionInfo& ci) : ci(ci), groupDelay(0.0), isBypassMode(false), gain(1.0) {
 		if (ci.outputSampleRate == ci.inputSampleRate) {
 			isBypassMode = true;
 			Converter::ci.bSingleStage = true;

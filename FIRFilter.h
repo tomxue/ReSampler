@@ -39,9 +39,10 @@ template <typename FloatType>
 class FIRFilter {
 
 public:
+
 	// constructor:
 	FIRFilter(const FloatType* taps, size_t size) :
-		size(size), CurrentIndex(size-1), LastPut(0), Signal(nullptr),
+		size(size), Signal(nullptr), CurrentIndex(size-1), LastPut(0),
 		Kernel0(nullptr),Kernel1(nullptr), Kernel2(nullptr), Kernel3(nullptr)
 	{
 
@@ -69,7 +70,7 @@ public:
 	~FIRFilter() {
 		freeBuffers();
 	}
-	
+
 	// copy constructor:
 	FIRFilter(const FIRFilter& other) : size(other.size), CurrentIndex(other.CurrentIndex), LastPut(other.LastPut)
 	{
@@ -80,9 +81,8 @@ public:
 
 	// move constructor:
 	FIRFilter(FIRFilter&& other) noexcept :
-		size(other.size), CurrentIndex(other.CurrentIndex), LastPut(other.LastPut),
-		Signal(other.Signal), Kernel0(other.Kernel0), 
-		Kernel1(other.Kernel1), Kernel2(other.Kernel2), Kernel3(other.Kernel3)
+		size(other.size), Signal(other.Signal), CurrentIndex(other.CurrentIndex), LastPut(other.LastPut),
+		Kernel0(other.Kernel0), Kernel1(other.Kernel1), Kernel2(other.Kernel2), Kernel3(other.Kernel3)
 	{
 		assertAlignment();
 		other.Signal = nullptr;
