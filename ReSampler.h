@@ -46,6 +46,7 @@ const std::string strExtraOptions(
     "--multiStage\n"
 	"--maxStages\n"
 	"--showStages\n"
+	"--noTempFile\n"
 );
 
 const double clippingTrim = 1.0 - (1.0 / (1 << 23));
