@@ -645,7 +645,7 @@ AnalyticSignalV(const std::vector<std::complex<double>>& input) {
 	return output;
 }
 
-// makeMinPhase() : transform linear-phase FIR filter coefficients into minimum-phase (in-place)
+// makeMinPhase() : transform linear-phase FIR filter coefficients into minimum-phase (in-place version)
 template<typename FloatType>
 void makeMinPhase(FloatType* pFIRcoeffs, size_t length)
 {
@@ -710,9 +710,9 @@ void makeMinPhase(FloatType* pFIRcoeffs, size_t length)
 	}
 }
 
-// makeMinPhase() : take linear-phase FIR filter coefficients, and return a new vector of minimum-phase coefficients
+// makeMinPhase2() : take linear-phase FIR filter coefficients, and return a new vector of minimum-phase coefficients
 template<typename FloatType>
-std::vector<FloatType> makeMinPhase2(FloatType* pFIRcoeffs, size_t length)
+std::vector<FloatType> makeMinPhase2(const FloatType* pFIRcoeffs, size_t length)
 {
 	size_t fftLength = pow(2, 2.0 + ceil(log2(length))); // use FFT 4x larger than (length rounded-up to power-of-2)
 
