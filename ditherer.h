@@ -18,6 +18,8 @@
 
 #include <cmath>
 #include <random>
+#include <cstring>
+
 #include "biquad.h"
 #include "noiseshape.h"
 
