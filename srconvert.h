@@ -402,7 +402,6 @@ private:
 	bool isMultistage;
 	bool isBypassMode;
 	double gain;
-
 };
 
 #endif // SRCONVERT_H

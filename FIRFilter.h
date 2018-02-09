@@ -247,14 +247,14 @@ public:
 		b          = _mm_add_ss(a, b);                 // [C     D     | D+C A+B+C+D]
 		output    += _mm_cvtss_f32(b);                 // A+B+C+D
 		
-/*
+		/*
 		__m128   x;
 		x = _mm_movehl_ps(x, accumulator);
 		accumulator = _mm_add_ps(accumulator, x);
 		x = _mm_shuffle_ps(accumulator, accumulator, 0x55);
 		accumulator = _mm_add_ps(accumulator, x);
 		output += _mm_cvtss_f32(accumulator);
-*/
+		*/
 
 		/*
 		output += 
@@ -262,7 +262,7 @@ public:
 			accumulator.m128_f32[1] +
 			accumulator.m128_f32[2] +
 			accumulator.m128_f32[3];
-			*/
+		*/
 
 		// Part 3: Tail
 		for (int j = (size >> 2) << 2; j < size; ++j) {
@@ -341,6 +341,8 @@ private:
 
 #ifdef USE_SIMD
 
+#ifndef USE_SIMD_FOR_DOUBLES
+
 // Specialization for doubles:
 template <>
 double FIRFilter<double>::get() {
@@ -353,59 +355,62 @@ double FIRFilter<double>::get() {
 	return output;
 }
 
+#else 
+ 
 // actual SIMD implementations for doubles (not worth the effort - no faster than than naive):
 
-//double FIRFilter<double>::get() {
-//
-//	// SIMD implementation: This only works with doubles !
-//	// Processes two doubles at a time.
-//
-//	double output = 0.0;
-//	double* Kernel;
-//	int Index = (CurrentIndex >> 1) << 1; // make multiple-of-two
-//	int Phase = CurrentIndex & 1;
-//
-//	// Part1 : Head
-//	// select proper Kernel phase and calculate first Block of 2:
-//	switch (Phase) {
-//	case 0:
-//		Kernel = Kernel0;
-//		// signal already aligned and ready to use
-//		output = Kernel[0] * Signal[Index] + Kernel[1] * Signal[Index + 1];
-//		break;
-//	case 1:
-//		Kernel = Kernel1;
-//		// signal starts at +1 : load first value from history (ie upper half of buffer)
-//		output = Kernel[0] * Signal[Index + size] + Kernel[1] * Signal[Index + 1];
-//		break;
-//	}
-//	Index += 2;
-//
-//	// Part 2: Body
-//	alignas(SSE_ALIGNMENT_SIZE) __m128d signal;	// SIMD Vector Registers for calculation
-//	alignas(SSE_ALIGNMENT_SIZE) __m128d kernel;
-//	alignas(SSE_ALIGNMENT_SIZE) __m128d product;
-//	alignas(SSE_ALIGNMENT_SIZE) __m128d accumulator = _mm_setzero_pd();
-//
-//	for (int i = 2; i < (size >> 1) << 1; i += 2) {
-//		signal = _mm_load_pd(Signal + Index);
-//		kernel = _mm_load_pd(Kernel + i);
-//		product = _mm_mul_pd(signal, kernel);
-//		accumulator = _mm_add_pd(product, accumulator);
-//		Index += 2;
-//	}
-//
-//	output += accumulator.m128d_f64[0] + accumulator.m128d_f64[1];
-//
-//	// Part 3: Tail
-//	for (int j = (size >> 1) << 1; j < size; ++j) {
-//		output += Signal[Index] * Kernel[j];
-//		++Index;
-//	}
-//
-//	return output;
-//}
+template <>
+double FIRFilter<double>::get() {
 
+	// SIMD implementation
+	// Processes two doubles at a time.
+
+	double output = 0.0;
+	double* Kernel;
+	int Index = (CurrentIndex >> 1) << 1; // make multiple-of-two
+	int Phase = CurrentIndex & 1;
+
+	// Part1 : Head
+	// select proper Kernel phase and calculate first Block of 2:
+	switch (Phase) {
+	case 0:
+		Kernel = Kernel0;
+		// signal already aligned and ready to use
+		output = Kernel[0] * Signal[Index] + Kernel[1] * Signal[Index + 1];
+		break;
+	case 1:
+		Kernel = Kernel1;
+		// signal starts at +1 : load first value from history (ie upper half of buffer)
+		output = Kernel[0] * Signal[Index + size] + Kernel[1] * Signal[Index + 1];
+		break;
+	}
+	Index += 2;
+
+	// Part 2: Body
+	alignas(SSE_ALIGNMENT_SIZE) __m128d signal;	// SIMD Vector Registers for calculation
+	alignas(SSE_ALIGNMENT_SIZE) __m128d kernel;
+	alignas(SSE_ALIGNMENT_SIZE) __m128d product;
+	alignas(SSE_ALIGNMENT_SIZE) __m128d accumulator = _mm_setzero_pd();
+
+	for (int i = 2; i < (size >> 1) << 1; i += 2) {
+		signal = _mm_load_pd(Signal + Index);
+		kernel = _mm_load_pd(Kernel + i);
+		product = _mm_mul_pd(signal, kernel);
+		accumulator = _mm_add_pd(product, accumulator);
+		Index += 2;
+	}
+
+	output += accumulator.m128d_f64[0] + accumulator.m128d_f64[1];
+
+	// Part 3: Tail
+	for (int j = (size >> 1) << 1; j < size; ++j) {
+		output += Signal[Index] * Kernel[j];
+		++Index;
+	}
+
+	return output;
+}
+#endif // USE_SIMD_FOR_DOUBLES
 #endif // USE_SIMD
 #endif // !USE_AVX
 

@@ -187,7 +187,6 @@ public:
 		}
 
 		// FIR-specific stuff:
-		
 		const FloatType scale = 1.0;
 		FIRLength = selectedDitherProfile.N;
 		for (int n = 0; n < FIRLength; ++n) {

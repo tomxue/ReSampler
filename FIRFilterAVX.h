@@ -504,6 +504,5 @@ double testSum4Doubles(double a, double b, double c, double d) {
 	return sum4doubles(v);
 }
 
-
 #endif // USE_AVX
 #endif // FIRFFILTER_AVX_H_

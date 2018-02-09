@@ -245,7 +245,6 @@ inline bool ConversionInfo::fromCmdLineArgs(int argc, char* argv[]) {
 	bBadParams = false;
 	appName.clear();
 
-
 	// get core parameters:
 	getCmdlineParam(argv, argv + argc, "-i", inputFilename);
 	getCmdlineParam(argv, argv + argc, "-o", outputFilename);
