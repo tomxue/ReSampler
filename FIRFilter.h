@@ -58,11 +58,11 @@ public:
 		}
 
 		// Populate additional kernel Phases:
-		memcpy(1 + Kernel1, Kernel0, (size - 1)*sizeof(FloatType));
+		memcpy(1 + Kernel1, Kernel0, (size - 1) * sizeof(FloatType));
 		Kernel1[0] = Kernel0[size - 1];
-		memcpy(1 + Kernel2, Kernel1, (size - 1)*sizeof(FloatType));
+		memcpy(1 + Kernel2, Kernel1, (size - 1) * sizeof(FloatType));
 		Kernel2[0] = Kernel1[size - 1];
-		memcpy(1 + Kernel3, Kernel2, (size - 1)*sizeof(FloatType));
+		memcpy(1 + Kernel3, Kernel2, (size - 1) * sizeof(FloatType));
 		Kernel3[0] = Kernel2[size - 1];
 	}
 
