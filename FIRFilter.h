@@ -741,16 +741,6 @@ std::vector<FloatType> makeMinPhase2(const FloatType* pFIRcoeffs, size_t length)
 		complexInput.emplace_back(0, 0);
 	}
 
-	/*
-	// pad with trailing zeros
-	for (int n = 0; n < fftLength; ++n) {
-	if (n<length)
-	complexInput.push_back({ pFIRcoeffs[n], 0 });
-	else
-	complexInput.push_back({ 0, 0 }); // pad remainder with zeros
-	}
-	*/
-
 	assert(complexInput.size() == fftLength); // make sure padding worked properly.
 
 	// Formula is as follows:
