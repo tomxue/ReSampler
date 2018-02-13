@@ -471,7 +471,7 @@ double I0(double z)
 }
 
 // applyKaiserWindow() - This function applies a Kaiser Window to an array of filter coefficients ("textbook" version):
-template<typename FloatType> bool applyKaiserWindow(FloatType* filter, int Length, FloatType Beta)
+template<typename FloatType> bool applyKaiserWindow(FloatType* filter, int Length, double Beta)
 {
 	// Note: sometimes, the Kaiser Window formula is defined in terms of Alpha (instead of Beta), 
 	// in which case, Alpha def= Beta / pi
@@ -487,7 +487,7 @@ template<typename FloatType> bool applyKaiserWindow(FloatType* filter, int Lengt
 }
 
 // applyKaiserWindow2() - applies a Kaiser Window to an array of filter coefficients (alternative formula):
-template<typename FloatType> bool applyKaiserWindow2(FloatType* filter, int Length, FloatType Beta)
+template<typename FloatType> bool applyKaiserWindow2(FloatType* filter, int Length, double Beta)
  {
 	 double A;	// use double internally, regardless of FloatType (speed not an issue here; no reason not to)
 	 double maxA = 0; // for diagnostics
