@@ -246,24 +246,7 @@ public:
 		a          = _mm_movehl_ps(a, b);              // [C     D     | D+C   C+D  ]
 		b          = _mm_add_ss(a, b);                 // [C     D     | D+C A+B+C+D]
 		output    += _mm_cvtss_f32(b);                 // A+B+C+D
-		
-		/*
-		__m128   x;
-		x = _mm_movehl_ps(x, accumulator);
-		accumulator = _mm_add_ps(accumulator, x);
-		x = _mm_shuffle_ps(accumulator, accumulator, 0x55);
-		accumulator = _mm_add_ps(accumulator, x);
-		output += _mm_cvtss_f32(accumulator);
-		*/
-
-		/*
-		output += 
-			accumulator.m128_f32[0] +
-			accumulator.m128_f32[1] +
-			accumulator.m128_f32[2] +
-			accumulator.m128_f32[3];
-		*/
-
+	
 		// Part 3: Tail
 		for (int j = (size >> 2) << 2; j < size; ++j) {
 			output += Signal[Index] * Kernel[j];
