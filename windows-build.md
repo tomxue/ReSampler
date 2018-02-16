@@ -25,3 +25,10 @@ AVX build:
 ~~~
 g++ -pthread -std=c++11 ReSampler.cpp -Ilibsndfile/include -Ifftw64 -Lfftw64 -llibfftw3-3 -Llibsndfile/lib -llibsndfile-1 -o x64/minGW-W64-AVX/ReSampler.exe -O3 -DUSE_AVX -mavx
 ~~~
+
+Quad-Precision FIR tap and Kaiser Window calculations (experimental) - GCC / minGW only:
+~~~
+ g++ -pthread -std=gnu++11 ReSampler.cpp -Ilibsndfile/include -Ifftw64 -Lfftw64 -llibfftw3-3 -Llibsndfile/lib -llibsndfile-1 -lquadmath -o x64/minGW-W64/ReSampler.exe -O -DUSE_QUADMATH
+ ~~~
+
+

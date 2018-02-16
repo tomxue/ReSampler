@@ -35,6 +35,13 @@
 	#define USE_SIMD 1 // Vectorise main loop in FIRFilter::get() by using SSE2 SIMD instrinsics 
 #endif
 
+#if defined (__MINGW64__) || defined (__MINGW32__) || defined (__GNUC__)
+#ifdef USE_QUADMATH
+#include <quadmath.h>
+#define FIR_QUAD_PRECISION
+#endif
+#endif
+
 template <typename FloatType>
 class FIRFilter {
 
@@ -43,7 +50,7 @@ public:
 	// constructor:
 	FIRFilter(const FloatType* taps, size_t size) :
 		size(size), Signal(nullptr), CurrentIndex(size-1), LastPut(0),
-		Kernel0(nullptr),Kernel1(nullptr), Kernel2(nullptr), Kernel3(nullptr)
+		Kernel0(nullptr), Kernel1(nullptr), Kernel2(nullptr), Kernel3(nullptr)
 	{
 
 		// allocate buffers:
@@ -401,11 +408,30 @@ double FIRFilter<double>::get() {
 // -- Functions beyond this point are for manipulating filter taps, and not for actually performing filtering -- //
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+
 // makeLPF() : generate low pass filter coefficients, using sinc function
 template<typename FloatType> bool makeLPF(FloatType* filter, int Length, FloatType transitionFreq, FloatType sampleRate)
 {
+#ifdef FIR_QUAD_PRECISION
+
+    std::cout << "calculating filter coefficients\n";
+
+    // use quads internally, regardless of FloatType
+    __float128 ft = transitionFreq / sampleRate; // normalised transition frequency
+    assert(ft < 0.5Q);
+    int halfLength = Length / 2;
+    __float128 halfM = 0.5Q * (Length - 1);
+
+    if (Length & 1)
+        filter[halfLength] = 2.0Q * ft; // if length is odd, avoid divide-by-zero at centre-tap
+
+    for (int n = 0; n<halfLength; ++n) {
+        __float128 sinc = sinq(2.0Q * M_PIq * ft * (n - halfM)) / (M_PIq * (n - halfM));	// sinc function
+        filter[Length - n - 1] = filter[n] = sinc;	// exploit symmetry
+    }
+
+#else
 	// use doubles internally, regardless of FloatType
-	// (or long doubles, if they actually worked properly ... ) 
 	double ft = transitionFreq / sampleRate; // normalised transition frequency
 	assert(ft < 0.5);
 	int halfLength = Length / 2;
@@ -418,6 +444,7 @@ template<typename FloatType> bool makeLPF(FloatType* filter, int Length, FloatTy
 		double sinc = sin(2.0 * M_PI * ft * (n - halfM)) / (M_PI * (n - halfM));	// sinc function
 		filter[Length - n - 1] = filter[n] = sinc;	// exploit symmetry
 	}
+#endif
 
 	return true;
 }
@@ -443,7 +470,7 @@ template<typename FloatType> FloatType calcKaiserBeta(FloatType dB)
 
 // I0() : 0th-order Modified Bessel function of the first kind:
 double I0(double z)
-{	
+{
 	double result = 0.0;
 	double kfact = 1.0;
 	for (int k = 0; k < 30; ++k) {
@@ -454,19 +481,44 @@ double I0(double z)
 	return result;
 }
 
+#ifdef FIR_QUAD_PRECISION
+__float128 I0q(__float128 x)
+{
+    __float128 result = 0.0Q;
+    __float128 kfact = 1.0Q;
+    for (int k = 0; k < 60; ++k) {
+        if (k)
+            kfact *= k;
+        result += powq((powq(x, 2.0Q) / 4.0Q), k) / powq(kfact, 2.0Q);
+    }
+    return result;
+}
+#endif
+
 // applyKaiserWindow() - This function applies a Kaiser Window to an array of filter coefficients ("textbook" version):
 template<typename FloatType> bool applyKaiserWindow(FloatType* filter, int Length, double Beta)
 {
 	// Note: sometimes, the Kaiser Window formula is defined in terms of Alpha (instead of Beta), 
 	// in which case, Alpha def= Beta / pi
 
-	if (Length < 1)
-		return false;
+    if (Length < 1)
+        return false;
 
+#ifdef FIR_QUAD_PRECISION
+
+    std::cout << "Applying Kaiser Window\n";
+
+    for (int n = 0; n < Length; ++n) {
+        filter[n] *= I0q(Beta * sqrtq(1.0Q - powq((2.0Q * n / (Length - 1) - 1), 2.0Q)))
+                     / I0q(Beta);
+    }
+#else
 	for (int n = 0; n < Length; ++n) {
 		filter[n] *= I0(Beta * sqrt(1.0 - pow((2.0 * n / (Length - 1) - 1), 2.0)))
 			/ I0(Beta);
 	}
+#endif
+
 	return true;
 }
 
