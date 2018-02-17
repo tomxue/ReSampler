@@ -414,7 +414,7 @@ template<typename FloatType> bool makeLPF(FloatType* filter, int Length, FloatTy
 {
 #ifdef FIR_QUAD_PRECISION
 
-    std::cout << "calculating filter coefficients\n";
+    std::cout << "calculating quad-precision filter coefficients ...\n";
 
     // use quads internally, regardless of FloatType
     __float128 ft = transitionFreq / sampleRate; // normalised transition frequency
@@ -506,7 +506,7 @@ template<typename FloatType> bool applyKaiserWindow(FloatType* filter, int Lengt
 
 #ifdef FIR_QUAD_PRECISION
 
-    std::cout << "Applying Kaiser Window\n";
+    std::cout << "Applying quad-precision Kaiser Window ...\n";
 
     for (int n = 0; n < Length; ++n) {
         filter[n] *= I0q(Beta * sqrtq(1.0Q - powq((2.0Q * n / (Length - 1) - 1), 2.0Q)))

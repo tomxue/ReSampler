@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.8)
 project(ReSampler)
 
 set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_FLAGS "-Wall -pthread")
+set(CMAKE_CXX_FLAGS "-Wall -pthread -m64")
 set(CMAKE_CXX_FLAGS_DEBUG "-g")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
 
@@ -31,7 +31,7 @@ if(WIN32)
     include_directories(libsndfile/include fftw64)
     link_directories(libsndfile/lib fftw64)
     link_libraries(libsndfile-1  libfftw3-3)
-    add_executable(ReSampler.exe ${SOURCE_FILES})
+    add_executable(ReSampler ${SOURCE_FILES})
 
 elseif (APPLE)
     include_directories(/usr/local/include)
