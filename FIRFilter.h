@@ -809,17 +809,17 @@ std::vector<FloatType> makeMinPhase2(const FloatType* pFIRcoeffs, size_t length)
 
 // dumpKaiserWindow() - utility function for displaying Kaiser Window:
 void dumpKaiserWindow(size_t length, double Beta) {
-	std::vector<double> f(length, 1);
-	applyKaiserWindow<double>(f.data(), length, Beta);
-	for (int i = 0; i < length; ++i) {
-		std::cout << i << ": " << f[i] << std::endl;
-	}
+    std::vector<double> f(length, 1);
+    applyKaiserWindow<double>(f.data(), length, Beta);
+    for (int i = 0; i < length; ++i) {
+        std::cout << i << ": " << f[i] << std::endl;
+    }
 
-	std::vector<double> g(length, 1);
-	applyKaiserWindow<double>(g.data(), length, Beta);
-	for (int i = 0; i < length; ++i) {
-		std::cout << i << ": " << g[i] << std::endl;
-	}
+    std::vector<double> g(length, 1);
+    applyKaiserWindow<double>(g.data(), length, Beta);
+    for (int i = 0; i < length; ++i) {
+        std::cout << i << ": " << g[i] << std::endl;
+    }
 }
 
 // asserts that the two Kaiser Window formulas agree with each other (within a specified tolerance)
