@@ -13,9 +13,14 @@
 // macros which address differences between operating systems go here. 
 
 #ifdef _WIN32
+
+#if defined(_MSC_VER)
+// MSVC specific
 #define NOMINMAX // disable min() and max() macros (use std:: library instead)
 #pragma warning(disable : 4996) // suppress pointless MS "deprecation" warnings
 #pragma warning(disable : 4244) // suppress double-to-float warnings
+#endif
+
 #else // Non-Windows:
 typedef uint64_t __int64;
 #define stricmp strcasecmp

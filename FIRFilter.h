@@ -12,6 +12,8 @@
 
 // FIRFilter.h : simple FIR filter implementation by J.Niemann
 
+// #define USE_SIMD_FOR_DOUBLES
+
 #include <typeinfo>
 #include <algorithm>
 #include <complex>
