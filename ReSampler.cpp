@@ -456,8 +456,6 @@ bool convert(ConversionInfo& ci)
 	for (int n = 0; n < nChannels; n++) {
 		inputChannelBuffers.emplace_back(std::vector<FloatType>(inputChannelBufferSize, 0));
 		outputChannelBuffers.emplace_back(std::vector<FloatType>(outputChannelBufferSize, 0));
-//        inputChannelBuffers.push_back(std::vector<FloatType>(inputChannelBufferSize, 0));
-//        outputChannelBuffers.push_back(std::vector<FloatType>(outputChannelBufferSize, 0));
 	}
 			
 	int inputFileFormat = infile.format();
@@ -915,9 +913,7 @@ bool convert(ConversionInfo& ci)
 
 		} while (ci.bTmpFile && !ci.disableClippingProtection && bClippingDetected && clippingProtectionAttempts < maxClippingProtectionAttempts); // if using temp file, do another round if clipping detected
 	} while (!ci.bTmpFile && !ci.disableClippingProtection && bClippingDetected && clippingProtectionAttempts < maxClippingProtectionAttempts); // if NOT using temp file, do another round if clipping detected
-
-//    inputChannelBuffers.clear();
-//    outputChannelBuffers.at(0).clear();
+	
 //    outputChannelBuffers.clear(); // <--- CRASH here on GCC ! to-do: why ??
 
 	// clean-up temp file:
