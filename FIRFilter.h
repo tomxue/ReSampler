@@ -12,7 +12,7 @@
 
 // FIRFilter.h : simple FIR filter implementation by J.Niemann
 
-// #define USE_SIMD_FOR_DOUBLES
+//#define USE_SIMD_FOR_DOUBLES
 
 #include <typeinfo>
 #include <algorithm>
@@ -40,7 +40,9 @@
 #if defined (__MINGW64__) || defined (__MINGW32__) || defined (__GNUC__)
 #ifdef USE_QUADMATH
 #include <quadmath.h>
+#ifndef FIR_QUAD_PRECISION
 #define FIR_QUAD_PRECISION
+#endif
 #endif
 #endif
 
@@ -335,6 +337,7 @@ private:
 
 #ifndef USE_SIMD_FOR_DOUBLES
 
+#ifndef FIR_QUAD_PRECISION
 // Specialization for doubles:
 template <>
 double FIRFilter<double>::get() {
@@ -348,7 +351,20 @@ double FIRFilter<double>::get() {
 }
 
 #else 
- 
+template <>
+// specialisation for doubles (with quad precision summation)
+double FIRFilter<double>::get() {
+	__float128 output = 0.0Q;
+	int index = CurrentIndex;
+	for (int i = 0; i < size; ++i) {
+		output += (__float128)Signal[index] * (__float128)Kernel0[i];
+		index++;
+	}
+	return (double)output;
+}
+#endif
+
+#else 
 // actual SIMD implementations for doubles (not worth the effort - no faster than than naive):
 
 template <>

@@ -26,6 +26,15 @@ unsigned int fp_control_state = _controlfp(_EM_INEXACT, _MCW_EM);
 #include <libproc.h>
 #endif 
 
+#if defined (__MINGW64__) || defined (__MINGW32__) || defined (__GNUC__)
+#ifdef USE_QUADMATH
+#include <quadmath.h>
+#ifndef FIR_QUAD_PRECISION
+#define FIR_QUAD_PRECISION
+#endif
+#endif
+#endif
+
 #include "ReSampler.h"
 #include "conversioninfo.h"
 #include "osspecific.h"
@@ -136,6 +145,7 @@ int main(int argc, char * argv[])
 	}
 
 	try {
+
 		if (ci.bUseDoublePrecision) {
 			std::cout << "Using double precision for calculations." << std::endl;
 			if (ci.dsfInput) {
@@ -151,6 +161,7 @@ int main(int argc, char * argv[])
 				return convert<SndfileHandle, double> (ci) ? EXIT_SUCCESS : EXIT_FAILURE;
 			}
 		}
+
 		else {
 			if (ci.dsfInput) {
 				ci.bEnablePeakDetection = false;
@@ -165,7 +176,8 @@ int main(int argc, char * argv[])
 				return convert<SndfileHandle, float> (ci) ? EXIT_SUCCESS : EXIT_FAILURE;
 			}
 		}
-	}
+
+	} //ends try block
 		
 	catch (const std::exception& e) {
 		std::cerr << "fatal error: " << e.what();
