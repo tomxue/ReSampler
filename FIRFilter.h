@@ -12,7 +12,7 @@
 
 // FIRFilter.h : simple FIR filter implementation by J.Niemann
 
-//#define USE_SIMD_FOR_DOUBLES
+#define USE_SIMD_FOR_DOUBLES
 
 #include <typeinfo>
 #include <algorithm>
@@ -365,7 +365,6 @@ double FIRFilter<double>::get() {
 #endif
 
 #else 
-// actual SIMD implementations for doubles (not worth the effort - no faster than than naive):
 
 template <>
 double FIRFilter<double>::get() {
@@ -407,8 +406,6 @@ double FIRFilter<double>::get() {
 		accumulator = _mm_add_pd(product, accumulator);
 		Index += 2;
 	}
-
-	// output += accumulator.m128d_f64[0] + accumulator.m128d_f64[1];
 
 	// horizontal add of two doubles
     __m128 undef  = _mm_undefined_ps();
