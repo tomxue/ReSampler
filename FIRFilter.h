@@ -408,7 +408,13 @@ double FIRFilter<double>::get() {
 		Index += 2;
 	}
 
-	output += accumulator.m128d_f64[0] + accumulator.m128d_f64[1];
+	// output += accumulator.m128d_f64[0] + accumulator.m128d_f64[1];
+
+	// horizontal add of two doubles
+    __m128 undef  = _mm_undefined_ps();
+    __m128 shuftmp= _mm_movehl_ps(undef, _mm_castpd_ps(accumulator));
+    __m128d shuf  = _mm_castps_pd(shuftmp);
+    output +=  _mm_cvtsd_f64(_mm_add_sd(accumulator, shuf));
 
 	// Part 3: Tail
 	for (int j = (size >> 1) << 1; j < size; ++j) {
