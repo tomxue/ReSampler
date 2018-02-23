@@ -457,7 +457,7 @@ bool convert(ConversionInfo& ci)
 	// set buffer sizes:
 	size_t inputChannelBufferSize = BUFFERSIZE;
 	size_t inputBlockSize = static_cast<size_t>(BUFFERSIZE * nChannels);
-	size_t outputChannelBufferSize = static_cast<size_t>(std::ceil(BUFFERSIZE * static_cast<double>(fraction.numerator) / static_cast<double>(fraction.denominator)));
+	size_t outputChannelBufferSize = static_cast<size_t>(1 + std::ceil(BUFFERSIZE * static_cast<double>(fraction.numerator) / static_cast<double>(fraction.denominator)));
 	size_t outputBlockSize = nChannels * (1 + outputChannelBufferSize);
 	
 	// allocate buffers:
