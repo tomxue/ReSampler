@@ -12,8 +12,6 @@
 
 // FIRFilter.h : simple FIR filter implementation by J.Niemann
 
-#define USE_SIMD_FOR_DOUBLES
-
 #include <typeinfo>
 #include <algorithm>
 #include <complex>
@@ -35,6 +33,7 @@
 #else
 #if (defined(_M_X64) || defined(__x86_64__) || defined(USE_SSE2)) // All x64 CPUs have SSE2 instructions, but some older 32-bit CPUs do not. 
 	#define USE_SIMD 1 // Vectorise main loop in FIRFilter::get() by using SSE2 SIMD instrinsics 
+	#define USE_SIMD_FOR_DOUBLES
 #endif
 
 #if defined (__MINGW64__) || defined (__MINGW32__) || defined (__GNUC__)
@@ -192,6 +191,19 @@ public:
 
 	FloatType get() {
 
+#ifdef FIR_QUAD_PRECISION
+
+		// specialisation for FloatType input/output, with quad-precision processing
+		__float128 output = 0.0Q;
+		int index = CurrentIndex;
+		for (int i = 0; i < size; ++i) {
+			output += (__float128)Signal[index] * (__float128)Kernel0[i];
+			index++;
+		}
+		return (FloatType)output;
+
+#else
+
 #ifndef USE_SIMD
 		FloatType output = 0.0;
 		int index = CurrentIndex;
@@ -267,6 +279,7 @@ public:
 		return output;
 
 #endif // !USE_SIMD
+#endif // !FIR_QUAD_PRECISION
 	}
 
 	FloatType lazyGet(int L) {	// Skips stuffed-zeros introduced by interpolation, by only calculating every Lth sample from LastPut
@@ -333,13 +346,14 @@ private:
 	}
 };
 
-#ifdef USE_SIMD
+#if defined(USE_SIMD) && !defined(FIR_QUAD_PRECISION)
+
+// Specializations for doubles
 
 #ifndef USE_SIMD_FOR_DOUBLES
 
-#ifndef FIR_QUAD_PRECISION
+// scalar implementation
 
-// Specialization for doubles:
 template <>
 double FIRFilter<double>::get() {
 	double output = 0.0;
@@ -350,21 +364,6 @@ double FIRFilter<double>::get() {
 	}
 	return output;
 }
-
-#else 
-
-// specialisation for double-precision input, quad-precision processing
-template <>
-double FIRFilter<double>::get() {
-	__float128 output = 0.0Q;
-	int index = CurrentIndex;
-	for (int i = 0; i < size; ++i) {
-		output += (__float128)Signal[index] * (__float128)Kernel0[i];
-		index++;
-	}
-	return (double)output;
-}
-#endif
 
 #else 
 
@@ -424,7 +423,7 @@ double FIRFilter<double>::get() {
 	return output;
 }
 #endif // USE_SIMD_FOR_DOUBLES
-#endif // USE_SIMD
+#endif // USE_SIMD && !FIR_QUAD_PRECISION
 #endif // !USE_AVX
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
