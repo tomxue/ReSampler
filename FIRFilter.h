@@ -338,6 +338,7 @@ private:
 #ifndef USE_SIMD_FOR_DOUBLES
 
 #ifndef FIR_QUAD_PRECISION
+
 // Specialization for doubles:
 template <>
 double FIRFilter<double>::get() {
@@ -351,8 +352,9 @@ double FIRFilter<double>::get() {
 }
 
 #else 
+
+// specialisation for double-precision input, quad-precision processing
 template <>
-// specialisation for doubles (with quad precision summation)
 double FIRFilter<double>::get() {
 	__float128 output = 0.0Q;
 	int index = CurrentIndex;
