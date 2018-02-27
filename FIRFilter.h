@@ -557,7 +557,7 @@ template<typename FloatType> bool applyKaiserWindow2(FloatType* filter, int Leng
 		 filter[n] *= I0(A) / I0(Beta);
 	 }
 	
-	//// diagnostic to check accuracy of I0():
+	//// diagnostic to check accuracy of I0(): 
 	//	std::cout << "I0( " << maxA << " ) ==" << I0(maxA) << std::endl;
 	
 	return true;

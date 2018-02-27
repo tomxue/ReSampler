@@ -270,18 +270,7 @@ public:
 #endif
 
 			Index += 8;
-		}	
-		/*
-		output += 
-			accumulator.m256_f32[0] +
-			accumulator.m256_f32[1] +
-			accumulator.m256_f32[2] +
-			accumulator.m256_f32[3] +
-			accumulator.m256_f32[4] +
-			accumulator.m256_f32[5] +
-			accumulator.m256_f32[6] +
-			accumulator.m256_f32[7];
-		*/
+		}
 
 		output += sum8floats(accumulator);
 
@@ -462,14 +451,7 @@ double FIRFilter<double>::get() {
 #endif
 		Index += 4;
 	}
-	
-	/*
-	output +=
-		accumulator.m256d_f64[0] +
-		accumulator.m256d_f64[1] +
-		accumulator.m256d_f64[2] +
-		accumulator.m256d_f64[3];
-	*/
+
 	output += sum4doubles(accumulator);
 
 	// Part 3: Tail
