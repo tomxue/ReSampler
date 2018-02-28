@@ -7,7 +7,7 @@
 - BUILD !!
 
 #### using minGW-W64 under Windows (to build 64-bit .exe):
-- use MinGW-W64 with Posix Threads and SEH
+- use MinGW-W64 with Posix Threads and SEH (*tip: install [Git for Windows](https://github.com/git-for-windows) and use Git Bash!*)
 - {...}\MinGW-W64\mingw64\bin must be added to Path
 - unlike *nix systems, there is no standard place to put libraries and include files
 - locations of include files can be specified by -Idir
@@ -26,10 +26,9 @@ AVX build:
 g++ -pthread -std=c++11 ReSampler.cpp -Ilibsndfile/include -Ifftw64 -Lfftw64 -llibfftw3-3 -Llibsndfile/lib -llibsndfile-1 -o x64/minGW-W64-AVX/ReSampler.exe -O3 -DUSE_AVX -mavx
 ~~~
 
-Quad-Precision FIR tap and Kaiser Window calculations (experimental) - GCC / minGW only:
+Quad-Precision build (experimental) - GCC / minGW only:
 ~~~
  g++ -pthread -std=gnu++11 ReSampler.cpp -Ilibsndfile/include -Ifftw64 -Lfftw64 -llibfftw3-3 -Llibsndfile/lib -llibsndfile-1 -lquadmath -o x64/minGW-W64/ReSampler.exe -O -DUSE_QUADMATH
 ~~~
 
 *note the use of **-std=gnu++11** to enable the gcc-specific language extensions for quad precision - the 'Q' initializer suffix and __float128 type*
-
