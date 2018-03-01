@@ -139,6 +139,20 @@ struct MetaData
 
 };
 
+enum TempFileOpenMethod {
+	Std_tmpnam,
+	Std_tmpfile
+};
+
+#if defined (__MINGW64__)
+TempFileOpenMethod tempFileOpenMethod = TempFileOpenMethod::Std_tmpfile; 
+// observations:
+// 1. tempnam() can sometimes give unusable temp filenames on windows with minGW-w64 compiler
+// 2. tmpfile() doesn't seem to work properly with MSVC 
+#else
+TempFileOpenMethod tempFileOpenMethod = TempFileOpenMethod::Std_tmpnam; // note: clang and gcc complain that tmpnam() is not secure 
+#endif
+
 bool checkSSE2();
 bool checkAVX();
 bool showBuildVersion();

@@ -17,6 +17,7 @@ unsigned int fp_control_state = _controlfp(_EM_INEXACT, _MCW_EM);
 
 #define _USE_MATH_DEFINES
 #include <cmath>
+#include <cstdio>
 #include <iostream>
 #include <vector>
 #include <iomanip>
@@ -430,7 +431,7 @@ bool convert(ConversionInfo& ci)
 	// pointer for temp file;
 	SndfileHandle* tmpFile = nullptr;
 
-	// filename for temp file:
+	// filename for temp file;
 	std::string tmpFilename;
 
 	// Open input file:
@@ -696,6 +697,8 @@ bool convert(ConversionInfo& ci)
 			return false;
 		}
 
+		
+
 		// conditionally open temp file:
 		if (ci.bTmpFile) {
 
@@ -709,10 +712,17 @@ bool convert(ConversionInfo& ci)
 			else {
 				tmpFileFormat |= SF_FORMAT_FLOAT;
 			}
-			
-			tmpFilename = std::string(std::string(std::tmpnam(nullptr)) + ".wav");
-			// std::cout << "Temp File: " << tmpFilename << "\n";
-			tmpFile = new SndfileHandle(tmpFilename, SFM_RDWR, tmpFileFormat, nChannels, ci.outputSampleRate);
+	
+			if (tempFileOpenMethod == Std_tmpfile) {
+				int fd = fileno(std::tmpfile());
+				tmpFile = new SndfileHandle(fd, true, SFM_RDWR, tmpFileFormat, nChannels, ci.outputSampleRate); // open using file descriptor 
+			}
+
+			else {
+				tmpFilename = std::string(std::string(std::tmpnam(nullptr)) + ".wav");
+				//std::cout << "Temp File: " << tmpFilename << "\n";
+				tmpFile = new SndfileHandle(tmpFilename, SFM_RDWR, tmpFileFormat, nChannels, ci.outputSampleRate); // open using filename
+			}
 
 			if (int e = tmpFile->error()) {
 				std::cout << "Error: Couldn't Open Temporary File (" << sf_error_number(e) << ")\n";
@@ -926,11 +936,11 @@ bool convert(ConversionInfo& ci)
 		} while (ci.bTmpFile && !ci.disableClippingProtection && bClippingDetected && clippingProtectionAttempts < maxClippingProtectionAttempts); // if using temp file, do another round if clipping detected
 	} while (!ci.bTmpFile && !ci.disableClippingProtection && bClippingDetected && clippingProtectionAttempts < maxClippingProtectionAttempts); // if NOT using temp file, do another round if clipping detected
 	
-//    outputChannelBuffers.clear(); // <--- CRASH here on GCC ! to-do: why ??
-
 	// clean-up temp file:
 	delete tmpFile; // dealllocate SndFileHandle
-	std::remove(tmpFilename.c_str()); // actually remove the temp file from disk
+
+	if(tempFileOpenMethod == Std_tmpnam)
+		std::remove(tmpFilename.c_str()); // actually remove the temp file from disk
 	
 	return true;
 } // ends convert()
