@@ -53,9 +53,14 @@ standard 64-bit build:
 g++ -pthread -std=c++11 ReSampler.cpp -lfftw3 -lsndfile -o ReSampler -O3
 ~~~
 
-AVX Build **(NOT TESTED YET !)**:
+AVX Build:
 ~~~
 g++ -pthread -std=c++11 ReSampler.cpp -lfftw3 -lsndfile -o ReSampler -O3 -DUSE_AVX -mavx
+~~~
+
+Quad Precision (experimental)
+~~~
+g++ -pthread -std=gnu++11 ReSampler.cpp -lfftw3 -lsndfile -o ReSampler -O3 -lquadmath -DUSE_QUADMATH
 ~~~
 
 #### using clang:
