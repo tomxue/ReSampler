@@ -716,14 +716,6 @@ bool convert(ConversionInfo& ci)
 				}
 			}
 
-			//else if (tempFileOpenMethod == Tmpfile_s) { // M$ only
-			//	FILE* f = NULL;
-			//	tmpFileError = (tmpfile_s(&f) != 0);
-			//	if (!tmpFileError) {
-			//		tmpSndfileHandle = new SndfileHandle(fileno(f), true, SFM_RDWR, tmpFileFormat, nChannels, ci.outputSampleRate); // open using file descriptor
-			//	}
-			//}
-
 			else {
 				tmpFilename = std::string(std::string(std::tmpnam(nullptr)) + ".wav");
 				tmpSndfileHandle = new SndfileHandle(tmpFilename, SFM_RDWR, tmpFileFormat, nChannels, ci.outputSampleRate); // open using filename

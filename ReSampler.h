@@ -142,7 +142,6 @@ struct MetaData
 enum TempFileOpenMethod {
 	Std_tmpnam, // deprecated on all compilers (not thread-safe / doesn't automaticcally close file etc)
 	Std_tmpfile,
-	Tmpfile_s // M$ specific "secure" version
 }; // other possibilities: mkstemp(), tmpnam_s(), boost ?, C++17 ?? ...
 
 // to-do: test: std::tmpfile() on everything except MSVC
