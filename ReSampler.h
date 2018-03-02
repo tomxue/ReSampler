@@ -148,7 +148,11 @@ enum TempFileOpenMethod {
 // to-do: test: std::tmpfile() on everything except MSVC
 // ... if ok, default to std::tmpfile() and use something else for MSVC
 
-#if defined (__MINGW64__)
+#if defined (__GNUC__)
+
+TempFileOpenMethod tempFileOpenMethod = TempFileOpenMethod::Std_tmpfile;
+
+#elif defined (__MINGW64__)
 
 TempFileOpenMethod tempFileOpenMethod = TempFileOpenMethod::Std_tmpfile; 
 
