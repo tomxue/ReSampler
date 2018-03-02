@@ -429,7 +429,7 @@ bool convert(ConversionInfo& ci)
 	bool multiThreaded = ci.bMultiThreaded;
 
 	// pointer for temp file;
-	SndfileHandle* tmpFile = nullptr;
+	SndfileHandle* tmpSndfileHandle = nullptr;
 
 	// filename for temp file;
 	std::string tmpFilename;
@@ -697,8 +697,6 @@ bool convert(ConversionInfo& ci)
 			return false;
 		}
 
-		
-
 		// conditionally open temp file:
 		if (ci.bTmpFile) {
 
@@ -706,25 +704,33 @@ bool convert(ConversionInfo& ci)
 			int tmpFileFormat = (outputFileFormat & SF_FORMAT_RF64) ? SF_FORMAT_RF64 : SF_FORMAT_WAV;
 
 			// set appropriate floating-point subformat:
-			if (sizeof(FloatType) == 8) {
-				tmpFileFormat |= SF_FORMAT_DOUBLE;
-			}
-			else {
-				tmpFileFormat |= SF_FORMAT_FLOAT;
-			}
+			tmpFileFormat |= (sizeof(FloatType) == 8) ? SF_FORMAT_DOUBLE : SF_FORMAT_FLOAT;
 	
+			bool tmpFileError = false;
+
 			if (tempFileOpenMethod == Std_tmpfile) {
-				int fd = fileno(std::tmpfile());
-				tmpFile = new SndfileHandle(fd, true, SFM_RDWR, tmpFileFormat, nChannels, ci.outputSampleRate); // open using file descriptor 
+				FILE* f = std::tmpfile();
+				tmpFileError = (f == NULL);
+				if (!tmpFileError) {
+					tmpSndfileHandle = new SndfileHandle(fileno(f), true, SFM_RDWR, tmpFileFormat, nChannels, ci.outputSampleRate); // open using file descriptor
+				}
 			}
+
+			//else if (tempFileOpenMethod == Tmpfile_s) { // M$ only
+			//	FILE* f = NULL;
+			//	tmpFileError = (tmpfile_s(&f) != 0);
+			//	if (!tmpFileError) {
+			//		tmpSndfileHandle = new SndfileHandle(fileno(f), true, SFM_RDWR, tmpFileFormat, nChannels, ci.outputSampleRate); // open using file descriptor
+			//	}
+			//}
 
 			else {
 				tmpFilename = std::string(std::string(std::tmpnam(nullptr)) + ".wav");
-				//std::cout << "Temp File: " << tmpFilename << "\n";
-				tmpFile = new SndfileHandle(tmpFilename, SFM_RDWR, tmpFileFormat, nChannels, ci.outputSampleRate); // open using filename
+				tmpSndfileHandle = new SndfileHandle(tmpFilename, SFM_RDWR, tmpFileFormat, nChannels, ci.outputSampleRate); // open using filename
 			}
 
-			if (int e = tmpFile->error()) {
+			int e = 0;
+			if (tmpFileError || tmpSndfileHandle == nullptr || (e = tmpSndfileHandle->error())){
 				std::cout << "Error: Couldn't Open Temporary File (" << sf_error_number(e) << ")\n";
 				std::cout << "Disabling temp file mode." << std::endl;
 				ci.bTmpFile = false;
@@ -732,12 +738,12 @@ bool convert(ConversionInfo& ci)
 
 			// disable floating-point normalisation (important - we want to record/recover floating point values exactly)
 			if (sizeof(FloatType) == 8) {
-				tmpFile->command(SFC_SET_NORM_DOUBLE, NULL, SF_FALSE); // http://www.mega-nerd.com/libsndfile/command.html#SFC_SET_NORM_DOUBLE
+				tmpSndfileHandle->command(SFC_SET_NORM_DOUBLE, NULL, SF_FALSE); // http://www.mega-nerd.com/libsndfile/command.html#SFC_SET_NORM_DOUBLE
 			}
 				else {
-				tmpFile->command(SFC_SET_NORM_FLOAT, NULL, SF_FALSE);
+				tmpSndfileHandle->command(SFC_SET_NORM_FLOAT, NULL, SF_FALSE);
 			}
-		}
+		} // ends opening of temp file
 
 		// echo conversion mode to user (multi-stage/single-stage, multi-threaded/single-threaded)
 		std::string stageness(ci.bMultiStage ? "multi-stage" : "single-stage");
@@ -817,7 +823,7 @@ bool convert(ConversionInfo& ci)
 
 			// write to either temp file or outfile (with Group Delay Compensation):
 			if (ci.bTmpFile) {
-				tmpFile->write(outputBlock.data() + outStartOffset, outputBlockIndex - outStartOffset);
+				tmpSndfileHandle->write(outputBlock.data() + outStartOffset, outputBlockIndex - outStartOffset);
 			}
 			else {
 				outFile->write(outputBlock.data() + outStartOffset, outputBlockIndex - outStartOffset);
@@ -886,11 +892,11 @@ bool convert(ConversionInfo& ci)
 				sf_count_t incrementalProgressThreshold = inputSampleCount / 10;
 				sf_count_t nextProgressThreshold = incrementalProgressThreshold;
 
-				tmpFile->seek(0, SEEK_SET);
+				tmpSndfileHandle->seek(0, SEEK_SET);
 				outFile->seek(0, SEEK_SET);
 
 				do {// Grab a block of interleaved samples from temp file:
-					samplesRead = tmpFile->read(inputBlock.data(), inputBlockSize);
+					samplesRead = tmpSndfileHandle->read(inputBlock.data(), inputBlockSize);
 					totalSamplesRead += samplesRead;
 
 					// de-interleave into channels, apply gain, add dither, and save to output buffer
@@ -937,7 +943,7 @@ bool convert(ConversionInfo& ci)
 	} while (!ci.bTmpFile && !ci.disableClippingProtection && bClippingDetected && clippingProtectionAttempts < maxClippingProtectionAttempts); // if NOT using temp file, do another round if clipping detected
 	
 	// clean-up temp file:
-	delete tmpFile; // dealllocate SndFileHandle
+	delete tmpSndfileHandle; // dealllocate SndFileHandle
 
 	if(tempFileOpenMethod == Std_tmpnam)
 		std::remove(tmpFilename.c_str()); // actually remove the temp file from disk

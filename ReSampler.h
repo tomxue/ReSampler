@@ -140,17 +140,26 @@ struct MetaData
 };
 
 enum TempFileOpenMethod {
-	Std_tmpnam,
-	Std_tmpfile
-};
+	Std_tmpnam, // deprecated on all compilers (not thread-safe / doesn't automaticcally close file etc)
+	Std_tmpfile,
+	Tmpfile_s // M$ specific "secure" version
+}; // other possibilities: mkstemp(), tmpnam_s(), boost ?, C++17 ?? ...
+
+// to-do: test: std::tmpfile() on everything except MSVC
+// ... if ok, default to std::tmpfile() and use something else for MSVC
 
 #if defined (__MINGW64__)
+
 TempFileOpenMethod tempFileOpenMethod = TempFileOpenMethod::Std_tmpfile; 
-// observations:
+
 // 1. tempnam() can sometimes give unusable temp filenames on windows with minGW-w64 compiler
-// 2. tmpfile() doesn't seem to work properly with MSVC 
+// 2. tmpfile() doesn't seem to work properly with MSVC - probably related to this: 
+// http://www.mega-nerd.com/libsndfile/api.html#open_fd (see note regarding differing versions of MSVC runtime DLL)
+
 #else
-TempFileOpenMethod tempFileOpenMethod = TempFileOpenMethod::Std_tmpnam; // note: clang and gcc complain that tmpnam() is not secure 
+
+TempFileOpenMethod tempFileOpenMethod = TempFileOpenMethod::Std_tmpnam; // note: clang and gcc complain that tmpnam() is not secure
+
 #endif
 
 bool checkSSE2();
