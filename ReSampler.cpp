@@ -1123,6 +1123,18 @@ bool getMetaData(MetaData& metadata, const DsfFile& f) {
 	return true;
 }
 
+void generateExpSweep() {
+	double L = 10; // seconds
+	int sampleRate = 96000;
+	int P = 10; // number of octaves below Nyquist
+	int N = floor((L * sampleRate) / (2 * P)) * 2 * P; // N must be integer multiple of 2*P
+	double C = M_PI * N / P;
+	std::vector<double> signal;
+	for(int n = 0; n < N; n++) {
+		signal[n] = sin(fmod(C * pow(2, n/N), 2 * M_PI));
+	}
+}
+
 bool checkSSE2() {
 #if defined (_MSC_VER) || defined (__INTEL_COMPILER)
 	bool bSSE2ok = false;

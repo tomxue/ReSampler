@@ -179,6 +179,7 @@ int getSfBytesPerSample(int format);
 bool checkWarnOutputSize(sf_count_t inputSamples, int bytesPerSample, int numerator, int denominator);
 template<typename IntType> std::string fmtNumberWithCommas(IntType n);
 void printSamplePosAsTime(sf_count_t samplePos, unsigned int sampleRate);
+void generateExpSweep();
 bool getMetaData(MetaData& metadata, SndfileHandle& infile);
 bool setMetaData(const MetaData& metadata, SndfileHandle& outfile);
 void showCompiler();
