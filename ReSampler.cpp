@@ -63,7 +63,6 @@ unsigned int fp_control_state = _controlfp(_EM_INEXACT, _MCW_EM);
 
 int main(int argc, char * argv[])
 {
-
 	// test for global options
 	if (parseGlobalOptions(argc, argv)) {
 		exit(EXIT_SUCCESS);
@@ -1139,7 +1138,7 @@ void generateExpSweep() {
 	SndfileHandle outFile("mysweep.wav", SFM_WRITE, outFileFormat, 1, 96000);
 	std::vector<double> signal(N,0);
 	for(int n = 0; n < N; n++) {
-		signal[n] = sin(C * exp((double)n/N * log(pow(2,P))));
+		signal[n] = sin(fmod(C * exp((double)n/N * log(pow(2,P))), 2 * M_PI));
 		
 	}
 	outFile.write(signal.data(), N);
