@@ -1124,13 +1124,15 @@ bool getMetaData(MetaData& metadata, const DsfFile& f) {
 	return true;
 }
 
+#ifndef FIR_QUAD_PRECISION
+
 void generateExpSweep() {
 
 	double L = 10; // duration (seconds)
 	double P = 10; // number of octaves below Nyquist
 	int sampleRate = 96000;
 
-	double M = pow(2, P + 1) * P * log(2);
+	double M = pow(2, P + 1) * P * M_LN2;
 	int N = ceil((L * sampleRate) / M) * M; // N must be integer multiple of M
 
 	double y = log(pow(2.0, P));
@@ -1145,6 +1147,32 @@ void generateExpSweep() {
 
 	outFile.write(signal.data(), N);
 }
+
+#else // QUAD PRECISION VERSION
+
+void generateExpSweep() {
+
+	__float128 L = 10.0Q; // duration (seconds)
+	__float128 P = 10.0Q; // number of octaves below Nyquist
+	int sampleRate = 96000;
+
+	__float128 M = powq(2.0Q, P + 1) * P * M_LN2q;
+	int N = ceilq((L * sampleRate) / M) * M; // N must be integer multiple of M
+
+	__float128 y = logq(powq(2.0, P));
+	__float128 C = (N * M_PIq / powq(2.0Q, P)) / y;
+	int outFileFormat = SF_FORMAT_WAV | SF_FORMAT_DOUBLE;
+	SndfileHandle outFile("mysweep.wav", SFM_WRITE, outFileFormat, 1, 96000);
+	
+	std::vector<double> signal(N, 0);
+	for(int n = 0; n < N; n++) {
+		signal[n] = (double)sinq(fmodq(C * expq(y * n / N), 2 * M_PIq));
+	}
+
+	outFile.write(signal.data(), N);
+}
+
+#endif
 
 bool checkSSE2() {
 #if defined (_MSC_VER) || defined (__INTEL_COMPILER)
