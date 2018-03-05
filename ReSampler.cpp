@@ -63,6 +63,7 @@ unsigned int fp_control_state = _controlfp(_EM_INEXACT, _MCW_EM);
 
 int main(int argc, char * argv[])
 {
+
 	// test for global options
 	if (parseGlobalOptions(argc, argv)) {
 		exit(EXIT_SUCCESS);
@@ -1124,15 +1125,24 @@ bool getMetaData(MetaData& metadata, const DsfFile& f) {
 }
 
 void generateExpSweep() {
+
 	double L = 10; // seconds
 	int sampleRate = 96000;
-	int P = 10; // number of octaves below Nyquist
-	int N = floor((L * sampleRate) / (2 * P)) * 2 * P; // N must be integer multiple of 2*P
-	double C = M_PI * N / P;
-	std::vector<double> signal;
+	double P = 10; // number of octaves below Nyquist
+
+	double M = pow(2, P+1) * P * log(2);
+	int N = floor((L * sampleRate) / M) * M; // N must be integer multiple of M
+
+	std::cout << "N " << N << std::endl;
+	double C = (N * M_PI / pow(2.0 , P)) / (log(pow(2, P)));
+	int outFileFormat = SF_FORMAT_WAV | SF_FORMAT_DOUBLE;
+	SndfileHandle outFile("mysweep.wav", SFM_WRITE, outFileFormat, 1, 96000);
+	std::vector<double> signal(N,0);
 	for(int n = 0; n < N; n++) {
-		signal[n] = sin(fmod(C * pow(2, n/N), 2 * M_PI));
+		signal[n] = sin(C * exp((double)n/N * log(pow(2,P))));
+		
 	}
+	outFile.write(signal.data(), N);
 }
 
 bool checkSSE2() {
