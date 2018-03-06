@@ -63,6 +63,7 @@ unsigned int fp_control_state = _controlfp(_EM_INEXACT, _MCW_EM);
 
 int main(int argc, char * argv[])
 {
+
 	// test for global options
 	if (parseGlobalOptions(argc, argv)) {
 		exit(EXIT_SUCCESS);
@@ -1129,6 +1130,8 @@ void generateExpSweep() {
 
 	double L = 10; // duration (seconds)
 	double P = 10; // number of octaves below Nyquist
+	double amplitudedB = -3.0;
+	double amplitude = pow(10.0, (amplitudedB / 20.0));
 	int sampleRate = 96000;
 
 	double M = pow(2, P + 1) * P * M_LN2;
@@ -1141,7 +1144,7 @@ void generateExpSweep() {
 	
 	std::vector<double> signal(N,0);
 	for(int n = 0; n < N; n++) {
-		signal[n] = sin(fmod(C * exp(y * n / N), 2 * M_PI));
+		signal[n] = amplitude * sin(fmod(C * exp(y * n / N), 2 * M_PI));
 	}
 
 	outFile.write(signal.data(), N);
@@ -1153,6 +1156,8 @@ void generateExpSweep() {
 
 	__float128 L = 10.0Q; // duration (seconds)
 	__float128 P = 10.0Q; // number of octaves below Nyquist
+	__float128 amplitudedB = -3.0Q;
+	__float128 amplitude = powq(10.0Q, (amplitudedB / 20.0Q));
 	int sampleRate = 96000;
 
 	__float128 M = powq(2.0Q, P + 1) * P * M_LN2q;
@@ -1165,7 +1170,7 @@ void generateExpSweep() {
 	
 	std::vector<double> signal(N, 0);
 	for(int n = 0; n < N; n++) {
-		signal[n] = (double)sinq(fmodq(C * expq(y * n / N), 2 * M_PIq));
+		signal[n] = (double)(amplitude * sinq(fmodq(C * expq(y * n / N), 2 * M_PIq)));
 	}
 
 	outFile.write(signal.data(), N);
