@@ -231,6 +231,14 @@ bool parseGlobalOptions(int argc, char * argv[]) {
 		return true;
 	}
 
+	// generate
+	if (getCmdlineParam(argv, argv + argc, "--generate")) {
+		std::string filename;
+		getCmdlineParam(argv, argv + argc, "--generate", filename);
+		generateExpSweep(filename);
+		return true;
+	}
+
 	return false;
 }
 
@@ -1126,7 +1134,7 @@ bool getMetaData(MetaData& metadata, const DsfFile& f) {
 
 #ifndef FIR_QUAD_PRECISION
 
-void generateExpSweep() {
+void generateExpSweep(const std::string& filename) {
 
 	double L = 10; // duration (seconds)
 	double P = 10; // number of octaves below Nyquist
@@ -1140,7 +1148,7 @@ void generateExpSweep() {
 	double y = log(pow(2.0, P));
 	double C = (N * M_PI / pow(2.0, P)) / y;
 	int outFileFormat = SF_FORMAT_WAV | SF_FORMAT_DOUBLE;
-	SndfileHandle outFile("mysweep.wav", SFM_WRITE, outFileFormat, 1, 96000);
+	SndfileHandle outFile(filename, SFM_WRITE, outFileFormat, 1, 96000);
 	
 	std::vector<double> signal(N,0);
 	for(int n = 0; n < N; n++) {
@@ -1152,7 +1160,7 @@ void generateExpSweep() {
 
 #else // QUAD PRECISION VERSION
 
-void generateExpSweep() {
+void generateExpSweep(const std::string& filename) {
 
 	__float128 L = 10.0Q; // duration (seconds)
 	__float128 P = 10.0Q; // number of octaves below Nyquist
@@ -1166,7 +1174,7 @@ void generateExpSweep() {
 	__float128 y = logq(powq(2.0, P));
 	__float128 C = (N * M_PIq / powq(2.0Q, P)) / y;
 	int outFileFormat = SF_FORMAT_WAV | SF_FORMAT_DOUBLE;
-	SndfileHandle outFile("mysweep.wav", SFM_WRITE, outFileFormat, 1, 96000);
+	SndfileHandle outFile(filename, SFM_WRITE, outFileFormat, 1, 96000);
 	
 	std::vector<double> signal(N, 0);
 	for(int n = 0; n < N; n++) {
