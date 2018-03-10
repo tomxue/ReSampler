@@ -180,6 +180,7 @@ bool checkWarnOutputSize(sf_count_t inputSamples, int bytesPerSample, int numera
 template<typename IntType> std::string fmtNumberWithCommas(IntType n);
 void printSamplePosAsTime(sf_count_t samplePos, unsigned int sampleRate);
 void generateExpSweep(const std::string& filename = "");
+void generateExpSweep2(const std::string& filename = "");
 bool getMetaData(MetaData& metadata, SndfileHandle& infile);
 bool setMetaData(const MetaData& metadata, SndfileHandle& outfile);
 void showCompiler();

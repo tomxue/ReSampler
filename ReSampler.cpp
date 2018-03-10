@@ -1138,25 +1138,56 @@ void generateExpSweep(const std::string& filename) {
 
 	double L = 10; // duration (seconds)
 	double P = 10; // number of octaves below Nyquist
-	double amplitudedB = -3.0;
-	double amplitude = pow(10.0, (amplitudedB / 20.0));
+	double amplitude_dB = -3.0;
+	double amplitude = pow(10.0, (amplitude_dB / 20.0));
 	int sampleRate = 96000;
 
-	double M = pow(2, P + 1) * P * M_LN2;
-	int N = ceil((L * sampleRate) / M) * M; // N must be integer multiple of M
+	double M = pow(2.0, P + 1) * P * M_LN2;
+	int N = lround((L * sampleRate) / M) * M; // N must be integer multiple of M
 
 	double y = log(pow(2.0, P));
 	double C = (N * M_PI / pow(2.0, P)) / y;
+	double TWOPI = 2.0 * M_PI;
 	int outFileFormat = SF_FORMAT_WAV | SF_FORMAT_DOUBLE;
 	SndfileHandle outFile(filename, SFM_WRITE, outFileFormat, 1, 96000);
 	
 	std::vector<double> signal(N,0);
+
 	for(int n = 0; n < N; n++) {
-		signal[n] = amplitude * sin(fmod(C * exp(y * n / N), 2 * M_PI));
+		signal[n] = amplitude * sin(fmod(C * exp(y * n / N), TWOPI));
 	}
 
 	outFile.write(signal.data(), N);
 }
+
+void generateExpSweep2(const std::string& filename) {
+
+	double duration = 10; // duration (seconds)
+	int sampleRate = 96000;
+	double T = sampleRate * duration;
+	double f2 = 240;		// Nyquist
+	double f1 = f2 / 1024;	// 10 octaves below Nyquist
+	
+	double L = (1.0 / f1) * std::round((T*f1) / std::log(f2 / f1));
+	int N = L;
+	double amplitudedB = -3.0;
+	double amplitude = pow(10.0, (amplitudedB / 20.0));
+	
+	int outFileFormat = SF_FORMAT_WAV | SF_FORMAT_DOUBLE;
+	SndfileHandle outFile(filename, SFM_WRITE, outFileFormat, 1, 96000);
+
+	std::vector<double> signal(N, 0);
+	double M_TWOPI = 2.0 * M_PI;
+	double C = M_TWOPI * f1 * L;
+	for (int n = 0; n < N; n++) {
+	//	signal[n] = amplitude * sin(fmod(2.0 * M_PI * f1 * L * (exp((double)n/L) - 1.0), 2 * M_PI));
+
+		signal[n] = amplitude * sin(C * (exp((double)n / L) - 1.0));
+	}
+
+	outFile.write(signal.data(), N);
+}
+
 
 #else // QUAD PRECISION VERSION
 
@@ -1164,8 +1195,8 @@ void generateExpSweep(const std::string& filename) {
 
 	__float128 L = 10.0Q; // duration (seconds)
 	__float128 P = 10.0Q; // number of octaves below Nyquist
-	__float128 amplitudedB = -3.0Q;
-	__float128 amplitude = powq(10.0Q, (amplitudedB / 20.0Q));
+	__float128 amplitude_dB = -3.0Q;
+	__float128 amplitude = powq(10.0Q, (amplitude_dB / 20.0Q));
 	int sampleRate = 96000;
 
 	__float128 M = powq(2.0Q, P + 1) * P * M_LN2q;
