@@ -499,7 +499,9 @@ double I0(double z)
 		if (k) kfact *= static_cast<double>(k);
 		result += pow((pow(z, 2.0) / 4.0), k) / pow(kfact, 2.0);
 	}
-	// std::cout << "input: " << z << " output: " << result << std::endl;
+	
+	// std::cout << std::setprecision(std::numeric_limits<double>::digits10 + 1)
+	// << "input: " << z << " output: " << result << std::endl;
 	return result;
 }
 
