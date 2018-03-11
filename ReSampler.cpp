@@ -717,18 +717,16 @@ bool convert(ConversionInfo& ci)
 	
 			bool tmpFileError = false;
 
-			if (tempFileOpenMethod == Std_tmpfile) {
-				FILE* f = std::tmpfile();
-				tmpFileError = (f == NULL);
-				if (!tmpFileError) {
-					tmpSndfileHandle = new SndfileHandle(fileno(f), true, SFM_RDWR, tmpFileFormat, nChannels, ci.outputSampleRate); // open using file descriptor
-				}
+#ifdef TEMPFILE_OPEN_METHOD_STD_TMPFILE	
+			FILE* f = std::tmpfile();
+			tmpFileError = (f == NULL);
+			if (!tmpFileError) {
+				tmpSndfileHandle = new SndfileHandle(fileno(f), true, SFM_RDWR, tmpFileFormat, nChannels, ci.outputSampleRate); // open using file descriptor
 			}
-
-			else {
-				tmpFilename = std::string(std::string(std::tmpnam(nullptr)) + ".wav");
-				tmpSndfileHandle = new SndfileHandle(tmpFilename, SFM_RDWR, tmpFileFormat, nChannels, ci.outputSampleRate); // open using filename
-			}
+#else 
+			tmpFilename = std::string(std::string(std::tmpnam(nullptr)) + ".wav");
+			tmpSndfileHandle = new SndfileHandle(tmpFilename, SFM_RDWR, tmpFileFormat, nChannels, ci.outputSampleRate); // open using filename
+#endif
 
 			int e = 0;
 			if (tmpFileError || tmpSndfileHandle == nullptr || (e = tmpSndfileHandle->error())){
@@ -946,8 +944,9 @@ bool convert(ConversionInfo& ci)
 	// clean-up temp file:
 	delete tmpSndfileHandle; // dealllocate SndFileHandle
 
-	if(tempFileOpenMethod == Std_tmpnam)
+	#ifdef TEMPFILE_OPEN_METHOD_STD_TMPNAM
 		std::remove(tmpFilename.c_str()); // actually remove the temp file from disk
+	#endif
 	
 	return true;
 } // ends convert()
