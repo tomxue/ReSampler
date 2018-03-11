@@ -495,13 +495,15 @@ double I0(double z)
 {
 	double result = 0.0;
 	double kfact = 1.0;
-	for (int k = 0; k < 30; ++k) {
+	for (int k = 0; k < 34; ++k) {
 		if (k) kfact *= static_cast<double>(k);
-		result += pow((pow(z, 2.0) / 4.0), k) / pow(kfact, 2.0);
+		double x = pow(z * z / 4.0, k) / (kfact * kfact);	
+		// std::cout << std::setprecision(std::numeric_limits<double>::digits10 + 1) << x << std::endl;
+		result += x;
 	}
 	
-	// std::cout << std::setprecision(std::numeric_limits<double>::digits10 + 1)
-	// << "input: " << z << " output: " << result << std::endl;
+//	 std::cout << std::setprecision(std::numeric_limits<double>::digits10 + 1)
+//	 << "input: " << z << " output: " << result << std::endl;
 	return result;
 }
 

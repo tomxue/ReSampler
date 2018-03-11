@@ -64,6 +64,9 @@ unsigned int fp_control_state = _controlfp(_EM_INEXACT, _MCW_EM);
 int main(int argc, char * argv[])
 {
 
+	// std::cout << std::setprecision(std::numeric_limits<double>::digits10 + 1) << I0(20.0) - 43558282;
+	// exit(0);	
+
 	// test for global options
 	if (parseGlobalOptions(argc, argv)) {
 		exit(EXIT_SUCCESS);
@@ -947,7 +950,7 @@ bool convert(ConversionInfo& ci)
 	#ifdef TEMPFILE_OPEN_METHOD_STD_TMPNAM
 		std::remove(tmpFilename.c_str()); // actually remove the temp file from disk
 	#endif
-	
+
 	return true;
 } // ends convert()
 
