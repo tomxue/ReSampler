@@ -490,15 +490,27 @@ template<typename FloatType> FloatType calcKaiserBeta(FloatType dB)
 	}
 }
 
+/*
+function KahanSum(input)
+    var sum = 0.0
+    var c = 0.0                 // A running compensation for lost low-order bits.
+    for i = 1 to input.length do
+        var y = input[i] - c    // So far, so good: c is zero.
+        var t = sum + y         // Alas, sum is big, y small, so low-order digits of y are lost.
+        c = (t - sum) - y       // (t - sum) cancels the high-order part of y; subtracting y recovers negative (low part of y)
+        sum = t                 // Algebraically, c should always be zero. Beware overly-aggressive optimizing compilers!
+    next i                      // Next time around, the lost low part will be added to y in a fresh attempt.
+    return sum
+*/
+
 // I0() : 0th-order Modified Bessel function of the first kind:
 double I0(double z)
 {
 	double result = 0.0;
 	double kfact = 1.0;
 	for (int k = 0; k < 34; ++k) {
-		if (k) kfact *= static_cast<double>(k);
-		double x = pow(z * z / 4.0, k) / (kfact * kfact);	
-		// std::cout << std::setprecision(std::numeric_limits<double>::digits10 + 1) << x << std::endl;
+		if (k) kfact *= k;
+		double x = pow(z * z / 4.0, k) / (kfact * kfact);
 		result += x;
 	}
 	
