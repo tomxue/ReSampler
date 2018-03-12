@@ -63,10 +63,6 @@ unsigned int fp_control_state = _controlfp(_EM_INEXACT, _MCW_EM);
 
 int main(int argc, char * argv[])
 {
-
-	// std::cout << std::setprecision(std::numeric_limits<double>::digits10 + 1) << I0(20.0) /*- 43558282 */;
-	// exit(0);	
-
 	// test for global options
 	if (parseGlobalOptions(argc, argv)) {
 		exit(EXIT_SUCCESS);
@@ -1195,23 +1191,25 @@ void generateExpSweep2(const std::string& filename) {
 
 void generateExpSweep(const std::string& filename) {
 
-	__float128 L = 10.0Q; // duration (seconds)
-	__float128 P = 10.0Q; // number of octaves below Nyquist
+	__float128 L = 15.0Q; // duration (seconds)
+	__float128 P = 15.0Q; // number of octaves below Nyquist
 	__float128 amplitude_dB = -3.0Q;
 	__float128 amplitude = powq(10.0Q, (amplitude_dB / 20.0Q));
 	int sampleRate = 96000;
 
 	__float128 M = powq(2.0Q, P + 1) * P * M_LN2q;
-	int N = ceilq((L * sampleRate) / M) * M; // N must be integer multiple of M
+	int N = lrintq((L * sampleRate) / M) * M; // N must be integer multiple of M
 
 	__float128 y = logq(powq(2.0, P));
 	__float128 C = (N * M_PIq / powq(2.0Q, P)) / y;
+	__float128 TWOPIq = 2.0Q * M_PIq;
 	int outFileFormat = SF_FORMAT_WAV | SF_FORMAT_DOUBLE;
 	SndfileHandle outFile(filename, SFM_WRITE, outFileFormat, 1, 96000);
 	
 	std::vector<double> signal(N, 0);
+	
 	for(int n = 0; n < N; n++) {
-		signal[n] = (double)(amplitude * sinq(fmodq(C * expq(y * n / N), 2 * M_PIq)));
+		signal[n] = (double)(amplitude * sinq(fmodq(C * expq(y * n / N), TWOPIq)));
 	}
 
 	outFile.write(signal.data(), N);

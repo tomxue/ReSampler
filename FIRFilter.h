@@ -443,12 +443,13 @@ template<typename FloatType> bool makeLPF(FloatType* filter, int Length, FloatTy
     assert(ft < 0.5Q);
     int halfLength = Length / 2;
     __float128 halfM = 0.5Q * (Length - 1);
+	__float128 M_TWOPIq = 2.0Q * M_PIq;
 
     if (Length & 1)
         filter[halfLength] = 2.0Q * ft; // if length is odd, avoid divide-by-zero at centre-tap
 
     for (int n = 0; n<halfLength; ++n) {
-        __float128 sinc = sinq(2.0Q * M_PIq * ft * (n - halfM)) / (M_PIq * (n - halfM));	// sinc function
+        __float128 sinc = sinq(fmodq(M_TWOPIq * ft * (n - halfM), M_TWOPIq)) / (M_PIq * (n - halfM));	// sinc function
         filter[Length - n - 1] = filter[n] = sinc;	// exploit symmetry
     }
 
@@ -526,10 +527,10 @@ __float128 I0q(__float128 x)
 {
     __float128 result = 0.0Q;
     __float128 kfact = 1.0Q;
-    for (int k = 0; k < 60; ++k) {
+    for (int k = 0; k < 50; ++k) {
         if (k)
             kfact *= k;
-        result += powq((powq(x, 2.0Q) / 4.0Q), k) / powq(kfact, 2.0Q);
+        result += powq(x * x / 4.0, k) / (kfact * kfact);
     }
     return result;
 }
