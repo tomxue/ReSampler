@@ -477,14 +477,14 @@ template<typename FloatType> bool makeLPF(FloatType* filter, int Length, FloatTy
 // This function converts a requested sidelobe height (in dB) to a value for the Beta parameter used in a Kaiser window:
 template<typename FloatType> FloatType calcKaiserBeta(FloatType dB) 
 {
-	if(dB<21.0)
+	if(dB < 21.0)
 	{
 		return 0;
 	}
 	else if ((dB >= 21.0) && (dB <= 50.0)) {
 		return 0.5842 * pow((dB - 21), 0.4) + 0.07886 * (dB - 21);
 	}
-	else if (dB>50.0) {
+	else if (dB > 50.0) {
 		return 0.1102 * (dB - 8.7);
 	}
 	else
@@ -492,19 +492,6 @@ template<typename FloatType> FloatType calcKaiserBeta(FloatType dB)
 		return 0;
 	}
 }
-
-/*
-function KahanSum(input)
-    var sum = 0.0
-    var c = 0.0                 // A running compensation for lost low-order bits.
-    for i = 1 to input.length do
-        var y = input[i] - c    // So far, so good: c is zero.
-        var t = sum + y         // Alas, sum is big, y small, so low-order digits of y are lost.
-        c = (t - sum) - y       // (t - sum) cancels the high-order part of y; subtracting y recovers negative (low part of y)
-        sum = t                 // Algebraically, c should always be zero. Beware overly-aggressive optimizing compilers!
-    next i                      // Next time around, the lost low part will be added to y in a fresh attempt.
-    return sum
-*/
 
 // I0() : 0th-order Modified Bessel function of the first kind:
 double I0(double z)
@@ -528,9 +515,8 @@ __float128 I0q(__float128 x)
     __float128 result = 0.0Q;
     __float128 kfact = 1.0Q;
     for (int k = 0; k < 50; ++k) {
-        if (k)
-            kfact *= k;
-        result += powq(x * x / 4.0, k) / (kfact * kfact);
+        if (k) kfact *= k;
+		result += powq(x * x / 4.0, k) / (kfact * kfact);
     }
     return result;
 }

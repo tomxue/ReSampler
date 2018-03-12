@@ -1191,8 +1191,8 @@ void generateExpSweep2(const std::string& filename) {
 
 void generateExpSweep(const std::string& filename) {
 
-	__float128 L = 15.0Q; // duration (seconds)
-	__float128 P = 15.0Q; // number of octaves below Nyquist
+	__float128 L = 10.0Q; // duration (seconds)
+	__float128 P = 10.0Q; // number of octaves below Nyquist
 	__float128 amplitude_dB = -3.0Q;
 	__float128 amplitude = powq(10.0Q, (amplitude_dB / 20.0Q));
 	int sampleRate = 96000;
