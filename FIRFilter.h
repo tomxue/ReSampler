@@ -514,9 +514,22 @@ __float128 I0q(__float128 x)
 {
     __float128 result = 0.0Q;
     __float128 kfact = 1.0Q;
-    for (int k = 0; k < 50; ++k) {
+    for (int k = 0; k < 60; ++k) {
         if (k) kfact *= k;
 		result += powq(x * x / 4.0, k) / (kfact * kfact);
+
+		 char buf[128];
+			int width = 46;
+	 int n = quadmath_snprintf (buf, sizeof buf, "%+-#*.35Qe", width, kfact);
+	 double f = kfact;
+	 if ((size_t) n < sizeof buf) {
+		std::cout <<  std::setprecision(std::numeric_limits<double>::digits10 + 1) << f;
+		printf (" %s ", buf);
+		std::cout << std::endl;
+	 }
+	 	
+
+
     }
     return result;
 }

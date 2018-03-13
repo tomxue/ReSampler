@@ -63,6 +63,9 @@ unsigned int fp_control_state = _controlfp(_EM_INEXACT, _MCW_EM);
 
 int main(int argc, char * argv[])
 {
+	I0q(20.0Q);
+	exit(0);
+
 	// test for global options
 	if (parseGlobalOptions(argc, argv)) {
 		exit(EXIT_SUCCESS);
