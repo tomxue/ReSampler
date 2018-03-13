@@ -21,6 +21,7 @@
 
 #include <fftw3.h>
 #include "alignedmalloc.h"
+#include "factorial.h"
 
 #define FILTERSIZE_LIMIT 131071
 #define FILTERSIZE_BASE 103
@@ -497,9 +498,10 @@ template<typename FloatType> FloatType calcKaiserBeta(FloatType dB)
 double I0(double z)
 {
 	double result = 0.0;
-	double kfact = 1.0;
+	double kfact; // = 1.0;
 	for (int k = 0; k < 34; ++k) {
-		if (k) kfact *= k;
+		// if (k) kfact *= k;
+		kfact = factorials[k];
 		double x = pow(z * z / 4.0, k) / (kfact * kfact);
 		result += x;
 	}
@@ -512,26 +514,14 @@ double I0(double z)
 #ifdef FIR_QUAD_PRECISION
 __float128 I0q(__float128 x)
 {
-    __float128 result = 0.0Q;
-    __float128 kfact = 1.0Q;
-    for (int k = 0; k < 60; ++k) {
-        if (k) kfact *= k;
+	__float128 result = 0.0Q;
+	__float128 kfact = 1.0Q;
+	for (int k = 0; k < 55; ++k)
+	{
+		if (k) kfact *= k;
 		result += powq(x * x / 4.0, k) / (kfact * kfact);
-
-		 char buf[128];
-			int width = 46;
-	 int n = quadmath_snprintf (buf, sizeof buf, "%+-#*.35Qe", width, kfact);
-	 double f = kfact;
-	 if ((size_t) n < sizeof buf) {
-		std::cout <<  std::setprecision(std::numeric_limits<double>::digits10 + 1) << f;
-		printf (" %s ", buf);
-		std::cout << std::endl;
-	 }
-	 	
-
-
-    }
-    return result;
+	}
+	return result;
 }
 #endif
 
