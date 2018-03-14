@@ -500,7 +500,6 @@ double I0(double z)
 	double result = 0.0;
 	double kfact; // = 1.0;
 	for (int k = 0; k < 34; ++k) {
-		// if (k) kfact *= k;
 		kfact = factorials[k];
 		double x = pow(z * z / 4.0, k) / (kfact * kfact);
 		result += x;
