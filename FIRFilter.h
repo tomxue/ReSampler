@@ -515,7 +515,6 @@ __float128 I0q(__float128 x)
 	for (int k = 0; k < 55; ++k)
 	{
 		if (k) kfact *= k;
-		std::cout << std::hexfloat << (double)kfact << std::endl;
 		result += powq(x * x / 4.0, k) / (kfact * kfact);
 	}
 	return result;
