@@ -512,7 +512,7 @@ __float128 I0q(__float128 x)
 {
 	__float128 result = 0.0Q;
 	__float128 kfact = 1.0Q;
-	for (int k = 0; k < 101; ++k)
+	for (int k = 0; k < 55; ++k)
 	{
 		if (k) kfact *= k;
 		std::cout << std::hexfloat << (double)kfact << std::endl;
