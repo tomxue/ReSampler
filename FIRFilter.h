@@ -504,9 +504,6 @@ double I0(double z)
 		double x = pow(z * z / 4.0, k) / (kfact * kfact);
 		result += x;
 	}
-	
-//	 std::cout << std::setprecision(std::numeric_limits<double>::digits10 + 1)
-//	 << "input: " << z << " output: " << result << std::endl;
 	return result;
 }
 
@@ -515,9 +512,10 @@ __float128 I0q(__float128 x)
 {
 	__float128 result = 0.0Q;
 	__float128 kfact = 1.0Q;
-	for (int k = 0; k < 55; ++k)
+	for (int k = 0; k < 101; ++k)
 	{
 		if (k) kfact *= k;
+		std::cout << std::hexfloat << (double)kfact << std::endl;
 		result += powq(x * x / 4.0, k) / (kfact * kfact);
 	}
 	return result;

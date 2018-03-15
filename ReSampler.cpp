@@ -418,7 +418,7 @@ void listSubFormats(const std::string& f)
 	}
 }
 
-// Multi-threaded convert() :
+// convert()
 
 /* Note: type 'FileReader' MUST implement the following methods:
 constuctor(const std::string& fileName)
