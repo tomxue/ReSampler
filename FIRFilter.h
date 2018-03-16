@@ -538,11 +538,14 @@ template<typename FloatType> bool applyKaiserWindow(FloatType* filter, int Lengt
         filter[n] *= I0q(Beta * sqrtq(1.0Q - powq((2.0Q * n / (Length - 1) - 1), 2.0Q)))
                      / I0q(Beta);
     }
+
 #else
+
 	for (int n = 0; n < Length; ++n) {
 		filter[n] *= I0(Beta * sqrt(1.0 - pow((2.0 * n / (Length - 1) - 1), 2.0)))
 			/ I0(Beta);
 	}
+
 #endif
 
 	return true;
@@ -560,10 +563,7 @@ template<typename FloatType> bool applyKaiserWindow2(FloatType* filter, int Leng
 		 maxA = std::max(maxA, A);
 		 filter[n] *= I0(A) / I0(Beta);
 	 }
-	
-	//// diagnostic to check accuracy of I0(): 
-	//	std::cout << "I0( " << maxA << " ) ==" << I0(maxA) << std::endl;
-	
+
 	return true;
 }
 

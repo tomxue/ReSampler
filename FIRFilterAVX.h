@@ -431,6 +431,7 @@ double FIRFilter<double>::get() {
 		break;
 
 	}
+	
 	Index += 4;
 
 	// Part 2: Body
