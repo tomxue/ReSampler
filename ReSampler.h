@@ -1,5 +1,5 @@
 /*
-* Copyright (C) 2016 - 2017 Judd Niemann - All Rights Reserved
+* Copyright (C) 2016 - 2018 Judd Niemann - All Rights Reserved.
 * You may use, distribute and modify this code under the
 * terms of the GNU Lesser General Public License, version 2.1
 *
@@ -18,7 +18,7 @@
 
 struct ConversionInfo;
 
-const std::string strVersion("2.0.4");
+const std::string strVersion("2.0.5");
 const std::string strUsage("usage: ReSampler -i <inputfile> [-o <outputfile>] -r <samplerate> [-b <bitformat>] [-n [<normalization factor>]]\n");
 const std::string strExtraOptions(
 	"--help\n"
@@ -139,6 +139,23 @@ struct MetaData
 
 };
 
+#if defined (__GNUC__) || defined(__MINGW32__) || defined(__MINGW64__)
+
+// 1. tempnam() can sometimes give unusable temp filenames on windows with minGW-w64 compiler
+// 2. tmpfile() doesn't seem to work reliably with MSVC - probably related to this: 
+// http://www.mega-nerd.com/libsndfile/api.html#open_fd (see note regarding differing versions of MSVC runtime DLL)
+
+#define TEMPFILE_OPEN_METHOD_STD_TMPFILE
+
+#else
+
+// std::tmpnam()
+// deprecated on all compilers (not thread-safe / doesn't automaticcally close file etc)
+
+#define TEMPFILE_OPEN_METHOD_STD_TMPNAM
+
+#endif
+
 bool checkSSE2();
 bool checkAVX();
 bool showBuildVersion();
@@ -153,6 +170,8 @@ int getSfBytesPerSample(int format);
 bool checkWarnOutputSize(sf_count_t inputSamples, int bytesPerSample, int numerator, int denominator);
 template<typename IntType> std::string fmtNumberWithCommas(IntType n);
 void printSamplePosAsTime(sf_count_t samplePos, unsigned int sampleRate);
+void generateExpSweep(const std::string& filename = "");
+void generateExpSweep2(const std::string& filename = "");
 bool getMetaData(MetaData& metadata, SndfileHandle& infile);
 bool setMetaData(const MetaData& metadata, SndfileHandle& outfile);
 void showCompiler();

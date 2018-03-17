@@ -1,5 +1,5 @@
 /*
-* Copyright (C) 2016 - 2017 Judd Niemann - All Rights Reserved
+* Copyright (C) 2016 - 2018 Judd Niemann - All Rights Reserved.
 * You may use, distribute and modify this code under the
 * terms of the GNU Lesser General Public License, version 2.1
 *
@@ -130,6 +130,6 @@ const double blue[23] = { // approximation of "blueing" filter (turn white noise
 
 // **Psychoacoustically Optimal Noise Shaping
 // Robert. A. Wannamaker
-// Journal of the Audio Engineering Society 40(7 / 8) : 611 - 620 · July 1992
+// Journal of the Audio Engineering Society 40(7 / 8) : 611 - 620 ï¿½ July 1992
 
 #endif

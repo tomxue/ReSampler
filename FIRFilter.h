@@ -1,5 +1,5 @@
 /*
-* Copyright (C) 2016 - 2017 Judd Niemann - All Rights Reserved
+* Copyright (C) 2016 - 2018 Judd Niemann - All Rights Reserved.
 * You may use, distribute and modify this code under the
 * terms of the GNU Lesser General Public License, version 2.1
 *
@@ -12,8 +12,6 @@
 
 // FIRFilter.h : simple FIR filter implementation by J.Niemann
 
-#define USE_SIMD_FOR_DOUBLES
-
 #include <typeinfo>
 #include <algorithm>
 #include <complex>
@@ -23,6 +21,7 @@
 
 #include <fftw3.h>
 #include "alignedmalloc.h"
+#include "factorial.h"
 
 #define FILTERSIZE_LIMIT 131071
 #define FILTERSIZE_BASE 103
@@ -35,6 +34,7 @@
 #else
 #if (defined(_M_X64) || defined(__x86_64__) || defined(USE_SSE2)) // All x64 CPUs have SSE2 instructions, but some older 32-bit CPUs do not. 
 	#define USE_SIMD 1 // Vectorise main loop in FIRFilter::get() by using SSE2 SIMD instrinsics 
+	#define USE_SIMD_FOR_DOUBLES
 #endif
 
 #if defined (__MINGW64__) || defined (__MINGW32__) || defined (__GNUC__)
@@ -192,6 +192,19 @@ public:
 
 	FloatType get() {
 
+#ifdef FIR_QUAD_PRECISION
+
+		// specialisation for FloatType input/output, with quad-precision processing
+		__float128 output = 0.0Q;
+		int index = CurrentIndex;
+		for (int i = 0; i < size; ++i) {
+			output += (__float128)Signal[index] * (__float128)Kernel0[i];
+			index++;
+		}
+		return (FloatType)output;
+
+#else
+
 #ifndef USE_SIMD
 		FloatType output = 0.0;
 		int index = CurrentIndex;
@@ -267,6 +280,7 @@ public:
 		return output;
 
 #endif // !USE_SIMD
+#endif // !FIR_QUAD_PRECISION
 	}
 
 	FloatType lazyGet(int L) {	// Skips stuffed-zeros introduced by interpolation, by only calculating every Lth sample from LastPut
@@ -333,12 +347,14 @@ private:
 	}
 };
 
-#ifdef USE_SIMD
+#if defined(USE_SIMD) && !defined(FIR_QUAD_PRECISION)
+
+// Specializations for doubles
 
 #ifndef USE_SIMD_FOR_DOUBLES
 
-#ifndef FIR_QUAD_PRECISION
-// Specialization for doubles:
+// scalar implementation
+
 template <>
 double FIRFilter<double>::get() {
 	double output = 0.0;
@@ -349,20 +365,6 @@ double FIRFilter<double>::get() {
 	}
 	return output;
 }
-
-#else 
-template <>
-// specialisation for doubles (with quad precision summation)
-double FIRFilter<double>::get() {
-	__float128 output = 0.0Q;
-	int index = CurrentIndex;
-	for (int i = 0; i < size; ++i) {
-		output += (__float128)Signal[index] * (__float128)Kernel0[i];
-		index++;
-	}
-	return (double)output;
-}
-#endif
 
 #else 
 
@@ -422,7 +424,7 @@ double FIRFilter<double>::get() {
 	return output;
 }
 #endif // USE_SIMD_FOR_DOUBLES
-#endif // USE_SIMD
+#endif // USE_SIMD && !FIR_QUAD_PRECISION
 #endif // !USE_AVX
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -442,12 +444,13 @@ template<typename FloatType> bool makeLPF(FloatType* filter, int Length, FloatTy
     assert(ft < 0.5Q);
     int halfLength = Length / 2;
     __float128 halfM = 0.5Q * (Length - 1);
+	__float128 M_TWOPIq = 2.0Q * M_PIq;
 
     if (Length & 1)
         filter[halfLength] = 2.0Q * ft; // if length is odd, avoid divide-by-zero at centre-tap
 
     for (int n = 0; n<halfLength; ++n) {
-        __float128 sinc = sinq(2.0Q * M_PIq * ft * (n - halfM)) / (M_PIq * (n - halfM));	// sinc function
+        __float128 sinc = sinq(fmodq(M_TWOPIq * ft * (n - halfM), M_TWOPIq)) / (M_PIq * (n - halfM));	// sinc function
         filter[Length - n - 1] = filter[n] = sinc;	// exploit symmetry
     }
 
@@ -457,12 +460,14 @@ template<typename FloatType> bool makeLPF(FloatType* filter, int Length, FloatTy
 	assert(ft < 0.5);
 	int halfLength = Length / 2;
 	double halfM = 0.5 * (Length - 1);
+	double M_TWOPI = 2.0 * M_PI;
 
 	if (Length & 1)
 		filter[halfLength] = 2.0 * ft; // if length is odd, avoid divide-by-zero at centre-tap
 
-	for (int n = 0; n<halfLength; ++n) {
-		double sinc = sin(2.0 * M_PI * ft * (n - halfM)) / (M_PI * (n - halfM));	// sinc function
+	for (int n = 0; n < halfLength; ++n) {
+		// sinc function
+		double sinc = sin(fmod(M_TWOPI * ft * (n - halfM), M_TWOPI)) / (M_PI * (n - halfM));
 		filter[Length - n - 1] = filter[n] = sinc;	// exploit symmetry
 	}
 #endif
@@ -473,14 +478,14 @@ template<typename FloatType> bool makeLPF(FloatType* filter, int Length, FloatTy
 // This function converts a requested sidelobe height (in dB) to a value for the Beta parameter used in a Kaiser window:
 template<typename FloatType> FloatType calcKaiserBeta(FloatType dB) 
 {
-	if(dB<21.0)
+	if(dB < 21.0)
 	{
 		return 0;
 	}
 	else if ((dB >= 21.0) && (dB <= 50.0)) {
 		return 0.5842 * pow((dB - 21), 0.4) + 0.07886 * (dB - 21);
 	}
-	else if (dB>50.0) {
+	else if (dB > 50.0) {
 		return 0.1102 * (dB - 8.7);
 	}
 	else
@@ -493,26 +498,26 @@ template<typename FloatType> FloatType calcKaiserBeta(FloatType dB)
 double I0(double z)
 {
 	double result = 0.0;
-	double kfact = 1.0;
-	for (int k = 0; k < 30; ++k) {
-		if (k) kfact *= static_cast<double>(k);
-		result += pow((pow(z, 2.0) / 4.0), k) / pow(kfact, 2.0);
+	double kfact; // = 1.0;
+	for (int k = 0; k < 34; ++k) {
+		kfact = factorials[k];
+		double x = pow(z * z / 4.0, k) / (kfact * kfact);
+		result += x;
 	}
-	// std::cout << "input: " << z << " output: " << result << std::endl;
 	return result;
 }
 
 #ifdef FIR_QUAD_PRECISION
 __float128 I0q(__float128 x)
 {
-    __float128 result = 0.0Q;
-    __float128 kfact = 1.0Q;
-    for (int k = 0; k < 60; ++k) {
-        if (k)
-            kfact *= k;
-        result += powq((powq(x, 2.0Q) / 4.0Q), k) / powq(kfact, 2.0Q);
-    }
-    return result;
+	__float128 result = 0.0Q;
+	__float128 kfact = 1.0Q;
+	for (int k = 0; k < 55; ++k)
+	{
+		if (k) kfact *= k;
+		result += powq(x * x / 4.0, k) / (kfact * kfact);
+	}
+	return result;
 }
 #endif
 
@@ -533,11 +538,14 @@ template<typename FloatType> bool applyKaiserWindow(FloatType* filter, int Lengt
         filter[n] *= I0q(Beta * sqrtq(1.0Q - powq((2.0Q * n / (Length - 1) - 1), 2.0Q)))
                      / I0q(Beta);
     }
+
 #else
+
 	for (int n = 0; n < Length; ++n) {
 		filter[n] *= I0(Beta * sqrt(1.0 - pow((2.0 * n / (Length - 1) - 1), 2.0)))
 			/ I0(Beta);
 	}
+
 #endif
 
 	return true;
@@ -555,10 +563,7 @@ template<typename FloatType> bool applyKaiserWindow2(FloatType* filter, int Leng
 		 maxA = std::max(maxA, A);
 		 filter[n] *= I0(A) / I0(Beta);
 	 }
-	
-	//// diagnostic to check accuracy of I0():
-	//	std::cout << "I0( " << maxA << " ) ==" << I0(maxA) << std::endl;
-	
+
 	return true;
 }
 
@@ -867,17 +872,6 @@ template<typename FloatType> void dumpFilter(const FloatType* Filter, int Length
 	for (int i = 0; i < Length; ++i) {
 		std::cout << Filter[i] << std::endl;
 	}
-}
-
-void testMinPhase() {
-	std::cout << std::setprecision(15);
-	const size_t MedFilterSize = 511;
-	double MedFilterTaps[511];
-	makeLPF<double>(MedFilterTaps, MedFilterSize, 21819, 96000);
-	applyKaiserWindow2<double>(MedFilterTaps, MedFilterSize, calcKaiserBeta(195));
-	dumpFilter(MedFilterTaps, MedFilterSize);
-	makeMinPhase(MedFilterTaps, MedFilterSize);
-	dumpFilter(MedFilterTaps, MedFilterSize);
 }
 
 void dumpComplexVector(const std::vector<std::complex<double>>& v)

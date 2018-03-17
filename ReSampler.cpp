@@ -1,5 +1,5 @@
 /*
-* Copyright (C) 2016 - 2017 Judd Niemann - All Rights Reserved
+* Copyright (C) 2016 - 2018 Judd Niemann - All Rights Reserved.
 * You may use, distribute and modify this code under the
 * terms of the GNU Lesser General Public License, version 2.1
 *
@@ -17,6 +17,7 @@ unsigned int fp_control_state = _controlfp(_EM_INEXACT, _MCW_EM);
 
 #define _USE_MATH_DEFINES
 #include <cmath>
+#include <cstdio>
 #include <iostream>
 #include <vector>
 #include <iomanip>
@@ -229,6 +230,14 @@ bool parseGlobalOptions(int argc, char * argv[]) {
 		return true;
 	}
 
+	// generate
+	if (getCmdlineParam(argv, argv + argc, "--generate")) {
+		std::string filename;
+		getCmdlineParam(argv, argv + argc, "--generate", filename);
+		generateExpSweep(filename);
+		return true;
+	}
+
 	return false;
 }
 
@@ -409,7 +418,7 @@ void listSubFormats(const std::string& f)
 	}
 }
 
-// Multi-threaded convert() :
+// convert()
 
 /* Note: type 'FileReader' MUST implement the following methods:
 constuctor(const std::string& fileName)
@@ -428,9 +437,9 @@ bool convert(ConversionInfo& ci)
 	bool multiThreaded = ci.bMultiThreaded;
 
 	// pointer for temp file;
-	SndfileHandle* tmpFile = nullptr;
+	SndfileHandle* tmpSndfileHandle = nullptr;
 
-	// filename for temp file:
+	// filename for temp file;
 	std::string tmpFilename;
 
 	// Open input file:
@@ -703,18 +712,23 @@ bool convert(ConversionInfo& ci)
 			int tmpFileFormat = (outputFileFormat & SF_FORMAT_RF64) ? SF_FORMAT_RF64 : SF_FORMAT_WAV;
 
 			// set appropriate floating-point subformat:
-			if (sizeof(FloatType) == 8) {
-				tmpFileFormat |= SF_FORMAT_DOUBLE;
-			}
-			else {
-				tmpFileFormat |= SF_FORMAT_FLOAT;
-			}
-			
-			tmpFilename = std::string(std::string(std::tmpnam(nullptr)) + ".wav");
-			// std::cout << "Temp File: " << tmpFilename << "\n";
-			tmpFile = new SndfileHandle(tmpFilename, SFM_RDWR, tmpFileFormat, nChannels, ci.outputSampleRate);
+			tmpFileFormat |= (sizeof(FloatType) == 8) ? SF_FORMAT_DOUBLE : SF_FORMAT_FLOAT;
+	
+			bool tmpFileError = false;
 
-			if (int e = tmpFile->error()) {
+#ifdef TEMPFILE_OPEN_METHOD_STD_TMPFILE	
+			FILE* f = std::tmpfile();
+			tmpFileError = (f == NULL);
+			if (!tmpFileError) {
+				tmpSndfileHandle = new SndfileHandle(fileno(f), true, SFM_RDWR, tmpFileFormat, nChannels, ci.outputSampleRate); // open using file descriptor
+			}
+#else 
+			tmpFilename = std::string(std::string(std::tmpnam(nullptr)) + ".wav");
+			tmpSndfileHandle = new SndfileHandle(tmpFilename, SFM_RDWR, tmpFileFormat, nChannels, ci.outputSampleRate); // open using filename
+#endif
+
+			int e = 0;
+			if (tmpFileError || tmpSndfileHandle == nullptr || (e = tmpSndfileHandle->error())){
 				std::cout << "Error: Couldn't Open Temporary File (" << sf_error_number(e) << ")\n";
 				std::cout << "Disabling temp file mode." << std::endl;
 				ci.bTmpFile = false;
@@ -722,12 +736,12 @@ bool convert(ConversionInfo& ci)
 
 			// disable floating-point normalisation (important - we want to record/recover floating point values exactly)
 			if (sizeof(FloatType) == 8) {
-				tmpFile->command(SFC_SET_NORM_DOUBLE, NULL, SF_FALSE); // http://www.mega-nerd.com/libsndfile/command.html#SFC_SET_NORM_DOUBLE
+				tmpSndfileHandle->command(SFC_SET_NORM_DOUBLE, NULL, SF_FALSE); // http://www.mega-nerd.com/libsndfile/command.html#SFC_SET_NORM_DOUBLE
 			}
 				else {
-				tmpFile->command(SFC_SET_NORM_FLOAT, NULL, SF_FALSE);
+				tmpSndfileHandle->command(SFC_SET_NORM_FLOAT, NULL, SF_FALSE);
 			}
-		}
+		} // ends opening of temp file
 
 		// echo conversion mode to user (multi-stage/single-stage, multi-threaded/single-threaded)
 		std::string stageness(ci.bMultiStage ? "multi-stage" : "single-stage");
@@ -807,7 +821,7 @@ bool convert(ConversionInfo& ci)
 
 			// write to either temp file or outfile (with Group Delay Compensation):
 			if (ci.bTmpFile) {
-				tmpFile->write(outputBlock.data() + outStartOffset, outputBlockIndex - outStartOffset);
+				tmpSndfileHandle->write(outputBlock.data() + outStartOffset, outputBlockIndex - outStartOffset);
 			}
 			else {
 				outFile->write(outputBlock.data() + outStartOffset, outputBlockIndex - outStartOffset);
@@ -876,11 +890,11 @@ bool convert(ConversionInfo& ci)
 				sf_count_t incrementalProgressThreshold = inputSampleCount / 10;
 				sf_count_t nextProgressThreshold = incrementalProgressThreshold;
 
-				tmpFile->seek(0, SEEK_SET);
+				tmpSndfileHandle->seek(0, SEEK_SET);
 				outFile->seek(0, SEEK_SET);
 
 				do {// Grab a block of interleaved samples from temp file:
-					samplesRead = tmpFile->read(inputBlock.data(), inputBlockSize);
+					samplesRead = tmpSndfileHandle->read(inputBlock.data(), inputBlockSize);
 					totalSamplesRead += samplesRead;
 
 					// de-interleave into channels, apply gain, add dither, and save to output buffer
@@ -926,12 +940,13 @@ bool convert(ConversionInfo& ci)
 		} while (ci.bTmpFile && !ci.disableClippingProtection && bClippingDetected && clippingProtectionAttempts < maxClippingProtectionAttempts); // if using temp file, do another round if clipping detected
 	} while (!ci.bTmpFile && !ci.disableClippingProtection && bClippingDetected && clippingProtectionAttempts < maxClippingProtectionAttempts); // if NOT using temp file, do another round if clipping detected
 	
-//    outputChannelBuffers.clear(); // <--- CRASH here on GCC ! to-do: why ??
-
 	// clean-up temp file:
-	delete tmpFile; // dealllocate SndFileHandle
-	std::remove(tmpFilename.c_str()); // actually remove the temp file from disk
-	
+	delete tmpSndfileHandle; // dealllocate SndFileHandle
+
+	#ifdef TEMPFILE_OPEN_METHOD_STD_TMPNAM
+		std::remove(tmpFilename.c_str()); // actually remove the temp file from disk
+	#endif
+
 	return true;
 } // ends convert()
 
@@ -1114,6 +1129,93 @@ bool getMetaData(MetaData& metadata, const DsfFile& f) {
 	// stub - to-do
 	return true;
 }
+
+#ifndef FIR_QUAD_PRECISION
+
+void generateExpSweep(const std::string& filename) {
+
+	double L = 10; // duration (seconds)
+	double P = 10; // number of octaves below Nyquist
+	double amplitude_dB = -3.0;
+	double amplitude = pow(10.0, (amplitude_dB / 20.0));
+	int sampleRate = 96000;
+
+	double M = pow(2.0, P + 1) * P * M_LN2;
+	int N = lround((L * sampleRate) / M) * M; // N must be integer multiple of M
+
+	double y = log(pow(2.0, P));
+	double C = (N * M_PI / pow(2.0, P)) / y;
+	double TWOPI = 2.0 * M_PI;
+	int outFileFormat = SF_FORMAT_WAV | SF_FORMAT_DOUBLE;
+	SndfileHandle outFile(filename, SFM_WRITE, outFileFormat, 1, 96000);
+	
+	std::vector<double> signal(N,0);
+
+	for(int n = 0; n < N; n++) {
+		signal[n] = amplitude * sin(fmod(C * exp(y * n / N), TWOPI));
+	}
+
+	outFile.write(signal.data(), N);
+}
+
+void generateExpSweep2(const std::string& filename) {
+
+	double duration = 10; // duration (seconds)
+	int sampleRate = 96000;
+	double T = sampleRate * duration;
+	double f2 = 240;		// Nyquist
+	double f1 = f2 / 1024;	// 10 octaves below Nyquist
+	
+	double L = (1.0 / f1) * std::round((T*f1) / std::log(f2 / f1));
+	int N = L;
+	double amplitudedB = -3.0;
+	double amplitude = pow(10.0, (amplitudedB / 20.0));
+	
+	int outFileFormat = SF_FORMAT_WAV | SF_FORMAT_DOUBLE;
+	SndfileHandle outFile(filename, SFM_WRITE, outFileFormat, 1, 96000);
+
+	std::vector<double> signal(N, 0);
+	double M_TWOPI = 2.0 * M_PI;
+	double C = M_TWOPI * f1 * L;
+	for (int n = 0; n < N; n++) {
+	//	signal[n] = amplitude * sin(fmod(2.0 * M_PI * f1 * L * (exp((double)n/L) - 1.0), 2 * M_PI));
+
+		signal[n] = amplitude * sin(C * (exp((double)n / L) - 1.0));
+	}
+
+	outFile.write(signal.data(), N);
+}
+
+
+#else // QUAD PRECISION VERSION
+
+void generateExpSweep(const std::string& filename) {
+
+	__float128 L = 10.0Q; // duration (seconds)
+	__float128 P = 10.0Q; // number of octaves below Nyquist
+	__float128 amplitude_dB = -3.0Q;
+	__float128 amplitude = powq(10.0Q, (amplitude_dB / 20.0Q));
+	int sampleRate = 96000;
+
+	__float128 M = powq(2.0Q, P + 1) * P * M_LN2q;
+	int N = lrintq((L * sampleRate) / M) * M; // N must be integer multiple of M
+
+	__float128 y = logq(powq(2.0, P));
+	__float128 C = (N * M_PIq / powq(2.0Q, P)) / y;
+	__float128 TWOPIq = 2.0Q * M_PIq;
+	int outFileFormat = SF_FORMAT_WAV | SF_FORMAT_DOUBLE;
+	SndfileHandle outFile(filename, SFM_WRITE, outFileFormat, 1, 96000);
+	
+	std::vector<double> signal(N, 0);
+	
+	for(int n = 0; n < N; n++) {
+		signal[n] = (double)(amplitude * sinq(fmodq(C * expq(y * n / N), TWOPIq)));
+	}
+
+	outFile.write(signal.data(), N);
+}
+
+#endif
 
 bool checkSSE2() {
 #if defined (_MSC_VER) || defined (__INTEL_COMPILER)
