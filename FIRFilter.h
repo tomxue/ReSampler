@@ -874,17 +874,6 @@ template<typename FloatType> void dumpFilter(const FloatType* Filter, int Length
 	}
 }
 
-void testMinPhase() {
-	std::cout << std::setprecision(15);
-	const size_t MedFilterSize = 511;
-	double MedFilterTaps[511];
-	makeLPF<double>(MedFilterTaps, MedFilterSize, 21819, 96000);
-	applyKaiserWindow2<double>(MedFilterTaps, MedFilterSize, calcKaiserBeta(195));
-	dumpFilter(MedFilterTaps, MedFilterSize);
-	makeMinPhase(MedFilterTaps, MedFilterSize);
-	dumpFilter(MedFilterTaps, MedFilterSize);
-}
-
 void dumpComplexVector(const std::vector<std::complex<double>>& v)
 {
 	for (auto &c : v) {
