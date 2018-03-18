@@ -255,7 +255,6 @@ bool determineBestBitFormat(std::string& BitFormat, const std::string& inFilenam
 
 	bool dsfInput = false;
 	bool dffInput = false;
-
 	int inFileFormat = 0;
 
 	if (inFileExt == "dsf") {
