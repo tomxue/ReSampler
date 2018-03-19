@@ -1157,7 +1157,7 @@ void generateExpSweep2(const std::string& filename) {
 	double duration = 10; // duration (seconds)
 	int sampleRate = 96000;
 	double T = sampleRate * duration;
-	double f2 = 240;		// Nyquist
+	double f2 = 4800 / (2*M_PI);		// Nyquist
 	double f1 = f2 / 1024;	// 10 octaves below Nyquist
 	
 	double L = (1.0 / f1) * std::round((T*f1) / std::log(f2 / f1));
