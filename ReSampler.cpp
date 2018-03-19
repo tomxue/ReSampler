@@ -9,12 +9,6 @@
 
 // ReSampler.cpp : Audio Sample Rate Converter by Judd Niemann
 
-#if defined(_DEBUG) && defined(_MSC_VER)
-// use this to trap floating-point exceptions (MSVC: compile with /fp:strict)
-#include <float.h>
-unsigned int fp_control_state = _controlfp(_EM_INEXACT, _MCW_EM);
-#endif
-
 #define _USE_MATH_DEFINES
 #include <cmath>
 #include <cstdio>
@@ -255,6 +249,7 @@ bool determineBestBitFormat(std::string& BitFormat, const std::string& inFilenam
 
 	bool dsfInput = false;
 	bool dffInput = false;
+
 	int inFileFormat = 0;
 
 	if (inFileExt == "dsf") {
