@@ -1126,24 +1126,18 @@ bool getMetaData(MetaData& metadata, const DsfFile& f) {
 
 #ifndef FIR_QUAD_PRECISION
 
-void generateExpSweep(const std::string& filename) {
-
-	double L = 10; // duration (seconds)
-	double P = 10; // number of octaves below Nyquist
-	double amplitude_dB = -3.0;
+void generateExpSweep(const std::string& filename, int sampleRate, int format, double duration, int nOctaves, double amplitude_dB) {
+	int pow2P = 1 << nOctaves;
+	int pow2P1 = 1 << (nOctaves + 1);
 	double amplitude = pow(10.0, (amplitude_dB / 20.0));
-	int sampleRate = 96000;
-
-	double M = pow(2.0, P + 1) * P * M_LN2;
-	int N = lround((L * sampleRate) / M) * M; // N must be integer multiple of M
-
-	double y = log(pow(2.0, P));
-	double C = (N * M_PI / pow(2.0, P)) / y;
+	double M = pow2P1 * nOctaves * M_LN2;
+	int N = lround((duration * sampleRate) / M) * M; // N must be integer multiple of M
+	double y = log(pow2P);
+	double C = (N * M_PI / pow2P) / y;
 	double TWOPI = 2.0 * M_PI;
-	int outFileFormat = SF_FORMAT_WAV | SF_FORMAT_DOUBLE;
-	SndfileHandle outFile(filename, SFM_WRITE, outFileFormat, 1, 96000);
-	
-	std::vector<double> signal(N,0);
+
+	SndfileHandle outFile(filename, SFM_WRITE, format, 1, sampleRate);
+	std::vector<double> signal(N, 0.0);
 
 	for(int n = 0; n < N; n++) {
 		signal[n] = amplitude * sin(fmod(C * exp(y * n / N), TWOPI));
@@ -1151,35 +1145,6 @@ void generateExpSweep(const std::string& filename) {
 
 	outFile.write(signal.data(), N);
 }
-
-void generateExpSweep2(const std::string& filename) {
-
-	double duration = 10; // duration (seconds)
-	int sampleRate = 96000;
-	double T = sampleRate * duration;
-	double f2 = 4800 / (2*M_PI);		// Nyquist
-	double f1 = f2 / 1024;	// 10 octaves below Nyquist
-	
-	double L = (1.0 / f1) * std::round((T*f1) / std::log(f2 / f1));
-	int N = L;
-	double amplitudedB = -3.0;
-	double amplitude = pow(10.0, (amplitudedB / 20.0));
-	
-	int outFileFormat = SF_FORMAT_WAV | SF_FORMAT_DOUBLE;
-	SndfileHandle outFile(filename, SFM_WRITE, outFileFormat, 1, 96000);
-
-	std::vector<double> signal(N, 0);
-	double M_TWOPI = 2.0 * M_PI;
-	double C = M_TWOPI * f1 * L;
-	for (int n = 0; n < N; n++) {
-	//	signal[n] = amplitude * sin(fmod(2.0 * M_PI * f1 * L * (exp((double)n/L) - 1.0), 2 * M_PI));
-
-		signal[n] = amplitude * sin(C * (exp((double)n / L) - 1.0));
-	}
-
-	outFile.write(signal.data(), N);
-}
-
 
 #else // QUAD PRECISION VERSION
 
