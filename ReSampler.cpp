@@ -1148,27 +1148,22 @@ void generateExpSweep(const std::string& filename, int sampleRate, int format, d
 
 #else // QUAD PRECISION VERSION
 
-void generateExpSweep(const std::string& filename) {
+void generateExpSweep(const std::string& filename, int sampleRate, int format, double duration, int nOctaves, double amplitude_dB) {
 
-	__float128 L = 10.0Q; // duration (seconds)
-	__float128 P = 10.0Q; // number of octaves below Nyquist
-	__float128 amplitude_dB = -3.0Q;
-	__float128 amplitude = powq(10.0Q, (amplitude_dB / 20.0Q));
-	int sampleRate = 96000;
+	int pow2P = 1 << nOctaves;
+	int pow2P1 = 1 << (nOctaves + 1);
+	__float128 amplitude = pow(10.0Q, (amplitude_dB / 20.0Q));
+	__float128 M = pow2P1 * nOctaves * M_LN2q;
+	int N = lroundq((duration * sampleRate) / M) * M; // N must be integer multiple of M
+	__float128 y = logq(pow2P);
+	__float128 C = (N * M_PIq / pow2P) / y;
+	__float128 TWOPI = 2.0Q * M_PIq;
 
-	__float128 M = powq(2.0Q, P + 1) * P * M_LN2q;
-	int N = lrintq((L * sampleRate) / M) * M; // N must be integer multiple of M
+	SndfileHandle outFile(filename, SFM_WRITE, format, 1, sampleRate);
+	std::vector<double> signal(N, 0.0);
 
-	__float128 y = logq(powq(2.0, P));
-	__float128 C = (N * M_PIq / powq(2.0Q, P)) / y;
-	__float128 TWOPIq = 2.0Q * M_PIq;
-	int outFileFormat = SF_FORMAT_WAV | SF_FORMAT_DOUBLE;
-	SndfileHandle outFile(filename, SFM_WRITE, outFileFormat, 1, 96000);
-	
-	std::vector<double> signal(N, 0);
-	
-	for(int n = 0; n < N; n++) {
-		signal[n] = (double)(amplitude * sinq(fmodq(C * expq(y * n / N), TWOPIq)));
+	for (int n = 0; n < N; n++) {
+		signal[n] = amplitude * sinq(fmodq(C * expq(y * n / N), TWOPI));
 	}
 
 	outFile.write(signal.data(), N);
