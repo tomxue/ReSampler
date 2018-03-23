@@ -10,7 +10,7 @@
 #ifndef FIRFFILTER_H_
 #define FIRFFILTER_H_
 
-// FIRFilter.h : simple FIR filter implementation by J.Niemann
+// FIRFilter.h : simple FIR filter implementation
 
 #include <typeinfo>
 #include <algorithm>
