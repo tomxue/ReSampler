@@ -512,7 +512,7 @@ __float128 I0q(__float128 x)
 {
 	__float128 result = 0.0Q;
 	__float128 kfact = 1.0Q;
-	for (int k = 0; k < 55; ++k)
+	for (int k = 0; k < 170; ++k)
 	{
 		if (k) kfact *= k;
 		result += powq(x * x / 4.0, k) / (kfact * kfact);
