@@ -277,6 +277,7 @@
     <ClInclude Include="alignedmalloc.h" />
     <ClInclude Include="biquad.h" />
     <ClInclude Include="conversioninfo.h" />
+    <ClInclude Include="factorial.h" />
     <ClInclude Include="fraction.h" />
     <ClInclude Include="srconvert.h" />
     <ClInclude Include="dff.h" />
