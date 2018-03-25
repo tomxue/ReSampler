@@ -12,10 +12,10 @@
 #ifndef FACTORIAL_H
 #define FACTORIAL_H
 
-// table of double-precision factorials:
-
 #define FACTORIAL_TABLE_DOUBLE_COUNT 60
 #define FACTORIAL_TABLE_QUAD_COUNT 170
+
+// table of double-precision factorials:
 
 const double factorial[FACTORIAL_TABLE_DOUBLE_COUNT] = {
     1                     , // +1.00000000000000000000000000000000000e+00     
