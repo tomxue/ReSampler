@@ -10,7 +10,7 @@
 #ifndef FIRFFILTER_H_
 #define FIRFFILTER_H_
 
-// FIRFilter.h : simple FIR filter implementation by J.Niemann
+// FIRFilter.h : simple FIR filter implementation
 
 #include <typeinfo>
 #include <algorithm>
@@ -437,8 +437,6 @@ template<typename FloatType> bool makeLPF(FloatType* filter, int Length, FloatTy
 {
 #ifdef FIR_QUAD_PRECISION
 
-    std::cout << "calculating quad-precision filter coefficients ...\n";
-
     // use quads internally, regardless of FloatType
     __float128 ft = transitionFreq / sampleRate; // normalised transition frequency
     assert(ft < 0.5Q);
@@ -455,6 +453,7 @@ template<typename FloatType> bool makeLPF(FloatType* filter, int Length, FloatTy
     }
 
 #else
+
 	// use doubles internally, regardless of FloatType
 	double ft = transitionFreq / sampleRate; // normalised transition frequency
 	assert(ft < 0.5);
@@ -498,9 +497,8 @@ template<typename FloatType> FloatType calcKaiserBeta(FloatType dB)
 double I0(double z)
 {
 	double result = 0.0;
-	double kfact; // = 1.0;
 	for (int k = 0; k < 34; ++k) {
-		kfact = factorials[k];
+		double kfact = factorial[k];
 		double x = pow(z * z / 4.0, k) / (kfact * kfact);
 		result += x;
 	}
@@ -512,10 +510,9 @@ __float128 I0q(__float128 x)
 {
 	__float128 result = 0.0Q;
 	__float128 kfact = 1.0Q;
-	for (int k = 0; k < 55; ++k)
-	{
-		if (k) kfact *= k;
-		result += powq(x * x / 4.0, k) / (kfact * kfact);
+	__float128 xx_4 = x * x / 4.0Q;
+	for (int k = 0; k < 60; ++k){
+		result += powq(xx_4, k) / factorialSquaredq[k];
 	}
 	return result;
 }
@@ -531,8 +528,6 @@ template<typename FloatType> bool applyKaiserWindow(FloatType* filter, int Lengt
         return false;
 
 #ifdef FIR_QUAD_PRECISION
-
-    std::cout << "Applying quad-precision Kaiser Window ...\n";
 
     for (int n = 0; n < Length; ++n) {
         filter[n] *= I0q(Beta * sqrtq(1.0Q - powq((2.0Q * n / (Length - 1) - 1), 2.0Q)))

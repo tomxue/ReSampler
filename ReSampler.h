@@ -139,21 +139,16 @@ struct MetaData
 
 };
 
-#if defined (__GNUC__) || defined(__MINGW32__) || defined(__MINGW64__)
-
-// 1. tempnam() can sometimes give unusable temp filenames on windows with minGW-w64 compiler
-// 2. tmpfile() doesn't seem to work reliably with MSVC - probably related to this: 
-// http://www.mega-nerd.com/libsndfile/api.html#open_fd (see note regarding differing versions of MSVC runtime DLL)
-
-#define TEMPFILE_OPEN_METHOD_STD_TMPFILE
-
-#else
-
-// std::tmpnam()
-// deprecated on all compilers (not thread-safe / doesn't automaticcally close file etc)
+#if defined (_MSC_VER)
 
 #define TEMPFILE_OPEN_METHOD_STD_TMPNAM
 
+// 1. tempnam() is problematic :-)
+// 2. tmpfile() doesn't seem to work reliably with MSVC - probably related to this:
+// http://www.mega-nerd.com/libsndfile/api.html#open_fd (see note regarding differing versions of MSVC runtime DLL)
+
+#else
+#define TEMPFILE_OPEN_METHOD_STD_TMPFILE
 #endif
 
 bool checkSSE2();
@@ -170,8 +165,15 @@ int getSfBytesPerSample(int format);
 bool checkWarnOutputSize(sf_count_t inputSamples, int bytesPerSample, int numerator, int denominator);
 template<typename IntType> std::string fmtNumberWithCommas(IntType n);
 void printSamplePosAsTime(sf_count_t samplePos, unsigned int sampleRate);
-void generateExpSweep(const std::string& filename = "");
-void generateExpSweep2(const std::string& filename = "");
+
+void generateExpSweep(const std::string & filename, 
+	int sampleRate = 96000, // samplerate of generated file
+	int format = SF_FORMAT_WAV | SF_FORMAT_FLOAT, // format of generated file
+	double duration = 10.0, // approximate duration in seconds 
+	int octaves = 12, // number of octaves below Nyquist for lowest frequency 
+	double amplitude_dB = -3.0 // amplitude in dB relative to FS
+);
+
 bool getMetaData(MetaData& metadata, SndfileHandle& infile);
 bool setMetaData(const MetaData& metadata, SndfileHandle& outfile);
 void showCompiler();

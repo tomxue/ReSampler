@@ -9,12 +9,6 @@
 
 // ReSampler.cpp : Audio Sample Rate Converter by Judd Niemann
 
-#if defined(_DEBUG) && defined(_MSC_VER)
-// use this to trap floating-point exceptions (MSVC: compile with /fp:strict)
-#include <float.h>
-unsigned int fp_control_state = _controlfp(_EM_INEXACT, _MCW_EM);
-#endif
-
 #define _USE_MATH_DEFINES
 #include <cmath>
 #include <cstdio>
@@ -62,7 +56,7 @@ unsigned int fp_control_state = _controlfp(_EM_INEXACT, _MCW_EM);
 ////////////////////////////////////////////////////////////////////////////////////////
 
 int main(int argc, char * argv[])
-{
+{	
 	// test for global options
 	if (parseGlobalOptions(argc, argv)) {
 		exit(EXIT_SUCCESS);
@@ -148,7 +142,12 @@ int main(int argc, char * argv[])
 	try {
 
 		if (ci.bUseDoublePrecision) {
+
+#ifdef USE_QUADMATH
+			std::cout << "Using quadruple-precision for calculations.\n";
+#else
 			std::cout << "Using double precision for calculations." << std::endl;
+#endif
 			if (ci.dsfInput) {
 				ci.bEnablePeakDetection = false;
 				return convert<DsfFile, double> (ci) ? EXIT_SUCCESS : EXIT_FAILURE;
@@ -164,6 +163,10 @@ int main(int argc, char * argv[])
 		}
 
 		else {
+
+#ifdef USE_QUADMATH
+			std::cout << "Using quadruple-precision for calculations.\n";
+#endif
 			if (ci.dsfInput) {
 				ci.bEnablePeakDetection = false;
 				return convert<DsfFile, float> (ci) ? EXIT_SUCCESS : EXIT_FAILURE;
@@ -1132,24 +1135,18 @@ bool getMetaData(MetaData& metadata, const DsfFile& f) {
 
 #ifndef FIR_QUAD_PRECISION
 
-void generateExpSweep(const std::string& filename) {
-
-	double L = 10; // duration (seconds)
-	double P = 10; // number of octaves below Nyquist
-	double amplitude_dB = -3.0;
+void generateExpSweep(const std::string& filename, int sampleRate, int format, double duration, int nOctaves, double amplitude_dB) {
+	int pow2P = 1 << nOctaves;
+	int pow2P1 = 1 << (nOctaves + 1);
 	double amplitude = pow(10.0, (amplitude_dB / 20.0));
-	int sampleRate = 96000;
-
-	double M = pow(2.0, P + 1) * P * M_LN2;
-	int N = lround((L * sampleRate) / M) * M; // N must be integer multiple of M
-
-	double y = log(pow(2.0, P));
-	double C = (N * M_PI / pow(2.0, P)) / y;
+	double M = pow2P1 * nOctaves * M_LN2;
+	int N = lround((duration * sampleRate) / M) * M; // N must be integer multiple of M
+	double y = log(pow2P);
+	double C = (N * M_PI / pow2P) / y;
 	double TWOPI = 2.0 * M_PI;
-	int outFileFormat = SF_FORMAT_WAV | SF_FORMAT_DOUBLE;
-	SndfileHandle outFile(filename, SFM_WRITE, outFileFormat, 1, 96000);
-	
-	std::vector<double> signal(N,0);
+
+	SndfileHandle outFile(filename, SFM_WRITE, format, 1, sampleRate);
+	std::vector<double> signal(N, 0.0);
 
 	for(int n = 0; n < N; n++) {
 		signal[n] = amplitude * sin(fmod(C * exp(y * n / N), TWOPI));
@@ -1158,58 +1155,24 @@ void generateExpSweep(const std::string& filename) {
 	outFile.write(signal.data(), N);
 }
 
-void generateExpSweep2(const std::string& filename) {
-
-	double duration = 10; // duration (seconds)
-	int sampleRate = 96000;
-	double T = sampleRate * duration;
-	double f2 = 240;		// Nyquist
-	double f1 = f2 / 1024;	// 10 octaves below Nyquist
-	
-	double L = (1.0 / f1) * std::round((T*f1) / std::log(f2 / f1));
-	int N = L;
-	double amplitudedB = -3.0;
-	double amplitude = pow(10.0, (amplitudedB / 20.0));
-	
-	int outFileFormat = SF_FORMAT_WAV | SF_FORMAT_DOUBLE;
-	SndfileHandle outFile(filename, SFM_WRITE, outFileFormat, 1, 96000);
-
-	std::vector<double> signal(N, 0);
-	double M_TWOPI = 2.0 * M_PI;
-	double C = M_TWOPI * f1 * L;
-	for (int n = 0; n < N; n++) {
-	//	signal[n] = amplitude * sin(fmod(2.0 * M_PI * f1 * L * (exp((double)n/L) - 1.0), 2 * M_PI));
-
-		signal[n] = amplitude * sin(C * (exp((double)n / L) - 1.0));
-	}
-
-	outFile.write(signal.data(), N);
-}
-
-
 #else // QUAD PRECISION VERSION
 
-void generateExpSweep(const std::string& filename) {
+void generateExpSweep(const std::string& filename, int sampleRate, int format, double duration, int nOctaves, double amplitude_dB) {
 
-	__float128 L = 10.0Q; // duration (seconds)
-	__float128 P = 10.0Q; // number of octaves below Nyquist
-	__float128 amplitude_dB = -3.0Q;
-	__float128 amplitude = powq(10.0Q, (amplitude_dB / 20.0Q));
-	int sampleRate = 96000;
+	int pow2P = 1 << nOctaves;
+	int pow2P1 = 1 << (nOctaves + 1);
+	__float128 amplitude = pow(10.0Q, (amplitude_dB / 20.0Q));
+	__float128 M = pow2P1 * nOctaves * M_LN2q;
+	int N = lroundq((duration * sampleRate) / M) * M; // N must be integer multiple of M
+	__float128 y = logq(pow2P);
+	__float128 C = (N * M_PIq / pow2P) / y;
+	__float128 TWOPI = 2.0Q * M_PIq;
 
-	__float128 M = powq(2.0Q, P + 1) * P * M_LN2q;
-	int N = lrintq((L * sampleRate) / M) * M; // N must be integer multiple of M
+	SndfileHandle outFile(filename, SFM_WRITE, format, 1, sampleRate);
+	std::vector<double> signal(N, 0.0);
 
-	__float128 y = logq(powq(2.0, P));
-	__float128 C = (N * M_PIq / powq(2.0Q, P)) / y;
-	__float128 TWOPIq = 2.0Q * M_PIq;
-	int outFileFormat = SF_FORMAT_WAV | SF_FORMAT_DOUBLE;
-	SndfileHandle outFile(filename, SFM_WRITE, outFileFormat, 1, 96000);
-	
-	std::vector<double> signal(N, 0);
-	
-	for(int n = 0; n < N; n++) {
-		signal[n] = (double)(amplitude * sinq(fmodq(C * expq(y * n / N), TWOPIq)));
+	for (int n = 0; n < N; n++) {
+		signal[n] = amplitude * sinq(fmodq(C * expq(y * n / N), TWOPI));
 	}
 
 	outFile.write(signal.data(), N);
