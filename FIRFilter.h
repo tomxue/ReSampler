@@ -500,7 +500,7 @@ double I0(double z)
 	double result = 0.0;
 	double kfact; // = 1.0;
 	for (int k = 0; k < 34; ++k) {
-		kfact = factorials[k];
+		kfact = factorial[k];
 		double x = pow(z * z / 4.0, k) / (kfact * kfact);
 		result += x;
 	}
@@ -512,10 +512,9 @@ __float128 I0q(__float128 x)
 {
 	__float128 result = 0.0Q;
 	__float128 kfact = 1.0Q;
-	for (int k = 0; k < 170; ++k)
-	{
-		if (k) kfact *= k;
-		result += powq(x * x / 4.0, k) / (kfact * kfact);
+	__float128 xx_4 = x * x / 4.0Q;
+	for (int k = 0; k < 60; ++k){
+		result += powq(xx_4, k) / factorialSquaredq[k];
 	}
 	return result;
 }

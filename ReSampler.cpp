@@ -56,7 +56,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 int main(int argc, char * argv[])
-{
+{	
 	// test for global options
 	if (parseGlobalOptions(argc, argv)) {
 		exit(EXIT_SUCCESS);
