@@ -142,7 +142,12 @@ int main(int argc, char * argv[])
 	try {
 
 		if (ci.bUseDoublePrecision) {
+
+#ifdef USE_QUADMATH
+			std::cout << "Using quadruple-precision for calculations.\n";
+#else
 			std::cout << "Using double precision for calculations." << std::endl;
+#endif
 			if (ci.dsfInput) {
 				ci.bEnablePeakDetection = false;
 				return convert<DsfFile, double> (ci) ? EXIT_SUCCESS : EXIT_FAILURE;
@@ -158,6 +163,10 @@ int main(int argc, char * argv[])
 		}
 
 		else {
+
+#ifdef USE_QUADMATH
+			std::cout << "Using quadruple-precision for calculations.\n";
+#endif
 			if (ci.dsfInput) {
 				ci.bEnablePeakDetection = false;
 				return convert<DsfFile, float> (ci) ? EXIT_SUCCESS : EXIT_FAILURE;
