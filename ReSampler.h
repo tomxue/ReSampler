@@ -140,15 +140,18 @@ struct MetaData
 };
 
 #if defined (_MSC_VER)
-
 #define TEMPFILE_OPEN_METHOD_STD_TMPNAM
 
 // 1. tempnam() is problematic :-)
 // 2. tmpfile() doesn't seem to work reliably with MSVC - probably related to this:
 // http://www.mega-nerd.com/libsndfile/api.html#open_fd (see note regarding differing versions of MSVC runtime DLL)
 
+#elif defined (__MINGW64__) || defined (__MINGW32__)
+#define TEMPFILE_OPEN_METHOD_MKSTEMP
+
 #else
 #define TEMPFILE_OPEN_METHOD_STD_TMPFILE
+
 #endif
 
 bool checkSSE2();

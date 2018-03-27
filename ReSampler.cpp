@@ -719,13 +719,23 @@ bool convert(ConversionInfo& ci)
 	
 			bool tmpFileError = false;
 
-#ifdef TEMPFILE_OPEN_METHOD_STD_TMPFILE
+#if defined (TEMPFILE_OPEN_METHOD_STD_TMPFILE)
 			FILE* f = std::tmpfile();
 			tmpFileError = (f == NULL);
 			if (!tmpFileError) {
 				tmpSndfileHandle = new SndfileHandle(fileno(f), true, SFM_RDWR, tmpFileFormat, nChannels, ci.outputSampleRate); // open using file descriptor
 			} else {
                 std::cerr << "std::tmpfile() failed" << std::endl;
+            }
+#elif defined (TEMPFILE_OPEN_METHOD_MKSTEMP)
+            char templ[] = "ReSamplerXXXXXX";
+            int fd = mkstemp(templ);
+            tmpFileError = (fd == -1);
+            if(!tmpFileError) {
+                printf("temp file: %s\n", templ);
+                tmpSndfileHandle = new SndfileHandle(fd, true, SFM_RDWR, tmpFileFormat, nChannels, ci.outputSampleRate); // open using file descriptor
+            } else {
+                std::cerr << "std::mkstemp() failed" << std::endl;
             }
 #else
 			tmpFilename = std::string(std::string(std::tmpnam(nullptr)) + ".wav");
