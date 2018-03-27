@@ -732,7 +732,7 @@ bool convert(ConversionInfo& ci)
             int fd = mkstemp(templ);
             tmpFileError = (fd == -1);
             if(!tmpFileError) {
-                printf("temp file: %s\n", templ);
+            // printf("temp file: %s\n", templ);
                 tmpSndfileHandle = new SndfileHandle(fd, true, SFM_RDWR, tmpFileFormat, nChannels, ci.outputSampleRate); // open using file descriptor
             } else {
                 std::cerr << "std::mkstemp() failed" << std::endl;
