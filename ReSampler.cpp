@@ -719,31 +719,33 @@ bool convert(ConversionInfo& ci)
 	
 			bool tmpFileError = false;
 
-#ifdef TEMPFILE_OPEN_METHOD_STD_TMPFILE	
+#ifdef TEMPFILE_OPEN_METHOD_STD_TMPFILE
 			FILE* f = std::tmpfile();
 			tmpFileError = (f == NULL);
 			if (!tmpFileError) {
 				tmpSndfileHandle = new SndfileHandle(fileno(f), true, SFM_RDWR, tmpFileFormat, nChannels, ci.outputSampleRate); // open using file descriptor
-			}
-#else 
+			} else {
+                std::cerr << "std::tmpfile() failed" << std::endl;
+            }
+#else
 			tmpFilename = std::string(std::string(std::tmpnam(nullptr)) + ".wav");
 			tmpSndfileHandle = new SndfileHandle(tmpFilename, SFM_RDWR, tmpFileFormat, nChannels, ci.outputSampleRate); // open using filename
 #endif
-
+            
 			int e = 0;
 			if (tmpFileError || tmpSndfileHandle == nullptr || (e = tmpSndfileHandle->error())){
 				std::cout << "Error: Couldn't Open Temporary File (" << sf_error_number(e) << ")\n";
 				std::cout << "Disabling temp file mode." << std::endl;
 				ci.bTmpFile = false;
-			}	
-
-			// disable floating-point normalisation (important - we want to record/recover floating point values exactly)
-			if (sizeof(FloatType) == 8) {
-				tmpSndfileHandle->command(SFC_SET_NORM_DOUBLE, NULL, SF_FALSE); // http://www.mega-nerd.com/libsndfile/command.html#SFC_SET_NORM_DOUBLE
-			}
-				else {
-				tmpSndfileHandle->command(SFC_SET_NORM_FLOAT, NULL, SF_FALSE);
-			}
+			} else {
+                // disable floating-point normalisation (important - we want to record/recover floating point values exactly)
+                if (sizeof(FloatType) == 8) {
+                    tmpSndfileHandle->command(SFC_SET_NORM_DOUBLE, NULL,
+                                              SF_FALSE); // http://www.mega-nerd.com/libsndfile/command.html#SFC_SET_NORM_DOUBLE
+                } else {
+                    tmpSndfileHandle->command(SFC_SET_NORM_FLOAT, NULL, SF_FALSE);
+                }
+            }
 		} // ends opening of temp file
 
 		// echo conversion mode to user (multi-stage/single-stage, multi-threaded/single-threaded)
