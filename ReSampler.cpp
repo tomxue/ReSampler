@@ -734,7 +734,7 @@ bool convert(ConversionInfo& ci)
 					tmpFileError = false;
 					std::wstring_convert<std::codecvt_utf8<wchar_t>> utf8_conv;
 					tmpFilename = utf8_conv.to_bytes(_tmpFilename);
-					std::cout << "Temp Filename: " <<  tmpFilename << std::endl;
+				//	std::cout << "Temp Filename: " <<  tmpFilename << std::endl;
 					tmpSndfileHandle = new SndfileHandle(tmpFilename, SFM_RDWR, tmpFileFormat, nChannels, ci.outputSampleRate); // open using filename
 				}
 			}
