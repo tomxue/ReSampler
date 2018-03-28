@@ -708,7 +708,7 @@ bool convert(ConversionInfo& ci)
 			return false;
 		}
 
-		// conditionally open temp file:
+		// conditionally open a temp file:
 		if (ci.bTmpFile) {
 
 			// set major format of temp file (inherit rf64-ness from output file):
@@ -717,9 +717,28 @@ bool convert(ConversionInfo& ci)
 			// set appropriate floating-point subformat:
 			tmpFileFormat |= (sizeof(FloatType) == 8) ? SF_FORMAT_DOUBLE : SF_FORMAT_FLOAT;
 	
-			bool tmpFileError = false;
+			bool tmpFileError;
 
-#if defined (TEMPFILE_OPEN_METHOD_STD_TMPFILE)
+#if defined (TEMPFILE_OPEN_METHOD_WINAPI)
+			TCHAR tmpFilename[MAX_PATH];
+			TCHAR tmpPathname[MAX_PATH];
+			tmpFileError = true;
+
+			auto pathLen = GetTempPath(MAX_PATH, tmpPathname);
+			if (pathLen > MAX_PATH || pathLen == 0)
+				std::cerr << "Error: Could not determine temp path for temp file" << std::endl;
+			else {
+				if (GetTempFileName(tmpPathname, TEXT("ReS"), 0, tmpFilename) == 0)
+					std::cerr << "Error: Couldn't generate temp file name" << std::endl;
+				else {
+					tmpFileError = false;
+					std::wstring_convert<std::codecvt_utf8<wchar_t>> utf8_conv;
+					std::cout << "Temp Filename: " << utf8_conv.to_bytes(tmpFilename) << std::endl;
+					tmpSndfileHandle = new SndfileHandle(utf8_conv.to_bytes(tmpFilename), SFM_RDWR, tmpFileFormat, nChannels, ci.outputSampleRate); // open using filename
+				}
+			}
+
+#elif defined (TEMPFILE_OPEN_METHOD_STD_TMPFILE)
 			FILE* f = std::tmpfile();
 			tmpFileError = (f == NULL);
 			if (!tmpFileError) {
@@ -727,6 +746,7 @@ bool convert(ConversionInfo& ci)
 			} else {
                 std::cerr << "std::tmpfile() failed" << std::endl;
             }
+
 #elif defined (TEMPFILE_OPEN_METHOD_MKSTEMP)
             char templ[] = "ReSamplerXXXXXX";
             int fd = mkstemp(templ);
@@ -737,9 +757,13 @@ bool convert(ConversionInfo& ci)
             } else {
                 std::cerr << "std::mkstemp() failed" << std::endl;
             }
+
 #else
+			// tmpnam() method
+			tmpFileError = false;
 			tmpFilename = std::string(std::string(std::tmpnam(nullptr)) + ".wav");
 			tmpSndfileHandle = new SndfileHandle(tmpFilename, SFM_RDWR, tmpFileFormat, nChannels, ci.outputSampleRate); // open using filename
+
 #endif
             
 			int e = 0;
