@@ -720,21 +720,22 @@ bool convert(ConversionInfo& ci)
 			bool tmpFileError;
 
 #if defined (TEMPFILE_OPEN_METHOD_WINAPI)
-			TCHAR tmpFilename[MAX_PATH];
-			TCHAR tmpPathname[MAX_PATH];
+			TCHAR _tmpFilename[MAX_PATH];
+			TCHAR _tmpPathname[MAX_PATH];
 			tmpFileError = true;
 
-			auto pathLen = GetTempPath(MAX_PATH, tmpPathname);
+			auto pathLen = GetTempPath(MAX_PATH, _tmpPathname);
 			if (pathLen > MAX_PATH || pathLen == 0)
 				std::cerr << "Error: Could not determine temp path for temp file" << std::endl;
 			else {
-				if (GetTempFileName(tmpPathname, TEXT("ReS"), 0, tmpFilename) == 0)
+				if (GetTempFileName(_tmpPathname, TEXT("ReS"), 0, _tmpFilename) == 0)
 					std::cerr << "Error: Couldn't generate temp file name" << std::endl;
 				else {
 					tmpFileError = false;
 					std::wstring_convert<std::codecvt_utf8<wchar_t>> utf8_conv;
-					std::cout << "Temp Filename: " << utf8_conv.to_bytes(tmpFilename) << std::endl;
-					tmpSndfileHandle = new SndfileHandle(utf8_conv.to_bytes(tmpFilename), SFM_RDWR, tmpFileFormat, nChannels, ci.outputSampleRate); // open using filename
+					tmpFilename = utf8_conv.to_bytes(_tmpFilename);
+					std::cout << "Temp Filename: " <<  tmpFilename << std::endl;
+					tmpSndfileHandle = new SndfileHandle(tmpFilename, SFM_RDWR, tmpFileFormat, nChannels, ci.outputSampleRate); // open using filename
 				}
 			}
 
@@ -982,7 +983,7 @@ bool convert(ConversionInfo& ci)
 	// clean-up temp file:
 	delete tmpSndfileHandle; // dealllocate SndFileHandle
 
-	#ifdef TEMPFILE_OPEN_METHOD_STD_TMPNAM
+	#if defined (TEMPFILE_OPEN_METHOD_STD_TMPNAM) || defined (TEMPFILE_OPEN_METHOD_WINAPI)
 		std::remove(tmpFilename.c_str()); // actually remove the temp file from disk
 	#endif
 
