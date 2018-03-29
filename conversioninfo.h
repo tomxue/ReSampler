@@ -145,6 +145,7 @@ struct ConversionInfo
 	bool bBadParams;
 	std::string appName;
 	bool bTmpFile;
+	bool bShowTempFile;
 
 	bool fromCmdLineArgs(int argc, char* argv[]);
 	std::string toCmdLineArgs();
@@ -241,6 +242,7 @@ inline bool ConversionInfo::fromCmdLineArgs(int argc, char* argv[]) {
 	bMultiStage = true;
 	bShowStages = false;
 	bTmpFile = true;
+	bShowTempFile = false;
 	overSamplingFactor = 1;
 	bBadParams = false;
 	appName.clear();
@@ -274,6 +276,7 @@ inline bool ConversionInfo::fromCmdLineArgs(int argc, char* argv[]) {
 	bSingleStage = getCmdlineParam(argv, argv + argc, "--singleStage");
 	bMultiStage = getCmdlineParam(argv, argv + argc, "--multiStage");
 	bTmpFile = !getCmdlineParam(argv, argv + argc, "--noTempFile");
+	bShowTempFile = getCmdlineParam(argv, argv + argc, "--showTempFile");
 
 	/* resolve conflicts between singleStage and multiStage, according to this table:
 	IN   OUT

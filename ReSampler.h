@@ -46,6 +46,7 @@ const std::string strExtraOptions(
     "--multiStage\n"
 	"--maxStages\n"
 	"--showStages\n"
+	"--showTempFile\n"
 	"--noTempFile\n"
 );
 

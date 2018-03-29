@@ -734,7 +734,7 @@ bool convert(ConversionInfo& ci)
 					tmpFileError = false;
 					std::wstring_convert<std::codecvt_utf8<wchar_t>> utf8_conv;
 					tmpFilename = utf8_conv.to_bytes(_tmpFilename);
-				//	std::cout << "Temp Filename: " <<  tmpFilename << std::endl;
+					if(ci.bShowTempFile) std::cout << "Temp Filename: " <<  tmpFilename << std::endl;
 					tmpSndfileHandle = new SndfileHandle(tmpFilename, SFM_RDWR, tmpFileFormat, nChannels, ci.outputSampleRate); // open using filename
 				}
 			}
@@ -753,7 +753,7 @@ bool convert(ConversionInfo& ci)
             int fd = mkstemp(templ);
             tmpFileError = (fd == -1);
             if(!tmpFileError) {
-            // printf("temp file: %s\n", templ);
+				if(ci.bShowTempFile) printf("temp file: %s\n", templ);
                 tmpSndfileHandle = new SndfileHandle(fd, true, SFM_RDWR, tmpFileFormat, nChannels, ci.outputSampleRate); // open using file descriptor
             } else {
                 std::cerr << "std::mkstemp() failed" << std::endl;
@@ -763,6 +763,7 @@ bool convert(ConversionInfo& ci)
 			// tmpnam() method
 			tmpFileError = false;
 			tmpFilename = std::string(std::string(std::tmpnam(nullptr)) + ".wav");
+			if (ci.bShowTempFile) std::cout << "Temp Filename: " << tmpFilename << std::endl;
 			tmpSndfileHandle = new SndfileHandle(tmpFilename, SFM_RDWR, tmpFileFormat, nChannels, ci.outputSampleRate); // open using filename
 
 #endif
