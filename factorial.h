@@ -435,6 +435,6 @@ const __float128 factorialSquaredq[FACTORIAL_TABLE_QUAD_COUNT] =
 	0x1.e46c5329e49b156f3f046ee7a117p+2023Q
 };
 
-#endif
+#endif // USE_QUADMATH
 
 #endif // FACTORIAL_H
