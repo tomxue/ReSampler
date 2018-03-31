@@ -7,7 +7,7 @@
 * with this file. If not, please refer to: https://github.com/jniemann66/ReSampler
 */
 
-// ReSampler.cpp : Audio Sample Rate Converter by Judd Niemann
+// ReSampler.cpp : Audio Sample Rate Converter by Judd Niemann.
 
 #define _USE_MATH_DEFINES
 #include <cmath>
