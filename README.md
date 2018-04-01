@@ -155,6 +155,8 @@ On a multi-core system, this makes better use of available CPU resources and res
 
 **--showStages** : show details about the parameters used for each conversion stage.
 
+**--showTempFile--** : show the path and filename of the temp file 
+
 **--noTempFile** : disable the creation of a temporary file during conversion. 
 (By default, a temp file is created, containing intermediate conversion results in floating-point format. 
 The temp file is used to facilitate fast gain adjustment when clipping is detected, and is deleted after the output file has been written. If the creation of a temp file is disabled,
