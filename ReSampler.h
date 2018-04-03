@@ -171,6 +171,8 @@ bool determineBestBitFormat(std::string & BitFormat, const std::string & inFilen
 int determineOutputFormat(const std::string & outFileExt, const std::string & bitFormat);
 void listSubFormats(const std::string & f);
 template<typename FileReader, typename FloatType> bool convert(ConversionInfo & ci);
+template<typename FloatType>
+SndfileHandle* getTempFile(int inputFileFormat, int nChannels, const ConversionInfo& ci);
 int getDefaultNoiseShape(int sampleRate);
 void showDitherProfiles();
 int getSfBytesPerSample(int format);

@@ -991,6 +991,87 @@ bool convert(ConversionInfo& ci)
 	return true;
 } // ends convert()
 
+template<typename FloatType>
+SndfileHandle* getTempFile(int inputFileFormat, int nChannels, const ConversionInfo& ci) {
+
+    SndfileHandle* tmpSndfileHandle = nullptr;
+    bool tmpFileError;
+    int outputFileFormat = ci.outputFormat ? ci.outputFormat : inputFileFormat;
+
+    // set major format of temp file (inherit rf64-ness from output file):
+    int tmpFileFormat = (outputFileFormat & SF_FORMAT_RF64) ? SF_FORMAT_RF64 : SF_FORMAT_WAV;
+
+    // set appropriate floating-point subformat:
+    tmpFileFormat |= (sizeof(FloatType) == 8) ? SF_FORMAT_DOUBLE : SF_FORMAT_FLOAT;
+
+#if defined (TEMPFILE_OPEN_METHOD_WINAPI)
+    TCHAR _tmpFilename[MAX_PATH];
+			TCHAR _tmpPathname[MAX_PATH];
+			tmpFileError = true;
+
+			auto pathLen = GetTempPath(MAX_PATH, _tmpPathname);
+			if (pathLen > MAX_PATH || pathLen == 0)
+				std::cerr << "Error: Could not determine temp path for temp file" << std::endl;
+			else {
+				if (GetTempFileName(_tmpPathname, TEXT("ReS"), 0, _tmpFilename) == 0)
+					std::cerr << "Error: Couldn't generate temp file name" << std::endl;
+				else {
+					tmpFileError = false;
+					std::wstring_convert<std::codecvt_utf8<wchar_t>> utf8_conv;
+					tmpFilename = utf8_conv.to_bytes(_tmpFilename);
+					if(ci.bShowTempFile) std::cout << "Temp Filename: " <<  tmpFilename << std::endl;
+					tmpSndfileHandle = new SndfileHandle(tmpFilename, SFM_RDWR, tmpFileFormat, nChannels, ci.outputSampleRate); // open using filename
+				}
+			}
+
+#elif defined (TEMPFILE_OPEN_METHOD_STD_TMPFILE)
+    FILE* f = std::tmpfile();
+    tmpFileError = (f == NULL);
+    if (!tmpFileError) {
+        tmpSndfileHandle = new SndfileHandle(fileno(f), true, SFM_RDWR, tmpFileFormat, nChannels, ci.outputSampleRate); // open using file descriptor
+    } else {
+        std::cerr << "std::tmpfile() failed" << std::endl;
+    }
+
+#elif defined (TEMPFILE_OPEN_METHOD_MKSTEMP)
+    char templ[] = "ReSamplerXXXXXX";
+            int fd = mkstemp(templ);
+            tmpFileError = (fd == -1);
+            if(!tmpFileError) {
+				if(ci.bShowTempFile) printf("temp file: %s\n", templ);
+                tmpSndfileHandle = new SndfileHandle(fd, true, SFM_RDWR, tmpFileFormat, nChannels, ci.outputSampleRate); // open using file descriptor
+            } else {
+                std::cerr << "std::mkstemp() failed" << std::endl;
+            }
+
+#else
+			// tmpnam() method
+			tmpFileError = false;
+			tmpFilename = std::string(std::string(std::tmpnam(nullptr)) + ".wav");
+			if (ci.bShowTempFile) std::cout << "Temp Filename: " << tmpFilename << std::endl;
+			tmpSndfileHandle = new SndfileHandle(tmpFilename, SFM_RDWR, tmpFileFormat, nChannels, ci.outputSampleRate); // open using filename
+
+#endif
+
+    int e = 0;
+    if (tmpFileError || tmpSndfileHandle == nullptr || (e = tmpSndfileHandle->error())){
+        std::cout << "Error: Couldn't Open Temporary File (" << sf_error_number(e) << ")\n";
+        std::cout << "Disabling temp file mode." << std::endl;
+        //ci.bTmpFile = false;
+        tmpSndfileHandle = nullptr;
+    } else {
+        // disable floating-point normalisation (important - we want to record/recover floating point values exactly)
+        if (sizeof(FloatType) == 8) {
+            tmpSndfileHandle->command(SFC_SET_NORM_DOUBLE, NULL,
+                                      SF_FALSE); // http://www.mega-nerd.com/libsndfile/command.html#SFC_SET_NORM_DOUBLE
+        } else {
+            tmpSndfileHandle->command(SFC_SET_NORM_FLOAT, NULL, SF_FALSE);
+        }
+    }
+
+    return tmpSndfileHandle;
+}
+
 // retrieve metadata using libsndfile API :
 bool getMetaData(MetaData& metadata, SndfileHandle& infile) {
 	const char* empty = "";
