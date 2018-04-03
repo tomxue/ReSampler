@@ -607,8 +607,10 @@ bool convert(ConversionInfo& ci)
 		outputSignalBits = 8;
 		break;
     case SF_FORMAT_DOUBLE:
+        outputSignalBits = 53;
+        break;
     case SF_FORMAT_FLOAT:
-        outputSignalBits = 24;
+        outputSignalBits = 21;
         break;
 	default:
 		outputSignalBits = 16;
