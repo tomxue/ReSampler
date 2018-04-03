@@ -590,12 +590,13 @@ bool convert(ConversionInfo& ci)
 
 	// note: libsndfile has an rf64 auto-downgrade mode:
 	// http://www.mega-nerd.com/libsndfile/command.html#SFC_RF64_AUTO_DOWNGRADE
-	// However, I feel that rf64 auto-downgrade is more appropriate for recording applications
+	// However, rf64 auto-downgrade is more appropriate for recording applications
 	// (where the final file size cannot be known until the recording has stopped)
 	// In the case of sample-rate conversions, the output file size (and therefore the decision to promote to rf64)
 	// can be determined at the outset.
 
-	// determine number of bits in output format (used for Dithering purposes):
+    // Determine the value of outputSignalBits, based on outputFileFormat.
+	// outputSignalsBits is used to set the level of the LSB for dithering
 	int outputSignalBits;
 	switch (outputFileFormat & SF_FORMAT_SUBMASK) {
 	case SF_FORMAT_PCM_24:
@@ -605,6 +606,10 @@ bool convert(ConversionInfo& ci)
 	case SF_FORMAT_PCM_U8:
 		outputSignalBits = 8;
 		break;
+    case SF_FORMAT_DOUBLE:
+    case SF_FORMAT_FLOAT:
+        outputSignalBits = 24;
+        break;
 	default:
 		outputSignalBits = 16;
 	}
