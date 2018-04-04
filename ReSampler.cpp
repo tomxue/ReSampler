@@ -717,7 +717,7 @@ bool convert(ConversionInfo& ci)
 
 		// conditionally open a temp file:
 		if (ci.bTmpFile) {
-            tmpSndfileHandle = getTempFile<FloatType>(inputFileFormat, nChannels, ci);
+            tmpSndfileHandle = getTempFile<FloatType>(inputFileFormat, nChannels, ci, tmpFilename);
             if(tmpSndfileHandle == nullptr) {
                 ci.bTmpFile = false;
             }
@@ -937,7 +937,7 @@ bool convert(ConversionInfo& ci)
 // Returns nullptr if unsuccessful.
 
 template<typename FloatType>
-SndfileHandle* getTempFile(int inputFileFormat, int nChannels, const ConversionInfo& ci) {
+SndfileHandle* getTempFile(int inputFileFormat, int nChannels, const ConversionInfo& ci, std::string& tmpFilename) {
 
     SndfileHandle* tmpSndfileHandle = nullptr;
     bool tmpFileError;

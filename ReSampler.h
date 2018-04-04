@@ -172,7 +172,7 @@ int determineOutputFormat(const std::string & outFileExt, const std::string & bi
 void listSubFormats(const std::string & f);
 template<typename FileReader, typename FloatType> bool convert(ConversionInfo & ci);
 template<typename FloatType>
-SndfileHandle* getTempFile(int inputFileFormat, int nChannels, const ConversionInfo& ci);
+SndfileHandle* getTempFile(int inputFileFormat, int nChannels, const ConversionInfo& ci, std::string& tmpFilename);
 int getDefaultNoiseShape(int sampleRate);
 void showDitherProfiles();
 int getSfBytesPerSample(int format);
