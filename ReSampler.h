@@ -46,6 +46,11 @@ const std::string strExtraOptions(
     "--multiStage\n"
 	"--maxStages\n"
 	"--showStages\n"
+
+#if defined (_WIN32) || defined (_WIN64)
+	"--tempDir <path>\n"
+#endif
+
 	"--showTempFile\n"
 	"--noTempFile\n"
 );

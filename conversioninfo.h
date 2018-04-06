@@ -144,6 +144,11 @@ struct ConversionInfo
 	int overSamplingFactor;
 	bool bBadParams;
 	std::string appName;
+
+#if defined (_WIN32) || defined (_WIN64)
+	std::string tmpDir;
+#endif
+	
 	bool bTmpFile;
 	bool bShowTempFile;
 
@@ -275,6 +280,11 @@ inline bool ConversionInfo::fromCmdLineArgs(int argc, char* argv[]) {
 	getCmdlineParam(argv, argv + argc, "--maxStages", maxStages);
 	bSingleStage = getCmdlineParam(argv, argv + argc, "--singleStage");
 	bMultiStage = getCmdlineParam(argv, argv + argc, "--multiStage");
+
+#if defined (_WIN32) || defined (_WIN64)
+	getCmdlineParam(argv, argv + argc, "--tempDir", tmpDir);
+#endif
+
 	bTmpFile = !getCmdlineParam(argv, argv + argc, "--noTempFile");
 	bShowTempFile = getCmdlineParam(argv, argv + argc, "--showTempFile");
 

@@ -953,8 +953,17 @@ SndfileHandle* getTempFile(int inputFileFormat, int nChannels, const ConversionI
     TCHAR _tmpFilename[MAX_PATH];
     TCHAR _tmpPathname[MAX_PATH];
     tmpFileError = true;
+	DWORD pathLen;
 
-    auto pathLen = GetTempPath(MAX_PATH, _tmpPathname);
+	if (!ci.tmpDir.empty()) {
+		pathLen = ci.tmpDir.length();
+		std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>, wchar_t> widener;
+		wcscpy_s(_tmpPathname, MAX_PATH, widener.from_bytes(ci.tmpDir).c_str());
+	}
+	else {
+		pathLen = GetTempPath(MAX_PATH, _tmpPathname);
+	}
+	
     if (pathLen > MAX_PATH || pathLen == 0)
         std::cerr << "Error: Could not determine temp path for temp file" << std::endl;
     else {
@@ -962,8 +971,8 @@ SndfileHandle* getTempFile(int inputFileFormat, int nChannels, const ConversionI
             std::cerr << "Error: Couldn't generate temp file name" << std::endl;
         else {
             tmpFileError = false;
-            std::wstring_convert<std::codecvt_utf8<wchar_t>> utf8_conv;
-            tmpFilename = utf8_conv.to_bytes(_tmpFilename);
+            std::wstring_convert<std::codecvt_utf8<wchar_t>> wchar2utf8;
+            tmpFilename = wchar2utf8.to_bytes(_tmpFilename);
             if(ci.bShowTempFile) std::cout << "Temp Filename: " <<  tmpFilename << std::endl;
             tmpSndfileHandle = new SndfileHandle(tmpFilename, SFM_RDWR, tmpFileFormat, nChannels, ci.outputSampleRate); // open using filename
         }
