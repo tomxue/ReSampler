@@ -38,12 +38,12 @@ from the command line, the main options are as follows:
 
 **bitformat** : bit representation (sub format) of the data in the output file. If this option is omitted, resampler will try to deduce the intended bit format automatically. Not all bit formats are valid for a given output file type. For more details, refer to the [libsndfile](http://www.mega-nerd.com/libsndfile/) documentation. Here is a list of all subformats: 
 
-    8           8-bit (signed or unsigned - automatic, based on filReSampler was originally developed on Windows, but has also been successfully compiled on Linux.e type)
+    8           8-bit (signed or unsigned - automatic, based on file type)
     s8          Signed 8 bit data
     16          Signed 16 bit data
     24          Signed 24 bit data
     32          Signed 32 bit data
-    u8          Unsigned 8 bit dataReSampler was originally developed on Windows, but has also been successfully compiled on Linux.
+    u8          Unsigned 8 bit data
     32f         32 bit float data
     64f         64 bit float data
     ulaw        mu-Law encoded
@@ -156,6 +156,8 @@ On a multi-core system, this makes better use of available CPU resources and res
 **--showStages** : show details about the parameters used for each conversion stage.
 
 **--showTempFile** : (Windows Only) show the path and filename of the temp file
+
+**--tempDir &lt;path&gt;** : (Windows Only) specify temp directory for the temp file, instead of the default (%temp%). Directory must already exist.
 
 **--noTempFile** : disable the creation of a temporary file during conversion. 
 (By default, a temp file is created, containing intermediate conversion results in floating-point format. 
