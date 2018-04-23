@@ -727,7 +727,7 @@ bool convert(ConversionInfo& ci)
 		std::string stageness(ci.bMultiStage ? "multi-stage" : "single-stage");
 		std::string threadedness(ci.bMultiThreaded ? ", multi-threaded" : "");
 		std::cout << "Converting (" << stageness << threadedness << ") ..." << std::endl;
-	
+
 		peakOutputSample = 0.0;
 		totalSamplesRead = 0;
 		sf_count_t incrementalProgressThreshold = inputSampleCount / 10;
