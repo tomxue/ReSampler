@@ -21,7 +21,10 @@
             "macFrameworkPath": [
                 "/System/Library/Frameworks",
                 "/Library/Frameworks"
-            ]
+            ],
+            "compilerPath": "E:/VisualStudioExpress2015/VC/bin/cl.exe",
+            "cStandard": "c11",
+            "cppStandard": "c++17"
         },
         {
             "name": "Linux",
@@ -67,8 +70,9 @@
             },
             "intelliSenseMode": "msvc-x64",
             "cStandard": "c11",
-            "cppStandard": "c++17"
+            "cppStandard": "c++17",
+            "compilerPath": "E:/VisualStudioExpress2015/VC/bin/cl.exe"
         }
     ],
-    "version": 3
+    "version": 4
 }
