@@ -13,7 +13,6 @@ ReSampler is intended to produce outstanding quality sound files, keeping aliasi
 *Spectrogram of 0-48kHz Sine Sweep @96kHz sample rate, after having been downsampled to 44kHz sample rate*
 
 ## Motivation
-This project arose out of: 
 
 * experimentation with digital filters and some basic DSP concepts
 * a requirement to have a simple command-line tool to be used in a script to convert a large collection of audio files
