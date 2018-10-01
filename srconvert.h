@@ -266,7 +266,7 @@ private:
 
 	void initMultistage() {
 		Fraction masterConversionRatio = getFractionFromSamplerates(ci.inputSampleRate, ci.outputSampleRate);
-		auto fractions = getPresetFractions(masterConversionRatio, ci.maxStages);
+		auto fractions = getConversionStages(masterConversionRatio, ci.maxStages);
 		numStages = static_cast<int>(fractions.size());
 		indexOfLastStage = numStages - 1;
 		unsigned int inputRate = ci.inputSampleRate;

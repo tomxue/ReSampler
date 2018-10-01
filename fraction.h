@@ -17,7 +17,8 @@
 #include <iostream>
 
 // fraction.h
-// defines Fraction type, and functions for obtaining gcd, simplified fractions, and prime factors of integers
+// defines Fraction type, functions for obtaining gcd, simplified fractions, prime factors of integers,
+// functions for deriving conversion ratios for individual stages of multi-stage converter configurations
 
 // single-stage policies
 static const bool singleStageOnDecimateOnly = false;
@@ -40,8 +41,8 @@ int gcd(int a, int b) {
 	return a;
 }
 
-// getFractionFromSamplerates() - given Input and Output Sample Rate,
-// return a fraction representing the conversion ratio
+// getFractionFromSamplerates() - given Input and Output Sample Rates,
+// return a fraction representing the conversion factor
 // eg: input:96000, output:44100 => 147 / 320
 
 Fraction getFractionFromSamplerates(int inputRate, int outputRate) 
@@ -71,8 +72,8 @@ std::vector<int> factorize(int n) {
 	return factors;
 }
 
-// getnFactors() - // given a vector of prime factors,
-// return a set of possible factorizations, each with <= maxFactors factors
+// getnFactors() - // given a vector of prime factors of some integer x
+// return a set of possible factorizations of x, each with <= maxFactors factors
 
 std::set<std::vector<int>> getnFactors(const std::vector<int> &primes, int maxFactors) {
 
@@ -103,7 +104,7 @@ std::set<std::vector<int>> getnFactors(const std::vector<int> &primes, int maxFa
     return solutions;
 }
 
-// getnFactors() - // given an integer, x,
+// getnFactors() - given an integer, x,
 // return a set of possible factorizations, each with <= maxFactors factors,
 
 std::set<std::vector<int>> getnFactors(int x, int maxFactors) {
@@ -111,11 +112,11 @@ std::set<std::vector<int>> getnFactors(int x, int maxFactors) {
 	return getnFactors(primes, maxFactors);
 }
 
-// getDecompositionCandidates() : returns a vector of groups of fractions, with
-// each group representing a possible decomposition of the input fraction into <= maxStages stages
-// may also return an empty set if suitable solution is not possible with given value of maxStages
+// getConversionStageCandidates() : returns a vector of converter configurations,
+// each consisting of a vector of fractions representing individual conversion stages.
+// may also return an empty result if suitable solution is not possible with given value of maxStages
 
-std::vector<std::vector<Fraction>> getDecompositionCandidates(Fraction f, int maxStages) {
+std::vector<std::vector<Fraction>> getConversionStageCandidates(Fraction f, int maxStages) {
 	auto numeratorPrimes = factorize(f.numerator);
 	auto denominatorPrimes = factorize(f.denominator);
 	int maxPossibleStages = (int) std::max(numeratorPrimes.size(), denominatorPrimes.size()); // determines just how many stages can be formed
@@ -132,7 +133,7 @@ std::vector<std::vector<Fraction>> getDecompositionCandidates(Fraction f, int ma
 	auto numeratorGroups = getnFactors(numeratorPrimes, numStages);
 	auto denominatorGroups = getnFactors(denominatorPrimes, numStages);
 	std::vector<Fraction> tempFractionGroup(numStages, Fraction{ 1,1 });
-	std::vector<std::vector<Fraction>> decompositionCandidates; // the return value
+	std::vector<std::vector<Fraction>> conversionStageCandidates; // the return value
 	double minRatio = std::min(1.0, static_cast<double>(f.numerator) / f.denominator); // to be a viable candidate, conversion ratio must be >= this value at all stages
 
 	for (auto& numeratorGroup : numeratorGroups) {
@@ -150,16 +151,19 @@ std::vector<std::vector<Fraction>> getDecompositionCandidates(Fraction f, int ma
 			}
 
 			if (!badRatio) {
-				decompositionCandidates.push_back(tempFractionGroup);	
+				conversionStageCandidates.push_back(tempFractionGroup);
 			}
 
 		} // ends loop over denominatorGroups
 	} // ends loop over numeratorGroups
 	
-	return decompositionCandidates;
+	return conversionStageCandidates;
 }
 
-std::vector<Fraction> decomposeFraction(Fraction f, int maxStages) {
+// getBestConversionStagesCandidate() : given fraction and maximum number of stages,
+// attempt to algorithmically find best configuration of converter stages.
+
+std::vector<Fraction> getBestConversionStagesCandidate(Fraction f, int maxStages) {
 
 	std::vector<Fraction> fractions; // return value
 	if (maxStages <= 1) {
@@ -169,19 +173,22 @@ std::vector<Fraction> decomposeFraction(Fraction f, int maxStages) {
 
 	std::vector<std::vector<Fraction>> solutions;
 
-	// large values of maxStages may not produce a solution. 
+	// large values of maxStages may not produce a solution.
 	// Therefore, keep decreasing maxStages until solution is obtained
 	// (solution is guaranteed for maxStages <= 1)
 
-	do { 
-		solutions = getDecompositionCandidates(f, maxStages);
+	do {
+		solutions = getConversionStageCandidates(f, maxStages);
 		maxStages--;
 	} while (solutions.empty() && maxStages > 0);
-		
+
 	return *solutions.rbegin(); // last is best
 }
 
-std::vector<Fraction> getPresetFractions(Fraction f, int maxStages) {
+// getConversionStages() : get converter stages from hardcoded presets,
+// failing that, find converter configuration algorithmically.
+
+std::vector<Fraction> getConversionStages(Fraction f, int maxStages) {
 
 	// apply single-stage policies:
 	if (maxStages <= 1) {
@@ -202,7 +209,7 @@ std::vector<Fraction> getPresetFractions(Fraction f, int maxStages) {
 	}; 
 	
 	// hardcoded table of known presets
-	const std::vector<PresetFractionSet> presetList{
+	static const std::vector<PresetFractionSet> presetList{
 
 		{{5,147},{{1,3},{1,7},{5,7}}},
 		{{147,40},{{3,2},{7,2},{7,10}}},
@@ -221,7 +228,7 @@ std::vector<Fraction> getPresetFractions(Fraction f, int maxStages) {
 	}
 
 	// unknown fraction
-	return decomposeFraction(f, maxStages); // decompose algorithmically
+	return getBestConversionStagesCandidate(f, maxStages); // derive algorithmically
 }
 
 // utility functions:
@@ -254,7 +261,7 @@ void testDecomposition(int numStages, bool unique = true) {
 		for (int o : rates) {
 			Result d;
 			d.fraction = getFractionFromSamplerates(i, o);
-			d.fractionList = decomposeFraction(d.fraction, numStages);
+			d.fractionList = getBestConversionStagesCandidate(d.fraction, numStages);
 			decompositionList.push_back(d);
 		}
 	}
