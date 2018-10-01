@@ -40,8 +40,10 @@ int gcd(int a, int b) {
 	return a;
 }
 
-//  getFractionFromSamplerates() - reduces an input and output sample rate to a simplified faction
-// eg: 96000, 44100 => 147 / 320
+// getFractionFromSamplerates() - given Input and Output Sample Rate,
+// return a fraction representing the conversion ratio
+// eg: input:96000, output:44100 => 147 / 320
+
 Fraction getFractionFromSamplerates(int inputRate, int outputRate) 
 {
 	Fraction f;
@@ -51,6 +53,7 @@ Fraction getFractionFromSamplerates(int inputRate, int outputRate)
 }
 
 // factorize(n) - returns a vector of prime factors of n
+
 std::vector<int> factorize(int n) {
 	std::vector<int> factors;
 	int maxFactor = static_cast<int>(std::sqrt(n));
@@ -68,8 +71,9 @@ std::vector<int> factorize(int n) {
 	return factors;
 }
 
-// getnFactors() - take a vector of prime factors, and consolidate into
-// a set of vectors of factors (each with size <= maxFactors) representing possible solutions
+// getnFactors() - // given a vector of prime factors,
+// return a set of possible factorizations, each with <= maxFactors factors
+
 std::set<std::vector<int>> getnFactors(const std::vector<int> &primes, int maxFactors) {
 
     std::set<std::vector<int>> solutions; // the retval
@@ -99,8 +103,9 @@ std::set<std::vector<int>> getnFactors(const std::vector<int> &primes, int maxFa
     return solutions;
 }
 
-// getnFactors() - factorize a number x into maxFactors (or less) factors.
-// return a set of vectors representing possible solutions
+// getnFactors() - // given an integer, x,
+// return a set of possible factorizations, each with <= maxFactors factors,
+
 std::set<std::vector<int>> getnFactors(int x, int maxFactors) {
 	std::vector<int> primes = factorize(x);
 	return getnFactors(primes, maxFactors);
