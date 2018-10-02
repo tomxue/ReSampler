@@ -241,7 +241,7 @@ void dumpFractionList(std::vector<Fraction> fractions) {
 	}
 }
 
-void dumpDecompositionCandidates(std::vector<std::vector<Fraction>> candidates) {
+void dumpConversionStageCandidates(std::vector<std::vector<Fraction>> candidates) {
 	for (std::vector<Fraction>& candidate : candidates) {
 		dumpFractionList(candidate);
 		std::cout << "\n";
@@ -249,20 +249,20 @@ void dumpDecompositionCandidates(std::vector<std::vector<Fraction>> candidates) 
 }
 
 // test functions:
-void testDecomposition(int numStages, bool unique = true) {
+void testConverterStageSelection(int numStages, bool unique = true) {
 	std::vector<int> rates{8000, 11025, 16000, 22050, 32000, 37800, 44056, 44100, 47250, 48000, 50000, 50400, 88200, 96000, 176400, 192000, 352800, 384000, 2822400, 5644800};
 	struct Result {
 		Fraction fraction;
 		std::vector<Fraction> fractionList;
 	};
 
-	std::vector<Result> decompositionList; 
+	std::vector<Result> results;
 	for (int i : rates) {
 		for (int o : rates) {
 			Result d;
 			d.fraction = getFractionFromSamplerates(i, o);
 			d.fractionList = getBestConversionStagesCandidate(d.fraction, numStages);
-			decompositionList.push_back(d);
+			results.push_back(d);
 		}
 	}
 
@@ -275,11 +275,11 @@ void testDecomposition(int numStages, bool unique = true) {
 			}
 		};
 
-		std::set<Result, Cmp> u(decompositionList.begin(), decompositionList.end()); // sort & de-dupe
-		decompositionList.assign(u.begin(), u.end()); // convert back to vector again
+		std::set<Result, Cmp> u(results.begin(), results.end()); // sort & de-dupe
+		results.assign(u.begin(), u.end()); // convert back to vector again
 	}
 
-	for(auto& d : decompositionList) {
+	for(auto& d : results) {
 		double r = static_cast<double>(d.fraction.numerator) / d.fraction.denominator;
 		std::cout << r << " , " << d.fraction.numerator << " , " << d.fraction.denominator << " , " << "\"";
 		dumpFractionList(d.fractionList);
