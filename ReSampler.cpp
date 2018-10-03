@@ -57,10 +57,6 @@
 
 int main(int argc, char * argv[])
 {
-
-//	testConverterStageSelection(1);
-//	exit(0);
-
 	// test for global options
 	if (parseGlobalOptions(argc, argv)) {
 		exit(EXIT_SUCCESS);
