@@ -628,7 +628,7 @@ bool convert(ConversionInfo& ci)
 
 	// make a vector of ditherers (one ditherer for each channel):
 	std::vector<Ditherer<FloatType>> ditherers;
-	int seed = ci.bUseSeed ? ci.seed : time(nullptr);
+    auto seed = static_cast<int>(ci.bUseSeed ? ci.seed : time(nullptr));
 
 	for (int n = 0; n < nChannels; n++) {
 		// to-do: explore other seed-generation options (remote possibility of overlap)
@@ -1178,8 +1178,8 @@ std::string fmtNumberWithCommas(IntType n) {
 
 void printSamplePosAsTime(sf_count_t samplePos, unsigned int sampleRate) {
 	double seconds = static_cast<double>(samplePos) / sampleRate;
-	int h = seconds / 3600;
-	int m = (seconds - (h * 3600)) / 60;
+    auto h = static_cast<int>(seconds / 3600);
+    auto m = static_cast<int>((seconds - (h * 3600)) / 60);
 	double s = seconds - (h * 3600) - (m * 60);
 	std::ios::fmtflags f(std::cout.flags());
 	std::cout << std::setprecision(0) << h << ":" << m << ":" << std::setprecision(6) << s;

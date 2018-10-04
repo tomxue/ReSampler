@@ -711,7 +711,7 @@ AnalyticSignalV(const std::vector<std::complex<double>>& input) {
 template<typename FloatType>
 void makeMinPhase(FloatType* pFIRcoeffs, size_t length)
 {
-	size_t fftLength = pow(2, 2.0 + ceil(log2(length))); // use FFT 4x larger than (length rounded-up to power-of-2)
+    auto fftLength = static_cast<size_t>(pow(2, 2.0 + ceil(log2(length)))); // use FFT 4x larger than (length rounded-up to power-of-2)
 
 	std::vector <std::complex<double>> complexInput;
 	std::vector <std::complex<double>> complexOutput;
@@ -776,7 +776,7 @@ void makeMinPhase(FloatType* pFIRcoeffs, size_t length)
 template<typename FloatType>
 std::vector<FloatType> makeMinPhase2(const FloatType* pFIRcoeffs, size_t length)
 {
-	size_t fftLength = pow(2, 2.0 + ceil(log2(length))); // use FFT 4x larger than (length rounded-up to power-of-2)
+    auto fftLength = static_cast<size_t>(pow(2, 2.0 + ceil(log2(length)))); // use FFT 4x larger than (length rounded-up to power-of-2)
 
 	std::vector <std::complex<double>> complexInput;
 	std::vector <std::complex<double>> complexOutput;
@@ -879,7 +879,7 @@ void dumpComplexVector(const std::vector<std::complex<double>>& v)
 template<typename FloatType>
 void dumpFFT(FloatType* data, size_t length)
 {
-	size_t pow2length = pow(2, 1.0 + floor(log2(length)));
+    auto pow2length = static_cast<size_t>(pow(2, 1.0 + floor(log2(length))));
 
 	std::vector <std::complex<double>> complexInput;
 	std::vector <std::complex<double>> complexOutput;
