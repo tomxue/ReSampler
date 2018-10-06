@@ -1170,7 +1170,7 @@ std::string fmtNumberWithCommas(IntType n) {
 	std::string s = std::to_string(n);
 	int64_t insertPosition = s.length() - 3;
 	while (insertPosition > 0) {
-		s.insert(insertPosition, ",");
+		s.insert(static_cast<size_t>(insertPosition), ",");
 		insertPosition -= 3;
 	}
 	return s;
