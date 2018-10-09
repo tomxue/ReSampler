@@ -119,7 +119,7 @@ std::set<std::vector<int>> getnFactors(int x, int maxFactors) {
 std::vector<std::vector<Fraction>> getConversionStageCandidates(Fraction f, int maxStages) {
 	auto numeratorPrimes = factorize(f.numerator);
 	auto denominatorPrimes = factorize(f.denominator);
-	int maxPossibleStages = (int) std::max(numeratorPrimes.size(), denominatorPrimes.size()); // determines just how many stages can be formed
+	int maxPossibleStages = static_cast<int>(std::max(numeratorPrimes.size(), denominatorPrimes.size())); // determines just how many stages can be formed
 	int numStages = std::max(1, std::min(maxStages, maxPossibleStages)); // determines exactly how many stages we will have 
 	
 	while (numeratorPrimes.size() < numStages) { // pad with 1s at front
