@@ -867,8 +867,8 @@ bool convert(ConversionInfo& ci)
 				std::vector<FloatType> outBuf(inputBlockSize, 0);
 				peakOutputSample = 0.0;
 				totalSamplesRead = 0;
-				sf_count_t incrementalProgressThreshold = inputSampleCount / 10;
-				sf_count_t nextProgressThreshold = incrementalProgressThreshold;
+				incrementalProgressThreshold = inputSampleCount / 10;
+				nextProgressThreshold = incrementalProgressThreshold;
 
 				tmpSndfileHandle->seek(0, SEEK_SET);
 				outFile->seek(0, SEEK_SET);
