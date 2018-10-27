@@ -14,7 +14,6 @@ if [ $os == 'cygwin' ] || [ $os == 'msys' ]
 then 
     #Windows ...
     resampler_path=../x64/Release/ReSampler.exe
-    #resampler_path="E:\Temp\ReSampler1.3.6\ReSampler.exe"
     #resampler_path=../x64/minGW-W64/ReSampler.exe
 else
     resampler_path=../ReSampler
