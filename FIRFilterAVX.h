@@ -31,8 +31,8 @@ class FIRFilter {
 public:
 	// constructor:
 	FIRFilter(const FloatType* taps, size_t size) :
-		size(size), sizeRounded8((size >> 3) << 3), sizeRounded4((size >> 2) << 2), CurrentIndex(size-1), LastPut(0),
-		Signal(nullptr), Kernel0(nullptr), Kernel1(nullptr), Kernel2(nullptr), Kernel3(nullptr), Kernel4(nullptr), Kernel5(nullptr), Kernel6(nullptr), Kernel7(nullptr)
+		size(size), sizeRounded8((size >> 3) << 3), sizeRounded4((size >> 2) << 2), currentIndex(size-1), lastPut(0),
+		signal(nullptr), kernel0(nullptr), kernel1(nullptr), kernel2(nullptr), kernel3(nullptr), kernel4(nullptr), kernel5(nullptr), kernel6(nullptr), kernel7(nullptr)
 	{
 		// allocate buffers:
 		allocateBuffers();
@@ -40,27 +40,27 @@ public:
 
 		// initialize filter kernel and signal buffers
 		for (unsigned int i = 0; i < size; ++i) {
-			Kernel0[i] = taps[i];
-			Signal[i] = 0.0;
-			Signal[i + size] = 0.0;
+			kernel0[i] = taps[i];
+			signal[i] = 0.0;
+			signal[i + size] = 0.0;
 		}
 
 		// Populate additional kernel Phases:
-		memcpy(1 + Kernel1, Kernel0, (size - 1) * sizeof(FloatType));
-		Kernel1[0] = Kernel0[size - 1];
-		memcpy(1 + Kernel2, Kernel1, (size - 1) * sizeof(FloatType));
-		Kernel2[0] = Kernel1[size - 1];
-		memcpy(1 + Kernel3, Kernel2, (size - 1) * sizeof(FloatType));
-		Kernel3[0] = Kernel2[size - 1];
+		memcpy(1 + kernel1, kernel0, (size - 1) * sizeof(FloatType));
+		kernel1[0] = kernel0[size - 1];
+		memcpy(1 + kernel2, kernel1, (size - 1) * sizeof(FloatType));
+		kernel2[0] = kernel1[size - 1];
+		memcpy(1 + kernel3, kernel2, (size - 1) * sizeof(FloatType));
+		kernel3[0] = kernel2[size - 1];
 		//
-		memcpy(1 + Kernel4, Kernel3, (size - 1) * sizeof(FloatType));
-		Kernel4[0] = Kernel3[size - 1];
-		memcpy(1 + Kernel5, Kernel4, (size - 1) * sizeof(FloatType));
-		Kernel5[0] = Kernel4[size - 1];
-		memcpy(1 + Kernel6, Kernel5, (size - 1) * sizeof(FloatType));
-		Kernel6[0] = Kernel5[size - 1];
-		memcpy(1 + Kernel7, Kernel6, (size - 1) * sizeof(FloatType));
-		Kernel7[0] = Kernel6[size - 1];
+		memcpy(1 + kernel4, kernel3, (size - 1) * sizeof(FloatType));
+		kernel4[0] = kernel3[size - 1];
+		memcpy(1 + kernel5, kernel4, (size - 1) * sizeof(FloatType));
+		kernel5[0] = kernel4[size - 1];
+		memcpy(1 + kernel6, kernel5, (size - 1) * sizeof(FloatType));
+		kernel6[0] = kernel5[size - 1];
+		memcpy(1 + kernel7, kernel6, (size - 1) * sizeof(FloatType));
+		kernel7[0] = kernel6[size - 1];
 
 	}
 
@@ -70,7 +70,7 @@ public:
 	}
 
 	// copy constructor: 
-	FIRFilter(const FIRFilter& other) : size(other.size), sizeRounded8(other.sizeRounded8), sizeRounded4(other.sizeRounded4), CurrentIndex(other.CurrentIndex), LastPut(other.LastPut)
+	FIRFilter(const FIRFilter& other) : size(other.size), sizeRounded8(other.sizeRounded8), sizeRounded4(other.sizeRounded4), currentIndex(other.currentIndex), lastPut(other.lastPut)
 	{
 		allocateBuffers();
 		assertAlignment();
@@ -79,20 +79,20 @@ public:
 
 	// move constructor:
 	FIRFilter(FIRFilter&& other) :
-		size(other.size), sizeRounded8(other.sizeRounded8), sizeRounded4(other.sizeRounded4), CurrentIndex(other.CurrentIndex), LastPut(other.LastPut),
-		Signal(other.Signal), Kernel0(other.Kernel0), Kernel1(other.Kernel1), Kernel2(other.Kernel2), Kernel3(other.Kernel3),
-		Kernel4(other.Kernel4), Kernel5(other.Kernel5), Kernel6(other.Kernel6), Kernel7(other.Kernel7)
+		size(other.size), sizeRounded8(other.sizeRounded8), sizeRounded4(other.sizeRounded4), currentIndex(other.currentIndex), lastPut(other.lastPut),
+		signal(other.signal), kernel0(other.kernel0), kernel1(other.kernel1), kernel2(other.kernel2), kernel3(other.kernel3),
+		kernel4(other.kernel4), kernel5(other.kernel5), kernel6(other.kernel6), kernel7(other.kernel7)
 	{
 		assertAlignment();
-		other.Signal = nullptr;
-		other.Kernel0 = nullptr;
-		other.Kernel1 = nullptr;
-		other.Kernel2 = nullptr;
-		other.Kernel3 = nullptr;
-		other.Kernel4 = nullptr;
-		other.Kernel5 = nullptr;
-		other.Kernel6 = nullptr;
-		other.Kernel7 = nullptr;
+		other.signal = nullptr;
+		other.kernel0 = nullptr;
+		other.kernel1 = nullptr;
+		other.kernel2 = nullptr;
+		other.kernel3 = nullptr;
+		other.kernel4 = nullptr;
+		other.kernel5 = nullptr;
+		other.kernel6 = nullptr;
+		other.kernel7 = nullptr;
 	}
 
 	// copy assignment:
@@ -101,8 +101,8 @@ public:
 		size = other.size;
 		sizeRounded8 = other.sizeRounded8;
 		sizeRounded4 = other.sizeRounded4;
-		CurrentIndex = other.CurrentIndex;
-		LastPut = other.LastPut;
+		currentIndex = other.currentIndex;
+		lastPut = other.lastPut;
 		freeBuffers();
 		allocateBuffers();
 		assertAlignment();
@@ -118,68 +118,68 @@ public:
 			size = other.size;
 			sizeRounded8 = other.sizeRounded8;
 			sizeRounded4 = other.sizeRounded4;
-			CurrentIndex = other.CurrentIndex;
-			LastPut = other.LastPut;
+			currentIndex = other.currentIndex;
+			lastPut = other.lastPut;
 
 			freeBuffers();
 
-			Signal = other.Signal;
-			Kernel0 = other.Kernel0;
-			Kernel1 = other.Kernel1;
-			Kernel2 = other.Kernel2;
-			Kernel3 = other.Kernel3;
-			Kernel4 = other.Kernel4;
-			Kernel5 = other.Kernel5;
-			Kernel6 = other.Kernel6;
-			Kernel7 = other.Kernel7;
+			signal = other.signal;
+			kernel0 = other.kernel0;
+			kernel1 = other.kernel1;
+			kernel2 = other.kernel2;
+			kernel3 = other.kernel3;
+			kernel4 = other.kernel4;
+			kernel5 = other.kernel5;
+			kernel6 = other.kernel6;
+			kernel7 = other.kernel7;
 
 			assertAlignment();
 
-			other.Signal = nullptr;
-			other.Kernel0 = nullptr;
-			other.Kernel1 = nullptr;
-			other.Kernel2 = nullptr;
-			other.Kernel3 = nullptr;
-			other.Kernel4 = nullptr;
-			other.Kernel5 = nullptr;
-			other.Kernel6 = nullptr;
-			other.Kernel7 = nullptr;
+			other.signal = nullptr;
+			other.kernel0 = nullptr;
+			other.kernel1 = nullptr;
+			other.kernel2 = nullptr;
+			other.kernel3 = nullptr;
+			other.kernel4 = nullptr;
+			other.kernel5 = nullptr;
+			other.kernel6 = nullptr;
+			other.kernel7 = nullptr;
 		}
 		return *this;
 	}
 	
 	void reset() {
 		// reset indexes:
-		CurrentIndex = size - 1;
-		LastPut = 0;
+		currentIndex = size - 1;
+		lastPut = 0;
 
 		// clear signal buffer
 		for (unsigned int i = 0; i < size; ++i) {
-			Signal[i] = 0.0;
-			Signal[i + size] = 0.0;
+			signal[i] = 0.0;
+			signal[i + size] = 0.0;
 		}
 
 	}
 
 	void put(FloatType value) { // Put signal in reverse order.
-		Signal[CurrentIndex] = value;
-		LastPut = CurrentIndex;
-		if (CurrentIndex == 0) {
-			CurrentIndex = size - 1; // Wrap
-			memcpy(Signal + size, Signal, size*sizeof(FloatType)); // copy history to upper half of buffer
+		signal[currentIndex] = value;
+		lastPut = currentIndex;
+		if (currentIndex == 0) {
+			currentIndex = size - 1; // Wrap
+			memcpy(signal + size, signal, size*sizeof(FloatType)); // copy history to upper half of buffer
 		}
 		else
-			--CurrentIndex;
+			--currentIndex;
 	}
 
 	void putZero() {
-		Signal[CurrentIndex] = 0.0;
-		if (CurrentIndex == 0) {
-			CurrentIndex = size - 1; // Wrap
-			memcpy(Signal + size, Signal, size*sizeof(FloatType)); // copy history to upper half of buffer
+		signal[currentIndex] = 0.0;
+		if (currentIndex == 0) {
+			currentIndex = size - 1; // Wrap
+			memcpy(signal + size, signal, size*sizeof(FloatType)); // copy history to upper half of buffer
 		}
 		else
-			--CurrentIndex;
+			--currentIndex;
 	}
 
 	FloatType get() {
@@ -187,111 +187,111 @@ public:
 		// AVX implementation: This only works with floats - doubles need specialization ...
 
 		FloatType output = 0.0;
-		FloatType* Kernel = Kernel0;
-		int Index = (CurrentIndex >> 3) << 3; // make multiple-of-eight
-		int Phase = CurrentIndex & 7;
+		FloatType* kernel = kernel0;
+		int index = (currentIndex >> 3) << 3; // make multiple-of-eight
+		int phase = currentIndex & 7;
 		
 		// Part1 : Head
 		// select proper Kernel phase and calculate first Block of 8:
-		switch (Phase) {
+		switch (phase) {
 
 		case 0:
-			Kernel = Kernel0;
+			kernel = kernel0;
 			output =
-				Kernel[0] * Signal[Index] + Kernel[1] * Signal[Index + 1] + Kernel[2] * Signal[Index + 2] + Kernel[3] * Signal[Index + 3] +
-				Kernel[4] * Signal[Index + 4] + Kernel[5] * Signal[Index + 5] + Kernel[6] * Signal[Index + 6] + Kernel[7] * Signal[Index + 7];
+				kernel[0] * signal[index] + kernel[1] * signal[index + 1] + kernel[2] * signal[index + 2] + kernel[3] * signal[index + 3] +
+				kernel[4] * signal[index + 4] + kernel[5] * signal[index + 5] + kernel[6] * signal[index + 6] + kernel[7] * signal[index + 7];
 			break;
 
 		case 1:
-			Kernel = Kernel1;
+			kernel = kernel1;
 			output =
-				Kernel[0] * Signal[Index + size] + Kernel[1] * Signal[Index + 1] + Kernel[2] * Signal[Index + 2] + Kernel[3] * Signal[Index + 3] +
-				Kernel[4] * Signal[Index + 4] + Kernel[5] * Signal[Index + 5] + Kernel[6] * Signal[Index + 6] + Kernel[7] * Signal[Index + 7];
+				kernel[0] * signal[index + size] + kernel[1] * signal[index + 1] + kernel[2] * signal[index + 2] + kernel[3] * signal[index + 3] +
+				kernel[4] * signal[index + 4] + kernel[5] * signal[index + 5] + kernel[6] * signal[index + 6] + kernel[7] * signal[index + 7];
 			break;
 
 		case 2:
-			Kernel = Kernel2;
+			kernel = kernel2;
 			output =
-				Kernel[0] * Signal[Index + size] + Kernel[1] * Signal[Index + size + 1] + Kernel[2] * Signal[Index + 2] + Kernel[3] * Signal[Index + 3] +
-				Kernel[4] * Signal[Index + 4] + Kernel[5] * Signal[Index + 5] + Kernel[6] * Signal[Index + 6] + Kernel[7] * Signal[Index + 7];
+				kernel[0] * signal[index + size] + kernel[1] * signal[index + size + 1] + kernel[2] * signal[index + 2] + kernel[3] * signal[index + 3] +
+				kernel[4] * signal[index + 4] + kernel[5] * signal[index + 5] + kernel[6] * signal[index + 6] + kernel[7] * signal[index + 7];
 			break;
 
 		case 3: 
-			Kernel = Kernel3;
+			kernel = kernel3;
 			output =
-				Kernel[0] * Signal[Index + size] + Kernel[1] * Signal[Index + size + 1] + Kernel[2] * Signal[Index + size + 2] + Kernel[3] * Signal[Index + 3] +
-				Kernel[4] * Signal[Index + 4] + Kernel[5] * Signal[Index + 5] + Kernel[6] * Signal[Index + 6] + Kernel[7] * Signal[Index + 7];
+				kernel[0] * signal[index + size] + kernel[1] * signal[index + size + 1] + kernel[2] * signal[index + size + 2] + kernel[3] * signal[index + 3] +
+				kernel[4] * signal[index + 4] + kernel[5] * signal[index + 5] + kernel[6] * signal[index + 6] + kernel[7] * signal[index + 7];
 			break;
 
 		case 4:
-			Kernel = Kernel4;
+			kernel = kernel4;
 			output =
-				Kernel[0] * Signal[Index + size] + Kernel[1] * Signal[Index + size + 1] + Kernel[2] * Signal[Index + size + 2] + Kernel[3] * Signal[Index + size + 3] +
-				Kernel[4] * Signal[Index + 4] + Kernel[5] * Signal[Index + 5] + Kernel[6] * Signal[Index + 6] + Kernel[7] * Signal[Index + 7];
+				kernel[0] * signal[index + size] + kernel[1] * signal[index + size + 1] + kernel[2] * signal[index + size + 2] + kernel[3] * signal[index + size + 3] +
+				kernel[4] * signal[index + 4] + kernel[5] * signal[index + 5] + kernel[6] * signal[index + 6] + kernel[7] * signal[index + 7];
 			break;
 
 		case 5:
-			Kernel = Kernel5;
+			kernel = kernel5;
 			output =
-				Kernel[0] * Signal[Index + size] + Kernel[1] * Signal[Index + size + 1] + Kernel[2] * Signal[Index + size + 2] + Kernel[3] * Signal[Index + size + 3] +
-				Kernel[4] * Signal[Index + size + 4] + Kernel[5] * Signal[Index + 5] + Kernel[6] * Signal[Index + 6] + Kernel[7] * Signal[Index + 7];
+				kernel[0] * signal[index + size] + kernel[1] * signal[index + size + 1] + kernel[2] * signal[index + size + 2] + kernel[3] * signal[index + size + 3] +
+				kernel[4] * signal[index + size + 4] + kernel[5] * signal[index + 5] + kernel[6] * signal[index + 6] + kernel[7] * signal[index + 7];
 			break;
 
 		case 6:
-			Kernel = Kernel6;
+			kernel = kernel6;
 			output =
-				Kernel[0] * Signal[Index + size] + Kernel[1] * Signal[Index + size + 1] + Kernel[2] * Signal[Index + size + 2] + Kernel[3] * Signal[Index + size + 3] +
-				Kernel[4] * Signal[Index + size + 4] + Kernel[5] * Signal[Index + size + 5] + Kernel[6] * Signal[Index + 6] + Kernel[7] * Signal[Index + 7];
+				kernel[0] * signal[index + size] + kernel[1] * signal[index + size + 1] + kernel[2] * signal[index + size + 2] + kernel[3] * signal[index + size + 3] +
+				kernel[4] * signal[index + size + 4] + kernel[5] * signal[index + size + 5] + kernel[6] * signal[index + 6] + kernel[7] * signal[index + 7];
 			break;
 
 		case 7:
-			Kernel = Kernel7;
+			kernel = kernel7;
 			output =
-				Kernel[0] * Signal[Index + size] + Kernel[1] * Signal[Index + size + 1] + Kernel[2] * Signal[Index + size + 2] + Kernel[3] * Signal[Index + size + 3] +
-				Kernel[4] * Signal[Index + size + 4] + Kernel[5] * Signal[Index + size + 5] + Kernel[6] * Signal[Index + size + 6] + Kernel[7] * Signal[Index + 7];
+				kernel[0] * signal[index + size] + kernel[1] * signal[index + size + 1] + kernel[2] * signal[index + size + 2] + kernel[3] * signal[index + size + 3] +
+				kernel[4] * signal[index + size + 4] + kernel[5] * signal[index + size + 5] + kernel[6] * signal[index + size + 6] + kernel[7] * signal[index + 7];
 			break;
 		}
-		Index += 8;
+		index += 8;
 
 		// Part 2: Body
-		alignas(AVX_ALIGNMENT_SIZE) __m256 signal;	// AVX Vector Registers for calculation
-		alignas(AVX_ALIGNMENT_SIZE) __m256 kernel;
+		alignas(AVX_ALIGNMENT_SIZE) __m256 s;	// AVX Vector Registers for calculation
+		alignas(AVX_ALIGNMENT_SIZE) __m256 k;
 		alignas(AVX_ALIGNMENT_SIZE) __m256 product;
 		alignas(AVX_ALIGNMENT_SIZE) __m256 accumulator = _mm256_setzero_ps();
 
 		for (int i = 8; i < sizeRounded8; i += 8) {
-			signal = _mm256_load_ps(Signal + Index);
-			kernel = _mm256_load_ps(Kernel + i);
+			s = _mm256_load_ps(signal + index);
+			k = _mm256_load_ps(kernel + i);
 #ifdef USE_FMA
 			accumulator = _mm256_fmadd_ps(signal, kernel, accumulator);
 #else
-			product = _mm256_mul_ps(signal, kernel);
+			product = _mm256_mul_ps(s, k);
 			accumulator = _mm256_add_ps(product, accumulator);
 #endif
 
-			Index += 8;
+			index += 8;
 		}
 
 		output += sum8floats(accumulator);
 
 		// Part 3: Tail
 		for (int j = sizeRounded8; j < size; ++j) {
-			output += Signal[Index] * Kernel[j];
-			++Index;
+			output += signal[index] * kernel[j];
+			++index;
 		}
 
 		return output;
 	}
 
-	FloatType lazyGet(int L) {	// Skips stuffed-zeros introduced by interpolation, by only calculating every Lth sample from LastPut
+	FloatType lazyGet(int L) {	// Skips stuffed-zeros introduced by interpolation, by only calculating every Lth sample from lastPut
 		FloatType output = 0.0;
-		int Offset = LastPut - CurrentIndex;
+		int Offset = lastPut - currentIndex;
 		if (Offset < 0) { // Wrap condition
 			Offset += size;
 		}
 	
 		for (int i = Offset; i < size; i+=L) {
-			output += Signal[i+ CurrentIndex] * Kernel0[i];
+			output += signal[i+ currentIndex] * kernel0[i];
 		}
 		return output;
 	}
@@ -300,57 +300,57 @@ private:
 	size_t size;
 	size_t sizeRounded8; // size rounded down to nearest multiple of 8
 	size_t sizeRounded4; // size rounded down to nearest multiple of 4
-	FloatType* Signal; // Double-length signal buffer, to facilitate fast emulation of a circular buffer
-	int CurrentIndex;
-	int LastPut;
+	FloatType* signal; // Double-length signal buffer, to facilitate fast emulation of a circular buffer
+	int currentIndex;
+	int lastPut;
 
 	// Polyphase Filter Kernel table:
-	FloatType* Kernel0;
-	FloatType* Kernel1;
-	FloatType* Kernel2;
-	FloatType* Kernel3;
-	FloatType* Kernel4;
-	FloatType* Kernel5;
-	FloatType* Kernel6;
-	FloatType* Kernel7;
+	FloatType* kernel0;
+	FloatType* kernel1;
+	FloatType* kernel2;
+	FloatType* kernel3;
+	FloatType* kernel4;
+	FloatType* kernel5;
+	FloatType* kernel6;
+	FloatType* kernel7;
 
 	void allocateBuffers()
 	{
-		Signal = static_cast<FloatType*>(aligned_malloc(2 * size * sizeof(FloatType), AVX_ALIGNMENT_SIZE));
-		Kernel0 = static_cast<FloatType*>(aligned_malloc(size * sizeof(FloatType), AVX_ALIGNMENT_SIZE));
-		Kernel1 = static_cast<FloatType*>(aligned_malloc(size * sizeof(FloatType), AVX_ALIGNMENT_SIZE));
-		Kernel2 = static_cast<FloatType*>(aligned_malloc(size * sizeof(FloatType), AVX_ALIGNMENT_SIZE));
-		Kernel3 = static_cast<FloatType*>(aligned_malloc(size * sizeof(FloatType), AVX_ALIGNMENT_SIZE));
-		Kernel4 = static_cast<FloatType*>(aligned_malloc(size * sizeof(FloatType), AVX_ALIGNMENT_SIZE));
-		Kernel5 = static_cast<FloatType*>(aligned_malloc(size * sizeof(FloatType), AVX_ALIGNMENT_SIZE));
-		Kernel6 = static_cast<FloatType*>(aligned_malloc(size * sizeof(FloatType), AVX_ALIGNMENT_SIZE));
-		Kernel7 = static_cast<FloatType*>(aligned_malloc(size * sizeof(FloatType), AVX_ALIGNMENT_SIZE));
+		signal = static_cast<FloatType*>(aligned_malloc(2 * size * sizeof(FloatType), AVX_ALIGNMENT_SIZE));
+		kernel0 = static_cast<FloatType*>(aligned_malloc(size * sizeof(FloatType), AVX_ALIGNMENT_SIZE));
+		kernel1 = static_cast<FloatType*>(aligned_malloc(size * sizeof(FloatType), AVX_ALIGNMENT_SIZE));
+		kernel2 = static_cast<FloatType*>(aligned_malloc(size * sizeof(FloatType), AVX_ALIGNMENT_SIZE));
+		kernel3 = static_cast<FloatType*>(aligned_malloc(size * sizeof(FloatType), AVX_ALIGNMENT_SIZE));
+		kernel4 = static_cast<FloatType*>(aligned_malloc(size * sizeof(FloatType), AVX_ALIGNMENT_SIZE));
+		kernel5 = static_cast<FloatType*>(aligned_malloc(size * sizeof(FloatType), AVX_ALIGNMENT_SIZE));
+		kernel6 = static_cast<FloatType*>(aligned_malloc(size * sizeof(FloatType), AVX_ALIGNMENT_SIZE));
+		kernel7 = static_cast<FloatType*>(aligned_malloc(size * sizeof(FloatType), AVX_ALIGNMENT_SIZE));
 	}
 
 	void copyBuffers(const FIRFilter& other)
 	{
-		memcpy(Signal, other.Signal, 2 * size * sizeof(FloatType));
-		memcpy(Kernel0, other.Kernel0, size * sizeof(FloatType));
-		memcpy(Kernel1, other.Kernel1, size * sizeof(FloatType));
-		memcpy(Kernel2, other.Kernel2, size * sizeof(FloatType));
-		memcpy(Kernel3, other.Kernel3, size * sizeof(FloatType));
-		memcpy(Kernel4, other.Kernel4, size * sizeof(FloatType));
-		memcpy(Kernel5, other.Kernel5, size * sizeof(FloatType));
-		memcpy(Kernel6, other.Kernel6, size * sizeof(FloatType));
-		memcpy(Kernel7, other.Kernel7, size * sizeof(FloatType));
+		memcpy(signal, other.signal, 2 * size * sizeof(FloatType));
+		memcpy(kernel0, other.kernel0, size * sizeof(FloatType));
+		memcpy(kernel1, other.kernel1, size * sizeof(FloatType));
+		memcpy(kernel2, other.kernel2, size * sizeof(FloatType));
+		memcpy(kernel3, other.kernel3, size * sizeof(FloatType));
+		memcpy(kernel4, other.kernel4, size * sizeof(FloatType));
+		memcpy(kernel5, other.kernel5, size * sizeof(FloatType));
+		memcpy(kernel6, other.kernel6, size * sizeof(FloatType));
+		memcpy(kernel7, other.kernel7, size * sizeof(FloatType));
 	}
 
 	void freeBuffers()
 	{
-		aligned_free(Signal);
-		aligned_free(Kernel0);
-		aligned_free(Kernel1);
-		aligned_free(Kernel2);
-		aligned_free(Kernel3);
-		aligned_free(Kernel4);
-		aligned_free(Kernel5);
-		aligned_free(Kernel6);
-		aligned_free(Kernel7);
+		aligned_free(signal);
+		aligned_free(kernel0);
+		aligned_free(kernel1);
+		aligned_free(kernel2);
+		aligned_free(kernel3);
+		aligned_free(kernel4);
+		aligned_free(kernel5);
+		aligned_free(kernel6);
+		aligned_free(kernel7);
 	}
 
 	// assertAlignment() : asserts that all private data buffers are aligned on expected boundaries
@@ -358,15 +358,15 @@ private:
 	{
 		const std::uintptr_t alignment = AVX_ALIGNMENT_SIZE;
 		
-		assert(reinterpret_cast<std::uintptr_t>(Signal) % alignment == 0);
-		assert(reinterpret_cast<std::uintptr_t>(Kernel0) % alignment == 0);
-		assert(reinterpret_cast<std::uintptr_t>(Kernel1) % alignment == 0);
-		assert(reinterpret_cast<std::uintptr_t>(Kernel2) % alignment == 0);
-		assert(reinterpret_cast<std::uintptr_t>(Kernel3) % alignment == 0);
-		assert(reinterpret_cast<std::uintptr_t>(Kernel4) % alignment == 0);
-		assert(reinterpret_cast<std::uintptr_t>(Kernel5) % alignment == 0);
-		assert(reinterpret_cast<std::uintptr_t>(Kernel6) % alignment == 0);
-		assert(reinterpret_cast<std::uintptr_t>(Kernel7) % alignment == 0);
+		assert(reinterpret_cast<std::uintptr_t>(signal) % alignment == 0);
+		assert(reinterpret_cast<std::uintptr_t>(kernel0) % alignment == 0);
+		assert(reinterpret_cast<std::uintptr_t>(kernel1) % alignment == 0);
+		assert(reinterpret_cast<std::uintptr_t>(kernel2) % alignment == 0);
+		assert(reinterpret_cast<std::uintptr_t>(kernel3) % alignment == 0);
+		assert(reinterpret_cast<std::uintptr_t>(kernel4) % alignment == 0);
+		assert(reinterpret_cast<std::uintptr_t>(kernel5) % alignment == 0);
+		assert(reinterpret_cast<std::uintptr_t>(kernel6) % alignment == 0);
+		assert(reinterpret_cast<std::uintptr_t>(kernel7) % alignment == 0);
 
 	}
 };
@@ -383,62 +383,62 @@ double FIRFilter<double>::get() {
 
 	double output = 0.0;
 	double* Kernel;
-	int Index = (CurrentIndex >> 2) << 2; // make multiple-of-four
-	int Phase = CurrentIndex & 3;
+	int index = (currentIndex >> 2) << 2; // make multiple-of-four
+	int phase = currentIndex & 3;
 
 	// Part1 : Head
 	// select proper Kernel phase and calculate first Block of 4:
-	switch (Phase) {
+	switch (phase) {
 
 	case 0:
-		Kernel = Kernel0;
-		output = Kernel[0] * Signal[Index] + Kernel[1] * Signal[Index + 1] + Kernel[2] * Signal[Index + 2] + Kernel[3] * Signal[Index + 3];
+		Kernel = kernel0;
+		output = Kernel[0] * signal[index] + Kernel[1] * signal[index + 1] + Kernel[2] * signal[index + 2] + Kernel[3] * signal[index + 3];
 		break;
 
 	case 1:
-		Kernel = Kernel1;
-		output = Kernel[0] * Signal[Index + size] + Kernel[1] * Signal[Index + 1] + Kernel[2] * Signal[Index + 2] + Kernel[3] * Signal[Index + 3];
+		Kernel = kernel1;
+		output = Kernel[0] * signal[index + size] + Kernel[1] * signal[index + 1] + Kernel[2] * signal[index + 2] + Kernel[3] * signal[index + 3];
 		break;
 
 	case 2:
-		Kernel = Kernel2;
-		output = Kernel[0] * Signal[Index + size] + Kernel[1] * Signal[Index + size + 1] + Kernel[2] * Signal[Index + 2] + Kernel[3] * Signal[Index + 3];
+		Kernel = kernel2;
+		output = Kernel[0] * signal[index + size] + Kernel[1] * signal[index + size + 1] + Kernel[2] * signal[index + 2] + Kernel[3] * signal[index + 3];
 		break;
 
 	case 3:
-		Kernel = Kernel3;
-		output = Kernel[0] * Signal[Index + size] + Kernel[1] * Signal[Index + size + 1] + Kernel[2] * Signal[Index + size + 2] + Kernel[3] * Signal[Index + 3];
+		Kernel = kernel3;
+		output = Kernel[0] * signal[index + size] + Kernel[1] * signal[index + size + 1] + Kernel[2] * signal[index + size + 2] + Kernel[3] * signal[index + 3];
 		break;
 
 	}
 	
-	Index += 4;
+	index += 4;
 
 	// Part 2: Body
-	alignas(AVX_ALIGNMENT_SIZE) __m256d signal;	// AVX Vector Registers for calculation
-	alignas(AVX_ALIGNMENT_SIZE) __m256d kernel;
+	alignas(AVX_ALIGNMENT_SIZE) __m256d s;	// AVX Vector Registers for calculation
+	alignas(AVX_ALIGNMENT_SIZE) __m256d k;
 	alignas(AVX_ALIGNMENT_SIZE) __m256d product;
 	alignas(AVX_ALIGNMENT_SIZE) __m256d accumulator = _mm256_setzero_pd();
 
 	for (int i = 4; i < sizeRounded4; i += 4) {
-		signal = _mm256_load_pd(Signal + Index);
-		kernel = _mm256_load_pd(Kernel + i);
+		s = _mm256_load_pd(signal + index);
+		k = _mm256_load_pd(Kernel + i);
 
 #ifdef USE_FMA
 		accumulator = _mm256_fmadd_pd(signal, kernel, accumulator);
 #else
-		product = _mm256_mul_pd(signal, kernel);
+		product = _mm256_mul_pd(s, k);
 		accumulator = _mm256_add_pd(product, accumulator);
 #endif
-		Index += 4;
+		index += 4;
 	}
 
 	output += sum4doubles(accumulator);
 
 	// Part 3: Tail
 	for (int j = sizeRounded4; j < size; ++j) {
-		output += Signal[Index] * Kernel[j];
-		++Index;
+		output += signal[index] * Kernel[j];
+		++index;
 	}
 	return output;
 }
