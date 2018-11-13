@@ -14,6 +14,7 @@
 
 #include <typeinfo>
 #include <algorithm>
+#include <iostream>
 #include <complex>
 #include <cstdint>
 #include <cassert>
@@ -52,29 +53,26 @@ class FIRFilter {
 public:
 
 	// constructor:
-	FIRFilter(const FloatType* taps, size_t size) :
-		size(size), signal(nullptr), currentIndex(size-1), lastPut(0),
+	FIRFilter(const FloatType* taps, int length) :
+		length(length), signal(nullptr), currentIndex(length-1), lastPut(0),
 		kernel0(nullptr), kernel1(nullptr), kernel2(nullptr), kernel3(nullptr)
 	{
-
-		// allocate buffers:
+	   	calcPaddedLength();
 		allocateBuffers();
 		assertAlignment();
+		clearBuffers();
 
 		// initialize filter kernel and signal buffers
-		for (unsigned int i = 0; i < size; ++i) {
+		for (unsigned int i = 0; i < length; ++i) {
 			kernel0[i] = taps[i];
 			signal[i] = 0.0;
-			signal[i + size] = 0.0;
+			signal[i + length] = 0.0;
 		}
 
 		// Populate additional kernel Phases:
-		memcpy(1 + kernel1, kernel0, (size - 1) * sizeof(FloatType));
-		kernel1[0] = kernel0[size - 1];
-		memcpy(1 + kernel2, kernel1, (size - 1) * sizeof(FloatType));
-		kernel2[0] = kernel1[size - 1];
-		memcpy(1 + kernel3, kernel2, (size - 1) * sizeof(FloatType));
-		kernel3[0] = kernel2[size - 1];
+		memcpy(1 + kernel1, kernel0, (length - 1) * sizeof(FloatType));
+		memcpy(1 + kernel2, kernel1, (length - 1) * sizeof(FloatType));
+		memcpy(1 + kernel3, kernel2, (length - 1) * sizeof(FloatType));
 	}
 
 	// deconstructor:
@@ -83,8 +81,9 @@ public:
 	}
 
 	// copy constructor:
-	FIRFilter(const FIRFilter& other) : size(other.size), currentIndex(other.currentIndex), lastPut(other.lastPut)
+	FIRFilter(const FIRFilter& other) : length(other.length), currentIndex(other.currentIndex), lastPut(other.lastPut)
 	{
+        calcPaddedLength();
 		allocateBuffers();
 		assertAlignment();
 		copyBuffers(other);
@@ -92,9 +91,10 @@ public:
 
 	// move constructor:
 	FIRFilter(FIRFilter&& other) noexcept :
-		size(other.size), signal(other.signal), currentIndex(other.currentIndex), lastPut(other.lastPut),
+		length(other.length), signal(other.signal), currentIndex(other.currentIndex), lastPut(other.lastPut),
 		kernel0(other.kernel0), kernel1(other.kernel1), kernel2(other.kernel2), kernel3(other.kernel3)
 	{
+        calcPaddedLength();
 		assertAlignment();
 		other.signal = nullptr;
 		other.kernel0 = nullptr;
@@ -106,7 +106,8 @@ public:
 	// copy assignment:
 	FIRFilter& operator= (const FIRFilter& other)
 	{
-		size = other.size;
+		length = other.length;
+        calcPaddedLength();
 		currentIndex = other.currentIndex;
 		lastPut = other.lastPut;
 		freeBuffers();
@@ -121,7 +122,8 @@ public:
 	{
 		if(this!=&other) // prevent self-assignment
 		{
-			size = other.size;
+            length = other.length;
+           	calcPaddedLength();
 			currentIndex = other.currentIndex;
 			lastPut = other.lastPut;
 
@@ -145,10 +147,10 @@ public:
 
 	bool operator== (const FIRFilter& other) const 
 	{
-		if (size != other.size)
+		if (length != other.length)
 			return false;
 		
-		for (int i = 0; i < size; i++) {
+		for (int i = 0; i < paddedLength; i++) {
 			if (kernel0[i] != other.kernel0[i])
 				return false;
 		}
@@ -158,23 +160,22 @@ public:
 
 	void reset() {
 		// reset indexes:
-		currentIndex = size - 1;
+		currentIndex = length - 1;
 		lastPut = 0;
 
 		// clear signal buffer
-		for (unsigned int i = 0; i < size; ++i) {
+		for (unsigned int i = 0; i < paddedLength; ++i) {
 			signal[i] = 0.0;
-			signal[i + size] = 0.0;
+			signal[i + length] = 0.0;
 		}
-
 	}
 
 	void put(FloatType value) { // Put signal in reverse order.
 		signal[currentIndex] = value;
 		lastPut = currentIndex;
 		if (currentIndex == 0) {
-			currentIndex = size - 1; // Wrap
-			memcpy(signal + size, signal, size*sizeof(FloatType)); // copy history to upper half of buffer
+			currentIndex = length - 1; // Wrap
+			memcpy(signal + length, signal, length * sizeof(FloatType)); // copy history to upper half of buffer
 		}
 		else
 			--currentIndex;
@@ -183,8 +184,8 @@ public:
 	void putZero() {
 		signal[currentIndex] = 0.0;
 		if (currentIndex == 0) {
-			currentIndex = size - 1; // Wrap
-			memcpy(signal + size, signal, size*sizeof(FloatType)); // copy history to upper half of buffer
+			currentIndex = length - 1; // Wrap
+			memcpy(signal + length, signal, length * sizeof(FloatType)); // copy history to upper half of buffer
 		}
 		else
 			--currentIndex;
@@ -220,45 +221,33 @@ public:
 		FloatType* kernel = kernel0;
 		int index = (currentIndex >> 2) << 2; // make multiple-of-four
 		int phase = currentIndex & 3;
-		
-		// Part1 : Head
-		// select proper Kernel phase and calculate first Block of 4:
+
+		// select proper Kernel phase:
 		switch (phase) {
 		case 0:
 			kernel = kernel0;
-			// signal already aligned and ready to use
-			output = kernel[0] * signal[index] + kernel[1] * signal[index + 1] + kernel[2] * signal[index + 2] + kernel[3] * signal[index + 3];
 			break;
 		case 1:
 			kernel = kernel1;
-			// signal starts at +1 : load first value from history (ie upper half of buffer)
-			output = kernel[0] * signal[index + size] + kernel[1] * signal[index + 1] + kernel[2] * signal[index + 2] + kernel[3] * signal[index + 3];
 			break;
 		case 2:
 			kernel = kernel2;
-			// signal starts at +2 : load first and second values from history (ie upper half of buffer)
-			output = kernel[0] * signal[index + size] + kernel[1] * signal[index + size + 1] + kernel[2] * signal[index + 2] + kernel[3] * signal[index + 3];
 			break;
 		case 3: 
 			kernel = kernel3;
-			// signal starts at +3 : load 1st, 2nd, 3rd values from history (ie upper half of buffer)
-			output = kernel[0] * signal[index + size] + kernel[1] * signal[index + size + 1] + kernel[2] * signal[index + size + 2] + kernel[3] * signal[index + 3];
 			break;
 		}
-		index += 4;
 
-		// Part 2: Body
 		alignas(SSE_ALIGNMENT_SIZE) __m128 s;	// SIMD Vector Registers for calculation
 		alignas(SSE_ALIGNMENT_SIZE) __m128 k;
 		alignas(SSE_ALIGNMENT_SIZE) __m128 product;
 		alignas(SSE_ALIGNMENT_SIZE) __m128 accumulator = _mm_setzero_ps();
 
-		for (int i = 4; i < (size >> 2) << 2; i += 4) {
-			s = _mm_load_ps(signal + index);
+		for (int i = 0; i < paddedLength; i += 4) {
+			s = _mm_load_ps(signal + index + i);
 			k = _mm_load_ps(kernel + i);
 			product = _mm_mul_ps(s, k);
 			accumulator = _mm_add_ps(product, accumulator);
-			index += 4;
 		}
 		
 		// http://stackoverflow.com/questions/6996764/fastest-way-to-do-horizontal-float-vector-sum-on-x86
@@ -270,12 +259,6 @@ public:
 		a          = _mm_movehl_ps(a, b);              // [C     D     | D+C   C+D  ]
 		b          = _mm_add_ss(a, b);                 // [C     D     | D+C A+B+C+D]
 		output    += _mm_cvtss_f32(b);                 // A+B+C+D
-	
-		// Part 3: Tail
-		for (int j = (size >> 2) << 2; j < size; ++j) {
-			output += signal[index] * kernel[j];
-			++index;
-		}
 
 		return output;
 
@@ -287,20 +270,24 @@ public:
 		FloatType output = 0.0;
 		int Offset = lastPut - currentIndex;
 		if (Offset < 0) { // Wrap condition
-			Offset += size;
+			Offset += length;
 		}
 	
-		for (int i = Offset; i < size; i+=L) {
+		for (int i = Offset; i < length; i+=L) {
 			output += signal[i+ currentIndex] * kernel0[i];
 		}
 		return output;
 	}
 
 private:
-	size_t size;
+	int length;
+	int paddedLength;
+
 	FloatType* signal; // Double-length signal buffer, to facilitate fast emulation of a circular buffer
 	int currentIndex;
 	int lastPut;
+	int numVecElements;
+	uintptr_t alignMask;
 
 	// Polyphase Filter Kernel table:
 	FloatType* kernel0;
@@ -308,22 +295,38 @@ private:
 	FloatType* kernel2;
 	FloatType* kernel3;
 
+	void calcPaddedLength()
+	{
+		numVecElements = SSE_ALIGNMENT_SIZE / sizeof(FloatType);
+		alignMask = -static_cast<uintptr_t>(numVecElements);
+		paddedLength = (length & alignMask) + numVecElements;
+	}
+
 	void allocateBuffers()
 	{
-		signal = static_cast<FloatType*>(aligned_malloc(2 * size * sizeof(FloatType), SSE_ALIGNMENT_SIZE));
-		kernel0 = static_cast<FloatType*>(aligned_malloc(size * sizeof(FloatType), SSE_ALIGNMENT_SIZE));
-		kernel1 = static_cast<FloatType*>(aligned_malloc(size * sizeof(FloatType), SSE_ALIGNMENT_SIZE));
-		kernel2 = static_cast<FloatType*>(aligned_malloc(size * sizeof(FloatType), SSE_ALIGNMENT_SIZE));
-		kernel3 = static_cast<FloatType*>(aligned_malloc(size * sizeof(FloatType), SSE_ALIGNMENT_SIZE));
+		signal = static_cast<FloatType*>(aligned_malloc((paddedLength + length) * sizeof(FloatType), SSE_ALIGNMENT_SIZE));
+		kernel0 = static_cast<FloatType*>(aligned_malloc(paddedLength * sizeof(FloatType), SSE_ALIGNMENT_SIZE));
+		kernel1 = static_cast<FloatType*>(aligned_malloc(paddedLength * sizeof(FloatType), SSE_ALIGNMENT_SIZE));
+		kernel2 = static_cast<FloatType*>(aligned_malloc(paddedLength * sizeof(FloatType), SSE_ALIGNMENT_SIZE));
+		kernel3 = static_cast<FloatType*>(aligned_malloc(paddedLength * sizeof(FloatType), SSE_ALIGNMENT_SIZE));
 	}
+
+	void clearBuffers()
+    {
+	    memset(signal, 0.0, (paddedLength + length) * sizeof(FloatType));
+	    memset(kernel0, 0.0, paddedLength * sizeof(FloatType));
+	    memset(kernel1, 0.0, paddedLength * sizeof(FloatType));
+	    memset(kernel2, 0.0, paddedLength * sizeof(FloatType));
+	    memset(kernel3, 0.0, paddedLength * sizeof(FloatType));
+    }
 
 	void copyBuffers(const FIRFilter& other)
 	{
-		memcpy(signal, other.signal, 2 * size * sizeof(FloatType));
-		memcpy(kernel0, other.kernel0, size * sizeof(FloatType));
-		memcpy(kernel1, other.kernel1, size * sizeof(FloatType));
-		memcpy(kernel2, other.kernel2, size * sizeof(FloatType));
-		memcpy(kernel3, other.kernel3, size * sizeof(FloatType));
+		memcpy(signal, other.signal, (paddedLength + length) * sizeof(FloatType));
+		memcpy(kernel0, other.kernel0, paddedLength * sizeof(FloatType));
+		memcpy(kernel1, other.kernel1, paddedLength * sizeof(FloatType));
+		memcpy(kernel2, other.kernel2, paddedLength * sizeof(FloatType));
+		memcpy(kernel3, other.kernel3, paddedLength * sizeof(FloatType));
 	}
 
 	void freeBuffers()
@@ -384,29 +387,23 @@ double FIRFilter<double>::get() {
 	switch (phase) {
 	case 0:
 		kernel = kernel0;
-		// signal already aligned and ready to use
-		output = kernel[0] * signal[index] + kernel[1] * signal[index + 1];
 		break;
 	case 1:
 		kernel = kernel1;
-		// signal starts at +1 : load first value from history (ie upper half of buffer)
-		output = kernel[0] * signal[index + size] + kernel[1] * signal[index + 1];
 		break;
 	}
 	index += 2;
 
-	// Part 2: Body
 	alignas(SSE_ALIGNMENT_SIZE) __m128d s;	// SIMD Vector Registers for calculation
 	alignas(SSE_ALIGNMENT_SIZE) __m128d k;
 	alignas(SSE_ALIGNMENT_SIZE) __m128d product;
 	alignas(SSE_ALIGNMENT_SIZE) __m128d accumulator = _mm_setzero_pd();
 
-	for (int i = 2; i < (size >> 1) << 1; i += 2) {
-		s = _mm_load_pd(signal + index);
+	for (int i = 0; i < (paddedLength >> 1) << 1; i += 2) {
+		s = _mm_load_pd(signal + index + i);
 		k = _mm_load_pd(kernel + i);
 		product = _mm_mul_pd(s, k);
 		accumulator = _mm_add_pd(product, accumulator);
-		index += 2;
 	}
 
 	// horizontal add of two doubles
@@ -414,12 +411,6 @@ double FIRFilter<double>::get() {
     __m128 shuftmp= _mm_movehl_ps(undef, _mm_castpd_ps(accumulator));
     __m128d shuf  = _mm_castps_pd(shuftmp);
     output +=  _mm_cvtsd_f64(_mm_add_sd(accumulator, shuf));
-
-	// Part 3: Tail
-	for (int j = (size >> 1) << 1; j < size; ++j) {
-		output += signal[index] * kernel[j];
-		++index;
-	}
 
 	return output;
 }
