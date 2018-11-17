@@ -54,9 +54,15 @@ public:
 
 	// constructor:
 	FIRFilter(const FloatType* taps, int length) :
-		length(length), signal(nullptr), currentIndex(length-1), lastPut(0),
-		kernel0(nullptr), kernel1(nullptr), kernel2(nullptr), kernel3(nullptr)
+		length(length), signal(nullptr), currentIndex(length-1), lastPut(0)
+
 	{
+
+	    kernelphases[0] = nullptr;
+        kernelphases[1] = nullptr;
+        kernelphases[2] = nullptr;
+        kernelphases[3] = nullptr;
+
 	   	calcPaddedLength();
 		allocateBuffers();
 		assertAlignment();
@@ -64,15 +70,15 @@ public:
 
 		// initialize filter kernel and signal buffers
 		for (unsigned int i = 0; i < length; ++i) {
-			kernel0[i] = taps[i];
+			kernelphases[0][i] = taps[i];
 			signal[i] = 0.0;
 			signal[i + length] = 0.0;
 		}
 
 		// Populate additional kernel Phases:
-		memcpy(1 + kernel1, kernel0, (length - 1) * sizeof(FloatType));
-		memcpy(1 + kernel2, kernel1, (length - 1) * sizeof(FloatType));
-		memcpy(1 + kernel3, kernel2, (length - 1) * sizeof(FloatType));
+		memcpy(1 + kernelphases[1], kernelphases[0], (length - 1) * sizeof(FloatType));
+		memcpy(1 + kernelphases[2], kernelphases[1], (length - 1) * sizeof(FloatType));
+		memcpy(1 + kernelphases[3], kernelphases[2], (length - 1) * sizeof(FloatType));
 	}
 
 	// deconstructor:
@@ -91,16 +97,20 @@ public:
 
 	// move constructor:
 	FIRFilter(FIRFilter&& other) noexcept :
-		length(other.length), signal(other.signal), currentIndex(other.currentIndex), lastPut(other.lastPut),
-		kernel0(other.kernel0), kernel1(other.kernel1), kernel2(other.kernel2), kernel3(other.kernel3)
+		length(other.length), signal(other.signal), currentIndex(other.currentIndex), lastPut(other.lastPut)
 	{
         calcPaddedLength();
+        kernelphases[0] = other.kernelphases[0];
+        kernelphases[1] = other.kernelphases[1];
+        kernelphases[2] = other.kernelphases[2];
+        kernelphases[3] = other.kernelphases[3];
+
 		assertAlignment();
 		other.signal = nullptr;
-		other.kernel0 = nullptr;
-		other.kernel1 = nullptr;
-		other.kernel2 = nullptr;
-		other.kernel3 = nullptr;
+		other.kernelphases[0] = nullptr;
+		other.kernelphases[1] = nullptr;
+		other.kernelphases[2] = nullptr;
+		other.kernelphases[3] = nullptr;
 	}
 	
 	// copy assignment:
@@ -130,10 +140,11 @@ public:
 			freeBuffers();
 			
 			signal = other.signal;
-			kernel0 = other.kernel0;
-			kernel1 = other.kernel1;
-			kernel2 = other.kernel2;
-			kernel3 = other.kernel3;
+			kernelphases[0] = other.kernelphases[0];
+            kernelphases[1] = other.kernelphases[1];
+            kernelphases[2] = other.kernelphases[2];
+            kernelphases[3] = other.kernelphases[3];
+
 			assertAlignment();
 
 			other.signal = nullptr;
@@ -151,7 +162,7 @@ public:
 			return false;
 		
 		for (int i = 0; i < paddedLength; i++) {
-			if (kernel0[i] != other.kernel0[i])
+			if (kernelphases[0][i] != other.kernelphases[0][i])
 				return false;
 		}
 		
@@ -218,25 +229,11 @@ public:
 		// SIMD implementation: This only works with floats (doubles need specialisation)
 
 		FloatType output = 0.0;
-		FloatType* kernel = kernel0;
+
 		int index = (currentIndex >> 2) << 2; // make multiple-of-four
 		int phase = currentIndex & 3;
+		FloatType* kernel = kernelphases[phase];
 
-		// select proper Kernel phase:
-		switch (phase) {
-		case 0:
-			kernel = kernel0;
-			break;
-		case 1:
-			kernel = kernel1;
-			break;
-		case 2:
-			kernel = kernel2;
-			break;
-		case 3: 
-			kernel = kernel3;
-			break;
-		}
 
 		alignas(SSE_ALIGNMENT_SIZE) __m128 s;	// SIMD Vector Registers for calculation
 		alignas(SSE_ALIGNMENT_SIZE) __m128 k;
@@ -274,7 +271,7 @@ public:
 		}
 	
 		for (int i = Offset; i < length; i+=L) {
-			output += signal[i+ currentIndex] * kernel0[i];
+			output += signal[i+ currentIndex] * kernelphases[0][i];
 		}
 		return output;
 	}
@@ -283,17 +280,14 @@ private:
 	int length;
 	int paddedLength;
 
-	FloatType* signal; // Double-length signal buffer, to facilitate fast emulation of a circular buffer
+	FloatType* signal; // Double-length signal buffer, to facilitate fast emulation of a circular buffe
 	int currentIndex;
 	int lastPut;
 	int numVecElements;
 	uintptr_t alignMask;
 
 	// Polyphase Filter Kernel table:
-	FloatType* kernel0;
-	FloatType* kernel1;
-	FloatType* kernel2;
-	FloatType* kernel3;
+	FloatType* kernelphases[4];
 
 	void calcPaddedLength()
 	{
@@ -305,37 +299,37 @@ private:
 	void allocateBuffers()
 	{
 		signal = static_cast<FloatType*>(aligned_malloc((paddedLength + length) * sizeof(FloatType), SSE_ALIGNMENT_SIZE));
-		kernel0 = static_cast<FloatType*>(aligned_malloc(paddedLength * sizeof(FloatType), SSE_ALIGNMENT_SIZE));
-		kernel1 = static_cast<FloatType*>(aligned_malloc(paddedLength * sizeof(FloatType), SSE_ALIGNMENT_SIZE));
-		kernel2 = static_cast<FloatType*>(aligned_malloc(paddedLength * sizeof(FloatType), SSE_ALIGNMENT_SIZE));
-		kernel3 = static_cast<FloatType*>(aligned_malloc(paddedLength * sizeof(FloatType), SSE_ALIGNMENT_SIZE));
+		kernelphases[0] = static_cast<FloatType*>(aligned_malloc(paddedLength * sizeof(FloatType), SSE_ALIGNMENT_SIZE));
+		kernelphases[1] = static_cast<FloatType*>(aligned_malloc(paddedLength * sizeof(FloatType), SSE_ALIGNMENT_SIZE));
+		kernelphases[2] = static_cast<FloatType*>(aligned_malloc(paddedLength * sizeof(FloatType), SSE_ALIGNMENT_SIZE));
+		kernelphases[3] = static_cast<FloatType*>(aligned_malloc(paddedLength * sizeof(FloatType), SSE_ALIGNMENT_SIZE));
 	}
 
 	void clearBuffers()
     {
 	    memset(signal, 0.0, (paddedLength + length) * sizeof(FloatType));
-	    memset(kernel0, 0.0, paddedLength * sizeof(FloatType));
-	    memset(kernel1, 0.0, paddedLength * sizeof(FloatType));
-	    memset(kernel2, 0.0, paddedLength * sizeof(FloatType));
-	    memset(kernel3, 0.0, paddedLength * sizeof(FloatType));
+	    memset(kernelphases[0], 0.0, paddedLength * sizeof(FloatType));
+	    memset(kernelphases[1], 0.0, paddedLength * sizeof(FloatType));
+	    memset(kernelphases[2], 0.0, paddedLength * sizeof(FloatType));
+	    memset(kernelphases[3], 0.0, paddedLength * sizeof(FloatType));
     }
 
 	void copyBuffers(const FIRFilter& other)
 	{
 		memcpy(signal, other.signal, (paddedLength + length) * sizeof(FloatType));
-		memcpy(kernel0, other.kernel0, paddedLength * sizeof(FloatType));
-		memcpy(kernel1, other.kernel1, paddedLength * sizeof(FloatType));
-		memcpy(kernel2, other.kernel2, paddedLength * sizeof(FloatType));
-		memcpy(kernel3, other.kernel3, paddedLength * sizeof(FloatType));
+		memcpy(kernelphases[0], other.kernelphases[0], paddedLength * sizeof(FloatType));
+		memcpy(kernelphases[1], other.kernelphases[1], paddedLength * sizeof(FloatType));
+		memcpy(kernelphases[2], other.kernelphases[2], paddedLength * sizeof(FloatType));
+		memcpy(kernelphases[3], other.kernelphases[3], paddedLength * sizeof(FloatType));
 	}
 
 	void freeBuffers()
 	{
 		aligned_free(signal);
-		aligned_free(kernel0);
-		aligned_free(kernel1);
-		aligned_free(kernel2);
-		aligned_free(kernel3);
+		aligned_free(kernelphases[0]);
+		aligned_free(kernelphases[1]);
+		aligned_free(kernelphases[2]);
+		aligned_free(kernelphases[3]);
 	}
 	
 	// assertAlignment() : asserts that all private data buffers are aligned on expected boundaries
@@ -343,10 +337,10 @@ private:
 	{
 		const std::uintptr_t alignment = SSE_ALIGNMENT_SIZE;
 		assert(reinterpret_cast<std::uintptr_t>(signal) % alignment == 0);
-		assert(reinterpret_cast<std::uintptr_t>(kernel0) % alignment == 0);
-		assert(reinterpret_cast<std::uintptr_t>(kernel1) % alignment == 0);
-		assert(reinterpret_cast<std::uintptr_t>(kernel2) % alignment == 0);
-		assert(reinterpret_cast<std::uintptr_t>(kernel3) % alignment == 0);
+		assert(reinterpret_cast<std::uintptr_t>(kernelphases[0]) % alignment == 0);
+		assert(reinterpret_cast<std::uintptr_t>(kernelphases[1]) % alignment == 0);
+		assert(reinterpret_cast<std::uintptr_t>(kernelphases[2]) % alignment == 0);
+		assert(reinterpret_cast<std::uintptr_t>(kernelphases[3]) % alignment == 0);
 	}
 };
 
@@ -381,18 +375,7 @@ double FIRFilter<double>::get() {
 	double* kernel;
 	int index = (currentIndex >> 1) << 1; // make multiple-of-two
 	int phase = currentIndex & 1;
-
-	// Part1 : Head
-	// select proper Kernel phase and calculate first Block of 2:
-	switch (phase) {
-	case 0:
-		kernel = kernel0;
-		break;
-	case 1:
-		kernel = kernel1;
-		break;
-	}
-	index += 2;
+	kernel = kernelphases[phase];
 
 	alignas(SSE_ALIGNMENT_SIZE) __m128d s;	// SIMD Vector Registers for calculation
 	alignas(SSE_ALIGNMENT_SIZE) __m128d k;
