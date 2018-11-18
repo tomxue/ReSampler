@@ -274,8 +274,8 @@ public:
 		// scalar processing of float or double types
 		FloatType output = 0.0;
 		int index = currentIndex;
-		for (int i = 0; i < size; ++i) {
-			output += signal[index] * kernel0[i];
+		for (int i = 0; i < length; ++i) {
+			output += signal[index] * kernelphases[0][i];
 			index++;
 		}
 		return output;
