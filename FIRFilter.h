@@ -57,28 +57,27 @@ public:
 		length(length), signal(nullptr), currentIndex(length-1), lastPut(0)
 
 	{
+        calcPaddedLength();
 
-	    kernelphases[0] = nullptr;
-        kernelphases[1] = nullptr;
-        kernelphases[2] = nullptr;
-        kernelphases[3] = nullptr;
+        for(int i = 0; i < numVecElements; i++) {
+            kernelphases[i] = nullptr;
+        }
 
-	   	calcPaddedLength();
 		allocateBuffers();
 		assertAlignment();
 		clearBuffers();
 
 		// initialize filter kernel and signal buffers
-		for (unsigned int i = 0; i < length; ++i) {
+		for (int i = 0; i < length; ++i) {
 			kernelphases[0][i] = taps[i];
 			signal[i] = 0.0;
 			signal[i + length] = 0.0;
 		}
 
-		// Populate additional kernel Phases:
-		memcpy(1 + kernelphases[1], kernelphases[0], (length - 1) * sizeof(FloatType));
-		memcpy(1 + kernelphases[2], kernelphases[1], (length - 1) * sizeof(FloatType));
-		memcpy(1 + kernelphases[3], kernelphases[2], (length - 1) * sizeof(FloatType));
+        // Populate additional kernel Phases:
+		for(int n = 1; n < numVecElements; n++) {
+            memcpy(1 + kernelphases[n], kernelphases[n - 1], (length - 1) * sizeof(FloatType));
+		}
 	}
 
 	// deconstructor:
@@ -100,19 +99,16 @@ public:
 		length(other.length), signal(other.signal), currentIndex(other.currentIndex), lastPut(other.lastPut)
 	{
         calcPaddedLength();
-        kernelphases[0] = other.kernelphases[0];
-        kernelphases[1] = other.kernelphases[1];
-        kernelphases[2] = other.kernelphases[2];
-        kernelphases[3] = other.kernelphases[3];
 
+        for(int i = 0; i < numVecElements; i++) {
+            kernelphases[i] = other.kernelphases[i];
+            other.kernelphases[i] = nullptr;
+        }
+
+        other.signal = nullptr;
 		assertAlignment();
-		other.signal = nullptr;
-		other.kernelphases[0] = nullptr;
-		other.kernelphases[1] = nullptr;
-		other.kernelphases[2] = nullptr;
-		other.kernelphases[3] = nullptr;
 	}
-	
+
 	// copy assignment:
 	FIRFilter& operator= (const FIRFilter& other)
 	{
@@ -140,18 +136,12 @@ public:
 			freeBuffers();
 			
 			signal = other.signal;
-			kernelphases[0] = other.kernelphases[0];
-            kernelphases[1] = other.kernelphases[1];
-            kernelphases[2] = other.kernelphases[2];
-            kernelphases[3] = other.kernelphases[3];
-
+            for(int i = 0; i < numVecElements; i++) {
+                kernelphases[i] = other.kernelphases[i];
+                other.kernelphases[i] = nullptr;
+            }
+            other.signal = nullptr;
 			assertAlignment();
-
-			other.signal = nullptr;
-			other.kernel0 = nullptr;
-			other.kernel1 = nullptr;
-			other.kernel2 = nullptr;
-			other.kernel3 = nullptr;
 		}
 		return *this;
 	}
@@ -234,7 +224,6 @@ public:
 		int phase = currentIndex & 3;
 		FloatType* kernel = kernelphases[phase];
 
-
 		alignas(SSE_ALIGNMENT_SIZE) __m128 s;	// SIMD Vector Registers for calculation
 		alignas(SSE_ALIGNMENT_SIZE) __m128 k;
 		alignas(SSE_ALIGNMENT_SIZE) __m128 product;
@@ -271,7 +260,7 @@ public:
 		}
 	
 		for (int i = Offset; i < length; i+=L) {
-			output += signal[i+ currentIndex] * kernelphases[0][i];
+			output += signal[i + currentIndex] * kernelphases[0][i];
 		}
 		return output;
 	}
@@ -287,7 +276,14 @@ private:
 	uintptr_t alignMask;
 
 	// Polyphase Filter Kernel table:
-	FloatType* kernelphases[4];
+
+#if defined(USE_AVX)
+    FloatType* kernelphases[8];
+#elif defined(USE_SIMD)
+    FloatType* kernelphases[4];
+#else
+    FloatType* kernelphases[1];
+#endif
 
 	void calcPaddedLength()
 	{
@@ -299,37 +295,33 @@ private:
 	void allocateBuffers()
 	{
 		signal = static_cast<FloatType*>(aligned_malloc((paddedLength + length) * sizeof(FloatType), SSE_ALIGNMENT_SIZE));
-		kernelphases[0] = static_cast<FloatType*>(aligned_malloc(paddedLength * sizeof(FloatType), SSE_ALIGNMENT_SIZE));
-		kernelphases[1] = static_cast<FloatType*>(aligned_malloc(paddedLength * sizeof(FloatType), SSE_ALIGNMENT_SIZE));
-		kernelphases[2] = static_cast<FloatType*>(aligned_malloc(paddedLength * sizeof(FloatType), SSE_ALIGNMENT_SIZE));
-		kernelphases[3] = static_cast<FloatType*>(aligned_malloc(paddedLength * sizeof(FloatType), SSE_ALIGNMENT_SIZE));
+		for(int i = 0; i < numVecElements; i++) {
+            kernelphases[i] = static_cast<FloatType*>(aligned_malloc(paddedLength * sizeof(FloatType), SSE_ALIGNMENT_SIZE));
+		}
 	}
 
 	void clearBuffers()
     {
 	    memset(signal, 0.0, (paddedLength + length) * sizeof(FloatType));
-	    memset(kernelphases[0], 0.0, paddedLength * sizeof(FloatType));
-	    memset(kernelphases[1], 0.0, paddedLength * sizeof(FloatType));
-	    memset(kernelphases[2], 0.0, paddedLength * sizeof(FloatType));
-	    memset(kernelphases[3], 0.0, paddedLength * sizeof(FloatType));
+        for(int i = 0; i < numVecElements; i++) {
+            memset(kernelphases[i], 0.0, paddedLength * sizeof(FloatType));
+        }
     }
 
 	void copyBuffers(const FIRFilter& other)
 	{
 		memcpy(signal, other.signal, (paddedLength + length) * sizeof(FloatType));
-		memcpy(kernelphases[0], other.kernelphases[0], paddedLength * sizeof(FloatType));
-		memcpy(kernelphases[1], other.kernelphases[1], paddedLength * sizeof(FloatType));
-		memcpy(kernelphases[2], other.kernelphases[2], paddedLength * sizeof(FloatType));
-		memcpy(kernelphases[3], other.kernelphases[3], paddedLength * sizeof(FloatType));
+        for(int i = 0; i < numVecElements; i++) {
+            memcpy(kernelphases[i], other.kernelphases[i], paddedLength * sizeof(FloatType));
+        }
 	}
 
 	void freeBuffers()
 	{
 		aligned_free(signal);
-		aligned_free(kernelphases[0]);
-		aligned_free(kernelphases[1]);
-		aligned_free(kernelphases[2]);
-		aligned_free(kernelphases[3]);
+        for(int i = 0; i < numVecElements; i++) {
+            aligned_free(kernelphases[i]);
+        }
 	}
 	
 	// assertAlignment() : asserts that all private data buffers are aligned on expected boundaries
@@ -337,10 +329,9 @@ private:
 	{
 		const std::uintptr_t alignment = SSE_ALIGNMENT_SIZE;
 		assert(reinterpret_cast<std::uintptr_t>(signal) % alignment == 0);
-		assert(reinterpret_cast<std::uintptr_t>(kernelphases[0]) % alignment == 0);
-		assert(reinterpret_cast<std::uintptr_t>(kernelphases[1]) % alignment == 0);
-		assert(reinterpret_cast<std::uintptr_t>(kernelphases[2]) % alignment == 0);
-		assert(reinterpret_cast<std::uintptr_t>(kernelphases[3]) % alignment == 0);
+        for(int i = 0; i < numVecElements; i++) {
+            assert(reinterpret_cast<std::uintptr_t>(kernelphases[i]) % alignment == 0);
+        }
 	}
 };
 
