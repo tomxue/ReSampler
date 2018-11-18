@@ -409,9 +409,9 @@ double FIRFilter<double>::get() {
 	alignas(ALIGNMENT_SIZE) __m256d product;
 	alignas(ALIGNMENT_SIZE) __m256d accumulator = _mm256_setzero_pd();
 
-	for (int i = 0; i < sizeRounded4; i += 4) {
+	for (int i = 0; i < paddedLength; i += 4) {
 		s = _mm256_load_pd(signal + index);
-		k = _mm256_load_pd(Kernel + i);
+		k = _mm256_load_pd(kernel + i);
 
 #ifdef USE_FMA
 		accumulator = _mm256_fmadd_pd(signal, kernel, accumulator);
