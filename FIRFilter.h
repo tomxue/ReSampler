@@ -126,7 +126,7 @@ public:
 	// move assignment:
 	FIRFilter& operator= (FIRFilter&& other) noexcept
 	{
-		if(this!=&other) // prevent self-assignment
+		if(this != &other) // prevent self-assignment
 		{
             length = other.length;
            	calcPaddedLength();
@@ -196,7 +196,7 @@ public:
 
 #ifdef FIR_QUAD_PRECISION
 
-		// specialisation for FloatType input/output, with quad-precision processing
+		// scalar processing of quad-precision types
 		__float128 output = 0.0Q;
 		int index = currentIndex;
 		for (int i = 0; i < size; ++i) {
@@ -205,9 +205,9 @@ public:
 		}
 		return (FloatType)output;
 
-#else
+#elif !defined(USE_SIMD)
 
-#ifndef USE_SIMD
+		// scalar processing of float or double types
 		FloatType output = 0.0;
 		int index = currentIndex;
 		for (int i = 0; i < size; ++i) {
@@ -216,7 +216,7 @@ public:
 		}
 		return output;
 #else
-		// SIMD implementation: This only works with floats (doubles need specialisation)
+		// vector processing of float types (doubles require separate specialisation)
 
 		FloatType output = 0.0;
 
@@ -248,8 +248,8 @@ public:
 
 		return output;
 
-#endif // !USE_SIMD
 #endif // !FIR_QUAD_PRECISION
+
 	}
 
 	FloatType lazyGet(int L) {	// Skips stuffed-zeros introduced by interpolation, by only calculating every Lth sample from lastPut
@@ -278,9 +278,9 @@ private:
 	// Polyphase Filter Kernel table:
 
 #if defined(USE_AVX)
-    FloatType* kernelphases[8];
+    FloatType* kernelphases[8]; // note:  will only use half of these if FloatType = double
 #elif defined(USE_SIMD)
-    FloatType* kernelphases[4];
+    FloatType* kernelphases[4]; // note: will only use half of these if FloatType = double
 #else
     FloatType* kernelphases[1];
 #endif
