@@ -219,8 +219,7 @@ public:
 		// vector processing of float types (doubles require separate specialisation)
 
 		FloatType output = 0.0;
-
-		int index = (currentIndex >> 2) << 2; // make multiple-of-four
+		int index = currentIndex & -4; // make multiple-of-four
 		int phase = currentIndex & 3;
 		FloatType* kernel = kernelphases[phase];
 
@@ -359,12 +358,12 @@ double FIRFilter<double>::get() {
 template <>
 double FIRFilter<double>::get() {
 
-	// SIMD implementation
+	// SSE / doubles
 	// Processes two doubles at a time.
 
 	double output = 0.0;
 	double* kernel;
-	int index = (currentIndex >> 1) << 1; // make multiple-of-two
+	int index = currentIndex & -2; // make multiple-of-two
 	int phase = currentIndex & 1;
 	kernel = kernelphases[phase];
 
@@ -373,7 +372,7 @@ double FIRFilter<double>::get() {
 	alignas(SSE_ALIGNMENT_SIZE) __m128d product;
 	alignas(SSE_ALIGNMENT_SIZE) __m128d accumulator = _mm_setzero_pd();
 
-	for (int i = 0; i < (paddedLength >> 1) << 1; i += 2) {
+	for (int i = 0; i < paddedLength; i += 2) {
 		s = _mm_load_pd(signal + index + i);
 		k = _mm_load_pd(kernel + i);
 		product = _mm_mul_pd(s, k);
