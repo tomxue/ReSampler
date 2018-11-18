@@ -27,12 +27,15 @@
 #define FILTERSIZE_LIMIT 131071
 #define FILTERSIZE_BASE 103
 
-#define SSE_ALIGNMENT_SIZE 16
-
 #ifdef USE_AVX
-#include "FIRFilterAVX.h"
+
+#define ALIGNMENT_SIZE 32
+#include <immintrin.h>
 
 #else
+
+#define ALIGNMENT_SIZE 16
+
 #if (defined(_M_X64) || defined(__x86_64__) || defined(USE_SSE2)) // All x64 CPUs have SSE2 instructions, but some older 32-bit CPUs do not. 
 	#define USE_SIMD 1 // Vectorise main loop in FIRFilter::get() by using SSE2 SIMD instrinsics 
 	#define USE_SIMD_FOR_DOUBLES
@@ -43,6 +46,7 @@
 #include <quadmath.h>
 #ifndef FIR_QUAD_PRECISION
 #define FIR_QUAD_PRECISION
+#endif
 #endif
 #endif
 #endif
@@ -205,17 +209,36 @@ public:
 		}
 		return (FloatType)output;
 
-#elif !defined(USE_SIMD)
+#elif defined(USE_AVX)
 
-		// scalar processing of float or double types
+		// AVX processing of float types
+
 		FloatType output = 0.0;
-		int index = currentIndex;
-		for (int i = 0; i < size; ++i) {
-			output += signal[index] * kernel0[i];
-			index++;
-		}
-		return output;
+		int index = currentIndex & -8; // make multiple-of-eight
+		int phase = currentIndex & 7;
+		FloatType* kernel = kernelphases[phase];
+
+		alignas(ALIGNMENT_SIZE) __m256 s;	// AVX Vector Registers for calculation
+		alignas(ALIGNMENT_SIZE) __m256 k;
+		alignas(ALIGNMENT_SIZE) __m256 product;
+		alignas(ALIGNMENT_SIZE) __m256 accumulator = _mm256_setzero_ps();
+
+		for (int i = 0; i < paddedLength; i += 8) {
+			s = _mm256_load_ps(signal + index + i);
+			k = _mm256_load_ps(kernel + i);
+#ifdef USE_FMA
+			accumulator = _mm256_fmadd_ps(signal, kernel, accumulator);
 #else
+			product = _mm256_mul_ps(s, k);
+			accumulator = _mm256_add_ps(product, accumulator);
+#endif
+		}
+
+		output += sum8floats(accumulator);
+		return output;
+
+#elif defined(USE_SIMD)
+
 		// vector processing of float types (doubles require separate specialisation)
 
 		FloatType output = 0.0;
@@ -223,10 +246,10 @@ public:
 		int phase = currentIndex & 3;
 		FloatType* kernel = kernelphases[phase];
 
-		alignas(SSE_ALIGNMENT_SIZE) __m128 s;	// SIMD Vector Registers for calculation
-		alignas(SSE_ALIGNMENT_SIZE) __m128 k;
-		alignas(SSE_ALIGNMENT_SIZE) __m128 product;
-		alignas(SSE_ALIGNMENT_SIZE) __m128 accumulator = _mm_setzero_ps();
+		alignas(ALIGNMENT_SIZE) __m128 s;	// SIMD Vector Registers for calculation
+		alignas(ALIGNMENT_SIZE) __m128 k;
+		alignas(ALIGNMENT_SIZE) __m128 product;
+		alignas(ALIGNMENT_SIZE) __m128 accumulator = _mm_setzero_ps();
 
 		for (int i = 0; i < paddedLength; i += 4) {
 			s = _mm_load_ps(signal + index + i);
@@ -247,7 +270,17 @@ public:
 
 		return output;
 
-#endif // !FIR_QUAD_PRECISION
+#else
+		// scalar processing of float or double types
+		FloatType output = 0.0;
+		int index = currentIndex;
+		for (int i = 0; i < size; ++i) {
+			output += signal[index] * kernel0[i];
+			index++;
+		}
+		return output;
+
+#endif //
 
 	}
 
@@ -286,16 +319,16 @@ private:
 
 	void calcPaddedLength()
 	{
-		numVecElements = SSE_ALIGNMENT_SIZE / sizeof(FloatType);
+		numVecElements = ALIGNMENT_SIZE / sizeof(FloatType);
 		alignMask = -static_cast<uintptr_t>(numVecElements);
 		paddedLength = (length & alignMask) + numVecElements;
 	}
 
 	void allocateBuffers()
 	{
-		signal = static_cast<FloatType*>(aligned_malloc((paddedLength + length) * sizeof(FloatType), SSE_ALIGNMENT_SIZE));
+		signal = static_cast<FloatType*>(aligned_malloc((paddedLength + length) * sizeof(FloatType), ALIGNMENT_SIZE));
 		for(int i = 0; i < numVecElements; i++) {
-            kernelphases[i] = static_cast<FloatType*>(aligned_malloc(paddedLength * sizeof(FloatType), SSE_ALIGNMENT_SIZE));
+            kernelphases[i] = static_cast<FloatType*>(aligned_malloc(paddedLength * sizeof(FloatType), ALIGNMENT_SIZE));
 		}
 	}
 
@@ -326,40 +359,79 @@ private:
 	// assertAlignment() : asserts that all private data buffers are aligned on expected boundaries
 	void assertAlignment()
 	{
-		const std::uintptr_t alignment = SSE_ALIGNMENT_SIZE;
+		const std::uintptr_t alignment = ALIGNMENT_SIZE;
 		assert(reinterpret_cast<std::uintptr_t>(signal) % alignment == 0);
         for(int i = 0; i < numVecElements; i++) {
             assert(reinterpret_cast<std::uintptr_t>(kernelphases[i]) % alignment == 0);
         }
 	}
+
+#if defined(USE_AVX)
+	// Horizontal add function (sums 8 floats into single float) http://stackoverflow.com/questions/23189488/horizontal-sum-of-32-bit-floats-in-256-bit-avx-vector
+static inline float sum8floats(__m256 x) {
+	const __m128 x128 = _mm_add_ps(
+		_mm256_extractf128_ps(x, 1),
+		_mm256_castps256_ps128(x));																// ( x3+x7, x2+x6, x1+x5, x0+x4 )
+	const __m128 x64 = _mm_add_ps(x128, _mm_movehl_ps(x128, x128));								// ( -, -, x1+x3+x5+x7, x0+x2+x4+x6 )
+	const __m128 x32 = _mm_add_ss(x64, _mm_shuffle_ps(x64, x64, 0x55));							// ( -, -, -, x0+x1+x2+x3+x4+x5+x6+x7 )
+	return _mm_cvtss_f32(x32);
+}
+
+// Horizontal add function (sums 4 doubles into single double)
+static inline double sum4doubles(__m256d x) {
+	const __m128d x128 = _mm_add_pd(
+		_mm256_extractf128_pd(x, 1),
+		_mm256_castpd256_pd128(x));
+	const __m128d x64 = _mm_add_pd(_mm_permute_pd(x128, 1), x128);
+	return _mm_cvtsd_f64(x64);
+}
+
+#endif // defined(USE_AVX)
+
 };
 
-#if defined(USE_SIMD) && !defined(FIR_QUAD_PRECISION)
+// Specializations for doubles:
 
-// Specializations for doubles
-
-#ifndef USE_SIMD_FOR_DOUBLES
-
-// scalar implementation
+#if defined(USE_AVX)
 
 template <>
 double FIRFilter<double>::get() {
+
+	// AVX implementation: Processes four doubles at a time.
+
 	double output = 0.0;
-	int index = currentIndex;
-	for (int i = 0; i < size; ++i) {
-		output += signal[index] * kernel0[i];
-		index++;
+	int index = currentIndex & -4; // make multiple-of-four
+	int phase = currentIndex & 3;
+	double* kernel = kernelphases[phase];
+
+	alignas(ALIGNMENT_SIZE) __m256d s;	// AVX Vector Registers for calculation
+	alignas(ALIGNMENT_SIZE) __m256d k;
+	alignas(ALIGNMENT_SIZE) __m256d product;
+	alignas(ALIGNMENT_SIZE) __m256d accumulator = _mm256_setzero_pd();
+
+	for (int i = 0; i < sizeRounded4; i += 4) {
+		s = _mm256_load_pd(signal + index);
+		k = _mm256_load_pd(Kernel + i);
+
+#ifdef USE_FMA
+		accumulator = _mm256_fmadd_pd(signal, kernel, accumulator);
+#else
+		product = _mm256_mul_pd(s, k);
+		accumulator = _mm256_add_pd(product, accumulator);
+#endif
+		index += 4;
 	}
+
+	output += sum4doubles(accumulator);
 	return output;
 }
 
-#else 
+#elif defined(USE_SIMD) && defined(USE_SIMD_FOR_DOUBLES) && !defined(FIR_QUAD_PRECISION)
 
 template <>
 double FIRFilter<double>::get() {
 
-	// SSE / doubles
-	// Processes two doubles at a time.
+	// SSE Implementation: Processes two doubles at a time.
 
 	double output = 0.0;
 	double* kernel;
@@ -367,10 +439,10 @@ double FIRFilter<double>::get() {
 	int phase = currentIndex & 1;
 	kernel = kernelphases[phase];
 
-	alignas(SSE_ALIGNMENT_SIZE) __m128d s;	// SIMD Vector Registers for calculation
-	alignas(SSE_ALIGNMENT_SIZE) __m128d k;
-	alignas(SSE_ALIGNMENT_SIZE) __m128d product;
-	alignas(SSE_ALIGNMENT_SIZE) __m128d accumulator = _mm_setzero_pd();
+	alignas(ALIGNMENT_SIZE) __m128d s;	// SIMD Vector Registers for calculation
+	alignas(ALIGNMENT_SIZE) __m128d k;
+	alignas(ALIGNMENT_SIZE) __m128d product;
+	alignas(ALIGNMENT_SIZE) __m128d accumulator = _mm_setzero_pd();
 
 	for (int i = 0; i < paddedLength; i += 2) {
 		s = _mm_load_pd(signal + index + i);
@@ -380,16 +452,16 @@ double FIRFilter<double>::get() {
 	}
 
 	// horizontal add of two doubles
-    __m128 undef  = _mm_undefined_ps();
-    __m128 shuftmp= _mm_movehl_ps(undef, _mm_castpd_ps(accumulator));
-    __m128d shuf  = _mm_castps_pd(shuftmp);
-    output +=  _mm_cvtsd_f64(_mm_add_sd(accumulator, shuf));
+	__m128 undef  = _mm_undefined_ps();
+	__m128 shuftmp= _mm_movehl_ps(undef, _mm_castpd_ps(accumulator));
+	__m128d shuf  = _mm_castps_pd(shuftmp);
+	output +=  _mm_cvtsd_f64(_mm_add_sd(accumulator, shuf));
 
 	return output;
 }
-#endif // USE_SIMD_FOR_DOUBLES
-#endif // USE_SIMD && !FIR_QUAD_PRECISION
-#endif // !USE_AVX
+
+#endif // double specialisation
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // -- Functions beyond this point are for manipulating filter taps, and not for actually performing filtering -- //
