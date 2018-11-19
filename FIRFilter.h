@@ -207,8 +207,7 @@ public:
 			output += (__float128)signal[index] * (__float128)kernel0[i];
 			index++;
 		}
-		return (FloatType)output;
-
+		
 #elif defined(USE_AVX)
 
 		// AVX processing of float types
@@ -235,7 +234,6 @@ public:
 		}
 
 		output += sum8floats(accumulator);
-		return output;
 
 #elif defined(USE_SIMD)
 
@@ -268,8 +266,6 @@ public:
 		b          = _mm_add_ss(a, b);                 // [C     D     | D+C A+B+C+D]
 		output    += _mm_cvtss_f32(b);                 // A+B+C+D
 
-		return output;
-
 #else
 		// scalar processing of float or double types
 		FloatType output = 0.0;
@@ -278,9 +274,10 @@ public:
 			output += signal[index] * kernelphases[0][i];
 			index++;
 		}
-		return output;
 
-#endif //
+#endif
+
+		return static_cast<FloatType>(output);
 
 	}
 
