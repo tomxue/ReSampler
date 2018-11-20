@@ -24,6 +24,7 @@
 #include "alignedmalloc.h"
 #include "factorial.h"
 
+#define WRAP_WITH_MEMCPY
 #define FILTERSIZE_LIMIT 131071
 #define FILTERSIZE_BASE 103
 
@@ -177,10 +178,19 @@ public:
 
 	void put(FloatType value) { // Put signal in reverse order.
 		signal[currentIndex] = value;
+
+#ifndef WRAP_WITH_MEMCPY
+		signal[currentIndex + length] = value;
+#endif
+
 		lastPut = currentIndex;
 		if (currentIndex == 0) {
 			currentIndex = length - 1; // Wrap
+
+#ifdef WRAP_WITH_MEMCPY
 			memcpy(signal + length, signal, length * sizeof(FloatType)); // copy history to upper half of buffer
+#endif
+
 		}
 		else
 			--currentIndex;
@@ -188,9 +198,18 @@ public:
 
 	void putZero() {
 		signal[currentIndex] = 0.0;
+
+#ifndef WRAP_WITH_MEMCPY
+		signal[currentIndex + length] = 0.0;
+#endif
+
 		if (currentIndex == 0) {
 			currentIndex = length - 1; // Wrap
+
+#ifdef WRAP_WITH_MEMCPY
 			memcpy(signal + length, signal, length * sizeof(FloatType)); // copy history to upper half of buffer
+#endif
+
 		}
 		else
 			--currentIndex;
