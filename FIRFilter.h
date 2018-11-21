@@ -222,8 +222,8 @@ public:
 		// scalar processing of quad-precision types
 		__float128 output = 0.0Q;
 		int index = currentIndex;
-		for (int i = 0; i < size; ++i) {
-			output += (__float128)signal[index] * (__float128)kernel0[i];
+		for (int i = 0; i < length; ++i) {
+			output += (__float128)signal[index] * (__float128)kernelphases[0][i];
 			index++;
 		}
 		

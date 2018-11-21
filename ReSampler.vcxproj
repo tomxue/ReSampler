@@ -285,7 +285,6 @@
     <ClInclude Include="ditherer.h" />
     <ClInclude Include="dsf.h" />
     <ClInclude Include="FIRFilter.h" />
-    <ClInclude Include="FIRFilterAVX.h" />
     <ClInclude Include="noiseshape.h" />
     <ClInclude Include="osspecific.h" />
     <ClInclude Include="raiitimer.h" />
