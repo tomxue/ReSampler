@@ -302,12 +302,12 @@ public:
 
 	FloatType lazyGet(int L) {	// Skips stuffed-zeros introduced by interpolation, by only calculating every Lth sample from lastPut
 		FloatType output = 0.0;
-		int Offset = lastPut - currentIndex;
-		if (Offset < 0) { // Wrap condition
-			Offset += length;
+		int offset = lastPut - currentIndex;
+		if (offset < 0) { // Wrap condition
+			offset += length;
 		}
 	
-		for (int i = Offset; i < length; i+=L) {
+		for (int i = offset; i < length; i+=L) {
 			output += signal[i + currentIndex] * kernelphases[0][i];
 		}
 		return output;
