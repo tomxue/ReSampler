@@ -33,7 +33,7 @@ inline void* aligned_malloc(size_t size, size_t alignment) {
 #else 
 	#include <cstdlib>
 
-    void *memory;
+	void *memory;
 	return posix_memalign(&memory, alignment, size) ? 0 : memory; // (note: posix_memalign returns 0 if successful, non-zero error code if not)
 #endif
 

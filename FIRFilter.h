@@ -62,11 +62,11 @@ public:
 		length(length), signal(nullptr), currentIndex(length-1), lastPut(0)
 
 	{
-        calcPaddedLength();
+		calcPaddedLength();
 
-        for(int i = 0; i < numVecElements; i++) {
-            kernelphases[i] = nullptr;
-        }
+		for(int i = 0; i < numVecElements; i++) {
+			kernelphases[i] = nullptr;
+		}
 
 		allocateBuffers();
 		assertAlignment();
@@ -79,9 +79,9 @@ public:
 			signal[i + length] = 0.0;
 		}
 
-        // Populate additional kernel Phases:
+		// Populate additional kernel Phases:
 		for(int n = 1; n < numVecElements; n++) {
-            memcpy(1 + kernelphases[n], kernelphases[n - 1], (length - 1) * sizeof(FloatType));
+			memcpy(1 + kernelphases[n], kernelphases[n - 1], (length - 1) * sizeof(FloatType));
 		}
 	}
 
@@ -93,7 +93,7 @@ public:
 	// copy constructor:
 	FIRFilter(const FIRFilter& other) : length(other.length), currentIndex(other.currentIndex), lastPut(other.lastPut)
 	{
-        calcPaddedLength();
+		calcPaddedLength();
 		allocateBuffers();
 		assertAlignment();
 		copyBuffers(other);
@@ -103,14 +103,14 @@ public:
 	FIRFilter(FIRFilter&& other) noexcept :
 		length(other.length), signal(other.signal), currentIndex(other.currentIndex), lastPut(other.lastPut)
 	{
-        calcPaddedLength();
+		calcPaddedLength();
 
-        for(int i = 0; i < numVecElements; i++) {
-            kernelphases[i] = other.kernelphases[i];
-            other.kernelphases[i] = nullptr;
-        }
+		for(int i = 0; i < numVecElements; i++) {
+			kernelphases[i] = other.kernelphases[i];
+			other.kernelphases[i] = nullptr;
+		}
 
-        other.signal = nullptr;
+		other.signal = nullptr;
 		assertAlignment();
 	}
 
@@ -118,7 +118,7 @@ public:
 	FIRFilter& operator= (const FIRFilter& other)
 	{
 		length = other.length;
-        calcPaddedLength();
+		calcPaddedLength();
 		currentIndex = other.currentIndex;
 		lastPut = other.lastPut;
 		freeBuffers();
@@ -133,19 +133,19 @@ public:
 	{
 		if(this != &other) // prevent self-assignment
 		{
-            length = other.length;
-           	calcPaddedLength();
+			length = other.length;
+		   	calcPaddedLength();
 			currentIndex = other.currentIndex;
 			lastPut = other.lastPut;
 
 			freeBuffers();
 			
 			signal = other.signal;
-            for(int i = 0; i < numVecElements; i++) {
-                kernelphases[i] = other.kernelphases[i];
-                other.kernelphases[i] = nullptr;
-            }
-            other.signal = nullptr;
+			for(int i = 0; i < numVecElements; i++) {
+				kernelphases[i] = other.kernelphases[i];
+				other.kernelphases[i] = nullptr;
+			}
+			other.signal = nullptr;
 			assertAlignment();
 		}
 		return *this;
@@ -328,11 +328,11 @@ private:
 	// Polyphase Filter Kernel table:
 
 #if defined(USE_AVX)
-    FloatType* kernelphases[8]; // note:  will only use half of these if FloatType = double
+	FloatType* kernelphases[8]; // note:  will only use half of these if FloatType = double
 #elif defined(USE_SIMD)
-    FloatType* kernelphases[4]; // note: will only use half of these if FloatType = double
+	FloatType* kernelphases[4]; // note: will only use half of these if FloatType = double
 #else
-    FloatType* kernelphases[1];
+	FloatType* kernelphases[1];
 #endif
 
 	void calcPaddedLength()
@@ -346,32 +346,32 @@ private:
 	{
 		signal = static_cast<FloatType*>(aligned_malloc((paddedLength + length) * sizeof(FloatType), ALIGNMENT_SIZE));
 		for(int i = 0; i < numVecElements; i++) {
-            kernelphases[i] = static_cast<FloatType*>(aligned_malloc(paddedLength * sizeof(FloatType), ALIGNMENT_SIZE));
+			kernelphases[i] = static_cast<FloatType*>(aligned_malloc(paddedLength * sizeof(FloatType), ALIGNMENT_SIZE));
 		}
 	}
 
 	void clearBuffers()
-    {
-	    memset(signal, 0.0, (paddedLength + length) * sizeof(FloatType));
-        for(int i = 0; i < numVecElements; i++) {
-            memset(kernelphases[i], 0.0, paddedLength * sizeof(FloatType));
-        }
-    }
+	{
+		memset(signal, 0.0, (paddedLength + length) * sizeof(FloatType));
+		for(int i = 0; i < numVecElements; i++) {
+			memset(kernelphases[i], 0.0, paddedLength * sizeof(FloatType));
+		}
+	}
 
 	void copyBuffers(const FIRFilter& other)
 	{
 		memcpy(signal, other.signal, (paddedLength + length) * sizeof(FloatType));
-        for(int i = 0; i < numVecElements; i++) {
-            memcpy(kernelphases[i], other.kernelphases[i], paddedLength * sizeof(FloatType));
-        }
+		for(int i = 0; i < numVecElements; i++) {
+			memcpy(kernelphases[i], other.kernelphases[i], paddedLength * sizeof(FloatType));
+		}
 	}
 
 	void freeBuffers()
 	{
 		aligned_free(signal);
-        for(int i = 0; i < numVecElements; i++) {
-            aligned_free(kernelphases[i]);
-        }
+		for(int i = 0; i < numVecElements; i++) {
+			aligned_free(kernelphases[i]);
+		}
 	}
 	
 	// assertAlignment() : asserts that all private data buffers are aligned on expected boundaries
@@ -379,9 +379,9 @@ private:
 	{
 		const std::uintptr_t alignment = ALIGNMENT_SIZE;
 		assert(reinterpret_cast<std::uintptr_t>(signal) % alignment == 0);
-        for(int i = 0; i < numVecElements; i++) {
-            assert(reinterpret_cast<std::uintptr_t>(kernelphases[i]) % alignment == 0);
-        }
+		for(int i = 0; i < numVecElements; i++) {
+			assert(reinterpret_cast<std::uintptr_t>(kernelphases[i]) % alignment == 0);
+		}
 	}
 
 #if defined(USE_AVX)
@@ -492,20 +492,20 @@ template<typename FloatType> bool makeLPF(FloatType* filter, int Length, FloatTy
 {
 #ifdef FIR_QUAD_PRECISION
 
-    // use quads internally, regardless of FloatType
-    __float128 ft = transitionFreq / sampleRate; // normalised transition frequency
-    assert(ft < 0.5Q);
-    int halfLength = Length / 2;
-    __float128 halfM = 0.5Q * (Length - 1);
+	// use quads internally, regardless of FloatType
+	__float128 ft = transitionFreq / sampleRate; // normalised transition frequency
+	assert(ft < 0.5Q);
+	int halfLength = Length / 2;
+	__float128 halfM = 0.5Q * (Length - 1);
 	__float128 M_TWOPIq = 2.0Q * M_PIq;
 
-    if (Length & 1)
-        filter[halfLength] = 2.0Q * ft; // if length is odd, avoid divide-by-zero at centre-tap
+	if (Length & 1)
+		filter[halfLength] = 2.0Q * ft; // if length is odd, avoid divide-by-zero at centre-tap
 
-    for (int n = 0; n<halfLength; ++n) {
-        __float128 sinc = sinq(fmodq(M_TWOPIq * ft * (n - halfM), M_TWOPIq)) / (M_PIq * (n - halfM));	// sinc function
-        filter[Length - n - 1] = filter[n] = sinc;	// exploit symmetry
-    }
+	for (int n = 0; n<halfLength; ++n) {
+		__float128 sinc = sinq(fmodq(M_TWOPIq * ft * (n - halfM), M_TWOPIq)) / (M_PIq * (n - halfM));	// sinc function
+		filter[Length - n - 1] = filter[n] = sinc;	// exploit symmetry
+	}
 
 #else
 
@@ -579,15 +579,15 @@ template<typename FloatType> bool applyKaiserWindow(FloatType* filter, int Lengt
 	// Note: sometimes, the Kaiser Window formula is defined in terms of Alpha (instead of Beta), 
 	// in which case, Alpha def= Beta / pi
 
-    if (Length < 1)
-        return false;
+	if (Length < 1)
+		return false;
 
 #ifdef FIR_QUAD_PRECISION
 
-    for (int n = 0; n < Length; ++n) {
-        filter[n] *= I0q(Beta * sqrtq(1.0Q - powq((2.0Q * n / (Length - 1) - 1), 2.0Q)))
-                     / I0q(Beta);
-    }
+	for (int n = 0; n < Length; ++n) {
+		filter[n] *= I0q(Beta * sqrtq(1.0Q - powq((2.0Q * n / (Length - 1) - 1), 2.0Q)))
+					 / I0q(Beta);
+	}
 
 #else
 
@@ -766,7 +766,7 @@ AnalyticSignalV(const std::vector<std::complex<double>>& input) {
 template<typename FloatType>
 void makeMinPhase(FloatType* pFIRcoeffs, size_t length)
 {
-    auto fftLength = static_cast<size_t>(pow(2, 2.0 + ceil(log2(length)))); // use FFT 4x larger than (length rounded-up to power-of-2)
+	auto fftLength = static_cast<size_t>(pow(2, 2.0 + ceil(log2(length)))); // use FFT 4x larger than (length rounded-up to power-of-2)
 
 	std::vector <std::complex<double>> complexInput;
 	std::vector <std::complex<double>> complexOutput;
@@ -831,7 +831,7 @@ void makeMinPhase(FloatType* pFIRcoeffs, size_t length)
 template<typename FloatType>
 std::vector<FloatType> makeMinPhase2(const FloatType* pFIRcoeffs, size_t length)
 {
-    auto fftLength = static_cast<size_t>(pow(2, 2.0 + ceil(log2(length)))); // use FFT 4x larger than (length rounded-up to power-of-2)
+	auto fftLength = static_cast<size_t>(pow(2, 2.0 + ceil(log2(length)))); // use FFT 4x larger than (length rounded-up to power-of-2)
 
 	std::vector <std::complex<double>> complexInput;
 	std::vector <std::complex<double>> complexOutput;
@@ -885,17 +885,17 @@ std::vector<FloatType> makeMinPhase2(const FloatType* pFIRcoeffs, size_t length)
 
 // dumpKaiserWindow() - utility function for displaying Kaiser Window:
 void dumpKaiserWindow(size_t length, double Beta) {
-    std::vector<double> f(length, 1);
-    applyKaiserWindow<double>(f.data(), length, Beta);
-    for (int i = 0; i < length; ++i) {
-        std::cout << i << ": " << f[i] << std::endl;
-    }
+	std::vector<double> f(length, 1);
+	applyKaiserWindow<double>(f.data(), length, Beta);
+	for (int i = 0; i < length; ++i) {
+		std::cout << i << ": " << f[i] << std::endl;
+	}
 
-    std::vector<double> g(length, 1);
-    applyKaiserWindow<double>(g.data(), length, Beta);
-    for (int i = 0; i < length; ++i) {
-        std::cout << i << ": " << g[i] << std::endl;
-    }
+	std::vector<double> g(length, 1);
+	applyKaiserWindow<double>(g.data(), length, Beta);
+	for (int i = 0; i < length; ++i) {
+		std::cout << i << ": " << g[i] << std::endl;
+	}
 }
 
 // asserts that the two Kaiser Window formulas agree with each other (within a specified tolerance)
@@ -934,7 +934,7 @@ void dumpComplexVector(const std::vector<std::complex<double>>& v)
 template<typename FloatType>
 void dumpFFT(FloatType* data, size_t length)
 {
-    auto pow2length = static_cast<size_t>(pow(2, 1.0 + floor(log2(length))));
+	auto pow2length = static_cast<size_t>(pow(2, 1.0 + floor(log2(length))));
 
 	std::vector <std::complex<double>> complexInput;
 	std::vector <std::complex<double>> complexOutput;
