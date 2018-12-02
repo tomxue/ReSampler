@@ -31,9 +31,9 @@ std::vector<FloatType> makeFilterCoefficients(const ConversionInfo& ci, Fraction
 	double steepness = 0.090909091 / (ci.lpfTransitionWidth / 100.0);
 
 	// determine filtersize
-	size_t filterSize = static_cast<size_t>(
+	int filterSize = static_cast<int>(
 		std::min<int>(FILTERSIZE_BASE * ci.overSamplingFactor * std::max(fraction.denominator, fraction.numerator) * steepness, FILTERSIZE_LIMIT)
-		| static_cast<int>(1) // ensure that filter length is always odd
+		| 1 // ensure that filter length is always odd
 	);
 
 	// determine sidelobe attenuation
