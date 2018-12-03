@@ -26,6 +26,11 @@ AVX build:
 g++ -pthread -std=c++11 ReSampler.cpp -Ilibsndfile/include -Ifftw64 -Lfftw64 -llibfftw3-3 -Llibsndfile/lib -llibsndfile-1 -o x64/minGW-W64-AVX/ReSampler.exe -O3 -DUSE_AVX -mavx
 ~~~
 
+AVX + FMA build (requires >= Intel Haswell or AMD PileDriver):
+~~~
+g++ -pthread -std=c++11 ReSampler.cpp -Ilibsndfile/include -Ifftw64 -Lfftw64 -llibfftw3-3 -Llibsndfile/lib -llibsndfile-1 -o x64/minGW-W64-AVX/ReSampler.exe -O3 -DUSE_AVX -mavx
+~~~
+
 Quad-Precision build (experimental) - GCC / minGW only:
 ~~~
  g++ -pthread -std=gnu++11 ReSampler.cpp -Ilibsndfile/include -Ifftw64 -Lfftw64 -llibfftw3-3 -Llibsndfile/lib -llibsndfile-1 -lquadmath -o x64/minGW-W64/ReSampler-QuadMath.exe -O -DUSE_QUADMATH
