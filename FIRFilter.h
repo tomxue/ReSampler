@@ -246,7 +246,7 @@ public:
 			k = _mm256_load_ps(kernel + i);
 
 #ifdef USE_FMA
-			accumulator = _mm256_fmadd_ps(signal, kernel, accumulator);
+                        accumulator = _mm256_fmadd_ps(s, k, accumulator);
 #else
 			product = _mm256_mul_ps(s, k);
 			accumulator = _mm256_add_ps(product, accumulator);
@@ -432,7 +432,7 @@ double FIRFilter<double>::get() {
 		k = _mm256_load_pd(kernel + i);
 
 #ifdef USE_FMA
-		accumulator = _mm256_fmadd_pd(signal, kernel, accumulator);
+                accumulator = _mm256_fmadd_pd(s, k, accumulator);
 #else
 		product = _mm256_mul_pd(s, k);
 		accumulator = _mm256_add_pd(product, accumulator);

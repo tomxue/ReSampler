@@ -49,6 +49,11 @@ AVX Build:
 clang++ -pthread -std=c++11 ReSampler.cpp -lfftw3 -lsndfile -o ReSampler -O3 -DUSE_AVX -mavx -L/usr/local/lib -I/usr/local/include
 ~~~
 
+AVX + FMA Build:
+~~~
+clang++ -pthread -std=c++11 ReSampler.cpp -lfftw3 -lsndfile -o ReSampler -O3 -DUSE_AVX -DUSE_FMA -mavx -mfma -L/usr/local/lib -I/usr/local/include
+~~~
+
 # miscellaneous
 
 ## compiling sndfile-tools 
