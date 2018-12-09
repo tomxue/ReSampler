@@ -2,7 +2,7 @@
 ## Synopsis
 ReSampler is a high-performance command-line audio sample rate conversion tool which can convert audio file formats with a variety of different bit-depths and audio channel configurations.
 
-ReSampler was *originally* developed on [Windows](windows-build.md), but also compiles and runs well on [Linux](linux-build.md) and [macOS](mac-build.md)
+ReSampler compiles and runs on [Windows](windows-build.md), [Linux](linux-build.md) and [macOS](mac-build.md)
 
 ReSampler is intended to produce outstanding quality sound files, keeping aliasing and other unwanted artifacts to a minimum, as the following actual measurement graphs show:
 
