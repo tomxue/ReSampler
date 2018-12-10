@@ -112,6 +112,9 @@ ReSampler was originally developed on Windows, but has also been successfully co
 **--seed &lt;n&gt;** : when specified in conjunction with **--dither** , causes the pseudo-random number generator used to generate dither noise to generate a specific (repeatable) sequence of noise associated with the number n.
 Using the same value of n on subsequent conversions should reproduce precisely the same result. n is a signed integer in the range -2,147,483,648 through 2,147,483,647.  
 
+**--quantize-bits &lt;number of bits&gt;** : when used in conjunction with **--dither**, quantize the output to a specified number of bits.
+(eg. quantize to 8 bits when output is really 16 bits)
+
 **--noDelayTrim** : deactivate correction of [delay due to the linear-phase FIR anti-aliasing filter.](./GroupDelayCorrection/delayCorrection.md)
 *By default, delay correction is active to ensure that the timing of the converted output file matches the timing of the input file precisely.*
 
