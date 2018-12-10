@@ -151,6 +151,8 @@ struct ConversionInfo
 	
 	bool bTmpFile;
 	bool bShowTempFile;
+	bool quantize;
+	int quantizeBits;
 
 	bool fromCmdLineArgs(int argc, char* argv[]);
 	std::string toCmdLineArgs();
@@ -324,6 +326,10 @@ inline bool ConversionInfo::fromCmdLineArgs(int argc, char* argv[]) {
 			lpfTransitionWidth = 100 - lpfCutoff; // auto mode
 		}
 	}
+
+	double qb = 0.0;
+	quantize = getCmdlineParam(argv, argv + argc, "--quantize-bits", qb);
+	quantizeBits = static_cast<int>(std::floor(qb));
 
 	// constraining functions:
 	auto constrainDouble = [](double& val, double minVal, double maxVal) {

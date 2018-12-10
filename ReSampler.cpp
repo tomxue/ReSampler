@@ -616,6 +616,10 @@ bool convert(ConversionInfo& ci)
 		outputSignalBits = 16;
 	}
 
+	if(ci.quantize) {
+	    outputSignalBits = std::max(1, std::min(ci.quantizeBits, outputSignalBits));
+	}
+
 	// confirm dithering options for user:
 	if (ci.bDither) {
 		auto prec = std::cout.precision();
