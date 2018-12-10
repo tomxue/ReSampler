@@ -29,7 +29,7 @@ const std::string strExtraOptions(
 	"--showDitherProfiles\n"
 	"--gain [<amount>]\n"
 	"--doubleprecision\n"
-	"--dither [<amount>] [--autoblank] [--ns [<ID>]] [--flat-tpdf] [--seed [<num>]]\n"
+	"--dither [<amount>] [--autoblank] [--ns [<ID>]] [--flat-tpdf] [--seed [<num>]] [--quantize-bits <number of bits>]\n"
 	"--noDelayTrim\n"
 	"--minphase\n"
 	"--flacCompression <compressionlevel>\n"
