@@ -905,7 +905,7 @@ bool convert(ConversionInfo& ci)
 					outFile->write(outBuf.data(), i);
 
 #ifdef __GNUC__
-			//		csvFile.write(outBuf.data(), i);
+//					csvFile.write(outBuf.data(), i);
 #endif
 
 

@@ -69,7 +69,7 @@ public:
     template <typename T>
     int64_t write(const T* buffer, int64_t count) {
         int64_t i;
-        for(i = 0; i < count; count++) {
+        for(i = 0; i < count; i++) {
             file << buffer[i];
             if(++currentChannel < numChannels) {
                 file << ",";
