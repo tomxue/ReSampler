@@ -18,6 +18,7 @@
 #include "FIRFilter.h"
 #include "conversioninfo.h"
 #include "fraction.h"
+#include "ReSampler.h"
 
 static_assert(std::is_copy_constructible<ConversionInfo>::value, "ConversionInfo needs to be copy Constructible");
 static_assert(std::is_copy_assignable<ConversionInfo>::value, "ConversionInfo needs to be copy Assignable");

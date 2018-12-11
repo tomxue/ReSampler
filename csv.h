@@ -59,6 +59,8 @@ public:
         }
 
 
+
+
 //                makeTbl();
 //                readHeaders();
 //
@@ -80,6 +82,13 @@ public:
 
 
     }
+
+    ~CsvFile() {
+        if(file.is_open()) {
+            file.close();
+        }
+    }
+
 
 private:
     std::string path;
