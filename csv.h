@@ -31,6 +31,7 @@ public:
     CsvFile(const std::string& path, CsvOpenMode mode = csv_write) : path(path), mode(mode)
     {
         file.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+        currentChannel = 0;
 
         switch (mode) {
             case csv_read:
@@ -58,9 +59,6 @@ public:
                 break;
         }
 
-
-
-
 //                makeTbl();
 //                readHeaders();
 //
@@ -79,8 +77,6 @@ public:
 //            case dff_write:
 //                break;
 
-
-
     }
 
     ~CsvFile() {
@@ -89,11 +85,27 @@ public:
         }
     }
 
+    template <typename T>
+    int64_t write(const T* buffer, int64_t count) {
+        int64_t i;
+        for(i = 0; i < count; count++) {
+            file << buffer[i];
+            if(++currentChannel < numChannels) {
+                file << ",";
+            } else {
+                file << "\r\n";
+                currentChannel = 0;
+            }
+        }
+        return i;
+    }
 
 private:
     std::string path;
     CsvOpenMode mode;
     std::fstream file;
+    int numChannels;
+    int currentChannel;
     bool err;
 };
 
