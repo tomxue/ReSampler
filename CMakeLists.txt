@@ -19,7 +19,6 @@ if(WIN32)
             ditherer.h
             dsf.h
             FIRFilter.h
-            FIRFilterAVX.h
             fraction.h
             noiseshape.h
             osspecific.h
@@ -49,7 +48,6 @@ elseif (APPLE)
             ditherer.h
             dsf.h
             FIRFilter.h
-            FIRFilterAVX.h
             fraction.h
             noiseshape.h
             osspecific.h
@@ -75,14 +73,13 @@ else ()
             ditherer.h
             dsf.h
             FIRFilter.h
-            FIRFilterAVX.h
             fraction.h
             noiseshape.h
             osspecific.h
             raiitimer.h
             ReSampler.cpp
             ReSampler.h
-            srconvert.h)
+            srconvert.h csv.h)
 
     add_executable(ReSampler ${SOURCE_FILES})
 endif()
