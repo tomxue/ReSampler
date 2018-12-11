@@ -58,25 +58,6 @@ public:
                 }
                 break;
         }
-
-//                makeTbl();
-//                readHeaders();
-//
-//                if (err)
-//                    return;
-//
-//                bufferSize = blockSize * numChannels;
-//                inputBuffer = new uint8_t[bufferSize];
-//                totalBytesRead = 0;
-//                endOfBlock = bufferSize;
-//                bufferIndex = endOfBlock; // empty (zero -> full)
-//                currentBit = 0;
-//                currentChannel = 0;
-//                break;
-//
-//            case dff_write:
-//                break;
-
     }
 
     ~CsvFile() {
@@ -105,6 +86,16 @@ private:
     CsvOpenMode mode;
     std::fstream file;
     int numChannels;
+public:
+    int getNumChannels() const {
+        return numChannels;
+    }
+
+    void setNumChannels(int numChannels) {
+        CsvFile::numChannels = numChannels;
+    }
+
+private:
     int currentChannel;
     bool err;
 };

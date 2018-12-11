@@ -675,7 +675,12 @@ bool convert(ConversionInfo& ci)
 		peakInputSample = 0.0;
 		bClippingDetected = false;
 		std::unique_ptr<SndfileHandle> outFile;
-		
+
+#ifdef __GNUC__
+//		CsvFile csvFile("/tmp/sound.csv");
+//		csvFile.setNumChannels(nChannels);
+#endif
+
 		try { // Open output file:
 
 			// output file may need to be overwriten on subsequent passes,
@@ -898,6 +903,12 @@ bool convert(ConversionInfo& ci)
 
 					// write output buffer to outfile
 					outFile->write(outBuf.data(), i);
+
+#ifdef __GNUC__
+			//		csvFile.write(outBuf.data(), i);
+#endif
+
+
 
 					// conditionally send progress update:
 					if (totalSamplesRead > nextProgressThreshold) {
