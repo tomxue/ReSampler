@@ -26,6 +26,12 @@ enum CsvOpenMode {
     csv_write
 };
 
+enum CsvNumericFormat {
+	Integer,
+	Float,
+	Hex
+};
+
 class CsvFile {
 public:
     CsvFile(const std::string& path, CsvOpenMode mode = csv_write) : path(path), mode(mode)
@@ -85,7 +91,10 @@ private:
     std::string path;
     CsvOpenMode mode;
     std::fstream file;
+	CsvNumericFormat csvNumericFormat;
+	int numBits;
     int numChannels;
+
 public:
     int getNumChannels() const {
         return numChannels;
