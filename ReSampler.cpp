@@ -22,10 +22,6 @@
 #endif 
 
 #if defined (__MINGW64__) || defined (__MINGW32__) || defined (__GNUC__)
-
-// to-do: windows
-#include "csv.h"
-
 #ifdef USE_QUADMATH
 #include <quadmath.h>
 #ifndef FIR_QUAD_PRECISION
@@ -34,6 +30,7 @@
 #endif
 #endif
 
+#include "csv.h" // to-do: check macOS
 #include "ReSampler.h"
 #include "conversioninfo.h"
 #include "osspecific.h"
