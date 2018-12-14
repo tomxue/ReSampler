@@ -28,6 +28,7 @@ enum CsvOpenMode {
 
 enum CsvNumericFormat {
 	Integer,
+	UnsignedInteger,
 	Float,
 	Hex
 };
