@@ -26,11 +26,22 @@ enum CsvOpenMode {
     csv_write
 };
 
+enum CsvSignedness {
+	Signed,
+	Unsigned
+};
+
 enum CsvNumericFormat {
 	Integer,
-	UnsignedInteger,
-	Float,
-	Hex
+	FloatingPoint,
+	Scientific
+};
+
+enum CsvNumericBase {
+	Binary = 2,
+	Octal = 8,
+	Decimal = 10,
+	Hexadecimal = 16
 };
 
 class CsvFile {
@@ -92,10 +103,13 @@ private:
     std::string path;
     CsvOpenMode mode;
     std::fstream file;
-	CsvNumericFormat csvNumericFormat;
+	int numChannels;
+	CsvNumericFormat numericFormat;
+	CsvSignedness signedness;
+	CsvNumericBase numericBase;
 	int numBits;
-    int numChannels;
-
+	int numSignificantDigits;
+  
 public:
     int getNumChannels() const {
         return numChannels;
