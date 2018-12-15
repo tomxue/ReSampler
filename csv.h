@@ -105,7 +105,49 @@ private:
     std::fstream file;
 	int numChannels;
 	CsvNumericFormat numericFormat;
-	CsvSignedness signedness;
+public:
+    CsvNumericFormat getNumericFormat() const {
+        return numericFormat;
+    }
+
+    void setNumericFormat(CsvNumericFormat numericFormat) {
+        CsvFile::numericFormat = numericFormat;
+    }
+
+    CsvSignedness getSignedness() const {
+        return signedness;
+    }
+
+    void setSignedness(CsvSignedness signedness) {
+        CsvFile::signedness = signedness;
+    }
+
+    CsvNumericBase getNumericBase() const {
+        return numericBase;
+    }
+
+    void setNumericBase(CsvNumericBase numericBase) {
+        CsvFile::numericBase = numericBase;
+    }
+
+    int getNumBits() const {
+        return numBits;
+    }
+
+    void setNumBits(int numBits) {
+        CsvFile::numBits = numBits;
+    }
+
+    int getNumSignificantDigits() const {
+        return numSignificantDigits;
+    }
+
+    void setNumSignificantDigits(int numSignificantDigits) {
+        CsvFile::numSignificantDigits = numSignificantDigits;
+    }
+
+private:
+    CsvSignedness signedness;
 	CsvNumericBase numericBase;
 	int numBits;
 	int numSignificantDigits;
