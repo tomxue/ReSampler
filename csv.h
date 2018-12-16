@@ -46,7 +46,7 @@ enum CsvNumericBase {
 
 class CsvFile {
 public:
-    CsvFile(const std::string& path, CsvOpenMode mode = csv_write) : path(path), mode(mode)
+    CsvFile(const std::string& path, CsvOpenMode mode = csv_write) : path(path), mode(mode), signedness(Signed), numericBase(Decimal), numBits(16), numSignificantDigits(10)
     {
         file.exceptions(std::ifstream::failbit | std::ifstream::badbit);
         currentChannel = 0;
