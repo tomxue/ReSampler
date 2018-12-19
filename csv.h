@@ -20,6 +20,8 @@
 #include <cstdint>
 #include <string>
 #include <fstream>
+#include <cmath>
+
 
 enum CsvOpenMode {
     csv_read,
@@ -88,11 +90,20 @@ public:
     int64_t write(const T* buffer, int64_t count) {
         int64_t i;
         for(i = 0; i < count; i++) {
-            file << buffer[i];
+            switch(numericFormat) {
+                case CsvNumericFormat::FloatingPoint:
+                    file << buffer[i];
+                    break;
+
+                default:
+                    file << scaleToInt(buffer[i]);
+                    break;
+            }
+
             if(++currentChannel < numChannels) {
                 file << ",";
             } else {
-                file << "\r\n";
+                file  << "\r\n";
                 currentChannel = 0;
             }
         }
@@ -105,6 +116,26 @@ private:
     std::fstream file;
 	int numChannels;
 	CsvNumericFormat numericFormat;
+	double scaleFactor;
+	template <typename IntType, typename FloatType>
+	IntType scaleToInt(FloatType x) {
+	    return static_cast<IntType>(std::round(scaleFactor * x));
+	}
+
+	void setStreamFormat() {
+	    if(file.is_open()) {
+	        if(numericFormat == FloatingPoint) {
+	            file.unsetf(std::ios::fixed);
+	            file << std::setprecision(numSignificantDigits);
+	        } else {
+	            file.setf(std::ios::fixed);
+	            file << std::setprecision(0);
+	        }
+	    }
+	}
+
+
+
 public:
     CsvNumericFormat getNumericFormat() const {
         return numericFormat;
@@ -112,6 +143,7 @@ public:
 
     void setNumericFormat(CsvNumericFormat numericFormat) {
         CsvFile::numericFormat = numericFormat;
+        setStreamFormat();
     }
 
     CsvSignedness getSignedness() const {
@@ -120,6 +152,7 @@ public:
 
     void setSignedness(CsvSignedness signedness) {
         CsvFile::signedness = signedness;
+        setStreamFormat();
     }
 
     CsvNumericBase getNumericBase() const {
@@ -128,6 +161,7 @@ public:
 
     void setNumericBase(CsvNumericBase numericBase) {
         CsvFile::numericBase = numericBase;
+        setStreamFormat();
     }
 
     int getNumBits() const {
@@ -135,7 +169,11 @@ public:
     }
 
     void setNumBits(int numBits) {
+        scaleFactor = 1.0 / ((1 << (numBits - 1)) - 1); // Erik
+   //     scaleFactor = 1.0 / (1 << (numBits - 1)); // Correct
+
         CsvFile::numBits = numBits;
+        setStreamFormat();
     }
 
     int getNumSignificantDigits() const {
@@ -144,6 +182,7 @@ public:
 
     void setNumSignificantDigits(int numSignificantDigits) {
         CsvFile::numSignificantDigits = numSignificantDigits;
+        setStreamFormat();
     }
 
 private:
