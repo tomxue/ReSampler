@@ -10,10 +10,7 @@
 #ifndef RESAMPLER_CSV_H
 #define RESAMPLER_CSV_H
 
-//
 // csv.h : defines module for exporting audio data as a csv file
-// Created by judd on 11/12/18.
-//
 
 #include <iostream>
 #include <cassert>
@@ -21,7 +18,6 @@
 #include <string>
 #include <fstream>
 #include <cmath>
-
 
 enum CsvOpenMode {
     csv_read,
@@ -36,6 +32,7 @@ enum CsvSignedness {
 enum CsvNumericFormat {
 	Integer,
 	FloatingPoint,
+	Fixed,
 	Scientific
 };
 
@@ -46,9 +43,14 @@ enum CsvNumericBase {
 	Hexadecimal = 16
 };
 
+enum IntegerWriteScalingStyle {
+    Pow2Clip,
+    Pow2Minus1
+};
+
 class CsvFile {
 public:
-    CsvFile(const std::string& path, CsvOpenMode mode = csv_write) : path(path), mode(mode), signedness(Signed), numericBase(Decimal), numBits(16), numSignificantDigits(10)
+    CsvFile(const std::string& path, CsvOpenMode mode = csv_write) : path(path), mode(mode), signedness(Signed), numericBase(Decimal), numBits(16), numSignificantDigits(10), integerWriteScalingStyle(Pow2Minus1)
     {
         file.exceptions(std::ifstream::failbit | std::ifstream::badbit);
         currentChannel = 0;
@@ -117,6 +119,14 @@ private:
 	int numChannels;
 	CsvNumericFormat numericFormat;
 	double scaleFactor;
+    CsvSignedness signedness;
+    CsvNumericBase numericBase;
+    int numBits;
+    int numSignificantDigits;
+    IntegerWriteScalingStyle integerWriteScalingStyle;
+    int currentChannel;
+    bool err;
+
 	template <typename IntType, typename FloatType>
 	IntType scaleToInt(FloatType x) {
 	    return static_cast<IntType>(std::round(scaleFactor * x));
@@ -133,8 +143,6 @@ private:
 	        }
 	    }
 	}
-
-
 
 public:
     CsvNumericFormat getNumericFormat() const {
@@ -169,8 +177,11 @@ public:
     }
 
     void setNumBits(int numBits) {
-        scaleFactor = 1.0 / ((1 << (numBits - 1)) - 1); // Erik
-   //     scaleFactor = 1.0 / (1 << (numBits - 1)); // Correct
+
+        scaleFactor = 1 << (numBits - 1); // Erik
+        if(integerWriteScalingStyle == Pow2Minus1) {
+            scaleFactor -= 1;
+        }
 
         CsvFile::numBits = numBits;
         setStreamFormat();
@@ -185,13 +196,14 @@ public:
         setStreamFormat();
     }
 
-private:
-    CsvSignedness signedness;
-	CsvNumericBase numericBase;
-	int numBits;
-	int numSignificantDigits;
-  
-public:
+    IntegerWriteScalingStyle getIntegerWriteScalingStyle() const {
+        return integerWriteScalingStyle;
+    }
+
+    void setIntegerWriteScalingStyle(IntegerWriteScalingStyle integerWriteScalingStyle) {
+        CsvFile::integerWriteScalingStyle = integerWriteScalingStyle;
+    }
+
     int getNumChannels() const {
         return numChannels;
     }
@@ -200,9 +212,6 @@ public:
         CsvFile::numChannels = numChannels;
     }
 
-private:
-    int currentChannel;
-    bool err;
 };
 
 
