@@ -178,7 +178,7 @@ public:
 
     void setNumBits(int numBits) {
 
-        scaleFactor = 1 << (numBits - 1); // Erik
+        scaleFactor = 1 << (numBits - 1);
         if(integerWriteScalingStyle == Pow2Minus1) {
             scaleFactor -= 1;
         }
