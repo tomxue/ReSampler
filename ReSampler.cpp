@@ -112,37 +112,41 @@ int main(int argc, char * argv[])
 	// detect csv output
 	ci.csvOutput = (outFileExt == "csv");
 
-	if (!ci.outBitFormat.empty()) {  // new output bit format requested
-		ci.outputFormat = determineOutputFormat(outFileExt, ci.outBitFormat);
-		if (ci.outputFormat)
-			std::cout << "Changing output bit format to " << ci.outBitFormat << std::endl;
-		else { // user-supplied bit format not valid; try choosing appropriate format
-			determineBestBitFormat(ci.outBitFormat, ci.inputFilename, ci.outputFilename);
+	if (ci.csvOutput) {
+		std::cout << "Outputting to csv format" << std::endl;
+	}
+	else {
+		if (!ci.outBitFormat.empty()) {  // new output bit format requested
 			ci.outputFormat = determineOutputFormat(outFileExt, ci.outBitFormat);
 			if (ci.outputFormat)
 				std::cout << "Changing output bit format to " << ci.outBitFormat << std::endl;
-			else {
-				std::cout << "Warning: NOT Changing output file bit format !" << std::endl;
-				ci.outputFormat = 0; // back where it started
+			else { // user-supplied bit format not valid; try choosing appropriate format
+				determineBestBitFormat(ci.outBitFormat, ci.inputFilename, ci.outputFilename);
+				ci.outputFormat = determineOutputFormat(outFileExt, ci.outBitFormat);
+				if (ci.outputFormat)
+					std::cout << "Changing output bit format to " << ci.outBitFormat << std::endl;
+				else {
+					std::cout << "Warning: NOT Changing output file bit format !" << std::endl;
+					ci.outputFormat = 0; // back where it started
+				}
+			}
+		}
+
+		if (outFileExt != inFileExt)
+		{ // file extensions differ, determine new output format: 
+
+			if (ci.outBitFormat.empty()) { // user changed file extension only. Attempt to choose appropriate output sub format:
+				std::cout << "Output Bit Format not specified" << std::endl;
+				determineBestBitFormat(ci.outBitFormat, ci.inputFilename, ci.outputFilename);
+			}
+			ci.outputFormat = determineOutputFormat(outFileExt, ci.outBitFormat);
+			if (ci.outputFormat)
+				std::cout << "Changing output file format to " << outFileExt << std::endl;
+			else { // cannot determine subformat of output file
+				std::cout << "Warning: NOT Changing output file format ! (extension different, but format will remain the same)" << std::endl;
 			}
 		}
 	}
-
-	if (outFileExt != inFileExt)
-	{ // file extensions differ, determine new output format: 
-
-		if (ci.outBitFormat.empty()) { // user changed file extension only. Attempt to choose appropriate output sub format:
-			std::cout << "Output Bit Format not specified" << std::endl;
-			determineBestBitFormat(ci.outBitFormat, ci.inputFilename, ci.outputFilename);
-		}
-		ci.outputFormat = determineOutputFormat(outFileExt, ci.outBitFormat);
-		if (ci.outputFormat)
-			std::cout << "Changing output file format to " << outFileExt << std::endl;
-		else { // cannot determine subformat of output file
-			std::cout << "Warning: NOT Changing output file format ! (extension different, but format will remain the same)" << std::endl;
-		}
-	}
-
 	try {
 
 		if (ci.bUseDoublePrecision) {
@@ -681,52 +685,54 @@ bool convert(ConversionInfo& ci)
 			csvFile = std::make_unique<CsvFile>(ci.outputFilename);
 			csvFile->setNumChannels(nChannels);
 		}
+		else {
 
-		try { // Open output file:
+			try { // Open output file:
 
-			// output file may need to be overwriten on subsequent passes,
-			// and the only way to close the file is to destroy the SndfileHandle.  
+				// output file may need to be overwriten on subsequent passes,
+				// and the only way to close the file is to destroy the SndfileHandle.  
 
-			outFile.reset(new SndfileHandle(ci.outputFilename, SFM_WRITE, outputFileFormat, nChannels, ci.outputSampleRate));
+				outFile.reset(new SndfileHandle(ci.outputFilename, SFM_WRITE, outputFileFormat, nChannels, ci.outputSampleRate));
 
-			if (int e = outFile->error()) {
-				std::cout << "Error: Couldn't Open Output File (" << sf_error_number(e) << ")" << std::endl;
-				return false;
-			}
+				if (int e = outFile->error()) {
+					std::cout << "Error: Couldn't Open Output File (" << sf_error_number(e) << ")" << std::endl;
+					return false;
+				}
 
-			if (ci.bNoPeakChunk) {
-				outFile->command(SFC_SET_ADD_PEAK_CHUNK, nullptr, SF_FALSE);
-			}
+				if (ci.bNoPeakChunk) {
+					outFile->command(SFC_SET_ADD_PEAK_CHUNK, nullptr, SF_FALSE);
+				}
 
-			if (ci.bWriteMetaData) {
-				if (!setMetaData(m, *outFile)) {
-					std::cout << "Warning: problem writing metadata to output file ( " << outFile->strError() << " )" << std::endl;
+				if (ci.bWriteMetaData) {
+					if (!setMetaData(m, *outFile)) {
+						std::cout << "Warning: problem writing metadata to output file ( " << outFile->strError() << " )" << std::endl;
+					}
+				}
+
+				// if the minor (sub) format of outputFileFormat is flac, and user has requested a specific compression level, set compression level:
+				if (((outputFileFormat & SF_FORMAT_FLAC) == SF_FORMAT_FLAC) && ci.bSetFlacCompression) {
+					std::cout << "setting flac compression level to " << ci.flacCompressionLevel << std::endl;
+					double cl = ci.flacCompressionLevel / 8.0; // there are 9 flac compression levels from 0-8. Normalize to 0-1.0
+					outFile->command(SFC_SET_COMPRESSION_LEVEL, &cl, sizeof(cl));
+				}
+
+				// if the minor (sub) format of outputFileFormat is vorbis, and user has requested a specific quality level, set quality level:
+				if (((outputFileFormat & SF_FORMAT_VORBIS) == SF_FORMAT_VORBIS) && ci.bSetVorbisQuality) {
+
+					auto prec = std::cout.precision();
+					std::cout.precision(1);
+					std::cout << "setting vorbis quality level to " << ci.vorbisQuality << std::endl;
+					std::cout.precision(prec);
+
+					double cl = (1.0 - ci.vorbisQuality) / 11.0; // Normalize from (-1 to 10), to (1.0 to 0) ... why is it backwards ?
+					outFile->command(SFC_SET_COMPRESSION_LEVEL, &cl, sizeof(cl));
 				}
 			}
 
-			// if the minor (sub) format of outputFileFormat is flac, and user has requested a specific compression level, set compression level:
-			if (((outputFileFormat & SF_FORMAT_FLAC) == SF_FORMAT_FLAC) && ci.bSetFlacCompression) {
-				std::cout << "setting flac compression level to " << ci.flacCompressionLevel << std::endl;
-				double cl = ci.flacCompressionLevel / 8.0; // there are 9 flac compression levels from 0-8. Normalize to 0-1.0
-				outFile->command(SFC_SET_COMPRESSION_LEVEL, &cl, sizeof(cl));
+			catch (std::exception& e) {
+				std::cout << "Error: Couldn't Open Output File " << e.what() << std::endl;
+				return false;
 			}
-
-			// if the minor (sub) format of outputFileFormat is vorbis, and user has requested a specific quality level, set quality level:
-			if (((outputFileFormat & SF_FORMAT_VORBIS) == SF_FORMAT_VORBIS) && ci.bSetVorbisQuality) {
-
-				auto prec = std::cout.precision();
-				std::cout.precision(1);
-				std::cout << "setting vorbis quality level to " << ci.vorbisQuality << std::endl;
-				std::cout.precision(prec);
-
-				double cl = (1.0 - ci.vorbisQuality) / 11.0; // Normalize from (-1 to 10), to (1.0 to 0) ... why is it backwards ?
-				outFile->command(SFC_SET_COMPRESSION_LEVEL, &cl, sizeof(cl));
-			}
-		}
-
-		catch (std::exception& e) {
-			std::cout << "Error: Couldn't Open Output File " << e.what() << std::endl;
-			return false;
 		}
 
 		// conditionally open a temp file:
@@ -818,7 +824,12 @@ bool convert(ConversionInfo& ci)
 				tmpSndfileHandle->write(outputBlock.data() + outStartOffset, outputBlockIndex - outStartOffset);
 			}
 			else {
-				outFile->write(outputBlock.data() + outStartOffset, outputBlockIndex - outStartOffset);
+				if (ci.csvOutput) {
+					csvFile->write(outputBlock.data() + outStartOffset, outputBlockIndex - outStartOffset);
+				}
+				else {
+					outFile->write(outputBlock.data() + outStartOffset, outputBlockIndex - outStartOffset);
+				}
 			}
 			outStartOffset = 0; // reset after first use
 
@@ -885,9 +896,11 @@ bool convert(ConversionInfo& ci)
 				nextProgressThreshold = incrementalProgressThreshold;
 
 				tmpSndfileHandle->seek(0, SEEK_SET);
-				outFile->seek(0, SEEK_SET);
+				if (!ci.csvOutput) {
+					outFile->seek(0, SEEK_SET);
+				}
 
-				do {// Grab a block of interleaved samples from temp file:
+				do { // Grab a block of interleaved samples from temp file:
 					samplesRead = tmpSndfileHandle->read(inputBlock.data(), inputBlockSize);
 					totalSamplesRead += samplesRead;
 
@@ -904,6 +917,7 @@ bool convert(ConversionInfo& ci)
 
 					// write output buffer to outfile
 					if (ci.csvOutput) {
+						std::cout << "blerf\n";
 						csvFile->write(outBuf.data(), i);
 					}
 					else {
