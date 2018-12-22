@@ -98,7 +98,7 @@ public:
                     break;
 
                 default:
-                    file << scaleToInt(buffer[i]);
+                    file << scaleToInt<int>(buffer[i]);
                     break;
             }
 

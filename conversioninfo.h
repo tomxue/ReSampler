@@ -132,6 +132,7 @@ struct ConversionInfo
 	int seed;
 	bool dsfInput;
 	bool dffInput;
+	bool csvOutput;
 	bool bEnablePeakDetection;
 	bool bMultiThreaded;
 	bool bRf64;

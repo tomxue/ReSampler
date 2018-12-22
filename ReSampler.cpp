@@ -109,6 +109,9 @@ int main(int argc, char * argv[])
 	ci.dsfInput = (inFileExt == "dsf");
 	ci.dffInput = (inFileExt == "dff");
 
+	// detect csv output
+	ci.csvOutput = (outFileExt == "csv");
+
 	if (!ci.outBitFormat.empty()) {  // new output bit format requested
 		ci.outputFormat = determineOutputFormat(outFileExt, ci.outBitFormat);
 		if (ci.outputFormat)
@@ -672,11 +675,12 @@ bool convert(ConversionInfo& ci)
 		peakInputSample = 0.0;
 		bClippingDetected = false;
 		std::unique_ptr<SndfileHandle> outFile;
+		std::unique_ptr<CsvFile> csvFile;
 
-#ifdef __GNUC__
-//		CsvFile csvFile("/tmp/sound.csv");
-//		csvFile.setNumChannels(nChannels);
-#endif
+		if (ci.csvOutput) {
+			csvFile = std::make_unique<CsvFile>(ci.outputFilename);
+			csvFile->setNumChannels(nChannels);
+		}
 
 		try { // Open output file:
 
@@ -899,11 +903,12 @@ bool convert(ConversionInfo& ci)
 					}
 
 					// write output buffer to outfile
-					outFile->write(outBuf.data(), i);
-
-#ifdef __GNUC__
-//					csvFile.write(outBuf.data(), i);
-#endif
+					if (ci.csvOutput) {
+						csvFile->write(outBuf.data(), i);
+					}
+					else {
+						outFile->write(outBuf.data(), i);
+					}
 
 					// conditionally send progress update:
 					if (totalSamplesRead > nextProgressThreshold) {
@@ -1025,7 +1030,6 @@ SndfileHandle* getTempFile(int inputFileFormat, int nChannels, const ConversionI
     if (tmpFileError || tmpSndfileHandle == nullptr || (e = tmpSndfileHandle->error())){
         std::cout << "Error: Couldn't Open Temporary File (" << sf_error_number(e) << ")\n";
         std::cout << "Disabling temp file mode." << std::endl;
-        //ci.bTmpFile = false;
         tmpSndfileHandle = nullptr;
     } else {
         // disable floating-point normalisation (important - we want to record/recover floating point values exactly)
