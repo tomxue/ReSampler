@@ -905,8 +905,6 @@ bool convert(ConversionInfo& ci)
 //					csvFile.write(outBuf.data(), i);
 #endif
 
-
-
 					// conditionally send progress update:
 					if (totalSamplesRead > nextProgressThreshold) {
 						int progressPercentage = std::min(static_cast<int>(99),
