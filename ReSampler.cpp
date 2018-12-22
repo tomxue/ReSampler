@@ -684,6 +684,7 @@ bool convert(ConversionInfo& ci)
 		if (ci.csvOutput) {
 			csvFile = std::make_unique<CsvFile>(ci.outputFilename);
 			csvFile->setNumChannels(nChannels);
+			csvFile->setNumBits(16);
 		}
 		else {
 
@@ -917,7 +918,6 @@ bool convert(ConversionInfo& ci)
 
 					// write output buffer to outfile
 					if (ci.csvOutput) {
-						std::cout << "blerf\n";
 						csvFile->write(outBuf.data(), i);
 					}
 					else {
