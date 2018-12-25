@@ -50,7 +50,7 @@ enum IntegerWriteScalingStyle {
 
 class CsvFile {
 public:
-    CsvFile(const std::string& path, CsvOpenMode mode = csv_write) : path(path), mode(mode), signedness(Signed), numericBase(Decimal), numSignificantDigits(10), integerWriteScalingStyle(Pow2Minus1)
+    CsvFile(const std::string& path, CsvOpenMode mode = csv_write) : path(path), mode(mode), numChannels(2), numericFormat(Integer), signedness(Signed), numericBase(Decimal), numSignificantDigits(10), integerWriteScalingStyle(Pow2Minus1)
     {
 		setNumBits(16);
 		
