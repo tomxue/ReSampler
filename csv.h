@@ -128,10 +128,16 @@ private:
     IntegerWriteScalingStyle integerWriteScalingStyle;
     int currentChannel;
     bool err;
+	int unsignedOffset;
 
 	template <typename IntType, typename FloatType>
 	IntType scaleToInt(FloatType x) {
-	    return static_cast<IntType>(std::round(scaleFactor * x));
+		if (signedness = Signed) {
+			return static_cast<IntType>(std::round(scaleFactor * x));
+		}
+		else {
+			return static_cast<IntType>(std::round(scaleFactor * x) + unsignedOffset);
+		}
 	}
 
 	void setStreamFormat() {
@@ -179,12 +185,8 @@ public:
     }
 
     void setNumBits(int numBits) {
-
-        scaleFactor = 1 << (numBits - 1);
-        if(integerWriteScalingStyle == Pow2Minus1) {
-            scaleFactor -= 1;
-        }
-
+        unsignedOffset = 1 << (numBits - 1);
+		scaleFactor = static_cast<double>((integerWriteScalingStyle == Pow2Minus1) ? unsignedOffset - 1 : unsignedOffset);
         CsvFile::numBits = numBits;
         setStreamFormat();
     }
