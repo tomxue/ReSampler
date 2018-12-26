@@ -50,13 +50,12 @@ enum IntegerWriteScalingStyle {
 
 class CsvFile {
 public:
-    CsvFile(const std::string& path, CsvOpenMode mode = csv_write) : path(path), mode(mode), numChannels(2), numericFormat(Integer), signedness(Signed), numericBase(Decimal), numSignificantDigits(10), integerWriteScalingStyle(Pow2Minus1)
+    CsvFile(const std::string& path, CsvOpenMode mode = csv_write) : path(path), mode(mode), numChannels(2), numericFormat(Integer), signedness(Signed), numericBase(Decimal), precision(10), integerWriteScalingStyle(Pow2Minus1)
     {
 		setNumBits(16);
 		
 		file.exceptions(std::ifstream::failbit | std::ifstream::badbit);
         currentChannel = 0;
-
 
         switch (mode) {
             case csv_read:
@@ -125,7 +124,7 @@ private:
     CsvSignedness signedness;
     CsvNumericBase numericBase;
     int numBits;
-    int numSignificantDigits;
+    int precision;
     IntegerWriteScalingStyle integerWriteScalingStyle;
     int currentChannel;
     bool err;
@@ -139,7 +138,7 @@ private:
 	    if(file.is_open()) {
 	        if(numericFormat == FloatingPoint) {
 	            file.unsetf(std::ios::fixed);
-	            file << std::setprecision(numSignificantDigits);
+	            file << std::setprecision(precision);
 	        } else {
 	            file.setf(std::ios::fixed);
 	            file << std::setprecision(0);
@@ -190,12 +189,12 @@ public:
         setStreamFormat();
     }
 
-    int getNumSignificantDigits() const {
-        return numSignificantDigits;
+    int getPrecision() const {
+        return precision;
     }
 
-    void setNumSignificantDigits(int numSignificantDigits) {
-        CsvFile::numSignificantDigits = numSignificantDigits;
+    void setPrecision(int precision) {
+        CsvFile::precision = precision;
         setStreamFormat();
     }
 
