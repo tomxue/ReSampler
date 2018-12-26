@@ -53,6 +53,3 @@ $resampler_path -i $input_path/96khz_sweep-3dBFS_32f.wav -o $output_path/96khz_s
 $resampler_path -i $input_path/96khz_sweep-3dBFS_32f.wav -o $output_path/96khz_sweep-3dBFS_32f-to96k-dp-relaxed.csv -r 96000 --noPeakChunk --doubleprecision --relaxedLPF --mt
 $resampler_path -i $input_path/96khz_sweep-3dBFS_32f.wav -o $output_path/96khz_sweep-3dBFS_32f-to176k-dp-relaxed.csv -r 176400 --noPeakChunk --doubleprecision --relaxedLPF
 $resampler_path -i $input_path/96khz_sweep-3dBFS_32f.wav -o $output_path/96khz_sweep-3dBFS_32f-to192k-dp-relaxed.csv -r 192000 --noPeakChunk --doubleprecision --relaxedLPF --mt
-
-# make spectrograms
-./make-spectrograms.sh
