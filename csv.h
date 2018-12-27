@@ -142,13 +142,32 @@ private:
 
 	void setStreamFormat() {
 	    if(file.is_open()) {
+			file.unsetf(std::ios_base::floatfield);
 	        if(numericFormat == FloatingPoint) {
-	            file.unsetf(std::ios::fixed);
 	            file << std::setprecision(precision);
-	        } else {
-	            file.setf(std::ios::fixed);
+	        } else if (numericFormat == Integer) {
+	            file.setf(std::ios_base::fixed);
 	            file << std::setprecision(0);
-	        }
+			}
+			else if (numericFormat == Fixed) {
+				file.setf(std::ios_base::fixed);
+				file << std::setprecision(precision);
+			}
+			else if (numericFormat == Scientific) {
+				file.setf(std::ios_base::scientific, std::ios_base::floatfield);
+				file << std::setprecision(precision);
+			}
+
+			if (numericBase == Hexadecimal) {
+				file.setf(std::ios_base::hex, std::ios_base::basefield);
+			}
+			else if (numericBase == Octal) {
+				file.setf(std::ios_base::oct, std::ios_base::basefield);
+			}
+			else {
+				file.setf(std::ios_base::dec, std::ios_base::basefield);
+			}
+
 	    }
 	}
 
