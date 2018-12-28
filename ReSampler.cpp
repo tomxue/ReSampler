@@ -685,6 +685,7 @@ bool convert(ConversionInfo& ci)
 			csvFile = std::make_unique<CsvFile>(ci.outputFilename);
 			csvFile->setNumChannels(nChannels);
 			csvFile->setNumBits(16);
+			csvFile->setNumericFormat(Integer);
 		}
 		else {
 
