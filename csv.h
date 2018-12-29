@@ -18,6 +18,9 @@
 #include <string>
 #include <fstream>
 #include <cmath>
+#include <string>
+#include <vector>
+
 
 enum CsvOpenMode {
     csv_read,

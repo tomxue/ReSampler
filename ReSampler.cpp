@@ -684,8 +684,10 @@ bool convert(ConversionInfo& ci)
 		if (ci.csvOutput) {
 			csvFile = std::make_unique<CsvFile>(ci.outputFilename);
 			csvFile->setNumChannels(nChannels);
-			csvFile->setNumBits(16);
-			csvFile->setNumericFormat(Integer);
+			csvFile->setNumBits(16); //
+			// to-do: set all parameters for csv export (integer / float, precision etc)
+			//csvFile->setPrecision(...);
+			csvFile->setNumericFormat(ci. Integer);
 		}
 		else {
 
@@ -761,7 +763,7 @@ bool convert(ConversionInfo& ci)
 
 			// Grab a block of interleaved samples from file:
 			samplesRead = infile.read(inputBlock.data(), inputBlockSize);
-			totalSamplesRead += samplesRead;
+			totalSamplesRead += samplesRead;  
 
 			// de-interleave into channel buffers
 			size_t i = 0;
