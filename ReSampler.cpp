@@ -685,7 +685,10 @@ bool convert(ConversionInfo& ci)
 		if (ci.csvOutput) {
 			csvFile.reset(new CsvFile(ci.outputFilename));
 			csvFile->setNumChannels(nChannels);
-			csvFile->setNumBits(16); //
+			csvFile->setNumBits(std::min(std::max(0,std::stoi(ci.outBitFormat)), 64));
+			if(csvFile->getNumBits() == 0) {
+				csvFile->setNumBits(16);
+			}
 			// to-do: set all parameters for csv export (integer / float, precision etc)
 			//csvFile->setPrecision(...);
 			csvFile->setNumericFormat(Integer);
