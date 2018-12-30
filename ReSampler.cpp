@@ -13,6 +13,7 @@
 #include <cmath>
 #include <cstdio>
 #include <iostream>
+#include <memory>
 #include <vector>
 #include <iomanip>
 
@@ -682,12 +683,12 @@ bool convert(ConversionInfo& ci)
 		std::unique_ptr<CsvFile> csvFile;
 
 		if (ci.csvOutput) {
-			csvFile = std::make_unique<CsvFile>(ci.outputFilename);
+			csvFile.reset(new CsvFile(ci.outputFilename));
 			csvFile->setNumChannels(nChannels);
 			csvFile->setNumBits(16); //
 			// to-do: set all parameters for csv export (integer / float, precision etc)
 			//csvFile->setPrecision(...);
-			csvFile->setNumericFormat(ci. Integer);
+			csvFile->setNumericFormat(Integer);
 		}
 		else {
 
