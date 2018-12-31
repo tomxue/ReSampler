@@ -12,10 +12,12 @@
 #define _USE_MATH_DEFINES
 #include <cmath>
 #include <cstdio>
+#include <string>
 #include <iostream>
 #include <memory>
 #include <vector>
 #include <iomanip>
+#include <regex>
 
 #ifdef __APPLE__
 #include <unistd.h>
