@@ -687,7 +687,8 @@ bool convert(ConversionInfo& ci)
 		if (ci.csvOutput) {
 			csvFile.reset(new CsvFile(ci.outputFilename));
 			csvFile->setNumChannels(nChannels);
-			csvFile->setNumBits(std::min(std::max(0,std::stoi(ci.outBitFormat)), 64));
+			std::regex rgx("([us]?)(\\d+)([fiox]?)"); // [u|s]<numBits>[f|i|o|x]
+			csvFile->setNumBits(std::min(std::max(0, std::stoi(ci.outBitFormat)), 64));
 			if(csvFile->getNumBits() == 0) {
 				csvFile->setNumBits(16);
 			}
