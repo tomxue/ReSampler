@@ -687,14 +687,23 @@ bool convert(ConversionInfo& ci)
 		if (ci.csvOutput) {
 			csvFile.reset(new CsvFile(ci.outputFilename));
 			csvFile->setNumChannels(nChannels);
-			std::regex rgx("([us]?)(\\d+)([fiox]?)"); // [u|s]<numBits>[f|i|o|x]
-			csvFile->setNumBits(std::min(std::max(0, std::stoi(ci.outBitFormat)), 64));
-			if(csvFile->getNumBits() == 0) {
-				csvFile->setNumBits(16);
+			if(!ci.outBitFormat.empty()) {
+                std::regex rgx("([us]?)(\\d+)([fiox]?)"); // [u|s]<numBits>[f|i|o|x]
+                std::smatch m;
+                std::regex_search(ci.outBitFormat, m, rgx);
+                for (const auto &v : m) { // todo : read the fields and set flags accordingly
+                    std::cout << v << std::endl;
+                }
+                csvFile->setNumBits(16); // todo: fix
+                csvFile->setNumericFormat(Integer); // todo: fix
+            } else {
+			   csvFile->setNumBits(16);
+			   csvFile->setNumericFormat(Integer);
 			}
+
 			// to-do: set all parameters for csv export (integer / float, precision etc)
 			//csvFile->setPrecision(...);
-			csvFile->setNumericFormat(Integer);
+
 		}
 		else {
 
