@@ -684,30 +684,32 @@ bool convert(ConversionInfo& ci)
 		std::unique_ptr<SndfileHandle> outFile;
 		std::unique_ptr<CsvFile> csvFile;
 
-		if (ci.csvOutput) {
+		if (ci.csvOutput) { // csv output
 			csvFile.reset(new CsvFile(ci.outputFilename));
 			csvFile->setNumChannels(nChannels);
+
+			// defaults
+			csvFile->setNumBits(16);
+            csvFile->setNumericFormat(Integer);
+
 			if(!ci.outBitFormat.empty()) {
                 std::regex rgx("([us]?)(\\d+)([fiox]?)"); // [u|s]<numBits>[f|i|o|x]
                 std::smatch m;
                 std::regex_search(ci.outBitFormat, m, rgx);
-                for (const auto &v : m) { // todo : read the fields and set flags accordingly
-                    std::cout << v << std::endl;
+                std::cout << "length:" << m.length();
+                if(m.length() == 3) {
+                    csvFile->setSignedness((m[1].compare("u") == 0) ? Unsigned : Signed);
+                    csvFile->setNumBits(std::min(std::max(1, std::stoi(m[2])), 64)); // 1-64 bits
+                    csvFile->setNumericFormat((m[3].compare("f") == 0) ? FloatingPoint : Integer);
+                    // todo: hex, octal
+                    // todo: precision, other params
                 }
-                csvFile->setNumBits(16); // todo: fix
-                csvFile->setNumericFormat(Integer); // todo: fix
-            } else {
-			   csvFile->setNumBits(16);
-			   csvFile->setNumericFormat(Integer);
-			}
-
-			// to-do: set all parameters for csv export (integer / float, precision etc)
-			//csvFile->setPrecision(...);
-
+            }
 		}
-		else {
 
-			try { // Open output file:
+		else { // libSndFile output
+
+			try {
 
 				// output file may need to be overwriten on subsequent passes,
 				// and the only way to close the file is to destroy the SndfileHandle.  
