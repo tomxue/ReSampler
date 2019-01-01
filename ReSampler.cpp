@@ -698,7 +698,6 @@ bool convert(ConversionInfo& ci)
                 std::regex rgx("([us]?)(\\d+)([fiox]?)"); // [u|s]<numBits>[f|i|o|x]
                 std::smatch m;
                 std::regex_search(ci.outBitFormat, m, rgx);
-                std::cout << "length:" << m.length();
                 if(m.length() == 3) {
                     csvFile->setSignedness((m[1].compare("u") == 0) ? Unsigned : Signed);
                     csvFile->setNumBits(std::min(std::max(1, std::stoi(m[2])), 64)); // 1-64 bits
