@@ -691,6 +691,8 @@ bool convert(ConversionInfo& ci)
 			// defaults
 			csvFile->setNumBits(16);
             csvFile->setNumericFormat(Integer);
+			csvFile->setSignedness(Unsigned);
+			csvFile->setNumericBase(Decimal);
 
 			if(!ci.outBitFormat.empty()) {
                 std::regex rgx("([us]?)(\\d+)([fiox]?)"); // [u|s]<numBits>[f|i|o|x]
@@ -701,7 +703,12 @@ bool convert(ConversionInfo& ci)
                     csvFile->setSignedness((m[1].compare("u") == 0) ? Unsigned : Signed);
                     csvFile->setNumBits(std::min(std::max(1, std::stoi(m[2])), 64)); // 1-64 bits
                     csvFile->setNumericFormat((m[3].compare("f") == 0) ? FloatingPoint : Integer);
-                    // todo: hex, octal
+					if ((m[3].compare("o") == 0)) {
+						csvFile->setNumericBase(Octal);
+					}
+					else if ((m[3].compare("x") == 0)) {
+						csvFile->setNumericBase(Hexadecimal);
+					}
                     // todo: precision, other params
                 }
             }
