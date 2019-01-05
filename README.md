@@ -188,9 +188,9 @@ For more information, please refer to the [libsndfile documentation](http://www.
 (since v2.0.7) ReSampler can also export audio data to a csv file. 
 The data for each channel is placed in a separate column, and each row represents a sample.
 To do this, set the file extension of the output file to **.csv** and specify an output format
-with the **-b** option followed by a bit format specification of the form **[u|s]&lt;num of bits&gt;[f|i|o|x];** 
-where u = unsigned, s = signed, f = float, i = integer, o = octal. x = hexadecimal.
-(if the **-b** option is omitted, then the default will be 16 bit integer) 
+with the **-b** option followed by a bit format specification of the form **[u|s]&lt;num of bits&gt;[f|i|o|x]** 
+where u = unsigned, s = signed, f = float, i = integer, o = octal, x = hexadecimal.
+(if the **-b** option is omitted, then the default will be 16 bit signed integer) 
 
 ## Additional Information
 
