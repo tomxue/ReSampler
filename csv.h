@@ -21,7 +21,6 @@
 #include <string>
 #include <vector>
 
-
 enum CsvOpenMode {
     csv_read,
     csv_write
@@ -239,6 +238,5 @@ public:
     }
 
 };
-
 
 #endif //RESAMPLER_CSV_H
