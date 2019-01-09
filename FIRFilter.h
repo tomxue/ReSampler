@@ -7,10 +7,10 @@
 * with this file. If not, please refer to: https://github.com/jniemann66/ReSampler
 */
 
+// FIRFilter.h : simple FIR filter implementation
+
 #ifndef FIRFFILTER_H_
 #define FIRFFILTER_H_
-
-// FIRFilter.h : simple FIR filter implementation
 
 #include <typeinfo>
 #include <algorithm>
@@ -18,9 +18,10 @@
 #include <complex>
 #include <cstdint>
 #include <cassert>
-#include <xmmintrin.h>
 
+#include <xmmintrin.h>
 #include <fftw3.h>
+
 #include "alignedmalloc.h"
 #include "factorial.h"
 
