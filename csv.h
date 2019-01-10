@@ -55,35 +55,38 @@ public:
     CsvFile(const std::string& path, CsvOpenMode mode = csv_write) : path(path), mode(mode), numChannels(2), numericFormat(Integer), signedness(Signed), numericBase(Decimal), precision(10), integerWriteScalingStyle(Pow2Minus1)
     {
 		setNumBits(16);
-		
 		file.exceptions(std::ifstream::failbit | std::ifstream::badbit);
         currentChannel = 0;
 
         switch (mode) {
-            case csv_read:
-                try {
-                    file.open(path, std::ios::in | std::ios::binary);
-                    err = false;
-                }
-                catch (std::ios_base::failure& e) {
-                    e.what();
-                    err = true;
-                    return;
-                }
-                break;
+        case csv_read:
+            try {
+                file.open(path, std::ios::in | std::ios::binary);
+                err = false;
+            }
+            catch (std::ios_base::failure& e) {
+                e.what();
+                err = true;
+                return;
+            }
+            break;
 
-            case csv_write:
-                try {
-                    file.open(path, std::ios::out | std::ios::binary);
-                    err = false;
-                }
-                catch (std::ios_base::failure& e) {
-                    e.what();
-                    err = true;
-                    return;
-                }
-                break;
+        case csv_write:
+            try {
+                file.open(path, std::ios::out | std::ios::binary);
+                err = false;
+            }
+            catch (std::ios_base::failure& e) {
+                e.what();
+                err = true;
+                return;
+            }
+            break;
         }
+    }
+
+    bool isErr() const {
+        return err;
     }
 
     ~CsvFile() {
@@ -94,6 +97,9 @@ public:
 
     template <typename T>
     int64_t write(const T* buffer, int64_t count) {
+        if(err) {
+            return 0;
+        }
         int64_t i;
         for(i = 0; i < count; i++) {
             switch(numericFormat) {
