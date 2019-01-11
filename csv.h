@@ -7,10 +7,10 @@
 * with this file. If not, please refer to: https://github.com/jniemann66/ReSampler
 */
 
+// csv.h : defines module for exporting audio data as a csv file
+
 #ifndef RESAMPLER_CSV_H
 #define RESAMPLER_CSV_H
-
-// csv.h : defines module for exporting audio data as a csv file
 
 #include <iostream>
 #include <cassert>
