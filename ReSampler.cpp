@@ -661,6 +661,7 @@ bool convert(ConversionInfo& ci)
 	FloatType gain = ci.gain * converters[0].getGain() * 
 		(ci.bNormalize ? fraction.numerator * (ci.limit / peakInputSample) : fraction.numerator * ci.limit );
 
+	// todo: more testing with very low bit depths (eg 4 bits)
 	if (ci.bDither) { // allow headroom for dithering:
 		FloatType ditherCompensation =
 			(pow(2, outputSignalBits - 1) - pow(2, ci.ditherAmount - 1)) / pow(2, outputSignalBits - 1); // eg 32767/32768 = 0.999969 (-0.00027 dB)
