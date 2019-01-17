@@ -13,7 +13,7 @@ Building on Raspbian consists of the following 3 steps:
 sudo apt install  build-essential
 
 ~~~
-~~sudo apt-get install build-essential~~
+
 
 ## fftw build/install
 
@@ -21,7 +21,6 @@ sudo apt install  build-essential
 #sudo apt install libfftw3-dev libfftw3-doc
 ~~~
 
-~~#sudo apt-get install libfftw3-dev libfftw3-doc~~
 
 
 [fftw source](http://www.fftw.org/fftw-3.3.6-pl2.tar.gz)
