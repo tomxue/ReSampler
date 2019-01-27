@@ -120,8 +120,9 @@ int main(int argc, char * argv[])
 	else {
 		if (!ci.outBitFormat.empty()) {  // new output bit format requested
 			ci.outputFormat = determineOutputFormat(outFileExt, ci.outBitFormat);
-			if (ci.outputFormat)
+			if (ci.outputFormat) {
 				std::cout << "Changing output bit format to " << ci.outBitFormat << std::endl;
+			}
 			else { // user-supplied bit format not valid; try choosing appropriate format
 				determineBestBitFormat(ci.outBitFormat, ci.inputFilename, ci.outputFilename);
 				ci.outputFormat = determineOutputFormat(outFileExt, ci.outBitFormat);
@@ -691,7 +692,7 @@ bool convert(ConversionInfo& ci)
 			// defaults
 			csvFile->setNumBits(16);
             csvFile->setNumericFormat(Integer);
-			csvFile->setSignedness(Unsigned);
+			csvFile->setSignedness(Unsigned); 
 			csvFile->setNumericBase(Decimal);
 			csvFile->setIntegerWriteScalingStyle(Pow2Minus1);
 
