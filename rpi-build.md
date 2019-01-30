@@ -8,19 +8,18 @@ Building on Raspbian consists of the following 3 steps:
 - Build and install libsndfile library
 - Build and install ReSampler
 
+Note 2019-01-30 : the SSE/AVX code in FIRFilter.h is currently x86/x64 - specific and will need a new specialization for ARM using arm intrinsics.
+
 ## build environment
 ~~~
 sudo apt install  build-essential
-
 ~~~
-
 
 ## fftw build/install
 
 ~~~
 #sudo apt install libfftw3-dev libfftw3-doc
 ~~~
-
 
 
 [fftw source](http://www.fftw.org/fftw-3.3.6-pl2.tar.gz)
