@@ -318,7 +318,7 @@ private:
 	bool bAutoBlankingEnabled;
 	FloatType autoBlankLevelThreshold;				// input signals below this threshold are considered zero
 	FloatType autoBlankTimeThreshold;				// number of zero samples before activating blanking
-	const FloatType autoBlankDecayFactor = (FloatType)0.9995;	// dither level will decrease by this factor for each sample when blanking is active
+    const FloatType autoBlankDecayFactor = static_cast<FloatType>(0.9995);	// dither level will decrease by this factor for each sample when blanking is active
 	
 	// IIR Filter-related stuff:
 	Biquad<double> f1;
