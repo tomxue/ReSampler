@@ -166,7 +166,7 @@ public:
 		case dff_write:
 			break;
 		}
-	};
+    }
 
 	~DffFile() {
 		if (file.is_open())
@@ -183,19 +183,19 @@ public:
 
 	unsigned int channels() const {
 		return numChannels;
-	};
+    }
 
 	unsigned int samplerate() const {
 		return _sampleRate;
-	};
+    }
 
 	uint64_t frames() const {
 		return numFrames;
-	};
+    }
 
 	uint64_t samples() const {
 		return numSamples;
-	};
+    }
 
 	int format() const {
 		return DFF_FORMAT;
@@ -241,7 +241,7 @@ public:
 			}
 		}
 		return samplesRead;
-	};
+    }
 
 	// testRead() : reads the entire file 
 	// and confirms number of samples read equals number of samples expected:

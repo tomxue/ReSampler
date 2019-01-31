@@ -16,6 +16,7 @@
 #include <cassert>
 #include <cstdint>
 #include <string>
+#include <iostream>
 #include <fstream>
 
 #include "osspecific.h"
@@ -114,7 +115,7 @@ public:
 		case dsf_write:
 			break;
 		}
-	};
+    }
 
 	~DsfFile() {
 		if(file.is_open())
@@ -132,19 +133,19 @@ public:
 
 	unsigned int channels() const {
 		return numChannels;
-	};
+    }
 
 	unsigned int samplerate() const {
 		return _sampleRate;
-	};
+    }
 
 	uint64_t frames() const {
 		return numFrames;
-	};
+    }
 
 	uint64_t samples() const {
 		return numSamples;
-	};
+    }
 
 	int format() const {
 		return DSF_FORMAT;
@@ -187,7 +188,7 @@ public:
 				bufferIndex = 0;
 			}
 
-			buffer[i] = samplTbl[channelBuffer[currentChannel][bufferIndex]][currentBit];
+            buffer[i] = static_cast<FloatType>(samplTbl[channelBuffer[currentChannel][bufferIndex]][currentBit]);
 		
 			++samplesRead;
 
@@ -202,7 +203,7 @@ public:
 			}
 		}
 		return samplesRead;
-	};
+    }
 
 	// testRead() : reads the entire file 
 	// and confirms number of samples read equals number of samples expected:

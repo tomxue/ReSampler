@@ -15,6 +15,9 @@
 #include <set>
 #include <numeric>
 #include <iostream>
+#include <cmath>
+#include <functional>
+#include <algorithm>
 
 // fraction.h
 // defines Fraction type, functions for obtaining gcd, simplified fractions, prime factors of integers,

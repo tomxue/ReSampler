@@ -11,6 +11,7 @@
 #define _RAIITIMER_H 1
 
 #include <iostream>
+#include <iomanip>
 #include <chrono>
 
 // class RaiiTimer : starts a high-resolution timer upon construction and prints elapsed time to stdout upon destruction

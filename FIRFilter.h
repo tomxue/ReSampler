@@ -15,9 +15,11 @@
 #include <typeinfo>
 #include <algorithm>
 #include <iostream>
+#include <iomanip>
 #include <complex>
 #include <cstdint>
 #include <cassert>
+#include <vector>
 
 #include <xmmintrin.h>
 #include <fftw3.h>
