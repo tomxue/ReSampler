@@ -37,3 +37,9 @@ Quad-Precision build (experimental) - GCC / minGW only:
 ~~~
 
 *note the use of **-std=gnu++11** to enable the gcc-specific language extensions for quad precision - the 'Q' initializer suffix and __float128 type*
+
+#### building in Windows using QtCreator
+
+- open a new project in Qt Creator by choosing **File -> "Open File or Project ..."**, then select the **CMakeLists.txt** file as the project file
+- configure the kit of your choice (Note: as of Qt 5.12, 64-bit mingw is available for windows)
+- copy dll files (libsndfile etc) files into the build folder. (Build directory can be seen using **QtCreator -> Projects -> Build -> Build Directory**)  
