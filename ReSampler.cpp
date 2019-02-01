@@ -669,7 +669,7 @@ bool convert(ConversionInfo& ci)
 		gain *= ditherCompensation;
 	}
 
-	int groupDelay = converters[0].getGroupDelay();
+    int groupDelay = static_cast<int>(converters[0].getGroupDelay());
 
 	FloatType peakOutputSample;
 	bool bClippingDetected;

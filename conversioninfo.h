@@ -56,7 +56,7 @@ bool getCmdlineParam(char** begin, char** end, const std::string& option, T& par
 			auto next = std::next(it);
 			if (next != args.end()) {
 				try {
-					parameter = std::stof(*next);
+                    parameter = static_cast<T>(std::stof(*next));
 				}
 				catch (std::invalid_argument& e) {
 					// leave parameter unchanged
