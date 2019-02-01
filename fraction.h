@@ -81,7 +81,7 @@ std::vector<int> factorize(int n) {
 std::set<std::vector<int>> getnFactors(const std::vector<int> &primes, int maxFactors) {
 
     std::set<std::vector<int>> solutions; // the retval
-    std::vector<int> currentFactors(maxFactors,1);
+    std::vector<int> currentFactors(maxFactors, 1);
 
     std::function<void(std::vector<int>, int)> recursiveFunc =
     [&solutions, &currentFactors, &recursiveFunc](std::vector<int> primeFactors, int numFactors) {
