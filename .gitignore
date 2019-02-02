@@ -6,6 +6,10 @@
 cmake-build*/
 CMakeCache.txt
 
+#Qt files
+*.pro.user
+*.cpp.autosave
+
 #macOS files
 .DS_Store
 tests/.DS_Store
