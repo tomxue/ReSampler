@@ -468,7 +468,7 @@ bool convert(ConversionInfo& ci)
 	getMetaData(m, infile);
 	
 	// read input file properties:
-	int nChannels = infile.channels();
+    int nChannels = static_cast<int>(infile.channels());
 	ci.inputSampleRate = infile.samplerate();
 	sf_count_t inputFrames = infile.frames();
 	sf_count_t inputSampleCount = inputFrames * nChannels;

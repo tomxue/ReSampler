@@ -67,7 +67,7 @@ struct DitherProfile {
 	bool bUseFeedback;
 };
 
-DitherProfile ditherProfileList[] = {
+const DitherProfile ditherProfileList[] = {
 
 	// id, name, noiseGeneratorType, filterType, intendedSampleRate, N, coeffs, bUseFeedback
 	
