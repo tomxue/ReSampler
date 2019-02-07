@@ -807,7 +807,7 @@ bool convert(ConversionInfo& ci)
 
 			std::vector<std::future<Result>> results(nChannels);
 			ctpl::thread_pool threadPool(nChannels);
-			size_t outputBlockIndex;
+            size_t outputBlockIndex = 0;
 			
 			for (int ch = 0; ch < nChannels; ++ch) { // run convert stage for each channel (concurrently)
 

@@ -173,7 +173,7 @@ public:
 		lastPut = 0;
 
 		// clear signal buffer
-		for (unsigned int i = 0; i < paddedLength; ++i) {
+        for (int i = 0; i < paddedLength; ++i) {
 			signal[i] = 0.0;
 			signal[i + length] = 0.0;
 		}

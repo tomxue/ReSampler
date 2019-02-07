@@ -115,7 +115,7 @@ public:
 	{
         // general parameters:
 		maxSignalMagnitude = static_cast<FloatType>((1 << (signalBits - 1)) - 1); // note the -1 : match 32767 scaling factor for 16 bit !
-		reciprocalSignalMagnitude = 1.0 / maxSignalMagnitude; // value of LSB in target format
+		reciprocalSignalMagnitude = static_cast<FloatType>(1.0 / maxSignalMagnitude); // value of LSB in target format
 		maxDitherScaleFactor = static_cast<FloatType>(pow(2, ditherBits - 1)) / maxSignalMagnitude / static_cast<FloatType>(randMax);
 		oldRandom = 0;
 
@@ -190,7 +190,7 @@ public:
 		const FloatType scale = 1.0;
 		FIRLength = selectedDitherProfile.N;
 		for (int n = 0; n < FIRLength; ++n) {
-			FIRCoeffs[n] = scale * selectedDitherProfile.coeffs[n];
+			FIRCoeffs[n] = static_cast<FloatType>(scale * selectedDitherProfile.coeffs[n]);
 		}
 
 		memset(FIRHistory, 0, MAX_FIR_FILTER_SIZE * sizeof(FloatType));
@@ -203,16 +203,16 @@ public:
 			ditherScaleFactor = maxDitherScaleFactor; 
 		}
 
-		autoBlankLevelThreshold = 1.0 / pow(2, 32); // 1 LSB of 32-bit digital
+		autoBlankLevelThreshold = static_cast<FloatType>(1.0 / pow(2, 32)); // 1 LSB of 32-bit digital
 		autoBlankTimeThreshold = 30000; // number of zero samples before activating autoblank
-		autoBlankDecayCutoff = 0.25 * reciprocalSignalMagnitude / randMax;
+		autoBlankDecayCutoff = static_cast<FloatType>(0.25 * reciprocalSignalMagnitude / randMax);
 		zeroCount = 0;
 		
 	} // Ends Constructor 
 
 	void adjustGain(FloatType factor) {
 		gain *= factor;
-		maxDitherScaleFactor = gain * pow(2, ditherBits - 1) / maxSignalMagnitude / randMax;
+		maxDitherScaleFactor = static_cast<FloatType>(gain * pow(2, ditherBits - 1) / maxSignalMagnitude / randMax);
 	}
 
 	void reset() {
@@ -381,7 +381,7 @@ private:
 		int newRandom = dist(randGenerator);
         auto tpdfNoise = static_cast<FloatType>(newRandom - oldRandom); // sloped TDPF
 		oldRandom = newRandom;
-		return f2.filter(f1.filter(tpdfNoise));
+		return static_cast<FloatType>(f2.filter(f1.filter(tpdfNoise)));
 	}
 
 	// --- Noise-shaping functions ---
@@ -391,7 +391,7 @@ private:
 	}
 
 	FloatType noiseShaperCascadedBiquad(FloatType x) {
-		return f3.filter(f2.filter(f1.filter(x)));
+		return static_cast<FloatType>(f3.filter(f2.filter(f1.filter(x))));
 	}
 
 	FloatType noiseShaperFIR(FloatType x) { // very simple FIR ...

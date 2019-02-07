@@ -140,7 +140,7 @@ private:
 
 	template <typename IntType, typename FloatType>
 	IntType scaleToInt(FloatType x) {
-		if (signedness = Signed) {
+        if (signedness == Signed) {
 			return static_cast<IntType>(std::round(scaleFactor * x));
 		}
 		else {

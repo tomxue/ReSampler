@@ -158,7 +158,7 @@ struct MetaData
 #elif (defined (__MINGW64__) || defined (__MINGW32__)) && (defined (_WIN32) || defined (_WIN64)) 
 #define TEMPFILE_OPEN_METHOD_WINAPI
 #define UNICODE // turns TCHAR into wchar_t
-#include <Windows.h>
+#include <windows.h>
 #include <codecvt>
 
 #else

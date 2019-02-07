@@ -105,8 +105,8 @@ struct ConversionInfo
 {
 	std::string inputFilename;
 	std::string outputFilename;
-	unsigned int inputSampleRate;
-	unsigned int outputSampleRate;
+    int inputSampleRate;
+    int outputSampleRate;
 	double gain;
 	double limit;
 	bool bUseDoublePrecision;
