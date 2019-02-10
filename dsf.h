@@ -350,7 +350,7 @@ private:
 
 	// readBlocks() : reads blockSize bytes into each channelBuffer for numChannels channels
 	uint32_t readBlocks() {
-		if (file.tellg() >= endOfData)
+        if (file.tellg() >= static_cast<std::istream::pos_type>(endOfData))
 			return 0;
 
 		for (size_t ch = 0; ch < numChannels; ++ch) {
