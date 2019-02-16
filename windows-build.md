@@ -44,3 +44,4 @@ Quad-Precision build (experimental) - GCC / minGW only:
 - copy dll files (libsndfile etc) files into the build folder. (Build directory can be seen using **QtCreator -> Projects -> Build -> Build Directory**
 
 #### building using CLion
+open the CMakeLists.txt in the ReSampler directory as a Project
