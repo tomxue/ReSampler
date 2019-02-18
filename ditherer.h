@@ -53,6 +53,8 @@ enum DitherProfileID {
 	High30,
 	High32,
 	Blue,
+    Rpdf,
+    Rpdf_f,
 	end
 };
 
@@ -80,11 +82,13 @@ const DitherProfile ditherProfileList[] = {
 	{ standard, "standard", slopedTPDF, fir, 44100, 10, std_44, true },
 	{ Wannamaker24tap, "Wannamaker 24-tap",flatTPDF, fir, 44100, 24, wan24, true },
 	{ Wannamaker9tap, "Wannamaker 9-tap",flatTPDF, fir, 44100, 9, wan9, true },
-	{ High28, "High28", slopedTPDF, fir, 44100, 13, high28, true },
+    { High28, "High28", slopedTPDF, fir, 44100, 13, high28, true },
 	{ ImpEWeighted44k, "Improved E-Weighted",flatTPDF, fir, 44100, 9, impew44, true },
 	{ High30, "High30", slopedTPDF, fir, 44100, 10, high30, true },
 	{ High32, "High32",slopedTPDF, fir, 44100, 12, high32, true },
-	{ Blue, "blue noise", flatTPDF, fir, 44100, 23, blue, true}
+    { Blue, "blue noise", flatTPDF, fir, 44100, 23, blue, true },
+    { Rpdf, "flat rpdf", RPDF, bypass, 44100, 1, noiseShaperPassThrough, false },
+    { Rpdf_f, "flat rpdf (with error-correction feedback)", RPDF, bypass, 44100, 1, noiseShaperPassThrough, true }
 };
 
 template<typename FloatType>
