@@ -38,6 +38,8 @@ with the ID of 0 corresponding to *flat* (no noise shaping; which is also equiva
         <tr><td>11</td><td>High30</td><td>notches at 3150Hz and 11.25kHz with 30dB high shelf</td><td>sounds great to older listeners, but high-frequencies may annoy younger listeners. Nevertheless, at the intended playback volume, the high-frequency components will still be very quiet relative to the program material</td></tr>
         <tr><td>12</td><td>High32</td><td>notches at 3150Hz and 11.25kHz with 32dB high shelf</td><td>sounds great to older listeners, but high-frequencies may annoy younger listeners. Nevertheless, at the intended playback volume, the high-frequency components will still be very quiet relative to the program material</td></tr>
         <tr><td>13</td><td>Blue Noise</td><td>3dB/octave increase in amplitude vs frequency</td><td>in-between white(flat) noise and violet noise</td></tr>
+        <tr><td>14</td><td>Flat RPDF</td><td>Random dither with rectangular probability density function (RPDF)</td><td>No Noise shaping. No Feedback</td></tr>
+        <tr><td>15</td><td>Flat RPDF (with error-correction feedback)</td><td>Random dither with rectangular probability density function (RPDF)</td><td>With error-correction feedback</td></tr>
     </tbody>
 </table>
 
