@@ -694,7 +694,7 @@ bool convert(ConversionInfo& ci)
             csvFile->setNumericFormat(Integer);
 			csvFile->setSignedness(Unsigned); 
 			csvFile->setNumericBase(Decimal);
-			csvFile->setIntegerWriteScalingStyle(Pow2Minus1);
+			csvFile->setIntegerWriteScalingStyle(ci.integerWriteScalingStyle);
 
 			if(!ci.outBitFormat.empty()) {
                 std::regex rgx("([us]?)(\\d+)([fiox]?)"); // [u|s]<numBits>[f|i|o|x]

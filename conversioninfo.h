@@ -15,6 +15,7 @@
 // for holding conversion parameters.
 
 #include "ditherer.h"
+#include "csv.h"
 
 #include <iostream>
 #include <vector>
@@ -154,6 +155,7 @@ struct ConversionInfo
 	bool bShowTempFile;
 	bool quantize;
 	int quantizeBits;
+	IntegerWriteScalingStyle integerWriteScalingStyle;
 
 	bool fromCmdLineArgs(int argc, char* argv[]);
 	std::string toCmdLineArgs();
@@ -283,6 +285,7 @@ inline bool ConversionInfo::fromCmdLineArgs(int argc, char* argv[]) {
 	getCmdlineParam(argv, argv + argc, "--maxStages", maxStages);
 	bSingleStage = getCmdlineParam(argv, argv + argc, "--singleStage");
 	bMultiStage = getCmdlineParam(argv, argv + argc, "--multiStage");
+	integerWriteScalingStyle = getCmdlineParam(argv, argv + argc, "--pow2clip") ? IntegerWriteScalingStyle::Pow2Clip : IntegerWriteScalingStyle::Pow2Minus1;
 
 #if defined (_WIN32) || defined (_WIN64)
 	getCmdlineParam(argv, argv + argc, "--tempDir", tmpDir);
