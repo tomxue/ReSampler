@@ -690,11 +690,11 @@ bool convert(ConversionInfo& ci)
 			csvFile->setNumChannels(nChannels);
 
 			// defaults
-			csvFile->setNumBits(16);
             csvFile->setNumericFormat(Integer);
 			csvFile->setSignedness(Unsigned); 
 			csvFile->setNumericBase(Decimal);
 			csvFile->setIntegerWriteScalingStyle(ci.integerWriteScalingStyle);
+			csvFile->setNumBits(16);
 
 			if(!ci.outBitFormat.empty()) {
                 std::regex rgx("([us]?)(\\d+)([fiox]?)"); // [u|s]<numBits>[f|i|o|x]

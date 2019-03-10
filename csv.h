@@ -52,9 +52,10 @@ enum IntegerWriteScalingStyle {
 
 class CsvFile {
 public:
-    CsvFile(const std::string& path, CsvOpenMode mode = csv_write) : path(path), mode(mode), numChannels(2), numericFormat(Integer), signedness(Signed), numericBase(Decimal), precision(10), integerWriteScalingStyle(Pow2Minus1)
+    CsvFile(const std::string& path, CsvOpenMode mode = csv_write) : path(path), mode(mode), numChannels(2), numericFormat(Integer), signedness(Signed), numericBase(Decimal), numBits(16), precision(10), integerWriteScalingStyle(Pow2Minus1),
+		unsignedOffset(0), intMaxAmplitude(32767)
     {
-		setNumBits(16);
+
 		file.exceptions(std::ifstream::failbit | std::ifstream::badbit);
         currentChannel = 0;
 
@@ -136,16 +137,12 @@ private:
     IntegerWriteScalingStyle integerWriteScalingStyle;
     int currentChannel;
     bool err;
+	int intMaxAmplitude;
 	int unsignedOffset;
 
 	template <typename IntType, typename FloatType>
 	IntType scaleToInt(FloatType x) {
-        if (signedness == Signed) {
-			return static_cast<IntType>(std::round(scaleFactor * x));
-		}
-		else {
-			return static_cast<IntType>(std::round(scaleFactor * x) + unsignedOffset);
-		}
+		return unsignedOffset + std::min(std::max(-intMaxAmplitude, static_cast<IntType>(std::round(scaleFactor * x))), intMaxAmplitude - 1);
 	}
 
 	void setStreamFormat() {
@@ -214,8 +211,15 @@ public:
     }
 
     void setNumBits(int numBits) {
-        unsignedOffset = 1 << (numBits - 1);
+		intMaxAmplitude = 1 << (numBits - 1);
+        unsignedOffset = (signedness == Signed) ? 0 : intMaxAmplitude;
 		scaleFactor = static_cast<double>((integerWriteScalingStyle == Pow2Minus1) ? unsignedOffset - 1 : unsignedOffset);
+		std::cout << "csv output: number of bits: " << numBits << ", scaleFactor: " << scaleFactor;
+		std::cout << ", integer output range: "
+			<< unsignedOffset + std::max(-intMaxAmplitude, static_cast<int>(std::round(scaleFactor * -1.0)))
+			<< " to "
+			<< unsignedOffset +  std::min(intMaxAmplitude - 1, static_cast<int>(std::round(scaleFactor * 1.0)))
+			<< std::endl;
         CsvFile::numBits = numBits;
         setStreamFormat();
     }
