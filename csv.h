@@ -213,7 +213,7 @@ public:
     void setNumBits(int numBits) {
 		intMaxAmplitude = 1 << (numBits - 1);
         unsignedOffset = (signedness == Signed) ? 0 : intMaxAmplitude;
-		scaleFactor = static_cast<double>((integerWriteScalingStyle == Pow2Minus1) ? unsignedOffset - 1 : unsignedOffset);
+		scaleFactor = static_cast<double>((integerWriteScalingStyle == Pow2Minus1) ? intMaxAmplitude - 1 : intMaxAmplitude);
 		std::cout << "csv output: number of bits: " << numBits << ", scaleFactor: " << scaleFactor;
 		std::cout << ", integer output range: "
 			<< unsignedOffset + std::max(-intMaxAmplitude, static_cast<int>(std::round(scaleFactor * -1.0)))
