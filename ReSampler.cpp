@@ -690,28 +690,43 @@ bool convert(ConversionInfo& ci)
 			csvFile->setNumChannels(nChannels);
 
 			// defaults
-            csvFile->setNumericFormat(Integer);
-			csvFile->setSignedness(Unsigned); 
 			csvFile->setNumericBase(Decimal);
 			csvFile->setIntegerWriteScalingStyle(ci.integerWriteScalingStyle);
-			csvFile->setNumBits(16);
+			csvFile->setSignedness(Signed);
+			csvFile->setNumericFormat(Integer);
 
-			if(!ci.outBitFormat.empty()) {
-                std::regex rgx("([us]?)(\\d+)([fiox]?)"); // [u|s]<numBits>[f|i|o|x]
-                std::smatch m;
-                std::regex_search(ci.outBitFormat, m, rgx);
-                if(m.length() == 3) {
-                    csvFile->setSignedness((m[1].compare("u") == 0) ? Unsigned : Signed);
-                    csvFile->setNumBits(std::min(std::max(1, std::stoi(m[2])), 64)); // 1-64 bits
-                    csvFile->setNumericFormat((m[3].compare("f") == 0) ? FloatingPoint : Integer);
-					if ((m[3].compare("o") == 0)) {
+			if (ci.outBitFormat.empty()) { // default = 16-bit, unsigned, integer (decimal)	
+				csvFile->setNumBits(16);
+			} 
+			else {
+				std::regex rgx("([us]?)(\\d+)([fiox]?)"); // [u|s]<numBits>[f|i|o|x]
+                std::smatch matchResults;
+                std::regex_search(ci.outBitFormat, matchResults, rgx);
+				int numBits = 16;
+
+				if (matchResults.length() >= 1 && matchResults[1].compare("u") == 0) {
+					csvFile->setSignedness(Unsigned);
+				} 
+
+				if (matchResults.length() >= 2 && std::stoi(matchResults[2]) != 0) {
+					numBits = std::min(std::max(1, std::stoi(matchResults[2])), 64); // 1-64 bits
+				} 
+				
+				if (matchResults.length() >= 3 && !matchResults[3].str().empty()) {
+					if (matchResults[3].compare("f") == 0) {
+						csvFile->setNumericFormat(FloatingPoint);
+					}
+					else if (matchResults[3].compare("o") == 0) {
 						csvFile->setNumericBase(Octal);
 					}
-					else if ((m[3].compare("x") == 0)) {
+					else if (matchResults[3].compare("x") == 0) {
 						csvFile->setNumericBase(Hexadecimal);
 					}
-                    // todo: precision, other params
-                }
+				}
+			
+				csvFile->setNumBits(numBits);
+
+                // todo: precision, other params
             }
 		}
 
