@@ -815,10 +815,10 @@ bool convert(ConversionInfo& ci)
 				++i;
 			}
 
-			typedef struct {
+			struct Result {
 				size_t outBlockindex;
 				FloatType peak;
-			} Result;
+			};
 
 			std::vector<std::future<Result>> results(nChannels);
 			ctpl::thread_pool threadPool(nChannels);
