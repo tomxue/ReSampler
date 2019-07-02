@@ -21,7 +21,7 @@
 #include <cassert>
 #include <vector>
 
-#include <xmmintrin.h>
+//#include <xmmintrin.h>
 #include <fftw3.h>
 
 #include "alignedmalloc.h"
