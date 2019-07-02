@@ -21,7 +21,10 @@
 #include <cassert>
 #include <vector>
 
-//#include <xmmintrin.h>
+#if !defined(__ANDROID__) && !defined(__arm__) && !defined(__aarch64__)
+#include <xmmintrin.h>
+#endif
+
 #include <fftw3.h>
 
 #include "alignedmalloc.h"
