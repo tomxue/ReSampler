@@ -21,7 +21,7 @@
 #ifdef __APPLE__
 #include <unistd.h>
 #include <libproc.h>
-#endif 
+#endif
 
 #if defined (__MINGW64__) || defined (__MINGW32__) || defined (__GNUC__)
 #ifdef USE_QUADMATH
@@ -42,7 +42,15 @@
 #include "raiitimer.h"
 #include "fraction.h"
 #include "srconvert.h"
-
+#if !defined(__ANDROID__) && !defined(__arm__) && !defined(__aarch64__)
+#else
+#define COMPILING_ON_ANDROID
+#include <Android/log.h>
+#define LOG_TAG "ReSampler"
+#define ANDROID_OUT(...) __android_log_print(ANDROID_LOG_VERBOSE, LOG_TAG, __VA_ARGS__)
+#define ANDROID_ERR(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
+#define ANDROID_STDTOC(x) x.c_str()
+#endif
 ////////////////////////////////////////////////////////////////////////////////////////
 // This program uses the following libraries:
 // 1:
@@ -50,11 +58,11 @@
 // available at http://www.mega-nerd.com/libsndfile/
 //
 // (copy of entire package included in $(ProjectDir)\libsbdfile)
-// 
+//
 // 2:
 // fftw
 // http://www.fftw.org/
-// 
+//
 //                                                                                    //
 ////////////////////////////////////////////////////////////////////////////////////////
 
@@ -92,11 +100,19 @@ int main(int argc, char * argv[])
 		exit(EXIT_FAILURE); // can't continue (CPU / build mismatch)
 
 	// echo filenames to user
+#ifdef COMPILING_ON_ANDROID
+    ANDROID_OUT("Input file: %s", ANDROID_STDTOC(ci.inputFilename));
+    ANDROID_OUT("Output file: %s", ANDROID_STDTOC(ci.outputFilename));
+#else
 	std::cout << "Input file: " << ci.inputFilename << std::endl;
 	std::cout << "Output file: " << ci.outputFilename << std::endl;
-
+#endif
 	if (ci.disableClippingProtection) {
+#ifdef COMPILING_ON_ANDROID
+	    ANDROID_OUT("clipping protection disabled ");
+#else
 		std::cout << "clipping protection disabled " << std::endl;
+#endif
 	}
 
 	// Isolate the file extensions
@@ -115,38 +131,68 @@ int main(int argc, char * argv[])
 	ci.csvOutput = (outFileExt == "csv");
 
 	if (ci.csvOutput) {
-		std::cout << "Outputting to csv format" << std::endl;
+#ifdef COMPILING_ON_ANDROID
+	    ANDROID_OUT("Outputting to csv format");
+#else
+        std::cout << "Outputting to csv format" << std::endl;
+#endif
 	}
 	else {
 		if (!ci.outBitFormat.empty()) {  // new output bit format requested
 			ci.outputFormat = determineOutputFormat(outFileExt, ci.outBitFormat);
 			if (ci.outputFormat) {
-				std::cout << "Changing output bit format to " << ci.outBitFormat << std::endl;
+#ifdef COMPILING_ON_ANDROID
+                ANDROID_OUT("Changing output bit format to %s", ANDROID_STDTOC(ci.outBitFormat));
+#else
+                std::cout <<  << ci.outBitFormat << std::endl;
+#endif
 			}
 			else { // user-supplied bit format not valid; try choosing appropriate format
 				determineBestBitFormat(ci.outBitFormat, ci.inputFilename, ci.outputFilename);
 				ci.outputFormat = determineOutputFormat(outFileExt, ci.outBitFormat);
-				if (ci.outputFormat)
-					std::cout << "Changing output bit format to " << ci.outBitFormat << std::endl;
+				if (ci.outputFormat) {
+#ifdef COMPILING_ON_ANDROID
+                    ANDROID_OUT("Changing output bit format to %s", ANDROID_STDTOC(ci.outBitFormat));
+#else
+                    std::cout << "Changing output bit format to " << ci.outBitFormat << std::endl;
+#endif
+                }
 				else {
+#ifdef COMPILING_ON_ANDROID
+                    ANDROID_OUT("Warning: NOT Changing output file bit format !");
+#else
 					std::cout << "Warning: NOT Changing output file bit format !" << std::endl;
+#endif
 					ci.outputFormat = 0; // back where it started
 				}
 			}
 		}
 
 		if (outFileExt != inFileExt)
-		{ // file extensions differ, determine new output format: 
+		{ // file extensions differ, determine new output format:
 
 			if (ci.outBitFormat.empty()) { // user changed file extension only. Attempt to choose appropriate output sub format:
+#ifdef COMPILING_ON_ANDROID
+			    ANDROID_OUT("Output Bit Format not specified");
+#else
 				std::cout << "Output Bit Format not specified" << std::endl;
+#endif
 				determineBestBitFormat(ci.outBitFormat, ci.inputFilename, ci.outputFilename);
 			}
 			ci.outputFormat = determineOutputFormat(outFileExt, ci.outBitFormat);
-			if (ci.outputFormat)
-				std::cout << "Changing output file format to " << outFileExt << std::endl;
+			if (ci.outputFormat) {
+#ifdef COMPILING_ON_ANDROID
+			    ANDROID_OUT("Changing output file format to %s", ANDROID_STDTOC(outFileExt));
+#else
+                std::cout << "Changing output file format to " << outFileExt << std::endl;
+#endif
+            }
 			else { // cannot determine subformat of output file
+#ifdef COMPILING_ON_ANDROID
+                ANDROID_OUT("Warning: NOT Changing output file format ! (extension different, but format will remain the same)");
+#else
 				std::cout << "Warning: NOT Changing output file format ! (extension different, but format will remain the same)" << std::endl;
+#endif
 			}
 		}
 	}
@@ -155,9 +201,17 @@ int main(int argc, char * argv[])
 		if (ci.bUseDoublePrecision) {
 
 #ifdef USE_QUADMATH
-			std::cout << "Using quadruple-precision for calculations.\n";
+    #ifdef COMPILING_ON_ANDROID
+            ANDROID_OUT("Using quadruple-precision for calculations.");
+    #else
+            std::cout << "Using quadruple-precision for calculations." << std::endl;
+    #endif
 #else
+    #ifdef COMPILING_ON_ANDROID
+            ANDROID_OUT("Using double precision for calculations.");
+    #else
 			std::cout << "Using double precision for calculations." << std::endl;
+    #endif
 #endif
 			if (ci.dsfInput) {
 				ci.bEnablePeakDetection = false;
@@ -176,7 +230,11 @@ int main(int argc, char * argv[])
 		else {
 
 #ifdef USE_QUADMATH
-			std::cout << "Using quadruple-precision for calculations.\n";
+            #ifdef COMPILING_ON_ANDROID
+            ANDROID_OUT("Using quadruple-precision for calculations.");
+    #else
+            std::cout << "Using quadruple-precision for calculations." << std::endl;
+    #endif
 #endif
 			if (ci.dsfInput) {
 				ci.bEnablePeakDetection = false;
@@ -193,9 +251,13 @@ int main(int argc, char * argv[])
 		}
 
 	} //ends try block
-		
+
 	catch (const std::exception& e) {
+#ifdef COMPILING_ON_ANDROID
+        ANDROID_ERR("fatal error: %s", e.what());
+#else
 		std::cerr << "fatal error: " << e.what();
+#endif
 		return EXIT_FAILURE;
 	}
 }
@@ -205,14 +267,23 @@ bool parseGlobalOptions(int argc, char * argv[]) {
 
 	// help switch:
 	if (getCmdlineParam(argv, argv + argc, "--help") || getCmdlineParam(argv, argv + argc, "-h")) {
+#ifdef COMPILING_ON_ANDROID
+        ANDROID_OUT("%s", ANDROID_STDTOC(strUsage));
+        ANDROID_OUT("Additional options:\n\n%s", ANDROID_STDTOC(strExtraOptions));
+#else
 		std::cout << strUsage << std::endl;
 		std::cout << "Additional options:\n\n" << strExtraOptions << std::endl;
+#endif
 		return true;
 	}
 
 	// version switch:
 	if (getCmdlineParam(argv, argv + argc, "--version")) {
+#ifdef COMPILING_ON_ANDROID
+	    ANDROID_OUT("%s", ANDROID_STDTOC(strVersion));
+#else
 		std::cout << strVersion << std::endl;
+#endif
 		return true;
 	}
 
@@ -226,7 +297,11 @@ bool parseGlobalOptions(int argc, char * argv[]) {
 	if (getCmdlineParam(argv, argv + argc, "--sndfile-version")) {
 		char s[128];
 		sf_command(nullptr, SFC_GET_LIB_VERSION, s, sizeof(s));
+#ifdef COMPILING_ON_ANDROID
+        ANDROID_OUT("%s", s);
+#else
 		std::cout << s << std::endl;
+#endif
 		return true;
 	}
 
@@ -286,7 +361,11 @@ bool determineBestBitFormat(std::string& BitFormat, const std::string& inFilenam
 		inFileFormat = infile.format();
 
 		if (int e = infile.error()) {
+#ifdef COMPILING_ON_ANDROID
+            ANDROID_OUT("Couldn't Open Input File (%s)", sf_error_number(e));
+#else
 			std::cout << "Couldn't Open Input File (" << sf_error_number(e) << ")" << std::endl;
+#endif
 			return false;
 		}
 
@@ -310,11 +389,15 @@ bool determineBestBitFormat(std::string& BitFormat, const std::string& inFilenam
 	std::string outFileExt;
 	if (outFilename.find_last_of('.') != std::string::npos)
 		outFileExt = outFilename.substr(outFilename.find_last_of('.') + 1);
-	
+
 	// when the input file is dsf/dff, use default output subformat:
 	if (dsfInput || dffInput) { // choose default output subformat for chosen output file format
 		BitFormat = defaultSubFormats.find(outFileExt)->second;
+#ifdef COMPILING_ON_ANDROID
+		ANDROID_OUT("defaulting to %s", ANDROID_STDTOC(BitFormat));
+#else
 		std::cout << "defaulting to " << BitFormat << std::endl;
+#endif
 		return true;
 	}
 
@@ -332,7 +415,7 @@ bool determineBestBitFormat(std::string& BitFormat, const std::string& inFilenam
 
 		if (stricmp(formatinfo.extension, outFileExt.c_str()) == 0) { // match between format number m and outfile's file extension
 			format = formatinfo.format | (inFileFormat & SF_FORMAT_SUBMASK); // combine outfile's major format with infile's subformat
-			
+
 			// Check if format / subformat combination is valid:
 			SF_INFO sfinfo;
 			memset(&sfinfo, 0, sizeof(sfinfo));
@@ -342,14 +425,22 @@ bool determineBestBitFormat(std::string& BitFormat, const std::string& inFilenam
 			if (sf_format_check(&sfinfo)) { // Match: infile's subformat is valid for outfile's format
 				break;
 			} else { // infile's subformat is not valid for outfile's format; use outfile's default subformat
+#ifdef COMPILING_ON_ANDROID
+                ANDROID_OUT( "Output file format %s and subformat %s combination not valid ... ", ANDROID_STDTOC(outFileExt), ANDROID_STDTOC(BitFormat));
+#else
 				std::cout << "Output file format " << outFileExt << " and subformat " << BitFormat << " combination not valid ... ";
+#endif
 				BitFormat.clear();
 				BitFormat = defaultSubFormats.find(outFileExt)->second;
+#ifdef COMPILING_ON_ANDROID
+		        ANDROID_OUT("defaulting to %s", ANDROID_STDTOC(BitFormat));
+#else
 				std::cout << "defaulting to " << BitFormat << std::endl;
+#endif
 				break;
 			}
 		}
-	} 
+	}
 	return true;
 }
 
@@ -379,7 +470,11 @@ int determineOutputFormat(const std::string& outFileExt, const std::string& bitF
 		if (sf != subFormats.end())
 			format = info.format | sf->second;
 		else
+#ifdef COMPILING_ON_ANDROID
+		    ANDROID_OUT("Warning: bit format %s not recognised !", ANDROID_STDTOC(bitFormat));
+#else
 			std::cout << "Warning: bit format " << bitFormat << " not recognised !" << std::endl;
+#endif
 	}
 
 	// Special cases:
@@ -414,7 +509,7 @@ void listSubFormats(const std::string& f)
 			break;
 		}
 	}
-	
+
 	if (bFileExtFound) {
 		SF_INFO sfinfo;
 		memset(&sfinfo, 0, sizeof(sfinfo));
@@ -424,11 +519,19 @@ void listSubFormats(const std::string& f)
 		for (auto& subformat : subFormats) {
 			sfinfo.format = (info.format & SF_FORMAT_TYPEMASK) | subformat.second;
 			if (sf_format_check(&sfinfo))
+#ifdef COMPILING_ON_ANDROID
+		        ANDROID_OUT("%s", ANDROID_STDTOC(subformat.first));
+#else
 				std::cout << subformat.first << std::endl;
+#endif
 		}
 	}
 	else {
+#ifdef COMPILING_ON_ANDROID
+		ANDROID_OUT("File extension %s unknown", ANDROID_STDTOC(f));
+#else
 		std::cout << "File extension " << f << " unknown" << std::endl;
+#endif
 	}
 }
 
@@ -457,16 +560,34 @@ bool convert(ConversionInfo& ci)
 	std::string tmpFilename;
 
 	// Open input file:
+	// TODO: FOR RAW AUDIO FILES: pass correct arguments to LIBSNDFILE: SndfileHandle::SndfileHandle (std::string const & path, int mode, int fmt, int chans, int srate)
+	// TODO: look in sndfile.hh:80 for possible constructors
+	/*
+	public :
+        SndfileHandle (void) : p (nullptr) {} ;
+        SndfileHandle (const char *path, int mode = SFM_READ,
+        int format = 0, int channels = 0, int samplerate = 0) ;
+        SndfileHandle (std::string const & path, int mode = SFM_READ,
+            int format = 0, int channels = 0, int samplerate = 0) ;
+        SndfileHandle (int fd, bool close_desc, int mode = SFM_READ,
+            int format = 0, int channels = 0, int samplerate = 0) ;
+        SndfileHandle (SF_VIRTUAL_IO &sfvirtual, void *user_data, int mode = SFM_READ,
+            int format = 0, int channels = 0, int samplerate = 0) ;
+	 */
 	FileReader infile(ci.inputFilename);
 	if (int e = infile.error()) {
-		std::cout << "Error: Couldn't Open Input File (" << sf_error_number(e) << ")" << std::endl; // to-do: make this more specific (?)
+#ifdef COMPILING_ON_ANDROID
+		ANDROID_ERR("Error: Couldn't Open Input File (%s)", sf_error_number(e));
+#else
+		std::cerr << "Error: Couldn't Open Input File (" << sf_error_number(e) << ")" << std::endl; // to-do: make this more specific (?)
+#endif
 		return false;
 	}
-	
+
 	// read input file metadata:
 	MetaData m;
 	getMetaData(m, infile);
-	
+
 	// read input file properties:
     int nChannels = static_cast<int>(infile.channels());
 	ci.inputSampleRate = infile.samplerate();
@@ -482,17 +603,17 @@ bool convert(ConversionInfo& ci)
     auto inputBlockSize = static_cast<size_t>(BUFFERSIZE * nChannels);
 	auto outputChannelBufferSize = static_cast<size_t>(1 + std::ceil(BUFFERSIZE * static_cast<double>(fraction.numerator) / static_cast<double>(fraction.denominator)));
 	auto outputBlockSize = static_cast<size_t>(nChannels * (1 + outputChannelBufferSize));
-	
+
 	// allocate buffers:
 	std::vector<FloatType> inputBlock(inputBlockSize, 0);		// input buffer for storing interleaved samples from input file
 	std::vector<FloatType> outputBlock(outputBlockSize, 0);		// output buffer for storing interleaved samples to be saved to output file
-	std::vector<std::vector<FloatType>> inputChannelBuffers;	// input buffer for each channel to store deinterleaved samples 
+	std::vector<std::vector<FloatType>> inputChannelBuffers;	// input buffer for each channel to store deinterleaved samples
 	std::vector<std::vector<FloatType>> outputChannelBuffers;	// output buffer for each channel to store converted deinterleaved samples
 	for (int n = 0; n < nChannels; n++) {
 		inputChannelBuffers.emplace_back(std::vector<FloatType>(inputChannelBufferSize, 0));
 		outputChannelBuffers.emplace_back(std::vector<FloatType>(outputChannelBufferSize, 0));
 	}
-			
+
 	int inputFileFormat = infile.format();
 	if (inputFileFormat != DFF_FORMAT && inputFileFormat != DSF_FORMAT) { // this block only relevant to libsndfile ...
 		// detect if input format is a floating-point format:
@@ -509,30 +630,55 @@ bool convert(ConversionInfo& ci)
 
 		for (auto& subformat : subFormats) { // scan subformats for a match:
 			if (subformat.second == (inputFileFormat & SF_FORMAT_SUBMASK)) {
+#ifdef COMPILING_ON_ANDROID
+		        ANDROID_OUT("input bit format: %s", ANDROID_STDTOC(subformat.first));
+#else
 				std::cout << "input bit format: " << subformat.first;
+#endif
 				break;
 			}
 		}
 
 		if (bFloat)
+#ifdef COMPILING_ON_ANDROID
+		    ANDROID_OUT(" (float)");
+#else
 			std::cout << " (float)";
+#endif
 		if (bDouble)
+#ifdef COMPILING_ON_ANDROID
+            ANDROID_OUT(" (double precision)");
+#else
 			std::cout << " (double precision)";
+#endif
 
+#ifdef COMPILING_ON_ANDROID
+        ANDROID_OUT("");
+#else
 		std::cout << std::endl;
+#endif
 	}
 
+#ifdef COMPILING_ON_ANDROID
+	ANDROID_OUT("source file channels: %d", nChannels);
+    ANDROID_OUT("input sample rate: %d\noutput sample rate: %d", ci.inputSampleRate, ci.outputSampleRate);
+#else
 	std::cout << "source file channels: " << nChannels << std::endl;
 	std::cout << "input sample rate: " << ci.inputSampleRate << "\noutput sample rate: " << ci.outputSampleRate << std::endl;
+#endif
 
 	FloatType peakInputSample;
 	sf_count_t peakInputPosition = 0LL;
 	sf_count_t samplesRead = 0LL;
 	sf_count_t totalSamplesRead = 0LL;
-	
+
 	if (ci.bEnablePeakDetection) {
 		peakInputSample = 0.0;
+#ifdef COMPILING_ON_ANDROID
+		ANDROID_OUT("Scanning input file for peaks ...");
+#else
 		std::cout << "Scanning input file for peaks ...";
+#endif
 
 		do {
 			samplesRead = infile.read(inputBlock.data(), inputBlockSize);
@@ -545,10 +691,19 @@ bool convert(ConversionInfo& ci)
 			totalSamplesRead += samplesRead;
 		} while (samplesRead > 0);
 
+#ifdef COMPILING_ON_ANDROID
+        ANDROID_OUT("Done");
+        ANDROID_OUT("Peak input sample: %G (%G dBFS) at ", peakInputSample, 20 * log10(peakInputSample));
+#else
 		std::cout << "Done\n";
 		std::cout << "Peak input sample: " << std::fixed << peakInputSample << " (" << 20 * log10(peakInputSample) << " dBFS) at ";
-		printSamplePosAsTime(peakInputPosition, ci.inputSampleRate);
+#endif
+		printSamplePosAsTime(peakInputPosition, static_cast<unsigned int>(ci.inputSampleRate)); // using unsigned int for type int
+#ifdef COMPILING_ON_ANDROID
+		ANDROID_OUT("");
+#else
 		std::cout << std::endl;
+#endif
 		infile.seek(0, SEEK_SET); // rewind back to start of file
 	}
 
@@ -560,7 +715,11 @@ bool convert(ConversionInfo& ci)
 
 	if (ci.bNormalize) { // echo Normalization settings to user
 		auto prec = std::cout.precision();
+#ifdef COMPILING_ON_ANDROID
+		ANDROID_OUT("Normalizing to %G", ci.limit);
+#else
 		std::cout << "Normalizing to " << std::setprecision(2) << ci.limit << std::endl;
+#endif
 		std::cout.precision(prec);
 	}
 
@@ -568,24 +727,36 @@ bool convert(ConversionInfo& ci)
 	double targetNyquist = std::min(ci.inputSampleRate, ci.outputSampleRate) / 2.0;
 	double ft = (ci.lpfCutoff / 100.0) * targetNyquist;
 	auto prec = std::cout.precision();
+#ifdef COMPILING_ON_ANDROID
+    ANDROID_OUT("LPF transition frequency: %G Hz (%G %%)", ft, 100 * ft / targetNyquist);
+#else
 	std::cout << "LPF transition frequency: " << std::fixed << std::setprecision(2) << ft << " Hz (" << 100 * ft / targetNyquist << " %)" << std::endl;
+#endif
 	std::cout.precision(prec);
 	if (ci.bMinPhase) {
+#ifdef COMPILING_ON_ANDROID
+		ANDROID_OUT("Using Minimum-Phase LPF");
+#else
 		std::cout << "Using Minimum-Phase LPF" << std::endl;
+#endif
 	}
 
 	// echo conversion ratio to user:
 	FloatType resamplingFactor = static_cast<FloatType>(ci.outputSampleRate) / ci.inputSampleRate;
+#ifdef COMPILING_ON_ANDROID
+    ANDROID_OUT("Conversion ratio: %G (%d:%d)", resamplingFactor, fraction.numerator, fraction.denominator);
+#else
 	std::cout << "Conversion ratio: " << resamplingFactor
 		<< " (" << fraction.numerator << ":" << fraction.denominator << ")" << std::endl;
+#endif
 
 	// if the outputFormat is zero, it means "No change to file format"
-	// if output file format has changed, use outputFormat. Otherwise, use same format as infile: 
+	// if output file format has changed, use outputFormat. Otherwise, use same format as infile:
 	int outputFileFormat = ci.outputFormat ? ci.outputFormat : inputFileFormat;
 
 	// if the minor (sub) format of outputFileFormat is not set, attempt to use minor format of input file (as a last resort)
 	if ((outputFileFormat & SF_FORMAT_SUBMASK) == 0) {
-		outputFileFormat |= (inputFileFormat & SF_FORMAT_SUBMASK); // may not be valid subformat for new file format. 
+		outputFileFormat |= (inputFileFormat & SF_FORMAT_SUBMASK); // may not be valid subformat for new file format.
 	}
 
 	// for wav files, determine whether to switch to rf64 mode:
@@ -593,7 +764,11 @@ bool convert(ConversionInfo& ci)
 		((outputFileFormat & SF_FORMAT_TYPEMASK) == SF_FORMAT_WAVEX)) {
 		if (ci.bRf64 ||
 			checkWarnOutputSize(inputSampleCount, getSfBytesPerSample(outputFileFormat), fraction.numerator, fraction.denominator)) {
+#ifdef COMPILING_ON_ANDROID
+		    ANDROID_OUT("Switching to rf64 format !");
+#else
 			std::cout << "Switching to rf64 format !" << std::endl;
+#endif
 			outputFileFormat &= ~SF_FORMAT_TYPEMASK; // clear file type
 			outputFileFormat |= SF_FORMAT_RF64;
 		}
@@ -634,11 +809,23 @@ bool convert(ConversionInfo& ci)
 	// confirm dithering options for user:
 	if (ci.bDither) {
 		auto prec = std::cout.precision();
+#ifdef COMPILING_ON_ANDROID
+		ANDROID_OUT("Generating %G bits of %s dither for %d-bit output format", ci.ditherAmount, ditherProfileList[ci.ditherProfileID].name, outputSignalBits);
+#else
 		std::cout << "Generating " << std::setprecision(2) << ci.ditherAmount << " bits of " << ditherProfileList[ci.ditherProfileID].name << " dither for " << outputSignalBits << "-bit output format";
+#endif
 		std::cout.precision(prec);
 		if (ci.bAutoBlankingEnabled)
+#ifdef COMPILING_ON_ANDROID
+		    ANDROID_OUT(", with auto-blanking");
+#else
 			std::cout << ", with auto-blanking";
+#endif
+#ifdef COMPILING_ON_ANDROID
+		ANDROID_OUT("");
+#else
 		std::cout << std::endl;
+#endif
 	}
 
 	// make a vector of ditherers (one ditherer for each channel):
@@ -647,7 +834,7 @@ bool convert(ConversionInfo& ci)
 
 	for (int n = 0; n < nChannels; n++) {
 		// to-do: explore other seed-generation options (remote possibility of overlap)
-		// maybe use a single global RNG ? 
+		// maybe use a single global RNG ?
 		// or use discard/jump-ahead ... to ensure parallel streams are sufficiently "far away" from each other ?
 		ditherers.emplace_back(outputSignalBits, ci.ditherAmount, ci.bAutoBlankingEnabled, n + seed, static_cast<DitherProfileID>(ci.ditherProfileID));
 	}
@@ -656,10 +843,10 @@ bool convert(ConversionInfo& ci)
 	std::vector<Converter<FloatType>> converters;
 	for (int n = 0; n < nChannels; n++) {
 		converters.emplace_back(ci);
-	} 
+	}
 
 	// Calculate initial gain:
-	FloatType gain = ci.gain * converters[0].getGain() * 
+	FloatType gain = ci.gain * converters[0].getGain() *
 		(ci.bNormalize ? fraction.numerator * (ci.limit / peakInputSample) : fraction.numerator * ci.limit );
 
 	// todo: more testing with very low bit depths (eg 4 bits)
@@ -695,9 +882,9 @@ bool convert(ConversionInfo& ci)
 			csvFile->setSignedness(Signed);
 			csvFile->setNumericFormat(Integer);
 
-			if (ci.outBitFormat.empty()) { // default = 16-bit, unsigned, integer (decimal)	
+			if (ci.outBitFormat.empty()) { // default = 16-bit, unsigned, integer (decimal)
 				csvFile->setNumBits(16);
-			} 
+			}
 			else {
 				std::regex rgx("([us]?)(\\d+)([fiox]?)"); // [u|s]<numBits>[f|i|o|x]
                 std::smatch matchResults;
@@ -706,12 +893,12 @@ bool convert(ConversionInfo& ci)
 
 				if (matchResults.length() >= 1 && matchResults[1].compare("u") == 0) {
 					csvFile->setSignedness(Unsigned);
-				} 
+				}
 
 				if (matchResults.length() >= 2 && std::stoi(matchResults[2]) != 0) {
 					numBits = std::min(std::max(1, std::stoi(matchResults[2])), 64); // 1-64 bits
-				} 
-				
+				}
+
 				if (matchResults.length() >= 3 && !matchResults[3].str().empty()) {
 					if (matchResults[3].compare("f") == 0) {
 						csvFile->setNumericFormat(FloatingPoint);
@@ -723,7 +910,7 @@ bool convert(ConversionInfo& ci)
 						csvFile->setNumericBase(Hexadecimal);
 					}
 				}
-			
+
 				csvFile->setNumBits(numBits);
 
                 // todo: precision, other params
@@ -735,12 +922,16 @@ bool convert(ConversionInfo& ci)
 			try {
 
 				// output file may need to be overwriten on subsequent passes,
-				// and the only way to close the file is to destroy the SndfileHandle.  
+				// and the only way to close the file is to destroy the SndfileHandle.
 
 				outFile.reset(new SndfileHandle(ci.outputFilename, SFM_WRITE, outputFileFormat, nChannels, ci.outputSampleRate));
 
 				if (int e = outFile->error()) {
-					std::cout << "Error: Couldn't Open Output File (" << sf_error_number(e) << ")" << std::endl;
+#ifdef COMPILING_ON_ANDROID
+            		ANDROID_ERR("Error: Couldn't Open Output File (%s)", sf_error_number(e));
+#else
+					std::cerr << "Error: Couldn't Open Output File (" << sf_error_number(e) << ")" << std::endl;
+#endif
 					return false;
 				}
 
@@ -750,13 +941,21 @@ bool convert(ConversionInfo& ci)
 
 				if (ci.bWriteMetaData) {
 					if (!setMetaData(m, *outFile)) {
+#ifdef COMPILING_ON_ANDROID
+                		ANDROID_OUT("Warning: problem writing metadata to output file ( %s )", outFile->strError());
+#else
 						std::cout << "Warning: problem writing metadata to output file ( " << outFile->strError() << " )" << std::endl;
+#endif
 					}
 				}
 
 				// if the minor (sub) format of outputFileFormat is flac, and user has requested a specific compression level, set compression level:
 				if (((outputFileFormat & SF_FORMAT_FLAC) == SF_FORMAT_FLAC) && ci.bSetFlacCompression) {
+#ifdef COMPILING_ON_ANDROID
+				    ANDROID_OUT("setting flac compression level to %d", ci.flacCompressionLevel);
+#else
 					std::cout << "setting flac compression level to " << ci.flacCompressionLevel << std::endl;
+#endif
 					double cl = ci.flacCompressionLevel / 8.0; // there are 9 flac compression levels from 0-8. Normalize to 0-1.0
 					outFile->command(SFC_SET_COMPRESSION_LEVEL, &cl, sizeof(cl));
 				}
@@ -765,8 +964,12 @@ bool convert(ConversionInfo& ci)
 				if (((outputFileFormat & SF_FORMAT_VORBIS) == SF_FORMAT_VORBIS) && ci.bSetVorbisQuality) {
 
 					auto prec = std::cout.precision();
-					std::cout.precision(1);
+                    std::cout.precision(1);
+#ifdef COMPILING_ON_ANDROID
+            		ANDROID_OUT("setting vorbis quality level to %G", ci.vorbisQuality);
+#else
 					std::cout << "setting vorbis quality level to " << ci.vorbisQuality << std::endl;
+#endif
 					std::cout.precision(prec);
 
 					double cl = (1.0 - ci.vorbisQuality) / 11.0; // Normalize from (-1 to 10), to (1.0 to 0) ... why is it backwards ?
@@ -775,7 +978,11 @@ bool convert(ConversionInfo& ci)
 			}
 
 			catch (std::exception& e) {
-				std::cout << "Error: Couldn't Open Output File " << e.what() << std::endl;
+#ifdef COMPILING_ON_ANDROID
+        		ANDROID_ERR("Error: Couldn't Open Output File %s", e.what());
+#else
+				std::cerr << "Error: Couldn't Open Output File " << e.what() << std::endl;
+#endif
 				return false;
 			}
 		}
@@ -791,7 +998,11 @@ bool convert(ConversionInfo& ci)
 		// echo conversion mode to user (multi-stage/single-stage, multi-threaded/single-threaded)
 		std::string stageness(ci.bMultiStage ? "multi-stage" : "single-stage");
 		std::string threadedness(ci.bMultiThreaded ? ", multi-threaded" : "");
+#ifdef COMPILING_ON_ANDROID
+		ANDROID_OUT("Converting (%s%s) ...", ANDROID_STDTOC(stageness), ANDROID_STDTOC(threadedness));
+#else
 		std::cout << "Converting (" << stageness << threadedness << ") ..." << std::endl;
+#endif
 
 		peakOutputSample = 0.0;
 		totalSamplesRead = 0;
@@ -799,12 +1010,12 @@ bool convert(ConversionInfo& ci)
 		sf_count_t nextProgressThreshold = incrementalProgressThreshold;
 
 		int outStartOffset = std::min(groupDelay * nChannels, static_cast<int>(outputBlockSize) - nChannels);
-		
-		do { // central conversion loop (the heart of the matter ...) 
+
+		do { // central conversion loop (the heart of the matter ...)
 
 			// Grab a block of interleaved samples from file:
 			samplesRead = infile.read(inputBlock.data(), inputBlockSize);
-			totalSamplesRead += samplesRead;  
+			totalSamplesRead += samplesRead;
 
 			// de-interleave into channel buffers
 			size_t i = 0;
@@ -823,7 +1034,7 @@ bool convert(ConversionInfo& ci)
 			std::vector<std::future<Result>> results(nChannels);
 			ctpl::thread_pool threadPool(nChannels);
             size_t outputBlockIndex = 0;
-			
+
 			for (int ch = 0; ch < nChannels; ++ch) { // run convert stage for each channel (concurrently)
 
 				auto kernel = [&, ch](int x = 0) {
@@ -881,7 +1092,11 @@ bool convert(ConversionInfo& ci)
 			// conditionally send progress update:
 			if (totalSamplesRead > nextProgressThreshold) {
 				int progressPercentage = std::min(static_cast<int>(99), static_cast<int>(100 * totalSamplesRead / inputSampleCount));
+#ifdef COMPILING_ON_ANDROID
+        		ANDROID_OUT("%d%%", progressPercentage); // logcat cannot handle backspace '\b' formatter
+#else
 				std::cout << progressPercentage << "%\b\b\b" << std::flush;
+#endif
 				nextProgressThreshold += incrementalProgressThreshold;
 			}
 
@@ -891,28 +1106,48 @@ bool convert(ConversionInfo& ci)
 			gain = 1.0; // output file must start with unity gain relative to temp file
 		} else {
 			// notify user:
+#ifdef COMPILING_ON_ANDROID
+    		ANDROID_OUT("Done");
+#else
 			std::cout << "Done" << std::endl;
+#endif
 			auto prec = std::cout.precision();
+#ifdef COMPILING_ON_ANDROID
+		    ANDROID_OUT("Peak output sample: %G (%G  dBFS)", peakOutputSample, 20 * log10(peakOutputSample));
+#else
 			std::cout << "Peak output sample: " << std::setprecision(6) << peakOutputSample << " (" << 20 * log10(peakOutputSample) << " dBFS)" << std::endl;
+#endif
 			std::cout.precision(prec);
-		} 
+		}
 
 		do {
 			// test for clipping:
 			if (!ci.disableClippingProtection && peakOutputSample > ci.limit) {
 
+#ifdef COMPILING_ON_ANDROID
+        		ANDROID_OUT("Clipping detected !");
+#else
 				std::cout << "\nClipping detected !" << std::endl;
+#endif
 
 				// calculate gain adjustment
 				FloatType gainAdjustment = static_cast<FloatType>(clippingTrim) * ci.limit / peakOutputSample;
 				gain *= gainAdjustment;
-				
+
 				// echo gain adjustment to user - use slightly differnt message if using temp file:
 				if (ci.bTmpFile) {
+#ifdef COMPILING_ON_ANDROID
+		            ANDROID_OUT("Adjusting gain by %G dB", 20 * log10(gainAdjustment));
+#else
 					std::cout << "Adjusting gain by " << 20 * log10(gainAdjustment) << " dB" << std::endl;
+#endif
 				}
 				else {
+#ifdef COMPILING_ON_ANDROID
+            		ANDROID_OUT("Re-doing with %G dB gain adjustment", 20 * log10(gainAdjustment));
+#else
 					std::cout << "Re-doing with " << 20 * log10(gainAdjustment) << " dB gain adjustment" << std::endl;
+#endif
 				}
 
 				// reset the ditherers
@@ -933,7 +1168,11 @@ bool convert(ConversionInfo& ci)
 			// if using temp file, write to outFile
 			if (ci.bTmpFile) {
 
+#ifdef COMPILING_ON_ANDROID
+		        ANDROID_OUT("Writing to output file ...");
+#else
 				std::cout << "Writing to output file ...\n";
+#endif
 				std::vector<FloatType> outBuf(inputBlockSize, 0);
 				peakOutputSample = 0.0;
 				totalSamplesRead = 0;
@@ -972,17 +1211,29 @@ bool convert(ConversionInfo& ci)
 					if (totalSamplesRead > nextProgressThreshold) {
 						int progressPercentage = std::min(static_cast<int>(99),
 							static_cast<int>(100 * totalSamplesRead / inputSampleCount));
+#ifdef COMPILING_ON_ANDROID
+                        ANDROID_OUT("%d%%", progressPercentage); // logcat cannot handle backspace '\b' formatter
+#else
 						std::cout << progressPercentage << "%\b\b\b" << std::flush;
+#endif
 						nextProgressThreshold += incrementalProgressThreshold;
 					}
 
 				} while (samplesRead > 0);
 
+#ifdef COMPILING_ON_ANDROID
+		        ANDROID_OUT("Done");
+#else
 				std::cout << "Done" << std::endl;
+#endif
 				auto prec = std::cout.precision();
+#ifdef COMPILING_ON_ANDROID
+		        ANDROID_OUT("Peak output sample: %G (%G dBFS)", peakOutputSample, 20 * log10(peakOutputSample));
+#else
 				std::cout << "Peak output sample: " << std::setprecision(6) << peakOutputSample << " (" << 20 * log10(peakOutputSample) << " dBFS)" << std::endl;
+#endif
 				std::cout.precision(prec);
-	
+
 			} // ends if (ci.bTmpFile)
 
 			bClippingDetected = peakOutputSample > ci.limit;
@@ -996,7 +1247,7 @@ bool convert(ConversionInfo& ci)
 
 		} while (ci.bTmpFile && !ci.disableClippingProtection && bClippingDetected && clippingProtectionAttempts < maxClippingProtectionAttempts); // if using temp file, do another round if clipping detected
 	} while (!ci.bTmpFile && !ci.disableClippingProtection && bClippingDetected && clippingProtectionAttempts < maxClippingProtectionAttempts); // if NOT using temp file, do another round if clipping detected
-	
+
 	// clean-up temp file:
 	delete tmpSndfileHandle; // dealllocate SndFileHandle
 
@@ -1040,17 +1291,30 @@ SndfileHandle* getTempFile(int inputFileFormat, int nChannels, const ConversionI
 	else {
 		pathLen = GetTempPath(MAX_PATH, _tmpPathname);
 	}
-	
+
     if (pathLen > MAX_PATH || pathLen == 0)
+#ifdef COMPILING_ON_ANDROID
+		ANDROID_ERR("Error: Could not determine temp path for temp file");
+#else
         std::cerr << "Error: Could not determine temp path for temp file" << std::endl;
+#endif
     else {
         if (GetTempFileName(_tmpPathname, TEXT("ReS"), 0, _tmpFilename) == 0)
+#ifdef COMPILING_ON_ANDROID
+		    ANDROID_ERR("Error: Couldn't generate temp file name");
+#else
             std::cerr << "Error: Couldn't generate temp file name" << std::endl;
+#endif
         else {
             tmpFileError = false;
             std::wstring_convert<std::codecvt_utf8<wchar_t>> wchar2utf8;
             tmpFilename = wchar2utf8.to_bytes(_tmpFilename);
-            if(ci.bShowTempFile) std::cout << "Temp Filename: " <<  tmpFilename << std::endl;
+            if(ci.bShowTempFile)
+#ifdef COMPILING_ON_ANDROID
+		        ANDROID_OUT("Temp Filename: %s", ANDROID_STDTOC(tmpFilename));
+#else
+                std::cout << "Temp Filename: " <<  tmpFilename << std::endl;
+#endif
             tmpSndfileHandle = new SndfileHandle(tmpFilename, SFM_RDWR, tmpFileFormat, nChannels, ci.outputSampleRate); // open using filename
         }
     }
@@ -1061,7 +1325,11 @@ SndfileHandle* getTempFile(int inputFileFormat, int nChannels, const ConversionI
     if (!tmpFileError) {
         tmpSndfileHandle = new SndfileHandle(fileno(f), true, SFM_RDWR, tmpFileFormat, nChannels, ci.outputSampleRate); // open using file descriptor
     } else {
+#ifdef COMPILING_ON_ANDROID
+		ANDROID_ERR("std::tmpfile() failed");
+#else
         std::cerr << "std::tmpfile() failed" << std::endl;
+#endif
     }
 
 #elif defined (TEMPFILE_OPEN_METHOD_MKSTEMP)
@@ -1072,22 +1340,35 @@ SndfileHandle* getTempFile(int inputFileFormat, int nChannels, const ConversionI
         if(ci.bShowTempFile) printf("temp file: %s\n", templ);
         tmpSndfileHandle = new SndfileHandle(fd, true, SFM_RDWR, tmpFileFormat, nChannels, ci.outputSampleRate); // open using file descriptor
     } else {
+#ifdef COMPILING_ON_ANDROID
+		ANDROID_ERR("std::mkstemp() failed");
+#else
         std::cerr << "std::mkstemp() failed" << std::endl;
+#endif
     }
 
 #else
     // tmpnam() method
     tmpFileError = false;
     tmpFilename = std::string(std::string(std::tmpnam(nullptr)) + ".wav");
-    if (ci.bShowTempFile) std::cout << "Temp Filename: " << tmpFilename << std::endl;
+    if (ci.bShowTempFile)
+#ifdef COMPILING_ON_ANDROID
+		ANDROID_OUT("Temp Filename: %s", ANDROID_STDTOC(tmpFilename));
+#else
+        std::cout << "Temp Filename: " << tmpFilename << std::endl;
+#endif
     tmpSndfileHandle = new SndfileHandle(tmpFilename, SFM_RDWR, tmpFileFormat, nChannels, ci.outputSampleRate); // open using filename
 
 #endif
 
     int e = 0;
     if (tmpFileError || tmpSndfileHandle == nullptr || (e = tmpSndfileHandle->error())){
-        std::cout << "Error: Couldn't Open Temporary File (" << sf_error_number(e) << ")\n";
+#ifdef COMPILING_ON_ANDROID
+		ANDROID_ERR("Error: Couldn't Open Temporary File (%s)\nDisabling temp file mode.", sf_error_number(e));
+#else
+        std::cerr << "Error: Couldn't Open Temporary File (" << sf_error_number(e) << ")\n";
         std::cout << "Disabling temp file mode." << std::endl;
+#endif
         tmpSndfileHandle = nullptr;
     } else {
         // disable floating-point normalisation (important - we want to record/recover floating point values exactly)
@@ -1122,18 +1403,26 @@ bool getMetaData(MetaData& metadata, SndfileHandle& infile) {
 	metadata.has_bext_fields = (infile.command(SFC_GET_BROADCAST_INFO, (void*)&metadata.broadcastInfo, sizeof(SF_BROADCAST_INFO)) == SF_TRUE);
 
 	if (metadata.has_bext_fields) {
+#ifdef COMPILING_ON_ANDROID
+		ANDROID_OUT("Input file contains a Broadcast Extension (bext) chunk");
+#else
 		std::cout << "Input file contains a Broadcast Extension (bext) chunk" << std::endl;
+#endif
 	}
 
 	// retrieve cart chunk, if it exists:
 	metadata.has_cart_chunk = (infile.command(SFC_GET_CART_INFO, (void*)&metadata.cartInfo, sizeof(LargeSFCartInfo)) == SF_TRUE);
 
 	if (metadata.has_cart_chunk) {
-		// Note: size of CART chunk is variable, depending on size of last field (tag_text[]) 
+		// Note: size of CART chunk is variable, depending on size of last field (tag_text[])
 		if (metadata.cartInfo.tag_text_size > MAX_CART_TAG_TEXT_SIZE) {
 			metadata.cartInfo.tag_text_size = MAX_CART_TAG_TEXT_SIZE; // apply hard limit on number of characters (spec says unlimited ...)
 		}
+#ifdef COMPILING_ON_ANDROID
+		ANDROID_OUT("Input file contains a cart chunk");
+#else
 		std::cout << "Input file contains a cart chunk" << std::endl;
+#endif
 	}
 	return true;
 }
@@ -1141,7 +1430,11 @@ bool getMetaData(MetaData& metadata, SndfileHandle& infile) {
 // set metadata using libsndfile API :
 bool setMetaData(const MetaData& metadata, SndfileHandle& outfile) {
 
+#ifdef COMPILING_ON_ANDROID
+    ANDROID_OUT("Writing Metadata");
+#else
 	std::cout << "Writing Metadata" << std::endl;
+#endif
 	if (!metadata.title.empty()) outfile.setString(SF_STR_TITLE, metadata.title.c_str());
 	if (!metadata.copyright.empty()) outfile.setString(SF_STR_COPYRIGHT, metadata.copyright.c_str());
 	if (!metadata.software.empty()) outfile.setString(SF_STR_SOFTWARE, metadata.software.c_str());
@@ -1165,7 +1458,7 @@ bool setMetaData(const MetaData& metadata, SndfileHandle& outfile) {
 		if (metadata.has_cart_chunk) {
 			outfile.command(SFC_SET_CART_INFO,
 				(void*)&metadata.cartInfo,
-				sizeof(metadata.cartInfo) - MAX_CART_TAG_TEXT_SIZE + metadata.cartInfo.tag_text_size // (size of cartInfo WITHOUT tag text) + (actual size of tag text) 
+				sizeof(metadata.cartInfo) - MAX_CART_TAG_TEXT_SIZE + metadata.cartInfo.tag_text_size // (size of cartInfo WITHOUT tag text) + (actual size of tag text)
 			);
 		}
 	}
@@ -1203,7 +1496,11 @@ int getDefaultNoiseShape(int sampleRate) {
 
 void showDitherProfiles() {
 	for (int d = DitherProfileID::flat; d != DitherProfileID::end; ++d) {
+#ifdef COMPILING_ON_ANDROID
+		ANDROID_OUT("%d:%s", ditherProfileList[d].id, ditherProfileList[d].name);
+#else
 		std::cout << ditherProfileList[d].id << " : " << ditherProfileList[d].name << std::endl;
+#endif
 	}
 }
 
@@ -1235,7 +1532,11 @@ bool checkWarnOutputSize(sf_count_t inputSamples, int bytesPerSample, int numera
 
 	const sf_count_t limit4G = 1ULL << 32;
 	if (outputDataSize >= limit4G) {
+#ifdef COMPILING_ON_ANDROID
+		ANDROID_OUT("Warning: output file ( %s bytes of data ) will exceed 4GB limit", ANDROID_STDTOC(fmtNumberWithCommas(outputDataSize)));
+#else
 		std::cout << "Warning: output file ( " << fmtNumberWithCommas(outputDataSize) << " bytes of data ) will exceed 4GB limit"  << std::endl;
+#endif
 		return true;
 	}
 	return false;
@@ -1258,7 +1559,11 @@ void printSamplePosAsTime(sf_count_t samplePos, unsigned int sampleRate) {
     auto m = static_cast<int>((seconds - (h * 3600)) / 60);
 	double s = seconds - (h * 3600) - (m * 60);
 	std::ios::fmtflags f(std::cout.flags());
+#ifdef COMPILING_ON_ANDROID
+    ANDROID_OUT("%d:%d:%G", h, m, s);
+#else
 	std::cout << std::setprecision(0) << h << ":" << m << ":" << std::setprecision(6) << s;
+#endif
 	std::cout.flags(f);
 }
 
@@ -1340,11 +1645,19 @@ bool checkSSE2() {
 			bSSE2ok = true;
 	}
 	if (bSSE2ok) {
+#ifdef COMPILING_ON_ANDROID
+		ANDROID_OUT("CPU supports SSE2 (ok)");
+#else
 		std::cout << "CPU supports SSE2 (ok)";
+#endif
 		return true;
 	}
 	else {
+#ifdef COMPILING_ON_ANDROID
+		ANDROID_OUT("Your CPU doesn't support SSE2 - please try a non-SSE2 build on this machine");
+#else
 		std::cout << "Your CPU doesn't support SSE2 - please try a non-SSE2 build on this machine" << std::endl;
+#endif
 		return false;
 	}
 #endif // defined (_MSC_VER) || defined (__INTEL_COMPILER)
@@ -1365,11 +1678,19 @@ bool checkAVX() {
 		}
 	}
 	if (bAVXok) {
+#ifdef COMPILING_ON_ANDROID
+		ANDROID_OUT("CPU supports AVX (ok)");
+#else
 		std::cout << "CPU supports AVX (ok)";
+#endif
 		return true;
 	}
 	else {
+#ifdef COMPILING_ON_ANDROID
+		ANDROID_OUT("Your CPU doesn't support AVX - please try a non-AVX build on this machine");
+#else
 		std::cout << "Your CPU doesn't support AVX - please try a non-AVX build on this machine" << std::endl;
+#endif
 		return false;
 	}
 #endif // defined (_MSC_VER) || defined (__INTEL_COMPILER)
@@ -1377,27 +1698,59 @@ return true; // todo: gcc detection
 }
 
 bool showBuildVersion() {
+#ifdef COMPILING_ON_ANDROID
+    ANDROID_OUT("%s", ANDROID_STDTOC(strVersion));
+#else
 	std::cout << strVersion << " ";
-#if defined(_M_X64) || defined(__x86_64__)
+#endif
+#if defined(_M_X64) || defined(__x86_64__) || defined(__aarch64__)
+#ifdef COMPILING_ON_ANDROID
+    ANDROID_OUT("64-bit version");
+#else
 	std::cout << "64-bit version";
+#endif
 #ifdef USE_AVX
+#ifdef COMPILING_ON_ANDROID
+    ANDROID_OUT(" AVX build ... ");
+#else
 	std::cout << " AVX build ... ";
+#endif
 	if (!checkAVX())
 		return false;
 #ifdef USE_FMA
+#ifdef COMPILING_ON_ANDROID
+    ANDROID_OUT("using FMA (Fused Multiply-Add) instruction ... ");
+#else
 	std::cout << "\nusing FMA (Fused Multiply-Add) instruction ... ";
 #endif
-#endif // USE_AVX	
+#endif
+#endif // USE_AVX
+#ifdef COMPILING_ON_ANDROID
+    ANDROID_OUT("");
+#else
 	std::cout << std::endl;
+#endif
+#else
+#ifdef COMPILING_ON_ANDROID
+    ANDROID_OUT("32-bit version");
 #else
 	std::cout << "32-bit version";
+#endif
 #if defined(USE_SSE2)
+#ifdef COMPILING_ON_ANDROID
+    ANDROID_OUT(", SSE2 build ... ");
+#else
 	std::cout << ", SSE2 build ... ";
+#endif
 	// Verify processor capabilities:
 	if (!checkSSE2())
 		return false;
 #endif // defined(USE_SSE2)
+#ifdef COMPILING_ON_ANDROID
+    ANDROID_OUT("");
+#else
 	std::cout << "\n" << std::endl;
+#endif
 #endif
 	return true;
 }
@@ -1405,23 +1758,51 @@ bool showBuildVersion() {
 void showCompiler() {
 	// https://sourceforge.net/p/predef/wiki/Compilers/
 #if defined (__clang__)
-	std::cout << "Clang " << __clang_major__ << "." 
+#ifdef COMPILING_ON_ANDROID
+    ANDROID_OUT("Clang %d.%d.%d", __clang_major__, __clang_minor__, __clang_patchlevel__);
+#else
+	std::cout << "Clang " << __clang_major__ << "."
 	<< __clang_minor__ << "."
 	<< __clang_patchlevel__ << std::endl;
+#endif
 #elif defined (__MINGW64__)
+#ifdef COMPILING_ON_ANDROID
+    ANDROID_OUT("minGW-w64");
+#else
 	std::cout << "minGW-w64" << std::endl;
+#endif
 #elif defined (__MINGW32__)
+#ifdef COMPILING_ON_ANDROID
+    ANDROID_OUT("minGW");
+#else
 	std::cout << "minGW" << std::endl;
+#endif
 #elif defined (__GNUC__)
-	std::cout << "gcc " << __GNUC__ << "." 
+#ifdef COMPILING_ON_ANDROID
+    ANDROID_OUT("gcc %d.%d.%d", __GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__);
+#else
+	std::cout << "gcc " << __GNUC__ << "."
 	<< __GNUC_MINOR__ << "."
 	<< __GNUC_PATCHLEVEL__ << std::endl;
+#endif
 #elif defined (_MSC_VER)
+#ifdef COMPILING_ON_ANDROID
+    ANDROID_OUT("Visual C++ %d", _MSC_FULL_VER); // assume int
+#else
 	std::cout << "Visual C++ " << _MSC_FULL_VER << std::endl;
+#endif
 #elif defined (__INTEL_COMPILER)
+#ifdef COMPILING_ON_ANDROID
+    ANDROID_OUT("Intel Compiler %d", __INTEL_COMPILER); // assume int
+#else
 	std::cout << "Intel Compiler " << __INTEL_COMPILER << std::endl;
+#endif
+#else
+#ifdef COMPILING_ON_ANDROID
+    ANDROID_OUT("unknown");
 #else
 	std::cout << "unknown" << std::endl;
-#endif 
+#endif
+#endif
 
 }
