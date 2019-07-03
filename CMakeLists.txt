@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.7)
+cmake_minimum_required(VERSION 3.6)
 project(ReSampler)
 
 set(CMAKE_CXX_STANDARD 11)
@@ -57,6 +57,31 @@ elseif (APPLE)
             srconvert.h)
 
     add_executable(ReSampler ${SOURCE_FILES})
+elseif(ANDROID)
+
+    set(SOURCE_FILES
+            libsndfilearm64_v8a/debug/src/sndfile.h
+            libsndfilearm64_v8a/debug/src/sndfile.hh
+            fftwarm64_v8a/debug/fftw3.h
+            alignedmalloc.h
+            biquad.h
+            conversioninfo.h
+            dff.h
+            ditherer.h
+            dsf.h
+            FIRFilter.h
+            fraction.h
+            noiseshape.h
+            osspecific.h
+            raiitimer.h
+            ReSampler.cpp
+            ReSampler.h
+            srconvert.h)
+
+    include_directories(libsndfilearm64_v8a/debug/src fftwarm64_v8a/debug)
+    link_directories(libsndfilearm64_v8a/debug fftwarm64_v8a/debug)
+    add_library(ReSampler SHARED ${SOURCE_FILES})
+    target_link_libraries(ReSampler sndfile fftw3)
 else ()
     include_directories(/usr/include)
     link_directories(/usr/lib)
