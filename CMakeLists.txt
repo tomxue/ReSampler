@@ -77,9 +77,6 @@ elseif(ANDROID)
     include_directories($CMAKE_SOURCE_DIR/android/src/libsndfile/src)
 
     set(SOURCE_FILES
-#            sndfile.h
-#            android/headers/arm64_v8a/libsndfilearm64_v8a/debug/src/sndfile.hh
-#            fftw3.h
             alignedmalloc.h
             biquad.h
             conversioninfo.h
