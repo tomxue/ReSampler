@@ -383,11 +383,16 @@ private:
 	// assertAlignment() : asserts that all private data buffers are aligned on expected boundaries
 	void assertAlignment()
 	{
+#ifdef COMPILING_ON_ANDROID
+	    // TODO: suport 32-byte alignment for android?
+#warning  32-byte alignment is not yet supported when compiling for android
+#else
 		const std::uintptr_t alignment = ALIGNMENT_SIZE;
 		assert(reinterpret_cast<std::uintptr_t>(signal) % alignment == 0);
 		for(int i = 0; i < numVecElements; i++) {
 			assert(reinterpret_cast<std::uintptr_t>(kernelphases[i]) % alignment == 0);
 		}
+#endif
 	}
 
 #if defined(USE_AVX)

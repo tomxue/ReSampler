@@ -276,7 +276,8 @@ private:
 		std::string stageInputName(ci.inputFilename);
 		double ft = ci.lpfCutoff / 100 * std::min(ci.inputSampleRate, ci.outputSampleRate) / 2.0;
 
-		for (int i = 0; i < numStages; i++) {
+		int i = 0;
+		for (; i < numStages; i++) {
 
 			// copy ConversionInfo for this stage from master:
 			ConversionInfo stageCi = ci;
