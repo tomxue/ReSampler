@@ -106,8 +106,10 @@ int main(int argc, char * argv[])
 #endif
     // test for global options
     if (parseGlobalOptions(argc, argv)) {
+#ifdef COMPILING_ON_ANDROID
         delete std::cout.rdbuf(0);
         delete std::cerr.rdbuf(0);
+#endif
         return EXIT_SUCCESS;
     }
 
@@ -130,15 +132,19 @@ int main(int argc, char * argv[])
     // get conversion parameters
     ci.fromCmdLineArgs(argc, argv);
     if (ci.bBadParams) {
+#ifdef COMPILING_ON_ANDROID
         delete std::cout.rdbuf(0);
         delete std::cerr.rdbuf(0);
+#endif
         return EXIT_FAILURE;
     }
 
     // query build version AND cpu
     if (!showBuildVersion()) {
+#ifdef COMPILING_ON_ANDROID
         delete std::cout.rdbuf(0);
         delete std::cerr.rdbuf(0);
+#endif
         return EXIT_FAILURE; // can't continue (CPU / build mismatch)
     }
 
@@ -247,8 +253,10 @@ int main(int argc, char * argv[])
 
     catch (const std::exception& e) {
         std::cerr << "fatal error: " << e.what();
+#ifdef COMPILING_ON_ANDROID
         delete std::cout.rdbuf(0);
         delete std::cerr.rdbuf(0);
+#endif
         return EXIT_FAILURE;
     }
 }
@@ -513,8 +521,10 @@ bool convert(ConversionInfo& ci)
     FileReader infile(ci.inputFilename);
     if (int e = infile.error()) {
         std::cout << "Error: Couldn't Open Input File (" << sf_error_number(e) << ")" << std::endl; // to-do: make this more specific (?)
+#ifdef COMPILING_ON_ANDROID
         delete std::cout.rdbuf(0);
         delete std::cerr.rdbuf(0);
+#endif
         return false;
     }
 
@@ -796,8 +806,10 @@ bool convert(ConversionInfo& ci)
 
                 if (int e = outFile->error()) {
                     std::cout << "Error: Couldn't Open Output File (" << sf_error_number(e) << ")" << std::endl;
+#ifdef COMPILING_ON_ANDROID
                     delete std::cout.rdbuf(0);
                     delete std::cerr.rdbuf(0);
+#endif
                     return false;
                 }
 
@@ -833,8 +845,10 @@ bool convert(ConversionInfo& ci)
 
             catch (std::exception& e) {
                 std::cout << "Error: Couldn't Open Output File " << e.what() << std::endl;
+#ifdef COMPILING_ON_ANDROID
                 delete std::cout.rdbuf(0);
                 delete std::cerr.rdbuf(0);
+#endif
                 return false;
             }
         }
@@ -902,8 +916,10 @@ bool convert(ConversionInfo& ci)
                     Result res;
                     res.outBlockindex = localOutputBlockIndex;
                     res.peak = localPeak;
+#ifdef COMPILING_ON_ANDROID
                     delete std::cout.rdbuf(0);
                     delete std::cerr.rdbuf(0);
+#endif
                     return res;
                 };
 
@@ -1065,8 +1081,10 @@ bool convert(ConversionInfo& ci)
     std::remove(tmpFilename.c_str()); // actually remove the temp file from disk
 #endif
 
+#ifdef COMPILING_ON_ANDROID
     delete std::cout.rdbuf(0);
     delete std::cerr.rdbuf(0);
+#endif
     return true;
 } // ends convert()
 
