@@ -53,7 +53,7 @@ enum IntegerWriteScalingStyle {
 class CsvFile {
 public:
     CsvFile(const std::string& path, CsvOpenMode mode = csv_write) : path(path), mode(mode), numChannels(2), numericFormat(Integer), signedness(Signed), numericBase(Decimal), numBits(16), precision(10), integerWriteScalingStyle(Pow2Minus1),
-		unsignedOffset(0), intMaxAmplitude(32767)
+        intMaxAmplitude(32767), unsignedOffset(0)
     {
 
 		file.exceptions(std::ifstream::failbit | std::ifstream::badbit);
