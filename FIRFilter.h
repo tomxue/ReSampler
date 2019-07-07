@@ -344,10 +344,10 @@ private:
 	void calcPaddedLength()
 	{
 
-#if defined(USE_AVX) || idefined(USE_SIMD)
+#if defined(USE_AVX) || defined(USE_SIMD)
 		numVecElements = ALIGNMENT_SIZE / sizeof(FloatType);
 #else
-		numVecElements = 1;
+		numVecElements = 1; // Scalar mode
 #endif
 
 		alignMask = -static_cast<uintptr_t>(numVecElements);
