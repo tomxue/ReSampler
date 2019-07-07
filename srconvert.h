@@ -276,7 +276,9 @@ private:
 		std::string stageInputName(ci.inputFilename);
 		double ft = ci.lpfCutoff / 100 * std::min(ci.inputSampleRate, ci.outputSampleRate) / 2.0;
 
-		for (int i = 0; i < numStages; i++) {
+		int i = 0;
+		for (; i < numStages; i++) {
+            std::cout << "loop start: " << i << std::endl << "loop max: " << numStages << std::endl;
 
 			// copy ConversionInfo for this stage from master:
 			ConversionInfo stageCi = ci;
@@ -381,6 +383,7 @@ private:
 
 			// set input rate of next stage
 			inputRate = stageCi.outputSampleRate;
+            std::cout << "loop end: " << i << std::endl << "loop max: " << numStages << std::endl;
 		} // ends loop over i
 
 		if (ci.bShowStages) {
