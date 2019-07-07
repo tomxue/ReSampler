@@ -62,7 +62,7 @@ template<typename FloatType>
 class ResamplingStage
 {
 public:
-	ResamplingStage(int L, int M, FIRFilter<FloatType>& filter, bool bypassMode = false)
+	ResamplingStage(int L, int M, const FIRFilter<FloatType>& filter, bool bypassMode = false)
 		: L(L), M(M),  m(0), filter(filter), bypassMode(bypassMode)
 	{
 		SetConvertFunction();
@@ -276,8 +276,7 @@ private:
 		std::string stageInputName(ci.inputFilename);
 		double ft = ci.lpfCutoff / 100 * std::min(ci.inputSampleRate, ci.outputSampleRate) / 2.0;
 
-		int i = 0;
-		for (; i < numStages; i++) {
+		for (int i = 0; i < numStages; i++) {
             std::cout << "loop start: " << i << std::endl << "loop max: " << numStages << std::endl;
 
 			// copy ConversionInfo for this stage from master:
@@ -370,7 +369,7 @@ private:
 			}
 			size_t outBufferSize = static_cast<size_t>(std::ceil(BUFFERSIZE * cumulativeNumerator / cumulativeDenominator));
 
-			// conditionally show outpout buffer size
+			// conditionally show output buffer size
 			if (ci.bShowStages) {
 				//std::cout << cumulativeNumerator << " / " << cumulativeDenominator << "\n";
 				std::cout << "Output Buffer Size: " << outBufferSize << "\n\n" << std::endl;
