@@ -144,7 +144,7 @@ int main(int argc, char * argv[])
 #ifdef COMPILING_ON_ANDROID
                 ANDROID_OUT("Changing output bit format to %s", ANDROID_STDTOC(ci.outBitFormat));
 #else
-                std::cout <<  << ci.outBitFormat << std::endl;
+                std::cout << ci.outBitFormat << std::endl;
 #endif
 			}
 			else { // user-supplied bit format not valid; try choosing appropriate format
