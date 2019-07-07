@@ -21,7 +21,7 @@
 #ifdef __APPLE__
 #include <unistd.h>
 #include <libproc.h>
-#endif 
+#endif
 
 #if defined (__MINGW64__) || defined (__MINGW32__) || defined (__GNUC__)
 #ifdef USE_QUADMATH
@@ -30,6 +30,46 @@
 #define FIR_QUAD_PRECISION
 #endif
 #endif
+#endif
+
+// define COMPILING_ON_ANDROID macro first before including any user headers
+#if !defined(__ANDROID__) && !defined(__arm__) && !defined(__aarch64__)
+#else
+#define COMPILING_ON_ANDROID
+#ifdef __aarch64__
+#define COMPILING_ON_ANDROID64
+#endif
+#include <Android/log.h>
+
+// https://gist.github.com/dzhioev/6127982
+class androidbuf : public std::streambuf {
+public:
+	enum { bufsize = 1024 }; // ... or some other suitable buffer size
+	androidbuf(const int log_priority, const char * log_tag) :LOG_PRIORITY(log_priority), LOG_TAG(log_tag) { this->setp(buffer, buffer + bufsize - 1); };
+private:
+	int overflow(int c) {
+		if (c == traits_type::eof()) {
+			*this->pptr() = traits_type::to_char_type(c);
+			this->sbumpc();
+		}
+		return this->sync() ? traits_type::eof() : traits_type::not_eof(c);
+	}
+
+	int sync() {
+		int rc = 0;
+		if (this->pbase() != this->pptr()) {
+			__android_log_print(LOG_PRIORITY, LOG_TAG, "%s", std::string(this->pbase(), this->pptr() - this->pbase()).c_str());
+			rc = 0;
+			this->setp(buffer, buffer + bufsize - 1);
+		}
+		return rc;
+	}
+
+	char buffer[bufsize];
+	const char * LOG_TAG;
+	const int LOG_PRIORITY;
+};
+
 #endif
 
 #include "csv.h" // to-do: check macOS
@@ -50,19 +90,27 @@
 // available at http://www.mega-nerd.com/libsndfile/
 //
 // (copy of entire package included in $(ProjectDir)\libsbdfile)
-// 
+//
 // 2:
 // fftw
 // http://www.fftw.org/
-// 
+//
 //                                                                                    //
 ////////////////////////////////////////////////////////////////////////////////////////
 
 int main(int argc, char * argv[])
 {
+#ifdef COMPILING_ON_ANDROID
+	std::cout.rdbuf(new androidbuf(ANDROID_LOG_INFO, "ReSampler"));
+	std::cerr.rdbuf(new androidbuf(ANDROID_LOG_ERROR, "ReSampler"));
+#endif
 	// test for global options
 	if (parseGlobalOptions(argc, argv)) {
-		exit(EXIT_SUCCESS);
+#ifdef COMPILING_ON_ANDROID
+		delete std::cout.rdbuf(0);
+		delete std::cerr.rdbuf(0);
+#endif
+		return EXIT_SUCCESS;
 	}
 
 	// ConversionInfo instance to hold parameters
@@ -72,7 +120,7 @@ int main(int argc, char * argv[])
 #ifdef __APPLE__
 	char pathBuf[PROC_PIDPATHINFO_MAXSIZE];
 	pid_t pid = getpid();
-	if ( proc_pidpath (pid, pathBuf, sizeof(pathBuf)) == 0 ) {
+	if (proc_pidpath(pid, pathBuf, sizeof(pathBuf)) == 0) {
 		ci.appName.assign(pathBuf);
 	}
 #else
@@ -84,12 +132,21 @@ int main(int argc, char * argv[])
 	// get conversion parameters
 	ci.fromCmdLineArgs(argc, argv);
 	if (ci.bBadParams) {
-		exit(EXIT_FAILURE);
+#ifdef COMPILING_ON_ANDROID
+		delete std::cout.rdbuf(0);
+		delete std::cerr.rdbuf(0);
+#endif
+		return EXIT_FAILURE;
 	}
 
 	// query build version AND cpu
-	if (!showBuildVersion())
-		exit(EXIT_FAILURE); // can't continue (CPU / build mismatch)
+	if (!showBuildVersion()) {
+#ifdef COMPILING_ON_ANDROID
+		delete std::cout.rdbuf(0);
+		delete std::cerr.rdbuf(0);
+#endif
+		return EXIT_FAILURE; // can't continue (CPU / build mismatch)
+	}
 
 	// echo filenames to user
 	std::cout << "Input file: " << ci.inputFilename << std::endl;
@@ -121,13 +178,22 @@ int main(int argc, char * argv[])
 		if (!ci.outBitFormat.empty()) {  // new output bit format requested
 			ci.outputFormat = determineOutputFormat(outFileExt, ci.outBitFormat);
 			if (ci.outputFormat) {
-				std::cout << "Changing output bit format to " << ci.outBitFormat << std::endl;
+#ifdef COMPILING_ON_ANDROID
+				ANDROID_OUT("Changing output bit format to %s", ANDROID_STDTOC(ci.outBitFormat));
+#else
+				std::cout << ci.outBitFormat << std::endl;
+#endif
 			}
 			else { // user-supplied bit format not valid; try choosing appropriate format
 				determineBestBitFormat(ci.outBitFormat, ci.inputFilename, ci.outputFilename);
 				ci.outputFormat = determineOutputFormat(outFileExt, ci.outBitFormat);
-				if (ci.outputFormat)
+				if (ci.outputFormat) {
+#ifdef COMPILING_ON_ANDROID
+					ANDROID_OUT("Changing output bit format to %s", ANDROID_STDTOC(ci.outBitFormat));
+#else
 					std::cout << "Changing output bit format to " << ci.outBitFormat << std::endl;
+#endif         
+				}
 				else {
 					std::cout << "Warning: NOT Changing output file bit format !" << std::endl;
 					ci.outputFormat = 0; // back where it started
@@ -136,7 +202,7 @@ int main(int argc, char * argv[])
 		}
 
 		if (outFileExt != inFileExt)
-		{ // file extensions differ, determine new output format: 
+		{ // file extensions differ, determine new output format:
 
 			if (ci.outBitFormat.empty()) { // user changed file extension only. Attempt to choose appropriate output sub format:
 				std::cout << "Output Bit Format not specified" << std::endl;
@@ -161,15 +227,15 @@ int main(int argc, char * argv[])
 #endif
 			if (ci.dsfInput) {
 				ci.bEnablePeakDetection = false;
-				return convert<DsfFile, double> (ci) ? EXIT_SUCCESS : EXIT_FAILURE;
+				return convert<DsfFile, double>(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
 			}
 			else if (ci.dffInput) {
 				ci.bEnablePeakDetection = false;
-				return convert<DffFile, double> (ci) ? EXIT_SUCCESS : EXIT_FAILURE;
+				return convert<DffFile, double>(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
 			}
 			else {
 				ci.bEnablePeakDetection = true;
-				return convert<SndfileHandle, double> (ci) ? EXIT_SUCCESS : EXIT_FAILURE;
+				return convert<SndfileHandle, double>(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
 			}
 		}
 
@@ -180,22 +246,26 @@ int main(int argc, char * argv[])
 #endif
 			if (ci.dsfInput) {
 				ci.bEnablePeakDetection = false;
-				return convert<DsfFile, float> (ci) ? EXIT_SUCCESS : EXIT_FAILURE;
+				return convert<DsfFile, float>(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
 			}
 			else if (ci.dffInput) {
 				ci.bEnablePeakDetection = false;
-				return convert<DffFile, float> (ci) ? EXIT_SUCCESS : EXIT_FAILURE;
+				return convert<DffFile, float>(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
 			}
 			else {
 				ci.bEnablePeakDetection = true;
-				return convert<SndfileHandle, float> (ci) ? EXIT_SUCCESS : EXIT_FAILURE;
+				return convert<SndfileHandle, float>(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
 			}
 		}
 
 	} //ends try block
-		
+
 	catch (const std::exception& e) {
 		std::cerr << "fatal error: " << e.what();
+#ifdef COMPILING_ON_ANDROID
+		delete std::cout.rdbuf(0);
+		delete std::cerr.rdbuf(0);
+#endif
 		return EXIT_FAILURE;
 	}
 }
@@ -310,7 +380,7 @@ bool determineBestBitFormat(std::string& BitFormat, const std::string& inFilenam
 	std::string outFileExt;
 	if (outFilename.find_last_of('.') != std::string::npos)
 		outFileExt = outFilename.substr(outFilename.find_last_of('.') + 1);
-	
+
 	// when the input file is dsf/dff, use default output subformat:
 	if (dsfInput || dffInput) { // choose default output subformat for chosen output file format
 		BitFormat = defaultSubFormats.find(outFileExt)->second;
@@ -332,7 +402,7 @@ bool determineBestBitFormat(std::string& BitFormat, const std::string& inFilenam
 
 		if (stricmp(formatinfo.extension, outFileExt.c_str()) == 0) { // match between format number m and outfile's file extension
 			format = formatinfo.format | (inFileFormat & SF_FORMAT_SUBMASK); // combine outfile's major format with infile's subformat
-			
+
 			// Check if format / subformat combination is valid:
 			SF_INFO sfinfo;
 			memset(&sfinfo, 0, sizeof(sfinfo));
@@ -341,7 +411,8 @@ bool determineBestBitFormat(std::string& BitFormat, const std::string& inFilenam
 
 			if (sf_format_check(&sfinfo)) { // Match: infile's subformat is valid for outfile's format
 				break;
-			} else { // infile's subformat is not valid for outfile's format; use outfile's default subformat
+			}
+			else { // infile's subformat is not valid for outfile's format; use outfile's default subformat
 				std::cout << "Output file format " << outFileExt << " and subformat " << BitFormat << " combination not valid ... ";
 				BitFormat.clear();
 				BitFormat = defaultSubFormats.find(outFileExt)->second;
@@ -349,7 +420,7 @@ bool determineBestBitFormat(std::string& BitFormat, const std::string& inFilenam
 				break;
 			}
 		}
-	} 
+	}
 	return true;
 }
 
@@ -414,7 +485,7 @@ void listSubFormats(const std::string& f)
 			break;
 		}
 	}
-	
+
 	if (bFileExtFound) {
 		SF_INFO sfinfo;
 		memset(&sfinfo, 0, sizeof(sfinfo));
@@ -460,15 +531,19 @@ bool convert(ConversionInfo& ci)
 	FileReader infile(ci.inputFilename);
 	if (int e = infile.error()) {
 		std::cout << "Error: Couldn't Open Input File (" << sf_error_number(e) << ")" << std::endl; // to-do: make this more specific (?)
+#ifdef COMPILING_ON_ANDROID
+		delete std::cout.rdbuf(0);
+		delete std::cerr.rdbuf(0);
+#endif
 		return false;
 	}
-	
+
 	// read input file metadata:
 	MetaData m;
 	getMetaData(m, infile);
-	
+
 	// read input file properties:
-    int nChannels = static_cast<int>(infile.channels());
+	int nChannels = static_cast<int>(infile.channels());
 	ci.inputSampleRate = infile.samplerate();
 	sf_count_t inputFrames = infile.frames();
 	sf_count_t inputSampleCount = inputFrames * nChannels;
@@ -479,20 +554,20 @@ bool convert(ConversionInfo& ci)
 
 	// set buffer sizes:
 	auto inputChannelBufferSize = static_cast<size_t>(BUFFERSIZE);
-    auto inputBlockSize = static_cast<size_t>(BUFFERSIZE * nChannels);
+	auto inputBlockSize = static_cast<size_t>(BUFFERSIZE * nChannels);
 	auto outputChannelBufferSize = static_cast<size_t>(1 + std::ceil(BUFFERSIZE * static_cast<double>(fraction.numerator) / static_cast<double>(fraction.denominator)));
 	auto outputBlockSize = static_cast<size_t>(nChannels * (1 + outputChannelBufferSize));
-	
+
 	// allocate buffers:
 	std::vector<FloatType> inputBlock(inputBlockSize, 0);		// input buffer for storing interleaved samples from input file
 	std::vector<FloatType> outputBlock(outputBlockSize, 0);		// output buffer for storing interleaved samples to be saved to output file
-	std::vector<std::vector<FloatType>> inputChannelBuffers;	// input buffer for each channel to store deinterleaved samples 
+	std::vector<std::vector<FloatType>> inputChannelBuffers;	// input buffer for each channel to store deinterleaved samples
 	std::vector<std::vector<FloatType>> outputChannelBuffers;	// output buffer for each channel to store converted deinterleaved samples
 	for (int n = 0; n < nChannels; n++) {
 		inputChannelBuffers.emplace_back(std::vector<FloatType>(inputChannelBufferSize, 0));
 		outputChannelBuffers.emplace_back(std::vector<FloatType>(outputChannelBufferSize, 0));
 	}
-			
+
 	int inputFileFormat = infile.format();
 	if (inputFileFormat != DFF_FORMAT && inputFileFormat != DSF_FORMAT) { // this block only relevant to libsndfile ...
 		// detect if input format is a floating-point format:
@@ -529,7 +604,7 @@ bool convert(ConversionInfo& ci)
 	sf_count_t peakInputPosition = 0LL;
 	sf_count_t samplesRead = 0LL;
 	sf_count_t totalSamplesRead = 0LL;
-	
+
 	if (ci.bEnablePeakDetection) {
 		peakInputSample = 0.0;
 		std::cout << "Scanning input file for peaks ...";
@@ -580,12 +655,12 @@ bool convert(ConversionInfo& ci)
 		<< " (" << fraction.numerator << ":" << fraction.denominator << ")" << std::endl;
 
 	// if the outputFormat is zero, it means "No change to file format"
-	// if output file format has changed, use outputFormat. Otherwise, use same format as infile: 
+	// if output file format has changed, use outputFormat. Otherwise, use same format as infile:
 	int outputFileFormat = ci.outputFormat ? ci.outputFormat : inputFileFormat;
 
 	// if the minor (sub) format of outputFileFormat is not set, attempt to use minor format of input file (as a last resort)
 	if ((outputFileFormat & SF_FORMAT_SUBMASK) == 0) {
-		outputFileFormat |= (inputFileFormat & SF_FORMAT_SUBMASK); // may not be valid subformat for new file format. 
+		outputFileFormat |= (inputFileFormat & SF_FORMAT_SUBMASK); // may not be valid subformat for new file format.
 	}
 
 	// for wav files, determine whether to switch to rf64 mode:
@@ -606,7 +681,7 @@ bool convert(ConversionInfo& ci)
 	// In the case of sample-rate conversions, the output file size (and therefore the decision to promote to rf64)
 	// can be determined at the outset.
 
-    // Determine the value of outputSignalBits, based on outputFileFormat.
+	// Determine the value of outputSignalBits, based on outputFileFormat.
 	// outputSignalsBits is used to set the level of the LSB for dithering
 	int outputSignalBits;
 	switch (outputFileFormat & SF_FORMAT_SUBMASK) {
@@ -617,18 +692,18 @@ bool convert(ConversionInfo& ci)
 	case SF_FORMAT_PCM_U8:
 		outputSignalBits = 8;
 		break;
-    case SF_FORMAT_DOUBLE:
-        outputSignalBits = 53;
-        break;
-    case SF_FORMAT_FLOAT:
-        outputSignalBits = 21;
-        break;
+	case SF_FORMAT_DOUBLE:
+		outputSignalBits = 53;
+		break;
+	case SF_FORMAT_FLOAT:
+		outputSignalBits = 21;
+		break;
 	default:
 		outputSignalBits = 16;
 	}
 
-	if(ci.quantize) {
-	    outputSignalBits = std::max(1, std::min(ci.quantizeBits, outputSignalBits));
+	if (ci.quantize) {
+		outputSignalBits = std::max(1, std::min(ci.quantizeBits, outputSignalBits));
 	}
 
 	// confirm dithering options for user:
@@ -643,11 +718,11 @@ bool convert(ConversionInfo& ci)
 
 	// make a vector of ditherers (one ditherer for each channel):
 	std::vector<Ditherer<FloatType>> ditherers;
-    auto seed = static_cast<int>(ci.bUseSeed ? ci.seed : time(nullptr));
+	auto seed = static_cast<int>(ci.bUseSeed ? ci.seed : time(nullptr));
 
 	for (int n = 0; n < nChannels; n++) {
 		// to-do: explore other seed-generation options (remote possibility of overlap)
-		// maybe use a single global RNG ? 
+		// maybe use a single global RNG ?
 		// or use discard/jump-ahead ... to ensure parallel streams are sufficiently "far away" from each other ?
 		ditherers.emplace_back(outputSignalBits, ci.ditherAmount, ci.bAutoBlankingEnabled, n + seed, static_cast<DitherProfileID>(ci.ditherProfileID));
 	}
@@ -655,12 +730,127 @@ bool convert(ConversionInfo& ci)
 	// make a vector of Resamplers
 	std::vector<Converter<FloatType>> converters;
 	for (int n = 0; n < nChannels; n++) {
+		// TODO: figure out why this hangs:
+		/*
+
+07/05 19:29:19: Launching app
+$ adb shell am start -n "media.player.pro/media.player.pro.MainActivity" -a android.intent.action.MAIN -c android.intent.category.LAUNCHER
+Client not ready yet..Waiting for process to come online
+Connected to process 31163 on device samsung-sm_g950f-ce091829e258a11b04
+Capturing and displaying logcat messages from application. This behavior can be disabled in the "Logcat output" section of the "Debugger" settings page.
+D/OboeAudio: openStream() OUTPUT -------- OboeVersion1.2.0 --------
+D/OboeAudio: AAudioLoader():  dlopen(libaaudio.so) returned 0xfab09f4ed61f48db
+	AudioStreamAAudio() call isSupported()
+D/AAudio: AAudioStreamBuilder_openStream() called ----------------------------------------
+D/AudioStreamBuilder: build() EXCLUSIVE sharing mode not supported. Use SHARED.
+D/: PlayerBase::PlayerBase()
+I/AAudioStream: open() rate   = 48000, channels    = 2, format   = 1, sharing = SH, dir = OUTPUT
+	open() device = 0, sessionId   = 0, perfMode = 12, callback: ON with frames = 0
+	open() usage  = 1, contentType = 2, inputPreset = 6
+D/AudioStreamTrack: open(), request notificationFrames = -8, frameCount = 0
+I/AudioTrack: AUDIO_OUTPUT_FLAG_FAST successful; frameCount 0 -> 1536
+W/AudioStreamTrack: open() flags changed from 0x00000104 to 0x00000004
+D/AAudio: AAudioStreamBuilder_openStream() returns 0 = AAUDIO_OK for (0x7e0b756300) ----------------
+D/OboeAudio: AudioStreamAAudio.open() app    format = 1
+	AudioStreamAAudio.open() sample rate   = 48000
+	AudioStreamAAudio.open() capacity      = 1536
+	AudioStreamAAudio.open: AAudioStream_Open() returned AAUDIO_OK, mAAudioStream = 0x7e0b756300
+W/OboeAudio: Oboe_Init: setting AudioStream buffer size
+	Oboe_Init: aquiring AudioStream format
+I/OboeAudio: Oboe_Init: AudioStream format is I16
+I/ReSampler: usage: ReSampler -i <inputfile> [-o <outputfile>] -r <samplerate> [-b <bitformat>] [-n [<normalization factor>]]
+	Additional options:
+
+	--help
+	--version
+	--compiler
+	--sndfile-version
+	--listsubformats <ext>
+	--showDitherProfiles
+	--gain [<amount>]
+	--doubleprecision
+	--dither [<amount>] [--autoblank] [--ns [<ID>]] [--flat-tpdf] [--seed [<num>]] [--quantize-bits <number of bits>]
+	--noDelayTrim
+	--minphase
+	--flacCompression <compressionlevel>
+	--vorbisQuality <quality>
+	--noClippingProtection
+	--relaxedLPF
+	--steepLPF
+	--lpf-cutoff <percentage> [--lpf-transition <percentage>]
+	--mt
+	--rf64
+	--noPeakChunk
+	--noMetadata
+	--singleStage
+	--multiStage
+	--maxStages
+	--showStages
+	--showTempFile
+	--noTempFile
+	2.0.7
+I/ReSampler: 2.0.7 64-bit version
+	Input file: /sdcard/ReSampler/00001313.wav
+	Output file: /sdcard/ReSampler/00001313_48000.wav
+	Changing output bit format to 16
+I/ReSampler: input bit format: 16
+	source file channels: 2
+	input sample rate: 44100
+	output sample rate: 48000
+I/ReSampler: Scanning input file for peaks ...Done
+	Peak input sample: 0.999969 (-0.000265 dBFS) at 0:0:1.259297
+	LPF transition frequency: 20045.45 Hz (90.91 %)
+	Conversion ratio: 1.088435 (160:147)
+I/ReSampler: loop start: 0
+	loop max: 2
+I/ReSampler: Stage: 1
+	inputRate: 44100
+	outputRate: 63000
+	ft: 20045.454545
+	stopFreq: 22050.000000
+	transition width: 3.181818 %
+	guarantee: 22050.000000
+	Generated Filter Size: 3072
+	Output Buffer Size: 46812
+I/ReSampler: loop end: 0
+	loop max: 2
+	loop start: 1
+	loop max: 2
+I/ReSampler: Stage: 2
+	inputRate: 63000
+	outputRate: 48000
+	ft: 20045.454545
+	stopFreq: 25950.000000
+	transition width: 9.090909 %
+	guarantee: 25950.000000
+	Generated Filter Size: 2560
+	Output Buffer Size: 35666
+	loop end: 1
+	loop max: 2
+	Command lines to do this conversion in discreet steps:
+	 -i /sdcard/ReSampler/00001313.wav -o /sdcard/ReSampler/00001313_48000-stage1.wav -r 63000 --lpf-cutoff 96.818182 --lpf-transition 3.181818 --maxStages 1
+	 -i /sdcard/ReSampler/00001313_48000-stage1.wav -o /sdcard/ReSampler/00001313_48000.wav -r 48000 --lpf-cutoff 90.909091 --lpf-transition 9.090909 --maxStages 1
+	loop start: 0
+	loop max: 2
+I/ReSampler: Stage: 1
+	inputRate: 44100
+	outputRate: 63000
+	ft: 20045.454545
+	stopFreq: 22050.000000
+	transition width: 3.181818 %
+	guarantee: 22050.000000
+	Generated Filter Size: 18446744073709548544
+	Output Buffer Size: 46812
+I/ReSampler: loop end: 0
+	loop max: 2
+
+		 */
 		converters.emplace_back(ci);
-	} 
+	}
 
 	// Calculate initial gain:
-	FloatType gain = ci.gain * converters[0].getGain() * 
-		(ci.bNormalize ? fraction.numerator * (ci.limit / peakInputSample) : fraction.numerator * ci.limit );
+	FloatType gain = ci.gain * converters[0].getGain() *
+		(ci.bNormalize ? fraction.numerator * (ci.limit / peakInputSample) : fraction.numerator * ci.limit);
 
 	// todo: more testing with very low bit depths (eg 4 bits)
 	if (ci.bDither) { // allow headroom for dithering:
@@ -669,7 +859,7 @@ bool convert(ConversionInfo& ci)
 		gain *= ditherCompensation;
 	}
 
-    int groupDelay = static_cast<int>(converters[0].getGroupDelay());
+	int groupDelay = static_cast<int>(converters[0].getGroupDelay());
 
 	FloatType peakOutputSample;
 	bool bClippingDetected;
@@ -695,23 +885,23 @@ bool convert(ConversionInfo& ci)
 			csvFile->setSignedness(Signed);
 			csvFile->setNumericFormat(Integer);
 
-			if (ci.outBitFormat.empty()) { // default = 16-bit, unsigned, integer (decimal)	
+			if (ci.outBitFormat.empty()) { // default = 16-bit, unsigned, integer (decimal)
 				csvFile->setNumBits(16);
-			} 
+			}
 			else {
 				std::regex rgx("([us]?)(\\d+)([fiox]?)"); // [u|s]<numBits>[f|i|o|x]
-                std::smatch matchResults;
-                std::regex_search(ci.outBitFormat, matchResults, rgx);
+				std::smatch matchResults;
+				std::regex_search(ci.outBitFormat, matchResults, rgx);
 				int numBits = 16;
 
 				if (matchResults.length() >= 1 && matchResults[1].compare("u") == 0) {
 					csvFile->setSignedness(Unsigned);
-				} 
+				}
 
 				if (matchResults.length() >= 2 && std::stoi(matchResults[2]) != 0) {
 					numBits = std::min(std::max(1, std::stoi(matchResults[2])), 64); // 1-64 bits
-				} 
-				
+				}
+
 				if (matchResults.length() >= 3 && !matchResults[3].str().empty()) {
 					if (matchResults[3].compare("f") == 0) {
 						csvFile->setNumericFormat(FloatingPoint);
@@ -723,11 +913,11 @@ bool convert(ConversionInfo& ci)
 						csvFile->setNumericBase(Hexadecimal);
 					}
 				}
-			
+
 				csvFile->setNumBits(numBits);
 
-                // todo: precision, other params
-            }
+				// todo: precision, other params
+			}
 		}
 
 		else { // libSndFile output
@@ -735,12 +925,16 @@ bool convert(ConversionInfo& ci)
 			try {
 
 				// output file may need to be overwriten on subsequent passes,
-				// and the only way to close the file is to destroy the SndfileHandle.  
+				// and the only way to close the file is to destroy the SndfileHandle.
 
 				outFile.reset(new SndfileHandle(ci.outputFilename, SFM_WRITE, outputFileFormat, nChannels, ci.outputSampleRate));
 
 				if (int e = outFile->error()) {
 					std::cout << "Error: Couldn't Open Output File (" << sf_error_number(e) << ")" << std::endl;
+#ifdef COMPILING_ON_ANDROID
+					delete std::cout.rdbuf(0);
+					delete std::cerr.rdbuf(0);
+#endif
 					return false;
 				}
 
@@ -776,16 +970,20 @@ bool convert(ConversionInfo& ci)
 
 			catch (std::exception& e) {
 				std::cout << "Error: Couldn't Open Output File " << e.what() << std::endl;
+#ifdef COMPILING_ON_ANDROID
+				delete std::cout.rdbuf(0);
+				delete std::cerr.rdbuf(0);
+#endif
 				return false;
 			}
 		}
 
 		// conditionally open a temp file:
 		if (ci.bTmpFile) {
-            tmpSndfileHandle = getTempFile<FloatType>(inputFileFormat, nChannels, ci, tmpFilename);
-            if(tmpSndfileHandle == nullptr) {
-                ci.bTmpFile = false;
-            }
+			tmpSndfileHandle = getTempFile<FloatType>(inputFileFormat, nChannels, ci, tmpFilename);
+			if (tmpSndfileHandle == nullptr) {
+				ci.bTmpFile = false;
+			}
 		} // ends opening of temp file
 
 		// echo conversion mode to user (multi-stage/single-stage, multi-threaded/single-threaded)
@@ -799,18 +997,18 @@ bool convert(ConversionInfo& ci)
 		sf_count_t nextProgressThreshold = incrementalProgressThreshold;
 
 		int outStartOffset = std::min(groupDelay * nChannels, static_cast<int>(outputBlockSize) - nChannels);
-		
-		do { // central conversion loop (the heart of the matter ...) 
+
+		do { // central conversion loop (the heart of the matter ...)
 
 			// Grab a block of interleaved samples from file:
 			samplesRead = infile.read(inputBlock.data(), inputBlockSize);
-			totalSamplesRead += samplesRead;  
+			totalSamplesRead += samplesRead;
 
 			// de-interleave into channel buffers
 			size_t i = 0;
-			for (size_t s = 0 ; s < samplesRead; s += nChannels) {
-				for (int ch = 0 ; ch < nChannels; ++ch) {
-					inputChannelBuffers[ch][i] = inputBlock[s+ch];
+			for (size_t s = 0; s < samplesRead; s += nChannels) {
+				for (int ch = 0; ch < nChannels; ++ch) {
+					inputChannelBuffers[ch][i] = inputBlock[s + ch];
 				}
 				++i;
 			}
@@ -822,8 +1020,8 @@ bool convert(ConversionInfo& ci)
 
 			std::vector<std::future<Result>> results(nChannels);
 			ctpl::thread_pool threadPool(nChannels);
-            size_t outputBlockIndex = 0;
-			
+			size_t outputBlockIndex = 0;
+
 			for (int ch = 0; ch < nChannels; ++ch) { // run convert stage for each channel (concurrently)
 
 				auto kernel = [&, ch](int x = 0) {
@@ -843,6 +1041,10 @@ bool convert(ConversionInfo& ci)
 					Result res;
 					res.outBlockindex = localOutputBlockIndex;
 					res.peak = localPeak;
+#ifdef COMPILING_ON_ANDROID
+					delete std::cout.rdbuf(0);
+					delete std::cerr.rdbuf(0);
+#endif
 					return res;
 				};
 
@@ -889,13 +1091,14 @@ bool convert(ConversionInfo& ci)
 
 		if (ci.bTmpFile) {
 			gain = 1.0; // output file must start with unity gain relative to temp file
-		} else {
+		}
+		else {
 			// notify user:
 			std::cout << "Done" << std::endl;
 			auto prec = std::cout.precision();
 			std::cout << "Peak output sample: " << std::setprecision(6) << peakOutputSample << " (" << 20 * log10(peakOutputSample) << " dBFS)" << std::endl;
 			std::cout.precision(prec);
-		} 
+		}
 
 		do {
 			// test for clipping:
@@ -906,7 +1109,7 @@ bool convert(ConversionInfo& ci)
 				// calculate gain adjustment
 				FloatType gainAdjustment = static_cast<FloatType>(clippingTrim) * ci.limit / peakOutputSample;
 				gain *= gainAdjustment;
-				
+
 				// echo gain adjustment to user - use slightly differnt message if using temp file:
 				if (ci.bTmpFile) {
 					std::cout << "Adjusting gain by " << 20 * log10(gainAdjustment) << " dB" << std::endl;
@@ -982,7 +1185,7 @@ bool convert(ConversionInfo& ci)
 				auto prec = std::cout.precision();
 				std::cout << "Peak output sample: " << std::setprecision(6) << peakOutputSample << " (" << 20 * log10(peakOutputSample) << " dBFS)" << std::endl;
 				std::cout.precision(prec);
-	
+
 			} // ends if (ci.bTmpFile)
 
 			bClippingDetected = peakOutputSample > ci.limit;
@@ -996,14 +1199,18 @@ bool convert(ConversionInfo& ci)
 
 		} while (ci.bTmpFile && !ci.disableClippingProtection && bClippingDetected && clippingProtectionAttempts < maxClippingProtectionAttempts); // if using temp file, do another round if clipping detected
 	} while (!ci.bTmpFile && !ci.disableClippingProtection && bClippingDetected && clippingProtectionAttempts < maxClippingProtectionAttempts); // if NOT using temp file, do another round if clipping detected
-	
+
 	// clean-up temp file:
 	delete tmpSndfileHandle; // dealllocate SndFileHandle
 
-	#if defined (TEMPFILE_OPEN_METHOD_STD_TMPNAM) || defined (TEMPFILE_OPEN_METHOD_WINAPI)
-		std::remove(tmpFilename.c_str()); // actually remove the temp file from disk
-	#endif
+#if defined (TEMPFILE_OPEN_METHOD_STD_TMPNAM) || defined (TEMPFILE_OPEN_METHOD_WINAPI)
+	std::remove(tmpFilename.c_str()); // actually remove the temp file from disk
+#endif
 
+#ifdef COMPILING_ON_ANDROID
+	delete std::cout.rdbuf(0);
+	delete std::cerr.rdbuf(0);
+#endif
 	return true;
 } // ends convert()
 
@@ -1016,20 +1223,20 @@ bool convert(ConversionInfo& ci)
 template<typename FloatType>
 SndfileHandle* getTempFile(int inputFileFormat, int nChannels, const ConversionInfo& ci, std::string& tmpFilename) {
 
-    SndfileHandle* tmpSndfileHandle = nullptr;
-    bool tmpFileError;
-    int outputFileFormat = ci.outputFormat ? ci.outputFormat : inputFileFormat;
+	SndfileHandle* tmpSndfileHandle = nullptr;
+	bool tmpFileError;
+	int outputFileFormat = ci.outputFormat ? ci.outputFormat : inputFileFormat;
 
-    // set major format of temp file (inherit rf64-ness from output file):
-    int tmpFileFormat = (outputFileFormat & SF_FORMAT_RF64) ? SF_FORMAT_RF64 : SF_FORMAT_WAV;
+	// set major format of temp file (inherit rf64-ness from output file):
+	int tmpFileFormat = (outputFileFormat & SF_FORMAT_RF64) ? SF_FORMAT_RF64 : SF_FORMAT_WAV;
 
-    // set appropriate floating-point subformat:
-    tmpFileFormat |= (sizeof(FloatType) == 8) ? SF_FORMAT_DOUBLE : SF_FORMAT_FLOAT;
+	// set appropriate floating-point subformat:
+	tmpFileFormat |= (sizeof(FloatType) == 8) ? SF_FORMAT_DOUBLE : SF_FORMAT_FLOAT;
 
 #if defined (TEMPFILE_OPEN_METHOD_WINAPI)
-    TCHAR _tmpFilename[MAX_PATH];
-    TCHAR _tmpPathname[MAX_PATH];
-    tmpFileError = true;
+	TCHAR _tmpFilename[MAX_PATH];
+	TCHAR _tmpPathname[MAX_PATH];
+	tmpFileError = true;
 	DWORD pathLen;
 
 	if (!ci.tmpDir.empty()) {
@@ -1040,66 +1247,70 @@ SndfileHandle* getTempFile(int inputFileFormat, int nChannels, const ConversionI
 	else {
 		pathLen = GetTempPath(MAX_PATH, _tmpPathname);
 	}
-	
-    if (pathLen > MAX_PATH || pathLen == 0)
-        std::cerr << "Error: Could not determine temp path for temp file" << std::endl;
-    else {
-        if (GetTempFileName(_tmpPathname, TEXT("ReS"), 0, _tmpFilename) == 0)
-            std::cerr << "Error: Couldn't generate temp file name" << std::endl;
-        else {
-            tmpFileError = false;
-            std::wstring_convert<std::codecvt_utf8<wchar_t>> wchar2utf8;
-            tmpFilename = wchar2utf8.to_bytes(_tmpFilename);
-            if(ci.bShowTempFile) std::cout << "Temp Filename: " <<  tmpFilename << std::endl;
-            tmpSndfileHandle = new SndfileHandle(tmpFilename, SFM_RDWR, tmpFileFormat, nChannels, ci.outputSampleRate); // open using filename
-        }
-    }
+
+	if (pathLen > MAX_PATH || pathLen == 0)
+		std::cerr << "Error: Could not determine temp path for temp file" << std::endl;
+	else {
+		if (GetTempFileName(_tmpPathname, TEXT("ReS"), 0, _tmpFilename) == 0)
+			std::cerr << "Error: Couldn't generate temp file name" << std::endl;
+		else {
+			tmpFileError = false;
+			std::wstring_convert<std::codecvt_utf8<wchar_t>> wchar2utf8;
+			tmpFilename = wchar2utf8.to_bytes(_tmpFilename);
+			if (ci.bShowTempFile) std::cout << "Temp Filename: " << tmpFilename << std::endl;
+			tmpSndfileHandle = new SndfileHandle(tmpFilename, SFM_RDWR, tmpFileFormat, nChannels, ci.outputSampleRate); // open using filename
+		}
+	}
 
 #elif defined (TEMPFILE_OPEN_METHOD_STD_TMPFILE)
-    FILE* f = std::tmpfile();
-    tmpFileError = (f == NULL);
-    if (!tmpFileError) {
-        tmpSndfileHandle = new SndfileHandle(fileno(f), true, SFM_RDWR, tmpFileFormat, nChannels, ci.outputSampleRate); // open using file descriptor
-    } else {
-        std::cerr << "std::tmpfile() failed" << std::endl;
-    }
+	FILE* f = std::tmpfile();
+	tmpFileError = (f == NULL);
+	if (!tmpFileError) {
+		tmpSndfileHandle = new SndfileHandle(fileno(f), true, SFM_RDWR, tmpFileFormat, nChannels, ci.outputSampleRate); // open using file descriptor
+	}
+	else {
+		std::cerr << "std::tmpfile() failed" << std::endl;
+	}
 
 #elif defined (TEMPFILE_OPEN_METHOD_MKSTEMP)
-    char templ[] = "ReSamplerXXXXXX";
-    int fd = mkstemp(templ);
-    tmpFileError = (fd == -1);
-    if(!tmpFileError) {
-        if(ci.bShowTempFile) printf("temp file: %s\n", templ);
-        tmpSndfileHandle = new SndfileHandle(fd, true, SFM_RDWR, tmpFileFormat, nChannels, ci.outputSampleRate); // open using file descriptor
-    } else {
-        std::cerr << "std::mkstemp() failed" << std::endl;
-    }
+	char templ[] = "ReSamplerXXXXXX";
+	int fd = mkstemp(templ);
+	tmpFileError = (fd == -1);
+	if (!tmpFileError) {
+		if (ci.bShowTempFile) printf("temp file: %s\n", templ);
+		tmpSndfileHandle = new SndfileHandle(fd, true, SFM_RDWR, tmpFileFormat, nChannels, ci.outputSampleRate); // open using file descriptor
+	}
+	else {
+		std::cerr << "std::mkstemp() failed" << std::endl;
+	}
 
 #else
-    // tmpnam() method
-    tmpFileError = false;
-    tmpFilename = std::string(std::string(std::tmpnam(nullptr)) + ".wav");
-    if (ci.bShowTempFile) std::cout << "Temp Filename: " << tmpFilename << std::endl;
-    tmpSndfileHandle = new SndfileHandle(tmpFilename, SFM_RDWR, tmpFileFormat, nChannels, ci.outputSampleRate); // open using filename
+	// tmpnam() method
+	tmpFileError = false;
+	tmpFilename = std::string(std::string(std::tmpnam(nullptr)) + ".wav");
+	if (ci.bShowTempFile) std::cout << "Temp Filename: " << tmpFilename << std::endl;
+	tmpSndfileHandle = new SndfileHandle(tmpFilename, SFM_RDWR, tmpFileFormat, nChannels, ci.outputSampleRate); // open using filename
 
 #endif
 
-    int e = 0;
-    if (tmpFileError || tmpSndfileHandle == nullptr || (e = tmpSndfileHandle->error())){
-        std::cout << "Error: Couldn't Open Temporary File (" << sf_error_number(e) << ")\n";
-        std::cout << "Disabling temp file mode." << std::endl;
-        tmpSndfileHandle = nullptr;
-    } else {
-        // disable floating-point normalisation (important - we want to record/recover floating point values exactly)
-        if (sizeof(FloatType) == 8) {
-            tmpSndfileHandle->command(SFC_SET_NORM_DOUBLE, NULL,
-                                      SF_FALSE); // http://www.mega-nerd.com/libsndfile/command.html#SFC_SET_NORM_DOUBLE
-        } else {
-            tmpSndfileHandle->command(SFC_SET_NORM_FLOAT, NULL, SF_FALSE);
-        }
-    }
+	int e = 0;
+	if (tmpFileError || tmpSndfileHandle == nullptr || (e = tmpSndfileHandle->error())) {
+		std::cout << "Error: Couldn't Open Temporary File (" << sf_error_number(e) << ")\n";
+		std::cout << "Disabling temp file mode." << std::endl;
+		tmpSndfileHandle = nullptr;
+	}
+	else {
+		// disable floating-point normalisation (important - we want to record/recover floating point values exactly)
+		if (sizeof(FloatType) == 8) {
+			tmpSndfileHandle->command(SFC_SET_NORM_DOUBLE, NULL,
+				SF_FALSE); // http://www.mega-nerd.com/libsndfile/command.html#SFC_SET_NORM_DOUBLE
+		}
+		else {
+			tmpSndfileHandle->command(SFC_SET_NORM_FLOAT, NULL, SF_FALSE);
+		}
+	}
 
-    return tmpSndfileHandle;
+	return tmpSndfileHandle;
 }
 
 // retrieve metadata using libsndfile API :
@@ -1129,7 +1340,7 @@ bool getMetaData(MetaData& metadata, SndfileHandle& infile) {
 	metadata.has_cart_chunk = (infile.command(SFC_GET_CART_INFO, (void*)&metadata.cartInfo, sizeof(LargeSFCartInfo)) == SF_TRUE);
 
 	if (metadata.has_cart_chunk) {
-		// Note: size of CART chunk is variable, depending on size of last field (tag_text[]) 
+		// Note: size of CART chunk is variable, depending on size of last field (tag_text[])
 		if (metadata.cartInfo.tag_text_size > MAX_CART_TAG_TEXT_SIZE) {
 			metadata.cartInfo.tag_text_size = MAX_CART_TAG_TEXT_SIZE; // apply hard limit on number of characters (spec says unlimited ...)
 		}
@@ -1165,7 +1376,7 @@ bool setMetaData(const MetaData& metadata, SndfileHandle& outfile) {
 		if (metadata.has_cart_chunk) {
 			outfile.command(SFC_SET_CART_INFO,
 				(void*)&metadata.cartInfo,
-				sizeof(metadata.cartInfo) - MAX_CART_TAG_TEXT_SIZE + metadata.cartInfo.tag_text_size // (size of cartInfo WITHOUT tag text) + (actual size of tag text) 
+				sizeof(metadata.cartInfo) - MAX_CART_TAG_TEXT_SIZE + metadata.cartInfo.tag_text_size // (size of cartInfo WITHOUT tag text) + (actual size of tag text)
 			);
 		}
 	}
@@ -1175,7 +1386,7 @@ bool setMetaData(const MetaData& metadata, SndfileHandle& outfile) {
 
 bool testSetMetaData(SndfileHandle& outfile) {
 	MetaData m;
-    memset(&m, 0, sizeof(m));
+	memset(&m, 0, sizeof(m));
 	m.title.assign("test title");
 	m.copyright.assign("test copyright");
 	m.software.assign("test software");
@@ -1235,7 +1446,7 @@ bool checkWarnOutputSize(sf_count_t inputSamples, int bytesPerSample, int numera
 
 	const sf_count_t limit4G = 1ULL << 32;
 	if (outputDataSize >= limit4G) {
-		std::cout << "Warning: output file ( " << fmtNumberWithCommas(outputDataSize) << " bytes of data ) will exceed 4GB limit"  << std::endl;
+		std::cout << "Warning: output file ( " << fmtNumberWithCommas(outputDataSize) << " bytes of data ) will exceed 4GB limit" << std::endl;
 		return true;
 	}
 	return false;
@@ -1254,8 +1465,8 @@ std::string fmtNumberWithCommas(IntType n) {
 
 void printSamplePosAsTime(sf_count_t samplePos, unsigned int sampleRate) {
 	double seconds = static_cast<double>(samplePos) / sampleRate;
-    auto h = static_cast<int>(seconds / 3600);
-    auto m = static_cast<int>((seconds - (h * 3600)) / 60);
+	auto h = static_cast<int>(seconds / 3600);
+	auto m = static_cast<int>((seconds - (h * 3600)) / 60);
 	double s = seconds - (h * 3600) - (m * 60);
 	std::ios::fmtflags f(std::cout.flags());
 	std::cout << std::setprecision(0) << h << ":" << m << ":" << std::setprecision(6) << s;
@@ -1297,7 +1508,7 @@ void generateExpSweep(const std::string& filename, int sampleRate, int format, d
 	SndfileHandle outFile(filename, SFM_WRITE, format, 1, sampleRate);
 	std::vector<double> signal(N, 0.0);
 
-	for(int n = 0; n < N; n++) {
+	for (int n = 0; n < N; n++) {
 		signal[n] = amplitude * sin(fmod(C * exp(y * n / N), TWOPI));
 	}
 
@@ -1348,7 +1559,7 @@ bool checkSSE2() {
 		return false;
 	}
 #endif // defined (_MSC_VER) || defined (__INTEL_COMPILER)
-return true; // todo: fix the check on gcc
+	return true; // todo: fix the check on gcc
 }
 
 bool checkAVX() {
@@ -1373,12 +1584,12 @@ bool checkAVX() {
 		return false;
 	}
 #endif // defined (_MSC_VER) || defined (__INTEL_COMPILER)
-return true; // todo: gcc detection
+	return true; // todo: gcc detection
 }
 
 bool showBuildVersion() {
 	std::cout << strVersion << " ";
-#if defined(_M_X64) || defined(__x86_64__)
+#if defined(_M_X64) || defined(__x86_64__) || defined(COMPILING_ON_ANDROID64)
 	std::cout << "64-bit version";
 #ifdef USE_AVX
 	std::cout << " AVX build ... ";
@@ -1387,7 +1598,7 @@ bool showBuildVersion() {
 #ifdef USE_FMA
 	std::cout << "\nusing FMA (Fused Multiply-Add) instruction ... ";
 #endif
-#endif // USE_AVX	
+#endif // USE_AVX
 	std::cout << std::endl;
 #else
 	std::cout << "32-bit version";
@@ -1405,23 +1616,23 @@ bool showBuildVersion() {
 void showCompiler() {
 	// https://sourceforge.net/p/predef/wiki/Compilers/
 #if defined (__clang__)
-	std::cout << "Clang " << __clang_major__ << "." 
-	<< __clang_minor__ << "."
-	<< __clang_patchlevel__ << std::endl;
+	std::cout << "Clang " << __clang_major__ << "."
+		<< __clang_minor__ << "."
+		<< __clang_patchlevel__ << std::endl;
 #elif defined (__MINGW64__)
 	std::cout << "minGW-w64" << std::endl;
 #elif defined (__MINGW32__)
 	std::cout << "minGW" << std::endl;
 #elif defined (__GNUC__)
-	std::cout << "gcc " << __GNUC__ << "." 
-	<< __GNUC_MINOR__ << "."
-	<< __GNUC_PATCHLEVEL__ << std::endl;
+	std::cout << "gcc " << __GNUC__ << "."
+		<< __GNUC_MINOR__ << "."
+		<< __GNUC_PATCHLEVEL__ << std::endl;
 #elif defined (_MSC_VER)
 	std::cout << "Visual C++ " << _MSC_FULL_VER << std::endl;
 #elif defined (__INTEL_COMPILER)
 	std::cout << "Intel Compiler " << __INTEL_COMPILER << std::endl;
 #else
 	std::cout << "unknown" << std::endl;
-#endif 
+#endif
 
 }

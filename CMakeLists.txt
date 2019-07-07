@@ -59,10 +59,24 @@ elseif (APPLE)
     add_executable(ReSampler ${SOURCE_FILES})
 elseif(ANDROID)
 
+    add_subdirectory (android/src/fftw-3.3.8)
+    set(BUILD_SHARED_LIBS_SAVED "${BUILD_SHARED_LIBS}")
+    set(BUILD_PROGRAMS_SAVED "${BUILD_PROGRAMS}")
+    set(BUILD_EXAMPLES_SAVED "${BUILD_EXAMPLES}")
+    set(BUILD_TESTING_SAVED "${BUILD_TESTING}")
+    set(BUILD_SHARED_LIBS OFF)
+    set(BUILD_PROGRAMS OFF)
+    set(BUILD_EXAMPLES OFF)
+    set(BUILD_TESTING OFF)
+    add_subdirectory (android/src/libsndfile)
+    set(BUILD_SHARED_LIBS "${BUILD_SHARED_LIBS_SAVED}")
+    set(BUILD_PROGRAMS "${BUILD_PROGRAMS_SAVED}")
+    set(BUILD_EXAMPLES "${BUILD_EXAMPLES_SAVED}")
+    set(BUILD_TESTING "${BUILD_TESTING_SAVED}")
+    include_directories(android/src/fftw-3.3.8/api)
+    include_directories($CMAKE_SOURCE_DIR/android/src/libsndfile/src)
+
     set(SOURCE_FILES
-            libsndfilearm64_v8a/debug/src/sndfile.h
-            libsndfilearm64_v8a/debug/src/sndfile.hh
-            fftwarm64_v8a/debug/fftw3.h
             alignedmalloc.h
             biquad.h
             conversioninfo.h
@@ -78,10 +92,8 @@ elseif(ANDROID)
             ReSampler.h
             srconvert.h)
 
-    include_directories(libsndfilearm64_v8a/debug/src fftwarm64_v8a/debug)
-    link_directories(libsndfilearm64_v8a/debug fftwarm64_v8a/debug)
     add_library(ReSampler SHARED ${SOURCE_FILES})
-    target_link_libraries(ReSampler sndfile fftw3)
+    target_link_libraries(ReSampler sndfile fftw3 log)
 else ()
     include_directories(/usr/include)
     link_directories(/usr/lib)
