@@ -281,6 +281,7 @@ inline bool ConversionInfo::fromCmdLineArgs(int argc, char* argv[]) {
 	overSamplingFactor = 1;
 	bBadParams = false;
 	appName.clear();
+	bRawInput = false;
 
 	// get core parameters:
 	getCmdlineParam(argv, argv + argc, "-i", inputFilename);
@@ -353,6 +354,20 @@ inline bool ConversionInfo::fromCmdLineArgs(int argc, char* argv[]) {
 		lpfMode = custom;
 		if (!getCmdlineParam(argv, argv + argc, "--lpf-transition", lpfTransitionWidth)) {
 			lpfTransitionWidth = 100 - lpfCutoff; // auto mode
+		}
+	}
+
+	if (getCmdlineParam(argv, argv + argc, "--raw-input")) {
+		std::vector<std::string> rawInputParams;
+		if (getCmdlineParam(argv, argv + argc, "--raw-input", rawInputParams)) {
+			if (rawInputParams.size() >= 2) {
+				bRawInput = true;
+				rawInputSampleRate = std::stoi(rawInputParams.at(0));
+				rawInputBitFormat = rawInputParams.at(1);
+				if (rawInputParams.size() >= 3) {
+					rawInputChannels = std::stoi(rawInputParams.at(2));
+				}
+			}
 		}
 	}
 
