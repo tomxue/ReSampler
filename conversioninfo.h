@@ -46,7 +46,7 @@ std::string sanitize(const std::string& str) {
 	return r;
 }
 
-// for numeric parameter values:
+// get numeric parameter value:
 template<typename T>
 bool getCmdlineParam(char** begin, char** end, const std::string& option, T& parameter) {
 	std::vector<std::string> args(begin, end);
@@ -69,7 +69,7 @@ bool getCmdlineParam(char** begin, char** end, const std::string& option, T& par
 	return found;
 }
 
-// for string parameter values:
+// get string parameter value:
 bool getCmdlineParam(char** begin, char** end, const std::string& option, std::string& parameter)
 {
 	std::vector<std::string> args(begin, end);
@@ -85,6 +85,27 @@ bool getCmdlineParam(char** begin, char** end, const std::string& option, std::s
 	}
 	return found;
 }
+
+// get vector of string parameters
+bool getCmdlineParam(char** begin, char** end, const std::string& option, std::vector<std::string>& parameters)
+{
+	std::vector<std::string> args(begin, end);
+	bool found = false;
+	for (auto it = args.begin(); it != args.end(); it++) {
+		if (sanitize(*it) == sanitize(option)) {
+			found = true;
+			// read parameters until we hit a hyphen or the end of args
+			for (auto next = std::next(it); next != args.end(); next++) {
+				if ((*next).find("-") == std::string::npos) {
+					parameters.push_back(*next);
+				}
+			}
+			break;
+		}
+	}
+	return found;
+}
+
 
 // switch only (no parameter value)
 bool getCmdlineParam(char** begin, char** end, const std::string& option)
@@ -156,6 +177,10 @@ struct ConversionInfo
 	bool quantize;
 	int quantizeBits;
 	IntegerWriteScalingStyle integerWriteScalingStyle;
+	bool bRawInput;
+	int rawInputChannels;
+	int rawInputSampleRate;
+	std::string rawInputBitFormat;
 
 	bool fromCmdLineArgs(int argc, char* argv[]);
 	std::string toCmdLineArgs();
