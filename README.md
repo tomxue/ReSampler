@@ -167,6 +167,8 @@ The temp file is used to facilitate fast gain adjustment when clipping is detect
 the entire conversion will need to be performed again if clipping is detected. 
 *Note: versions of Resampler prior to 2.0.3 did not use a temporary file*)
 
+**--raw-input &lt;samplerate&gt; &lt;bit-format&gt; [number of channels]**
+
 #### Example
 
 To convert a 24-bit, 96kHz .wav input file to 16-bit, 44.1kHz .flac output file, with steep lowpass filter and dithering:
