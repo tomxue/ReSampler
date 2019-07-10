@@ -120,9 +120,9 @@ struct FormDSDChunk {
 #define CKID_DIAR 0x44494152
 #define CKID_DITI 0x44495449
 
-enum dffOpenMode {
-	dff_read,
-	dff_write
+enum DffOpenMode {
+    Dff_read,
+    Dff_write
 };
 
 // DffFile interface:
@@ -132,12 +132,12 @@ class DffFile
 public:
 	// Construction / destruction
 	template <typename... OtherArgs>
-    explicit DffFile(const std::string& path, int mode = dff_read, OtherArgs... ignored) : path(path), mode(static_cast<dffOpenMode>(mode))
+    explicit DffFile(const std::string& path, int mode = Dff_read, OtherArgs... ignored) : path(path), mode(static_cast<DffOpenMode>(mode))
 	{
 		file.exceptions(std::ifstream::failbit | std::ifstream::badbit);
 
 		switch (mode) {
-		case dff_read:
+        case Dff_read:
 			try {
 				file.open(path, std::ios::in | std::ios::binary);
 				err = false;
@@ -164,7 +164,7 @@ public:
 			currentChannel = 0;
 			break;
 			
-		case dff_write:
+        case Dff_write:
 			break;
 		}
     }
@@ -277,7 +277,7 @@ public:
 private:
 	FormDSDChunk formDSDChunk{};
 	std::string path;
-	dffOpenMode mode;
+    DffOpenMode mode;
 	std::fstream file;
 	bool err;
 	const uint32_t blockSize = 4096;

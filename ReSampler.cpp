@@ -538,9 +538,9 @@ bool convert(ConversionInfo& ci)
 	int infileChannels = 0;
 	int infileRate = 0;
 	if(ci.dsfInput) {
-		infileMode = dsf_read;
+        infileMode = Dsf_read;
 	} else if(ci.dffInput) {
-		infileMode = dff_read;
+        infileMode = Dff_read;
 	} else {
 		infileMode = SFM_READ;
 		if(ci.bRawInput) {

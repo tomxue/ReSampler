@@ -65,9 +65,9 @@ struct DsfDataChunk {
 };
 #pragma pack(pop, r1)
 
-enum dsfOpenMode {
-	dsf_read,
-	dsf_write
+enum DsfOpenMode {
+    Dsf_read,
+    Dsf_write
 };
 
 #define DSF_ID_DSD 0x20445344
@@ -85,13 +85,13 @@ class DsfFile
 public:
 	// Construction / destruction
 	template<typename... OtherArgs>
-	DsfFile(const std::string& path, int mode = dsf_read, OtherArgs... ignored) : path(path), mode(static_cast<dsfOpenMode>(mode))
+    DsfFile(const std::string& path, int mode = Dsf_read, OtherArgs... ignored) : path(path), mode(static_cast<DsfOpenMode>(mode))
 	{
 		assertSizes();
 		file.exceptions(std::ifstream::failbit | std::ifstream::badbit);
 
 		switch (mode) {
-		case dsf_read:
+        case Dsf_read:
 			try {
 				file.open(path, std::ios::in | std::ios::binary);
 				err = false;
@@ -113,7 +113,7 @@ public:
 			currentChannel = 0;
 			break;
 
-		case dsf_write:
+        case Dsf_write:
 			break;
 		}
     }
@@ -243,7 +243,7 @@ private:
 	DsfDataChunk dsfDataChunk;
 	DsfChannelType dsfChannelType;
 	std::string path;
-	dsfOpenMode mode;
+    DsfOpenMode mode;
 	std::fstream file;
 	bool err;
 	uint32_t blockSize;
