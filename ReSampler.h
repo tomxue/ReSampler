@@ -61,7 +61,7 @@ const int maxClippingProtectionAttempts = 3;
 #define BUFFERSIZE 32768 // buffer size for file reads
 
 // map of commandline subformats to libsndfile subformats:
-const std::map<std::string,int> subFormats = { 
+const std::map<std::string, int> subFormats = { 
 	{ "s8",SF_FORMAT_PCM_S8 },
 	{ "u8",SF_FORMAT_PCM_U8 },
 	{ "8",SF_FORMAT_PCM_U8 },	// signed or unsigned depends on major format of output file eg. wav files unsigned
@@ -171,7 +171,7 @@ bool checkSSE2();
 bool checkAVX();
 bool showBuildVersion();
 bool parseGlobalOptions(int argc, char * argv[]);
-bool determineBestBitFormat(std::string & BitFormat, const std::string & inFilename, const std::string & outFilename);
+bool determineBestBitFormat(std::string& bitFormat, const ConversionInfo& ci);
 int determineOutputFormat(const std::string & outFileExt, const std::string & bitFormat);
 void listSubFormats(const std::string & f);
 template<typename FileReader, typename FloatType> bool convert(ConversionInfo & ci);

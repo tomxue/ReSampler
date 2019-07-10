@@ -183,9 +183,11 @@ int main(int argc, char * argv[])
 				std::cout << "Changing output bit format to " << ci.outBitFormat << std::endl;
 			}
 			else { // user-supplied bit format not valid; try choosing appropriate format
-				determineBestBitFormat(ci.outBitFormat, ci.inputFilename, ci.outputFilename);
-				ci.outputFormat = determineOutputFormat(outFileExt, ci.outBitFormat);
+                std::string outBitFormat;
+                determineBestBitFormat(outBitFormat, ci);
+                ci.outputFormat = determineOutputFormat(outFileExt, outBitFormat);
 				if (ci.outputFormat) {
+                    ci.outBitFormat = outBitFormat;
 					std::cout << "Changing output bit format to " << ci.outBitFormat << std::endl;
 				}
 				else {
@@ -198,14 +200,16 @@ int main(int argc, char * argv[])
 		if (outFileExt != inFileExt)
 		{ // file extensions differ, determine new output format:
 
+            std::string outBitFormat;
 			if (ci.outBitFormat.empty()) { // user changed file extension only. Attempt to choose appropriate output sub format:
 				std::cout << "Output Bit Format not specified" << std::endl;
-				determineBestBitFormat(ci.outBitFormat, ci.inputFilename, ci.outputFilename);
+                determineBestBitFormat(outBitFormat, ci);
 			}
-			ci.outputFormat = determineOutputFormat(outFileExt, ci.outBitFormat);
-			if (ci.outputFormat)
+            ci.outputFormat = determineOutputFormat(outFileExt, outBitFormat);
+            if (ci.outputFormat) {
+                ci.outBitFormat = outBitFormat;
 				std::cout << "Changing output file format to " << outFileExt << std::endl;
-			else { // cannot determine subformat of output file
+            } else { // cannot determine subformat of output file
 				std::cout << "Warning: NOT Changing output file format ! (extension different, but format will remain the same)" << std::endl;
 			}
 		}
@@ -324,12 +328,12 @@ bool parseGlobalOptions(int argc, char * argv[]) {
 // 2. use the default subformat for outfile.
 // store best bit format as a string in BitFormat
 
-bool determineBestBitFormat(std::string& BitFormat, const std::string& inFilename, const std::string& outFilename)
+bool determineBestBitFormat(std::string& bitFormat, const ConversionInfo& ci)
 {
 	// get infile's extension from filename:
 	std::string inFileExt;
-	if (inFilename.find_last_of('.') != std::string::npos)
-		inFileExt = inFilename.substr(inFilename.find_last_of('.') + 1);
+    if (ci.inputFilename.find_last_of('.') != std::string::npos)
+        inFileExt = ci.inputFilename.substr(ci.inputFilename.find_last_of('.') + 1);
 
 	bool dsfInput = false;
 	bool dffInput = false;
@@ -345,19 +349,27 @@ bool determineBestBitFormat(std::string& BitFormat, const std::string& inFilenam
 
 	else { // libsndfile-openable file
 
-		// Inspect input file for format:
-		SndfileHandle infile(inFilename, SFM_READ);
-		inFileFormat = infile.format();
+        if (ci.bRawInput)
+		{
+			inFileFormat = SF_FORMAT_RAW | subFormats.at(ci.rawInputBitFormat);
+		}
+		else
+		{
+			// Inspect input file for format:
+            SndfileHandle infile(ci.inputFilename, SFM_READ);
+			inFileFormat = infile.format();
 
-		if (int e = infile.error()) {
-			std::cout << "Couldn't Open Input File (" << sf_error_number(e) << ")" << std::endl;
-			return false;
+			if (int e = infile.error())
+			{
+				std::cout << "Couldn't Open Input File (" << sf_error_number(e) << ")" << std::endl;
+				return false;
+			}
 		}
 
 		// get BitFormat of inFile as a string:
 		for (auto& subformat : subFormats) {
 			if (subformat.second == (inFileFormat & SF_FORMAT_SUBMASK)) {
-				BitFormat = subformat.first;
+                bitFormat = subformat.first;
 				break;
 			}
 		}
@@ -372,13 +384,13 @@ bool determineBestBitFormat(std::string& BitFormat, const std::string& inFilenam
 
 	// get outfile's extension:
 	std::string outFileExt;
-	if (outFilename.find_last_of('.') != std::string::npos)
-		outFileExt = outFilename.substr(outFilename.find_last_of('.') + 1);
+    if (ci.outputFilename.find_last_of('.') != std::string::npos)
+        outFileExt = ci.outputFilename.substr(ci.outputFilename.find_last_of('.') + 1);
 
 	// when the input file is dsf/dff, use default output subformat:
 	if (dsfInput || dffInput) { // choose default output subformat for chosen output file format
-		BitFormat = defaultSubFormats.find(outFileExt)->second;
-		std::cout << "defaulting to " << BitFormat << std::endl;
+        bitFormat = defaultSubFormats.find(outFileExt)->second;
+        std::cout << "defaulting to " << bitFormat << std::endl;
 		return true;
 	}
 
@@ -407,10 +419,10 @@ bool determineBestBitFormat(std::string& BitFormat, const std::string& inFilenam
 				break;
 			}
 			else { // infile's subformat is not valid for outfile's format; use outfile's default subformat
-				std::cout << "Output file format " << outFileExt << " and subformat " << BitFormat << " combination not valid ... ";
-				BitFormat.clear();
-				BitFormat = defaultSubFormats.find(outFileExt)->second;
-				std::cout << "defaulting to " << BitFormat << std::endl;
+                std::cout << "Output file format " << outFileExt << " and subformat " << bitFormat << " combination not valid ... ";
+                bitFormat.clear();
+                bitFormat = defaultSubFormats.find(outFileExt)->second;
+                std::cout << "defaulting to " << bitFormat << std::endl;
 				break;
 			}
 		}
@@ -533,7 +545,9 @@ bool convert(ConversionInfo& ci)
 	} else {
 		infileMode = SFM_READ;
 		if(ci.bRawInput) {
-			infileFormat = SF_FORMAT_RAW;
+			auto it = subFormats.find(ci.rawInputBitFormat);
+			int infileSubFormat = (it != subFormats.end()) ? it->second : SF_FORMAT_PCM_16;
+			infileFormat = SF_FORMAT_RAW | infileSubFormat;
 			infileChannels = ci.rawInputChannels;
 			infileRate = ci.rawInputChannels;
 		}
@@ -743,121 +757,6 @@ bool convert(ConversionInfo& ci)
 	// make a vector of Resamplers
 	std::vector<Converter<FloatType>> converters;
 	for (int n = 0; n < nChannels; n++) {
-		// TODO: figure out why this hangs:
-		/*
-
-07/05 19:29:19: Launching app
-$ adb shell am start -n "media.player.pro/media.player.pro.MainActivity" -a android.intent.action.MAIN -c android.intent.category.LAUNCHER
-Client not ready yet..Waiting for process to come online
-Connected to process 31163 on device samsung-sm_g950f-ce091829e258a11b04
-Capturing and displaying logcat messages from application. This behavior can be disabled in the "Logcat output" section of the "Debugger" settings page.
-D/OboeAudio: openStream() OUTPUT -------- OboeVersion1.2.0 --------
-D/OboeAudio: AAudioLoader():  dlopen(libaaudio.so) returned 0xfab09f4ed61f48db
-	AudioStreamAAudio() call isSupported()
-D/AAudio: AAudioStreamBuilder_openStream() called ----------------------------------------
-D/AudioStreamBuilder: build() EXCLUSIVE sharing mode not supported. Use SHARED.
-D/: PlayerBase::PlayerBase()
-I/AAudioStream: open() rate   = 48000, channels    = 2, format   = 1, sharing = SH, dir = OUTPUT
-	open() device = 0, sessionId   = 0, perfMode = 12, callback: ON with frames = 0
-	open() usage  = 1, contentType = 2, inputPreset = 6
-D/AudioStreamTrack: open(), request notificationFrames = -8, frameCount = 0
-I/AudioTrack: AUDIO_OUTPUT_FLAG_FAST successful; frameCount 0 -> 1536
-W/AudioStreamTrack: open() flags changed from 0x00000104 to 0x00000004
-D/AAudio: AAudioStreamBuilder_openStream() returns 0 = AAUDIO_OK for (0x7e0b756300) ----------------
-D/OboeAudio: AudioStreamAAudio.open() app    format = 1
-	AudioStreamAAudio.open() sample rate   = 48000
-	AudioStreamAAudio.open() capacity      = 1536
-	AudioStreamAAudio.open: AAudioStream_Open() returned AAUDIO_OK, mAAudioStream = 0x7e0b756300
-W/OboeAudio: Oboe_Init: setting AudioStream buffer size
-	Oboe_Init: aquiring AudioStream format
-I/OboeAudio: Oboe_Init: AudioStream format is I16
-I/ReSampler: usage: ReSampler -i <inputfile> [-o <outputfile>] -r <samplerate> [-b <bitformat>] [-n [<normalization factor>]]
-	Additional options:
-
-	--help
-	--version
-	--compiler
-	--sndfile-version
-	--listsubformats <ext>
-	--showDitherProfiles
-	--gain [<amount>]
-	--doubleprecision
-	--dither [<amount>] [--autoblank] [--ns [<ID>]] [--flat-tpdf] [--seed [<num>]] [--quantize-bits <number of bits>]
-	--noDelayTrim
-	--minphase
-	--flacCompression <compressionlevel>
-	--vorbisQuality <quality>
-	--noClippingProtection
-	--relaxedLPF
-	--steepLPF
-	--lpf-cutoff <percentage> [--lpf-transition <percentage>]
-	--mt
-	--rf64
-	--noPeakChunk
-	--noMetadata
-	--singleStage
-	--multiStage
-	--maxStages
-	--showStages
-	--showTempFile
-	--noTempFile
-	2.0.7
-I/ReSampler: 2.0.7 64-bit version
-	Input file: /sdcard/ReSampler/00001313.wav
-	Output file: /sdcard/ReSampler/00001313_48000.wav
-	Changing output bit format to 16
-I/ReSampler: input bit format: 16
-	source file channels: 2
-	input sample rate: 44100
-	output sample rate: 48000
-I/ReSampler: Scanning input file for peaks ...Done
-	Peak input sample: 0.999969 (-0.000265 dBFS) at 0:0:1.259297
-	LPF transition frequency: 20045.45 Hz (90.91 %)
-	Conversion ratio: 1.088435 (160:147)
-I/ReSampler: loop start: 0
-	loop max: 2
-I/ReSampler: Stage: 1
-	inputRate: 44100
-	outputRate: 63000
-	ft: 20045.454545
-	stopFreq: 22050.000000
-	transition width: 3.181818 %
-	guarantee: 22050.000000
-	Generated Filter Size: 3072
-	Output Buffer Size: 46812
-I/ReSampler: loop end: 0
-	loop max: 2
-	loop start: 1
-	loop max: 2
-I/ReSampler: Stage: 2
-	inputRate: 63000
-	outputRate: 48000
-	ft: 20045.454545
-	stopFreq: 25950.000000
-	transition width: 9.090909 %
-	guarantee: 25950.000000
-	Generated Filter Size: 2560
-	Output Buffer Size: 35666
-	loop end: 1
-	loop max: 2
-	Command lines to do this conversion in discreet steps:
-	 -i /sdcard/ReSampler/00001313.wav -o /sdcard/ReSampler/00001313_48000-stage1.wav -r 63000 --lpf-cutoff 96.818182 --lpf-transition 3.181818 --maxStages 1
-	 -i /sdcard/ReSampler/00001313_48000-stage1.wav -o /sdcard/ReSampler/00001313_48000.wav -r 48000 --lpf-cutoff 90.909091 --lpf-transition 9.090909 --maxStages 1
-	loop start: 0
-	loop max: 2
-I/ReSampler: Stage: 1
-	inputRate: 44100
-	outputRate: 63000
-	ft: 20045.454545
-	stopFreq: 22050.000000
-	transition width: 3.181818 %
-	guarantee: 22050.000000
-	Generated Filter Size: 18446744073709548544
-	Output Buffer Size: 46812
-I/ReSampler: loop end: 0
-	loop max: 2
-
-		 */
 		converters.emplace_back(ci);
 	}
 
