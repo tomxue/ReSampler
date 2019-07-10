@@ -17,6 +17,8 @@
 #include <vector>
 #include <iomanip>
 #include <regex>
+#include <type_traits>
+#include <memory>
 
 #ifdef __APPLE__
 #include <unistd.h>
@@ -519,8 +521,27 @@ bool convert(ConversionInfo& ci)
 	// filename for temp file;
 	std::string tmpFilename;
 
-	// Open input file:
-	FileReader infile(ci.inputFilename);
+	// Prepare input file opening parameters
+	int infileMode;
+	int infileFormat = 0; // leave these zero for normal operation. (Only set for RAW input)
+	int infileChannels = 0;
+	int infileRate = 0;
+	if(ci.dsfInput) {
+		infileMode = dsf_read;
+	} else if(ci.dffInput) {
+		infileMode = dff_read;
+	} else {
+		infileMode = SFM_READ;
+		if(ci.bRawInput) {
+			infileFormat = SF_FORMAT_RAW;
+			infileChannels = ci.rawInputChannels;
+			infileRate = ci.rawInputChannels;
+		}
+	}
+
+	// Open input file
+	FileReader infile(ci.inputFilename, infileMode, infileFormat, infileChannels, infileRate);
+
 	if (int e = infile.error()) {
 		std::cout << "Error: Couldn't Open Input File (" << sf_error_number(e) << ")" << std::endl; // to-do: make this more specific (?)
 #ifdef COMPILING_ON_ANDROID

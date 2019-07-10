@@ -84,7 +84,8 @@ class DsfFile
 {
 public:
 	// Construction / destruction
-	DsfFile(const std::string& path, OpenMode mode = dsf_read) : path(path), mode(mode)
+	template<typename... OtherArgs>
+	DsfFile(const std::string& path, int mode = dsf_read, OtherArgs... ignored) : path(path), mode(static_cast<OpenMode>(mode))
 	{
 		assertSizes();
 		file.exceptions(std::ifstream::failbit | std::ifstream::badbit);

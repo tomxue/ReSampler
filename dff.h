@@ -131,7 +131,8 @@ class DffFile
 {
 public:
 	// Construction / destruction
-    explicit DffFile(const std::string& path, dffOpenMode mode = dff_read) : path(path), mode(mode)
+	template <typename... OtherArgs>
+    explicit DffFile(const std::string& path, int mode = dff_read, OtherArgs... ignored) : path(path), mode(static_cast<dffOpenMode>(mode))
 	{
 		file.exceptions(std::ifstream::failbit | std::ifstream::badbit);
 
