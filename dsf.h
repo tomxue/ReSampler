@@ -65,7 +65,7 @@ struct DsfDataChunk {
 };
 #pragma pack(pop, r1)
 
-enum OpenMode {
+enum dsfOpenMode {
 	dsf_read,
 	dsf_write
 };
@@ -85,7 +85,7 @@ class DsfFile
 public:
 	// Construction / destruction
 	template<typename... OtherArgs>
-	DsfFile(const std::string& path, int mode = dsf_read, OtherArgs... ignored) : path(path), mode(static_cast<OpenMode>(mode))
+	DsfFile(const std::string& path, int mode = dsf_read, OtherArgs... ignored) : path(path), mode(static_cast<dsfOpenMode>(mode))
 	{
 		assertSizes();
 		file.exceptions(std::ifstream::failbit | std::ifstream::badbit);
@@ -243,7 +243,7 @@ private:
 	DsfDataChunk dsfDataChunk;
 	DsfChannelType dsfChannelType;
 	std::string path;
-	OpenMode mode;
+	dsfOpenMode mode;
 	std::fstream file;
 	bool err;
 	uint32_t blockSize;
