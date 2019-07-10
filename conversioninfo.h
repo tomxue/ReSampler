@@ -366,7 +366,9 @@ inline bool ConversionInfo::fromCmdLineArgs(int argc, char* argv[]) {
 				rawInputBitFormat = rawInputParams.at(1);
 				if (rawInputParams.size() >= 3) {
 					rawInputChannels = std::stoi(rawInputParams.at(2));
-				}
+                } else {
+                    rawInputChannels = 1; // default to mono if unspecified
+                }
 			}
 		}
 	}
