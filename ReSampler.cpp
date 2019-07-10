@@ -17,8 +17,6 @@
 #include <vector>
 #include <iomanip>
 #include <regex>
-#include <type_traits>
-#include <memory>
 
 #ifdef __APPLE__
 #include <unistd.h>
@@ -332,8 +330,9 @@ bool determineBestBitFormat(std::string& bitFormat, const ConversionInfo& ci)
 {
 	// get infile's extension from filename:
 	std::string inFileExt;
-    if (ci.inputFilename.find_last_of('.') != std::string::npos)
+    if (ci.inputFilename.find_last_of('.') != std::string::npos) {
         inFileExt = ci.inputFilename.substr(ci.inputFilename.find_last_of('.') + 1);
+    }
 
 	bool dsfInput = false;
 	bool dffInput = false;
