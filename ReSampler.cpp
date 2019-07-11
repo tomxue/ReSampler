@@ -574,10 +574,6 @@ bool convert(ConversionInfo& ci)
 	sf_count_t inputFrames = infile.frames();
 	sf_count_t inputSampleCount = inputFrames * nChannels;
 	double inputDuration = 1000.0 * inputFrames / ci.inputSampleRate; // ms
-    std::cout << "nChannels " << nChannels << "\n";
-    std::cout << "ci.inputSampleRate " << ci.inputSampleRate << "\n";
-    std::cout << "inputFrames " << inputFrames << "\n";
-    std::cout << "inputSampleCout " << inputSampleCount << "\n";
 
 	// determine conversion ratio:
 	Fraction fraction = getFractionFromSamplerates(ci.inputSampleRate, ci.outputSampleRate);
