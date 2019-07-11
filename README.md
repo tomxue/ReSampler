@@ -167,7 +167,7 @@ The temp file is used to facilitate fast gain adjustment when clipping is detect
 the entire conversion will need to be performed again if clipping is detected. 
 *Note: versions of Resampler prior to 2.0.3 did not use a temporary file*)
 
-**--raw-input &lt;samplerate&gt; &lt;bit-format&gt; [number of channels]**
+**--raw-input &lt;samplerate&gt; &lt;bit-format&gt; [number of channels]** : read raw input data (ie with no header). Since there is no header, you must specify the sample rate, bit format, and number of channels of the input file using the syntax above. If the number of channels is omitted, single-channel (mono) input is assumed. Accepted bit formats for raw input are: 8, s8, u8, 16, 24, 32, 32f, 64f, alaw, ulaw, gsm610, dwvw12, dwvw16, dwvw24, vox-adpcm
 
 #### Example
 
