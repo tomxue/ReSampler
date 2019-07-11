@@ -127,7 +127,6 @@ public:
 	}
 
 	// API:
-
 	bool error() const {
 		return err;
 	}

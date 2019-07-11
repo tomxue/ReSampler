@@ -195,10 +195,9 @@ int main(int argc, char * argv[])
 			}
 		}
 
-		if (outFileExt != inFileExt)
-		{ // file extensions differ, determine new output format:
+        if (outFileExt != inFileExt) { // file extensions differ, determine new output format:
 
-            std::string outBitFormat;
+            std::string outBitFormat{ci.outBitFormat};
 			if (ci.outBitFormat.empty()) { // user changed file extension only. Attempt to choose appropriate output sub format:
 				std::cout << "Output Bit Format not specified" << std::endl;
                 determineBestBitFormat(outBitFormat, ci);
@@ -452,10 +451,11 @@ int determineOutputFormat(const std::string& outFileExt, const std::string& bitF
 	if (bFileExtFound) {
 		// Check if subformat is recognized:
 		auto sf = subFormats.find(bitFormat);
-		if (sf != subFormats.end())
+        if (sf != subFormats.end()) {
 			format = info.format | sf->second;
-		else
-			std::cout << "Warning: bit format " << bitFormat << " not recognised !" << std::endl;
+        } else {
+            std::cout << "Warning: bit format " << bitFormat << " not recognised !" << std::endl;
+        }
 	}
 
 	// Special cases:
