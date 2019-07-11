@@ -546,9 +546,9 @@ bool convert(ConversionInfo& ci)
 		if(ci.bRawInput) {
 			auto it = subFormats.find(ci.rawInputBitFormat);
 			int infileSubFormat = (it != subFormats.end()) ? it->second : SF_FORMAT_PCM_16;
-			infileFormat = SF_FORMAT_RAW | infileSubFormat;
+            infileFormat = SF_FORMAT_RAW | infileSubFormat;
 			infileChannels = ci.rawInputChannels;
-			infileRate = ci.rawInputChannels;
+            infileRate = ci.rawInputSampleRate;
 		}
 	}
 
@@ -570,10 +570,14 @@ bool convert(ConversionInfo& ci)
 
 	// read input file properties:
 	int nChannels = static_cast<int>(infile.channels());
-	ci.inputSampleRate = infile.samplerate();
+    ci.inputSampleRate = infile.samplerate();
 	sf_count_t inputFrames = infile.frames();
 	sf_count_t inputSampleCount = inputFrames * nChannels;
 	double inputDuration = 1000.0 * inputFrames / ci.inputSampleRate; // ms
+    std::cout << "nChannels " << nChannels << "\n";
+    std::cout << "ci.inputSampleRate " << ci.inputSampleRate << "\n";
+    std::cout << "inputFrames " << inputFrames << "\n";
+    std::cout << "inputSampleCout " << inputSampleCount << "\n";
 
 	// determine conversion ratio:
 	Fraction fraction = getFractionFromSamplerates(ci.inputSampleRate, ci.outputSampleRate);
