@@ -556,7 +556,7 @@ bool convert(ConversionInfo& ci)
 	FileReader infile(ci.inputFilename, infileMode, infileFormat, infileChannels, infileRate);
 
 	if (int e = infile.error()) {
-		std::cout << "Error: Couldn't Open Input File (" << sf_error_number(e) << ")" << std::endl; // to-do: make this more specific (?)
+		std::cout << "Error: Couldn't Open Input File (" << sf_error_number(e) << ")" << std::endl;
 #ifdef COMPILING_ON_ANDROID
 		delete std::cout.rdbuf(0);
 		delete std::cerr.rdbuf(0);
