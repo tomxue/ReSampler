@@ -18,7 +18,7 @@
 
 struct ConversionInfo;
 
-const std::string strVersion("2.0.7");
+const std::string strVersion("2.0.8");
 const std::string strUsage("usage: ReSampler -i <inputfile> [-o <outputfile>] -r <samplerate> [-b <bitformat>] [-n [<normalization factor>]]\n");
 const std::string strExtraOptions(
 	"--help\n"
@@ -46,6 +46,7 @@ const std::string strExtraOptions(
     "--multiStage\n"
 	"--maxStages\n"
 	"--showStages\n"
+    "--rawInput <samplerate> <bitformat> [numChannels]\n"
 
 #if defined (_WIN32) || defined (_WIN64)
 	"--tempDir <path>\n"
