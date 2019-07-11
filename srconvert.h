@@ -381,7 +381,7 @@ private:
 
 			// set input rate of next stage
 			inputRate = stageCi.outputSampleRate;
-           
+		   
 		} // ends loop over i
 
 		if (ci.bShowStages) {

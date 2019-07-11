@@ -80,31 +80,31 @@ std::vector<int> factorize(int n) {
 
 std::set<std::vector<int>> getnFactors(const std::vector<int> &primes, int maxFactors) {
 
-    std::set<std::vector<int>> solutions; // the retval
-    std::vector<int> currentFactors(static_cast<size_t>(maxFactors), 1);
+	std::set<std::vector<int>> solutions; // the retval
+	std::vector<int> currentFactors(static_cast<size_t>(maxFactors), 1);
 
-    std::function<void(std::vector<int>, int)> recursiveFunc =
-    [&solutions, &currentFactors, &recursiveFunc](std::vector<int> primeFactors, int numFactors) {
-        if(numFactors == 1) { // leaf node
-            currentFactors[0] = std::accumulate(primeFactors.begin(), primeFactors.end(), 1, std::multiplies<int>());
-            std::vector<int> newFactors = currentFactors;
-            std::sort(newFactors.begin(), newFactors.end() , std::less<int>());
-            solutions.insert(newFactors);
-            return;
-        }
+	std::function<void(std::vector<int>, int)> recursiveFunc =
+	[&solutions, &currentFactors, &recursiveFunc](std::vector<int> primeFactors, int numFactors) {
+		if(numFactors == 1) { // leaf node
+			currentFactors[0] = std::accumulate(primeFactors.begin(), primeFactors.end(), 1, std::multiplies<int>());
+			std::vector<int> newFactors = currentFactors;
+			std::sort(newFactors.begin(), newFactors.end() , std::less<int>());
+			solutions.insert(newFactors);
+			return;
+		}
 
-        int maxFirstItems = static_cast<int>(primeFactors.size() - (numFactors - 1));
-        for(int j = 1; j <= maxFirstItems; j++) {
-            currentFactors[numFactors-1] = std::accumulate(primeFactors.begin(), primeFactors.begin() + j, 1, std::multiplies<int>());
-            std::vector<int> remainingItems(primeFactors.begin() + j, primeFactors.end());
-            recursiveFunc(remainingItems, numFactors - 1);
-        }
-        return;
-    }; // ends recursiveFunc
+		int maxFirstItems = static_cast<int>(primeFactors.size() - (numFactors - 1));
+		for(int j = 1; j <= maxFirstItems; j++) {
+			currentFactors[numFactors-1] = std::accumulate(primeFactors.begin(), primeFactors.begin() + j, 1, std::multiplies<int>());
+			std::vector<int> remainingItems(primeFactors.begin() + j, primeFactors.end());
+			recursiveFunc(remainingItems, numFactors - 1);
+		}
+		return;
+	}; // ends recursiveFunc
 
-    recursiveFunc(std::move(primes), maxFactors);
+	recursiveFunc(std::move(primes), maxFactors);
 
-    return solutions;
+	return solutions;
 }
 
 // getnFactors() - given an integer, x,

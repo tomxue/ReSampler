@@ -66,8 +66,8 @@ struct DsfDataChunk {
 #pragma pack(pop, r1)
 
 enum DsfOpenMode {
-    Dsf_read,
-    Dsf_write
+	Dsf_read,
+	Dsf_write
 };
 
 #define DSF_ID_DSD 0x20445344
@@ -85,13 +85,13 @@ class DsfFile
 public:
 	// Construction / destruction
 	template<typename... OtherArgs>
-    DsfFile(const std::string& path, int mode = Dsf_read, OtherArgs... ignored) : path(path), mode(static_cast<DsfOpenMode>(mode))
+	DsfFile(const std::string& path, int mode = Dsf_read, OtherArgs... ignored) : path(path), mode(static_cast<DsfOpenMode>(mode))
 	{
 		assertSizes();
 		file.exceptions(std::ifstream::failbit | std::ifstream::badbit);
 
 		switch (mode) {
-        case Dsf_read:
+		case Dsf_read:
 			try {
 				file.open(path, std::ios::in | std::ios::binary);
 				err = false;
@@ -113,10 +113,10 @@ public:
 			currentChannel = 0;
 			break;
 
-        case Dsf_write:
+		case Dsf_write:
 			break;
 		}
-    }
+	}
 
 	~DsfFile() {
 		if(file.is_open())
@@ -133,19 +133,19 @@ public:
 
 	unsigned int channels() const {
 		return numChannels;
-    }
+	}
 
 	unsigned int samplerate() const {
 		return _sampleRate;
-    }
+	}
 
 	uint64_t frames() const {
 		return numFrames;
-    }
+	}
 
 	uint64_t samples() const {
 		return numSamples;
-    }
+	}
 
 	int format() const {
 		return DSF_FORMAT;
@@ -188,7 +188,7 @@ public:
 				bufferIndex = 0;
 			}
 
-            buffer[i] = static_cast<FloatType>(samplTbl[channelBuffer[currentChannel][bufferIndex]][currentBit]);
+			buffer[i] = static_cast<FloatType>(samplTbl[channelBuffer[currentChannel][bufferIndex]][currentBit]);
 		
 			++samplesRead;
 
@@ -203,7 +203,7 @@ public:
 			}
 		}
 		return samplesRead;
-    }
+	}
 
 	// testRead() : reads the entire file 
 	// and confirms number of samples read equals number of samples expected:
@@ -242,7 +242,7 @@ private:
 	DsfDataChunk dsfDataChunk;
 	DsfChannelType dsfChannelType;
 	std::string path;
-    DsfOpenMode mode;
+	DsfOpenMode mode;
 	std::fstream file;
 	bool err;
 	uint32_t blockSize;
@@ -350,7 +350,7 @@ private:
 
 	// readBlocks() : reads blockSize bytes into each channelBuffer for numChannels channels
 	uint32_t readBlocks() {
-        if (file.tellg() >= static_cast<std::istream::pos_type>(endOfData))
+		if (file.tellg() >= static_cast<std::istream::pos_type>(endOfData))
 			return 0;
 
 		for (size_t ch = 0; ch < numChannels; ++ch) {

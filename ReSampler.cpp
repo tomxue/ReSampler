@@ -181,11 +181,11 @@ int main(int argc, char * argv[])
 				std::cout << "Changing output bit format to " << ci.outBitFormat << std::endl;
 			}
 			else { // user-supplied bit format not valid; try choosing appropriate format
-                std::string outBitFormat;
-                determineBestBitFormat(outBitFormat, ci);
-                ci.outputFormat = determineOutputFormat(outFileExt, outBitFormat);
+				std::string outBitFormat;
+				determineBestBitFormat(outBitFormat, ci);
+				ci.outputFormat = determineOutputFormat(outFileExt, outBitFormat);
 				if (ci.outputFormat) {
-                    ci.outBitFormat = outBitFormat;
+					ci.outBitFormat = outBitFormat;
 					std::cout << "Changing output bit format to " << ci.outBitFormat << std::endl;
 				}
 				else {
@@ -195,18 +195,18 @@ int main(int argc, char * argv[])
 			}
 		}
 
-        if (outFileExt != inFileExt) { // file extensions differ, determine new output format:
+		if (outFileExt != inFileExt) { // file extensions differ, determine new output format:
 
-            std::string outBitFormat{ci.outBitFormat};
+			std::string outBitFormat{ci.outBitFormat};
 			if (ci.outBitFormat.empty()) { // user changed file extension only. Attempt to choose appropriate output sub format:
 				std::cout << "Output Bit Format not specified" << std::endl;
-                determineBestBitFormat(outBitFormat, ci);
+				determineBestBitFormat(outBitFormat, ci);
 			}
-            ci.outputFormat = determineOutputFormat(outFileExt, outBitFormat);
-            if (ci.outputFormat) {
-                ci.outBitFormat = outBitFormat;
+			ci.outputFormat = determineOutputFormat(outFileExt, outBitFormat);
+			if (ci.outputFormat) {
+				ci.outBitFormat = outBitFormat;
 				std::cout << "Changing output file format to " << outFileExt << std::endl;
-            } else { // cannot determine subformat of output file
+			} else { // cannot determine subformat of output file
 				std::cout << "Warning: NOT Changing output file format ! (extension different, but format will remain the same)" << std::endl;
 			}
 		}
@@ -329,9 +329,9 @@ bool determineBestBitFormat(std::string& bitFormat, const ConversionInfo& ci)
 {
 	// get infile's extension from filename:
 	std::string inFileExt;
-    if (ci.inputFilename.find_last_of('.') != std::string::npos) {
-        inFileExt = ci.inputFilename.substr(ci.inputFilename.find_last_of('.') + 1);
-    }
+	if (ci.inputFilename.find_last_of('.') != std::string::npos) {
+		inFileExt = ci.inputFilename.substr(ci.inputFilename.find_last_of('.') + 1);
+	}
 
 	bool dsfInput = false;
 	bool dffInput = false;
@@ -347,14 +347,14 @@ bool determineBestBitFormat(std::string& bitFormat, const ConversionInfo& ci)
 
 	else { // libsndfile-openable file
 
-        if (ci.bRawInput)
+		if (ci.bRawInput)
 		{
 			inFileFormat = SF_FORMAT_RAW | subFormats.at(ci.rawInputBitFormat);
 		}
 		else
 		{
 			// Inspect input file for format:
-            SndfileHandle infile(ci.inputFilename, SFM_READ);
+			SndfileHandle infile(ci.inputFilename, SFM_READ);
 			inFileFormat = infile.format();
 
 			if (int e = infile.error())
@@ -367,7 +367,7 @@ bool determineBestBitFormat(std::string& bitFormat, const ConversionInfo& ci)
 		// get BitFormat of inFile as a string:
 		for (auto& subformat : subFormats) {
 			if (subformat.second == (inFileFormat & SF_FORMAT_SUBMASK)) {
-                bitFormat = subformat.first;
+				bitFormat = subformat.first;
 				break;
 			}
 		}
@@ -382,13 +382,13 @@ bool determineBestBitFormat(std::string& bitFormat, const ConversionInfo& ci)
 
 	// get outfile's extension:
 	std::string outFileExt;
-    if (ci.outputFilename.find_last_of('.') != std::string::npos)
-        outFileExt = ci.outputFilename.substr(ci.outputFilename.find_last_of('.') + 1);
+	if (ci.outputFilename.find_last_of('.') != std::string::npos)
+		outFileExt = ci.outputFilename.substr(ci.outputFilename.find_last_of('.') + 1);
 
 	// when the input file is dsf/dff, use default output subformat:
 	if (dsfInput || dffInput) { // choose default output subformat for chosen output file format
-        bitFormat = defaultSubFormats.find(outFileExt)->second;
-        std::cout << "defaulting to " << bitFormat << std::endl;
+		bitFormat = defaultSubFormats.find(outFileExt)->second;
+		std::cout << "defaulting to " << bitFormat << std::endl;
 		return true;
 	}
 
@@ -417,10 +417,10 @@ bool determineBestBitFormat(std::string& bitFormat, const ConversionInfo& ci)
 				break;
 			}
 			else { // infile's subformat is not valid for outfile's format; use outfile's default subformat
-                std::cout << "Output file format " << outFileExt << " and subformat " << bitFormat << " combination not valid ... ";
-                bitFormat.clear();
-                bitFormat = defaultSubFormats.find(outFileExt)->second;
-                std::cout << "defaulting to " << bitFormat << std::endl;
+				std::cout << "Output file format " << outFileExt << " and subformat " << bitFormat << " combination not valid ... ";
+				bitFormat.clear();
+				bitFormat = defaultSubFormats.find(outFileExt)->second;
+				std::cout << "defaulting to " << bitFormat << std::endl;
 				break;
 			}
 		}
@@ -451,11 +451,11 @@ int determineOutputFormat(const std::string& outFileExt, const std::string& bitF
 	if (bFileExtFound) {
 		// Check if subformat is recognized:
 		auto sf = subFormats.find(bitFormat);
-        if (sf != subFormats.end()) {
+		if (sf != subFormats.end()) {
 			format = info.format | sf->second;
-        } else {
-            std::cout << "Warning: bit format " << bitFormat << " not recognised !" << std::endl;
-        }
+		} else {
+			std::cout << "Warning: bit format " << bitFormat << " not recognised !" << std::endl;
+		}
 	}
 
 	// Special cases:
@@ -538,17 +538,17 @@ bool convert(ConversionInfo& ci)
 	int infileChannels = 0;
 	int infileRate = 0;
 	if(ci.dsfInput) {
-        infileMode = Dsf_read;
+		infileMode = Dsf_read;
 	} else if(ci.dffInput) {
-        infileMode = Dff_read;
+		infileMode = Dff_read;
 	} else {
 		infileMode = SFM_READ;
 		if(ci.bRawInput) {
 			auto it = subFormats.find(ci.rawInputBitFormat);
 			int infileSubFormat = (it != subFormats.end()) ? it->second : SF_FORMAT_PCM_16;
-            infileFormat = SF_FORMAT_RAW | infileSubFormat;
+			infileFormat = SF_FORMAT_RAW | infileSubFormat;
 			infileChannels = ci.rawInputChannels;
-            infileRate = ci.rawInputSampleRate;
+			infileRate = ci.rawInputSampleRate;
 		}
 	}
 
@@ -570,7 +570,7 @@ bool convert(ConversionInfo& ci)
 
 	// read input file properties:
 	int nChannels = static_cast<int>(infile.channels());
-    ci.inputSampleRate = infile.samplerate();
+	ci.inputSampleRate = infile.samplerate();
 	sf_count_t inputFrames = infile.frames();
 	sf_count_t inputSampleCount = inputFrames * nChannels;
 	double inputDuration = 1000.0 * inputFrames / ci.inputSampleRate; // ms
