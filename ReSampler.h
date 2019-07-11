@@ -43,10 +43,10 @@ const std::string strExtraOptions(
 	"--noPeakChunk\n"
 	"--noMetadata\n"
 	"--singleStage\n"
-    "--multiStage\n"
+	"--multiStage\n"
 	"--maxStages\n"
 	"--showStages\n"
-    "--rawInput <samplerate> <bitformat> [numChannels]\n"
+	"--rawInput <samplerate> <bitformat> [numChannels]\n"
 
 #if defined (_WIN32) || defined (_WIN64)
 	"--tempDir <path>\n"

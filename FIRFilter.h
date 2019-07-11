@@ -176,7 +176,7 @@ public:
 		lastPut = 0;
 
 		// clear signal buffer
-        for (int i = 0; i < paddedLength; ++i) {
+		for (int i = 0; i < paddedLength; ++i) {
 			signal[i] = 0.0;
 			signal[i + length] = 0.0;
 		}
@@ -252,7 +252,7 @@ public:
 			k = _mm256_load_ps(kernel + i);
 
 #ifdef USE_FMA
-                        accumulator = _mm256_fmadd_ps(s, k, accumulator);
+						accumulator = _mm256_fmadd_ps(s, k, accumulator);
 #else
 			product = _mm256_mul_ps(s, k);
 			accumulator = _mm256_add_ps(product, accumulator);
@@ -390,7 +390,7 @@ private:
 	void assertAlignment()
 	{
 #ifdef COMPILING_ON_ANDROID
-	    // TODO: suport 32-byte alignment for android?
+		// TODO: suport 32-byte alignment for android?
 #warning  32-byte alignment is not yet supported when compiling for android
 #else
 		const std::uintptr_t alignment = ALIGNMENT_SIZE;
@@ -449,7 +449,7 @@ double FIRFilter<double>::get() {
 		k = _mm256_load_pd(kernel + i);
 
 #ifdef USE_FMA
-                accumulator = _mm256_fmadd_pd(s, k, accumulator);
+				accumulator = _mm256_fmadd_pd(s, k, accumulator);
 #else
 		product = _mm256_mul_pd(s, k);
 		accumulator = _mm256_add_pd(product, accumulator);
