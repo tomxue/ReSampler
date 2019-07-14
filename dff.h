@@ -121,8 +121,8 @@ struct FormDSDChunk {
 #define CKID_DITI 0x44495449
 
 enum DffOpenMode {
-    Dff_read,
-    Dff_write
+	Dff_read,
+	Dff_write
 };
 
 // DffFile interface:
@@ -132,12 +132,12 @@ class DffFile
 public:
 	// Construction / destruction
 	template <typename... OtherArgs>
-    explicit DffFile(const std::string& path, int mode = Dff_read, OtherArgs... ignored) : path(path), mode(static_cast<DffOpenMode>(mode))
+	explicit DffFile(const std::string& path, int mode = Dff_read, OtherArgs... ignored) : path(path), mode(static_cast<DffOpenMode>(mode))
 	{
 		file.exceptions(std::ifstream::failbit | std::ifstream::badbit);
 
 		switch (mode) {
-        case Dff_read:
+		case Dff_read:
 			try {
 				file.open(path, std::ios::in | std::ios::binary);
 				err = false;
@@ -164,10 +164,10 @@ public:
 			currentChannel = 0;
 			break;
 			
-        case Dff_write:
+		case Dff_write:
 			break;
 		}
-    }
+	}
 
 	~DffFile() {
 		if (file.is_open())
@@ -184,19 +184,19 @@ public:
 
 	unsigned int channels() const {
 		return numChannels;
-    }
+	}
 
 	unsigned int samplerate() const {
 		return _sampleRate;
-    }
+	}
 
 	uint64_t frames() const {
 		return numFrames;
-    }
+	}
 
 	uint64_t samples() const {
 		return numSamples;
-    }
+	}
 
 	int format() const {
 		return DFF_FORMAT;
@@ -242,7 +242,7 @@ public:
 			}
 		}
 		return samplesRead;
-    }
+	}
 
 	// testRead() : reads the entire file 
 	// and confirms number of samples read equals number of samples expected:
@@ -277,7 +277,7 @@ public:
 private:
 	FormDSDChunk formDSDChunk{};
 	std::string path;
-    DffOpenMode mode;
+	DffOpenMode mode;
 	std::fstream file;
 	bool err;
 	const uint32_t blockSize = 4096;

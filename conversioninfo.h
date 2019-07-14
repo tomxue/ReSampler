@@ -57,7 +57,7 @@ bool getCmdlineParam(char** begin, char** end, const std::string& option, T& par
 			auto next = std::next(it);
 			if (next != args.end()) {
 				try {
-                    parameter = static_cast<T>(std::stof(*next));
+					parameter = static_cast<T>(std::stof(*next));
 				}
 				catch (std::invalid_argument& e) {
 					// leave parameter unchanged
@@ -127,8 +127,8 @@ struct ConversionInfo
 {
 	std::string inputFilename;
 	std::string outputFilename;
-    int inputSampleRate;
-    int outputSampleRate;
+	int inputSampleRate;
+	int outputSampleRate;
 	double gain;
 	double limit;
 	bool bUseDoublePrecision;
@@ -366,9 +366,9 @@ inline bool ConversionInfo::fromCmdLineArgs(int argc, char* argv[]) {
 				rawInputBitFormat = rawInputParams.at(1);
 				if (rawInputParams.size() >= 3) {
 					rawInputChannels = std::stoi(rawInputParams.at(2));
-                } else {
-                    rawInputChannels = 1; // default to mono if unspecified
-                }
+				} else {
+					rawInputChannels = 1; // default to mono if unspecified
+				}
 			}
 		}
 	}
