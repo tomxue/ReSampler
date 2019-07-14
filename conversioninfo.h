@@ -230,7 +230,6 @@ inline std::string ConversionInfo::toCmdLineArgs() {
 	return result;
 }
 
-
 int getDefaultNoiseShape(int sampleRate) {
 	if (sampleRate <= 44100) {
 		return DitherProfileID::standard;
