@@ -178,7 +178,6 @@ void listSubFormats(const std::string & f);
 template<typename FileReader, typename FloatType> bool convert(ConversionInfo & ci);
 template<typename FloatType>
 SndfileHandle* getTempFile(int inputFileFormat, int nChannels, const ConversionInfo& ci, std::string& tmpFilename);
-int getDefaultNoiseShape(int sampleRate);
 void showDitherProfiles();
 int getSfBytesPerSample(int format);
 bool checkWarnOutputSize(sf_count_t inputSamples, int bytesPerSample, int numerator, int denominator);

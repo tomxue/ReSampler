@@ -230,6 +230,19 @@ inline std::string ConversionInfo::toCmdLineArgs() {
 	return result;
 }
 
+
+int getDefaultNoiseShape(int sampleRate) {
+	if (sampleRate <= 44100) {
+		return DitherProfileID::standard;
+	}
+	else if (sampleRate <= 48000) {
+		return DitherProfileID::standard;
+	}
+	else {
+		return DitherProfileID::flat_f;
+	}
+};
+
 // fromCmdLineArgs()
 // Return value indicates whether caller should continue execution (ie true: continue, false: terminate)
 // Some commandline options (eg --version) should result in termination, but not error.

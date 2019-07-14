@@ -106,6 +106,7 @@ int main(int argc, char * argv[])
 #endif
 	// test for global options
 	if (parseGlobalOptions(argc, argv)) {
+
 #ifdef COMPILING_ON_ANDROID
 		delete std::cout.rdbuf(0);
 		delete std::cerr.rdbuf(0);
@@ -132,6 +133,7 @@ int main(int argc, char * argv[])
 	// get conversion parameters
 	ci.fromCmdLineArgs(argc, argv);
 	if (ci.bBadParams) {
+
 #ifdef COMPILING_ON_ANDROID
 		delete std::cout.rdbuf(0);
 		delete std::cerr.rdbuf(0);
@@ -141,6 +143,7 @@ int main(int argc, char * argv[])
 
 	// query build version AND cpu
 	if (!showBuildVersion()) {
+
 #ifdef COMPILING_ON_ANDROID
 		delete std::cout.rdbuf(0);
 		delete std::cerr.rdbuf(0);
@@ -257,6 +260,7 @@ int main(int argc, char * argv[])
 
 	catch (const std::exception& e) {
 		std::cerr << "fatal error: " << e.what();
+
 #ifdef COMPILING_ON_ANDROID
 		delete std::cout.rdbuf(0);
 		delete std::cerr.rdbuf(0);
@@ -428,7 +432,7 @@ bool determineBestBitFormat(std::string& bitFormat, const ConversionInfo& ci)
 	return true;
 }
 
-// determineOutputFormat() : returns an integer representing the output format, which libsndfile understands:
+// determineOutputFormat() : returns an integer representing a libsndfile output format:
 int determineOutputFormat(const std::string& outFileExt, const std::string& bitFormat)
 {
 	SF_FORMAT_INFO info;
@@ -511,7 +515,8 @@ void listSubFormats(const std::string& f)
 // convert()
 
 /* Note: type 'FileReader' MUST implement the following methods:
-constuctor(const std::string& fileName)
+constructor(const std::string& fileName)
+constructor(const std::string& fileName, int infileMode, int infileFormat, int infileChannels, int infileRate)
 bool error() // or int error()
 unsigned int channels()
 unsigned int samplerate()
@@ -557,6 +562,7 @@ bool convert(ConversionInfo& ci)
 
 	if (int e = infile.error()) {
 		std::cout << "Error: Couldn't Open Input File (" << sf_error_number(e) << ")" << std::endl;
+
 #ifdef COMPILING_ON_ANDROID
 		delete std::cout.rdbuf(0);
 		delete std::cerr.rdbuf(0);
@@ -1309,18 +1315,6 @@ bool testSetMetaData(SndfileHandle& outfile) {
 	m.trackNumber.assign("test track number");
 	m.genre.assign("test genre");
 	return setMetaData(m, outfile);
-}
-
-int getDefaultNoiseShape(int sampleRate) {
-	if (sampleRate <= 44100) {
-		return DitherProfileID::standard;
-	}
-	else if (sampleRate <= 48000) {
-		return DitherProfileID::standard;
-	}
-	else {
-		return DitherProfileID::flat_f;
-	}
 }
 
 void showDitherProfiles() {
