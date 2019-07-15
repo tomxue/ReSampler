@@ -70,6 +70,11 @@ private:
 	const int LOG_PRIORITY;
 };
 
+void androidCleanup() {
+	delete std::cout.rdbuf(0);
+	delete std::cerr.rdbuf(0);
+}
+
 #endif
 
 #include "csv.h" // to-do: check macOS
@@ -103,16 +108,23 @@ int main(int argc, char * argv[])
 #ifdef COMPILING_ON_ANDROID
 	std::cout.rdbuf(new androidbuf(ANDROID_LOG_INFO, "ReSampler"));
 	std::cerr.rdbuf(new androidbuf(ANDROID_LOG_ERROR, "ReSampler"));
+	// register proposed android cleanup function:
+	// atexit(androidCleanup);
 #endif
+
+
 	// test for global options
 	if (parseGlobalOptions(argc, argv)) {
 
+// todo: remove these if atexit(androidClenup) works properly:
 #ifdef COMPILING_ON_ANDROID
 		delete std::cout.rdbuf(0);
 		delete std::cerr.rdbuf(0);
 #endif
+// ---
 		return EXIT_SUCCESS;
 	}
+
 
 	// ConversionInfo instance to hold parameters
 	ConversionInfo ci;
