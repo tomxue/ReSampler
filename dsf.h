@@ -84,8 +84,15 @@ class DsfFile
 {
 public:
 	// Construction / destruction
+
+#ifdef __clang__
+	// see www.open-std.org/jtc1/sc22/wg21/docs/cwg_defects.html#777
+	explicit DsfFile(const std::string& path, int mode = Dsf_read, int ignored1 = 0, int ignored2 = 0, int ignored3 = 0) : path(path), mode(static_cast<DsfOpenMode>(mode))
+#else
 	template<typename... OtherArgs>
 	DsfFile(const std::string& path, int mode = Dsf_read, OtherArgs... ignored) : path(path), mode(static_cast<DsfOpenMode>(mode))
+#endif
+
 	{
 		assertSizes();
 		file.exceptions(std::ifstream::failbit | std::ifstream::badbit);

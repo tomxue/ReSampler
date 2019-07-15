@@ -131,8 +131,15 @@ class DffFile
 {
 public:
 	// Construction / destruction
+
+#ifdef __clang__
+	// see www.open-std.org/jtc1/sc22/wg21/docs/cwg_defects.html#777
+	explicit DffFile(const std::string& path, int mode = Dff_read, int ignored1 = 0, int ignored2 = 0, int ignored3 = 0) : path(path), mode(static_cast<DffOpenMode>(mode))
+#else
 	template <typename... OtherArgs>
 	explicit DffFile(const std::string& path, int mode = Dff_read, OtherArgs... ignored) : path(path), mode(static_cast<DffOpenMode>(mode))
+#endif
+
 	{
 		file.exceptions(std::ifstream::failbit | std::ifstream::badbit);
 
