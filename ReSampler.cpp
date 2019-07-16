@@ -566,6 +566,7 @@ bool convert(ConversionInfo& ci)
 			infileFormat = SF_FORMAT_RAW | infileSubFormat;
 			infileChannels = ci.rawInputChannels;
 			infileRate = ci.rawInputSampleRate;
+			std::cout << "raw input" << std::endl;
 		}
 	}
 

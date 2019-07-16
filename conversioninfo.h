@@ -455,7 +455,7 @@ inline bool ConversionInfo::fromCmdLineArgs(int argc, char* argv[]) {
 	}
 
 	if (bBadParams) {
-		std::cout << strUsage << std::endl;
+		std::cout << strUsage << std::endl; // todo: fix: strUsage declared in ReSampler.h
 		return false;
 	}
 	return true;
