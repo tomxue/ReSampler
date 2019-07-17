@@ -150,6 +150,7 @@ int main(int argc, char * argv[])
 		delete std::cout.rdbuf(0);
 		delete std::cerr.rdbuf(0);
 #endif
+		std::cout << strUsage << std::endl;
 		return EXIT_FAILURE;
 	}
 
