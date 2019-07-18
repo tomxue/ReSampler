@@ -41,17 +41,17 @@ and use one of the following command lines to compile:
 
 #### using clang:
 ~~~
-clang++ -pthread -std=c++11 ReSampler.cpp -lfftw3 -lsndfile -o ReSampler-clang -O3 -L/usr/local/lib -I/usr/local/include
+clang++ -pthread -std=c++11 main.cpp ReSampler.cpp conversioninfo.cpp -lfftw3 -lsndfile -o ReSampler-clang -O3 -L/usr/local/lib -I/usr/local/include
 ~~~
 
 AVX Build:
 ~~~
-clang++ -pthread -std=c++11 ReSampler.cpp -lfftw3 -lsndfile -o ReSampler -O3 -DUSE_AVX -mavx -L/usr/local/lib -I/usr/local/include
+clang++ -pthread -std=c++11 main.cpp ReSampler.cpp conversioninfo.cpp -lfftw3 -lsndfile -o ReSampler -O3 -DUSE_AVX -mavx -L/usr/local/lib -I/usr/local/include
 ~~~
 
 AVX + FMA Build:
 ~~~
-clang++ -pthread -std=c++11 ReSampler.cpp -lfftw3 -lsndfile -o ReSampler -O3 -DUSE_AVX -DUSE_FMA -mavx -mfma -L/usr/local/lib -I/usr/local/include
+clang++ -pthread -std=c++11 main.cpp ReSampler.cpp conversioninfo.cpp -lfftw3 -lsndfile -o ReSampler -O3 -DUSE_AVX -DUSE_FMA -mavx -mfma -L/usr/local/lib -I/usr/local/include
 ~~~
 
 # miscellaneous
