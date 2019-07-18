@@ -11,11 +11,8 @@
 
 #include "ReSampler.h"
 #include "csv.h" // to-do: check macOS
-#include "conversioninfo.h"
 #include "osspecific.h"
 #include "ctpl/ctpl_stl.h"
-#include "dsf.h"
-#include "dff.h"
 #include "raiitimer.h"
 #include "fraction.h"
 #include "srconvert.h"
@@ -339,11 +336,6 @@ bool convert(ConversionInfo& ci)
 
 	if (int e = infile.error()) {
 		std::cout << "Error: Couldn't Open Input File (" << sf_error_number(e) << ")" << std::endl;
-
-#ifdef COMPILING_ON_ANDROID
-		delete std::cout.rdbuf(0);
-		delete std::cerr.rdbuf(0);
-#endif
 		return false;
 	}
 
@@ -625,10 +617,6 @@ bool convert(ConversionInfo& ci)
 
 				if (int e = outFile->error()) {
 					std::cout << "Error: Couldn't Open Output File (" << sf_error_number(e) << ")" << std::endl;
-#ifdef COMPILING_ON_ANDROID
-					delete std::cout.rdbuf(0);
-					delete std::cerr.rdbuf(0);
-#endif
 					return false;
 				}
 
@@ -664,10 +652,6 @@ bool convert(ConversionInfo& ci)
 
 			catch (std::exception& e) {
 				std::cout << "Error: Couldn't Open Output File " << e.what() << std::endl;
-#ifdef COMPILING_ON_ANDROID
-				delete std::cout.rdbuf(0);
-				delete std::cerr.rdbuf(0);
-#endif
 				return false;
 			}
 		}
@@ -735,10 +719,6 @@ bool convert(ConversionInfo& ci)
 					Result res;
 					res.outBlockindex = localOutputBlockIndex;
 					res.peak = localPeak;
-#ifdef COMPILING_ON_ANDROID
-					delete std::cout.rdbuf(0);
-					delete std::cerr.rdbuf(0);
-#endif
 					return res;
 				};
 
@@ -901,10 +881,6 @@ bool convert(ConversionInfo& ci)
 	std::remove(tmpFilename.c_str()); // actually remove the temp file from disk
 #endif
 
-#ifdef COMPILING_ON_ANDROID
-	delete std::cout.rdbuf(0);
-	delete std::cerr.rdbuf(0);
-#endif
 	return true;
 } // ends convert()
 
@@ -1175,7 +1151,7 @@ bool getMetaData(MetaData& metadata, const DsfFile& f) {
 	return true;
 }
 
-#ifndef FIR_QUAD_PRECISION
+#ifndef USE_QUADMATH
 
 void generateExpSweep(const std::string& filename, int sampleRate, int format, double duration, int nOctaves, double amplitude_dB) {
 	int pow2P = 1 << nOctaves;
