@@ -22,8 +22,6 @@
 #include <iostream>
 #include <fstream>
 
-
-
 #define DSF_FORMAT 0x00310000 // note: take care to make sure this doesn't clash with future libsndfile formats (unlikely)
 
 #pragma pack(push, r1, 1)
