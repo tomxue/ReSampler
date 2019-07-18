@@ -15,6 +15,7 @@ if(WIN32)
             alignedmalloc.h
             biquad.h
             conversioninfo.h
+            conversioninfo.cpp
             dff.h
             ditherer.h
             dsf.h
@@ -23,6 +24,7 @@ if(WIN32)
             noiseshape.h
             osspecific.h
             raiitimer.h
+            main.cpp
             ReSampler.cpp
             ReSampler.h
             srconvert.h)
@@ -44,6 +46,7 @@ elseif (APPLE)
             alignedmalloc.h
             biquad.h
             conversioninfo.h
+            conversioninfo.cpp
             dff.h
             ditherer.h
             dsf.h
@@ -52,6 +55,7 @@ elseif (APPLE)
             noiseshape.h
             osspecific.h
             raiitimer.h
+            main.cpp
             ReSampler.cpp
             ReSampler.h
             srconvert.h)
@@ -80,6 +84,7 @@ elseif(ANDROID)
             alignedmalloc.h
             biquad.h
             conversioninfo.h
+            conversioninfo.cpp
             dff.h
             ditherer.h
             dsf.h
@@ -88,6 +93,7 @@ elseif(ANDROID)
             noiseshape.h
             osspecific.h
             raiitimer.h
+            main.cpp
             ReSampler.cpp
             ReSampler.h
             srconvert.h)

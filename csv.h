@@ -13,6 +13,7 @@
 #define RESAMPLER_CSV_H
 
 #include <iostream>
+#include <iomanip>
 #include <cassert>
 #include <cstdint>
 #include <string>
