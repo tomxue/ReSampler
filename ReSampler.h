@@ -21,6 +21,9 @@
 #endif
 #endif
 
+#define _USE_MATH_DEFINES
+#include <cmath>
+
 #include "sndfile.h"
 #include "sndfile.hh"
 #include "conversioninfo.h"
@@ -29,6 +32,8 @@
 
 #include <string>
 #include <map>
+
+
 
 struct ConversionInfo;
 

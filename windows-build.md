@@ -17,22 +17,22 @@
 
 standard 64-bit build:
 ~~~
-g++ -pthread -std=c++11 ReSampler.cpp -Ilibsndfile/include -Ifftw64 -Lfftw64 -llibfftw3-3 -Llibsndfile/lib -llibsndfile-1 -o x64/minGW-W64/ReSampler.exe -O3
+g++ -pthread -std=c++11 main.cpp ReSampler.cpp conversioninfo.cpp -Ilibsndfile/include -Ifftw64 -Lfftw64 -llibfftw3-3 -Llibsndfile/lib -llibsndfile-1 -o x64/minGW-W64/ReSampler.exe -O3
 ~~~
 
 AVX build:
 ~~~
-g++ -pthread -std=c++11 ReSampler.cpp -Ilibsndfile/include -Ifftw64 -Lfftw64 -llibfftw3-3 -Llibsndfile/lib -llibsndfile-1 -o x64/minGW-W64-AVX/ReSampler.exe -O3 -DUSE_AVX -mavx
+g++ -pthread -std=c++11 main.cpp ReSampler.cpp conversioninfo.cpp -Ilibsndfile/include -Ifftw64 -Lfftw64 -llibfftw3-3 -Llibsndfile/lib -llibsndfile-1 -o x64/minGW-W64-AVX/ReSampler.exe -O3 -DUSE_AVX -mavx
 ~~~
 
 AVX + FMA build (requires >= Intel Haswell or AMD PileDriver):
 ~~~
-g++ -pthread -std=c++11 ReSampler.cpp -Ilibsndfile/include -Ifftw64 -Lfftw64 -llibfftw3-3 -Llibsndfile/lib -llibsndfile-1 -o x64/minGW-W64-AVX/ReSampler.exe -O3 -DUSE_AVX -DUSE_FMA -mavx -mfma
+g++ -pthread -std=c++11 main.cpp ReSampler.cpp conversioninfo.cpp -Ilibsndfile/include -Ifftw64 -Lfftw64 -llibfftw3-3 -Llibsndfile/lib -llibsndfile-1 -o x64/minGW-W64-AVX/ReSampler.exe -O3 -DUSE_AVX -DUSE_FMA -mavx -mfma
 ~~~
 
 Quad-Precision build (experimental) - GCC / minGW only:
 ~~~
- g++ -pthread -std=gnu++11 ReSampler.cpp -Ilibsndfile/include -Ifftw64 -Lfftw64 -llibfftw3-3 -Llibsndfile/lib -llibsndfile-1 -lquadmath -o x64/minGW-W64/ReSampler-QuadMath.exe -O -DUSE_QUADMATH
+ g++ -pthread -std=gnu++11 main.cpp ReSampler.cpp conversioninfo.cpp -Ilibsndfile/include -Ifftw64 -Lfftw64 -llibfftw3-3 -Llibsndfile/lib -llibsndfile-1 -lquadmath -o x64/minGW-W64/ReSampler-QuadMath.exe -O -DUSE_QUADMATH
 ~~~
 
 *note the use of **-std=gnu++11** to enable the gcc-specific language extensions for quad precision - the 'Q' initializer suffix and __float128 type*

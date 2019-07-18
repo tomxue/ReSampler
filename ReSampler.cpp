@@ -18,8 +18,6 @@
 #include "srconvert.h"
 #include "ditherer.h"
 
-#define _USE_MATH_DEFINES
-#include <cmath>
 #include <cstdio>
 #include <string>
 #include <iostream>
