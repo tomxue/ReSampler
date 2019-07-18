@@ -21,7 +21,11 @@
 #include <cassert>
 #include <vector>
 
-#if !defined(__ANDROID__) && !defined(__arm__) && !defined(__aarch64__)
+#if defined(__ANDROID__) || defined(__arm__) || defined(__aarch64__)
+#ifndef COMPILING_ON_ANDROID
+#define COMPILING_ON_ANDROID
+#endif
+#else
 #include <xmmintrin.h>
 #endif
 
@@ -35,7 +39,6 @@
 #define FILTERSIZE_BASE 103
 
 #ifdef USE_AVX
-
 #define ALIGNMENT_SIZE 32
 #include <immintrin.h>
 
