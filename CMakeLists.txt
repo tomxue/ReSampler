@@ -16,6 +16,7 @@ if(WIN32)
             biquad.h
             conversioninfo.h
             conversioninfo.cpp
+            csv.h
             dff.h
             ditherer.h
             dsf.h
@@ -47,6 +48,7 @@ elseif (APPLE)
             biquad.h
             conversioninfo.h
             conversioninfo.cpp
+            csv.h
             dff.h
             ditherer.h
             dsf.h
@@ -85,6 +87,7 @@ elseif(ANDROID)
             biquad.h
             conversioninfo.h
             conversioninfo.cpp
+            csv.h
             dff.h
             ditherer.h
             dsf.h

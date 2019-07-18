@@ -13,13 +13,16 @@
 // dsf.h
 // simple dsf file reader
 
+#include "osspecific.h"
+
+#include <algorithm>
 #include <cassert>
 #include <cstdint>
 #include <string>
 #include <iostream>
 #include <fstream>
 
-#include "osspecific.h"
+
 
 #define DSF_FORMAT 0x00310000 // note: take care to make sure this doesn't clash with future libsndfile formats (unlikely)
 

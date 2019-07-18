@@ -12,6 +12,9 @@
 #ifndef RESAMPLER_CSV_H
 #define RESAMPLER_CSV_H
 
+#include "osspecific.h"
+
+#include <algorithm>
 #include <iostream>
 #include <iomanip>
 #include <cassert>

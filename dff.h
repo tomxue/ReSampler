@@ -10,13 +10,14 @@
 #ifndef DFF_H_
 #define DFF_H_
 
+#include "osspecific.h"
+
+#include <algorithm>
 #include <iostream>
 #include <cassert>
 #include <cstdint>
 #include <string>
 #include <fstream>
-
-#include "osspecific.h"
 
 #define DFF_MAX_CHANNELS 6 
 #define DFF_FORMAT 0x00300000 // note: take care to make sure this doesn't clash with future libsndfile formats (unlikely)

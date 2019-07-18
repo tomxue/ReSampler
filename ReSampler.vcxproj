@@ -272,6 +272,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="conversioninfo.cpp" />
+    <ClCompile Include="main.cpp" />
     <ClCompile Include="ReSampler.cpp" />
   </ItemGroup>
   <ItemGroup>

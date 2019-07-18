@@ -11,7 +11,6 @@
 
 #include "ReSampler.h"
 #include "csv.h" // to-do: check macOS
-#include "osspecific.h"
 #include "ctpl/ctpl_stl.h"
 #include "raiitimer.h"
 #include "fraction.h"
