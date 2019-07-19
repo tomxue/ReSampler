@@ -115,6 +115,7 @@ else ()
             alignedmalloc.h
             biquad.h
             conversioninfo.h
+            csv.h
             dff.h
             ditherer.h
             dsf.h
