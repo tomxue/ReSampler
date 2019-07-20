@@ -162,6 +162,7 @@ int main(int argc, char * argv[])
 			}
 		}
 	}
+
 	try {
 
 		if (ci.bUseDoublePrecision) {
@@ -171,6 +172,7 @@ int main(int argc, char * argv[])
 #else
 			std::cout << "Using double precision for calculations." << std::endl;
 #endif
+
 			if (ci.dsfInput) {
 				ci.bEnablePeakDetection = false;
 				return convert<DsfFile, double>(ci) ? EXIT_SUCCESS : EXIT_FAILURE;

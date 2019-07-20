@@ -1291,7 +1291,7 @@ void showCompiler() {
 #endif
 }
 
-// generate all required versions of convert<>()
+// explicit instantiations - generate all required flavors of convert()
 template bool convert<DffFile, float>(ConversionInfo&);
 template bool convert<DffFile, double>(ConversionInfo&);
 template bool convert<DsfFile, float>(ConversionInfo&);
