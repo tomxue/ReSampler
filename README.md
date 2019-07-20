@@ -311,7 +311,7 @@ Resampler was originally developed on Visual C++ 2015, but also compiles just as
 
 ## Acknowledgements
 
-The following libraries are used in ReSampler:
+#### The following libraries are used in ReSampler:
 
 <table>
     <thead>
@@ -348,7 +348,8 @@ The following libraries are used in ReSampler:
     </tbody>
 </table>
 
-Thanks to the following github users for their contributions:
+#### Thanks to the following github users for their contributions:
 
 @mgood7123
+
 @godsic
