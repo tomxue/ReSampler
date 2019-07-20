@@ -348,8 +348,8 @@ Resampler was originally developed on Visual C++ 2015, but also compiles just as
     </tbody>
 </table>
 
-#### Thanks to the following github users for their contributions:
+#### Thanks to the following github users for their [contributions](https://github.com/jniemann66/ReSampler/graphs/contributors):
 
-@mgood7123
+[@mgood7123](https://github.com/mgood7123)
 
-@godsic
+[@godsic](https://github.com/godsic)
