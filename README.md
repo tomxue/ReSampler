@@ -347,3 +347,8 @@ The following libraries are used in ReSampler:
         </tr>
     </tbody>
 </table>
+
+Thanks to the following github users for their contributions:
+
+@mgood7123
+@godsic
