@@ -9,13 +9,18 @@
 
 // main.cpp : defines main entry point
 
+#include <iostream>
+#include <string>
+
+#if defined(__ANDROID__) || defined(__arm__) || defined(__aarch64__)
+
 // define COMPILING_ON_ANDROID macro first before including any user headers
-#if !defined(__ANDROID__) && !defined(__arm__) && !defined(__aarch64__)
-#else
 #define COMPILING_ON_ANDROID
+
 #ifdef __aarch64__
 #define COMPILING_ON_ANDROID64
 #endif
+
 #include <Android/log.h>
 
 // https://gist.github.com/dzhioev/6127982
@@ -52,7 +57,7 @@ void androidCleanup() {
 	delete std::cerr.rdbuf(0);
 }
 
-#endif
+#endif // defined(__ANDROID__) || defined(__arm__) || defined(__aarch64__)
 
 #include "ReSampler.h"
 
@@ -62,7 +67,7 @@ int main(int argc, char * argv[])
 #ifdef COMPILING_ON_ANDROID
 	std::cout.rdbuf(new androidbuf(ANDROID_LOG_INFO, "ReSampler"));
 	std::cerr.rdbuf(new androidbuf(ANDROID_LOG_ERROR, "ReSampler"));
-	// register android cleanup function:
+	// register android cleanup function
 	atexit(androidCleanup);
 #endif
 
