@@ -211,5 +211,6 @@ void generateExpSweep(const std::string & filename,
 bool getMetaData(MetaData& metadata, SndfileHandle& infile);
 bool setMetaData(const MetaData& metadata, SndfileHandle& outfile);
 void showCompiler();
+int runCommand(int argc, char** argv);
 
 #endif // RESAMPLER_H
