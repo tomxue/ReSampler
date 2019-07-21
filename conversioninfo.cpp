@@ -156,7 +156,7 @@ int getDefaultNoiseShape(int sampleRate) {
 // Some commandline options (eg --version) should result in termination, but not error.
 // unacceptable parameters are indicated by setting bBadParams to true
 
-bool ConversionInfo::fromCmdLineArgs(int argc, char* argv[]) {
+bool ConversionInfo::fromCmdLineArgs(int argc, char** argv) {
 
 	// set defaults for EVERYTHING:
 	inputFilename.clear();

@@ -14,6 +14,7 @@
 // defines the ConversionInfo struct,
 // for holding conversion parameters.
 
+#include <list>
 #include <string>
 #include "csv.h"
 
@@ -85,8 +86,8 @@ struct ConversionInfo
 	std::string rawInputBitFormat;
 
 	// functions
-	bool fromCmdLineArgs(int argc, char* argv[]);
-	std::string toCmdLineArgs();
+	bool fromCmdLineArgs(int argc, char **argv); // populate ConversionInfo from args
+	std::string toCmdLineArgs(); // format ConversionInfo into a space-separated string of args
 };
 
 std::string sanitize(const std::string& str);
