@@ -1,0 +1,78 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<Project ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="E:\CPP_Projects\ReSampler\ReSampler\conversioninfo.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\CPP_Projects\ReSampler\ReSampler\main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\CPP_Projects\ReSampler\ReSampler\ReSampler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="E:\CPP_Projects\ReSampler\ReSampler\libsndfile\include\sndfile.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\CPP_Projects\ReSampler\ReSampler\libsndfile\include\sndfile.hh">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\CPP_Projects\ReSampler\ReSampler\fftw64\fftw3.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\CPP_Projects\ReSampler\ReSampler\alignedmalloc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\CPP_Projects\ReSampler\ReSampler\biquad.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\CPP_Projects\ReSampler\ReSampler\conversioninfo.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\CPP_Projects\ReSampler\ReSampler\csv.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\CPP_Projects\ReSampler\ReSampler\dff.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\CPP_Projects\ReSampler\ReSampler\ditherer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\CPP_Projects\ReSampler\ReSampler\dsf.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\CPP_Projects\ReSampler\ReSampler\FIRFilter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\CPP_Projects\ReSampler\ReSampler\fraction.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\CPP_Projects\ReSampler\ReSampler\noiseshape.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\CPP_Projects\ReSampler\ReSampler\osspecific.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\CPP_Projects\ReSampler\ReSampler\raiitimer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\CPP_Projects\ReSampler\ReSampler\ReSampler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\CPP_Projects\ReSampler\ReSampler\srconvert.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="E:\CPP_Projects\ReSampler\ReSampler\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{A13B5082-5099-34E9-8F45-53B59429B2A4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{227B96A5-982B-36DF-91C7-B672500D0EC7}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

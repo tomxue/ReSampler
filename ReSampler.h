@@ -31,6 +31,7 @@
 #include "dsf.h"
 #include "dff.h"
 
+#include <type_traits>
 #include <vector>
 #include <string>
 #include <map>
