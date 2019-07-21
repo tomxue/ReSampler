@@ -31,6 +31,7 @@
 #include "dsf.h"
 #include "dff.h"
 
+#include <vector>
 #include <string>
 #include <map>
 
@@ -212,5 +213,22 @@ bool getMetaData(MetaData& metadata, SndfileHandle& infile);
 bool setMetaData(const MetaData& metadata, SndfileHandle& outfile);
 void showCompiler();
 int runCommand(int argc, char** argv);
+
+template <typename InputIterator>
+int runCommand(InputIterator first, InputIterator last)
+{
+	std::vector<const char*> argv;
+	for(auto it = first; it != last; ++it) {
+		argv.push_back(it->c_str());
+	}
+
+	return runCommand(argv.size(), const_cast<char**>(argv.data()));
+};
+
+template <typename ContainerType>
+int runCommand(const ContainerType& args)
+{
+	return runCommand(args.cbegin(), args.cend());
+};
 
 #endif // RESAMPLER_H
