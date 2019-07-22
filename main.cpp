@@ -10,7 +10,6 @@
 // main.cpp : defines main entry point
 
 #include <iostream>
-#include <vector>
 #include <string>
 
 #if defined(__ANDROID__) || defined(__arm__) || defined(__aarch64__)
