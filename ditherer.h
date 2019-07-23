@@ -23,6 +23,8 @@
 #include "biquad.h"
 #include "noiseshape.h"
 
+namespace ReSampler {
+
 enum FilterType {
 	bypass,
 	cascadedBiquad,
@@ -418,5 +420,7 @@ private:
 		return filterOutput;
 	}
 };
+
+} // namespace ReSampler
 
 #endif // DITHERER_H

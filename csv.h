@@ -25,6 +25,8 @@
 #include <string>
 #include <vector>
 
+namespace ReSampler {
+
 enum CsvOpenMode {
 	csv_read,
 	csv_write
@@ -254,5 +256,7 @@ public:
 	}
 
 };
+
+} // namespace ReSampler
 
 #endif //RESAMPLER_CSV_H

@@ -6,6 +6,8 @@
 #include <algorithm>
 #include <stdexcept>
 
+namespace ReSampler {
+
 // sanitize() : function to allow more permissive parsing.
 // Removes hyphens after first non-hyphen character and converts to lowercase.
 // examples:
@@ -368,3 +370,5 @@ bool ConversionInfo::fromCmdLineArgs(int argc, char** argv) {
 	}
 	return true;
 }
+
+} // namespace ReSampler

@@ -12,6 +12,8 @@
 
 // Simple iir biquad filter implementation
 
+namespace ReSampler {
+
 template<typename FloatType> class Biquad {
 public:
 	
@@ -56,5 +58,7 @@ protected:
 	FloatType a0, a1, a2, b1, b2;
 	double z1, z2;
 };
+
+} // namespace ReSampler
 
 #endif // biquad_H

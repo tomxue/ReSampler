@@ -23,6 +23,8 @@
 // defines Fraction type, functions for obtaining gcd, simplified fractions, prime factors of integers,
 // functions for deriving conversion ratios for individual stages of multi-stage converter configurations
 
+namespace ReSampler {
+
 // single-stage policies
 static const bool singleStageOnDecimateOnly = false;
 static const bool singleStageOnInterpolateOnly = false;
@@ -291,5 +293,7 @@ void testConverterStageSelection(int numStages, bool unique = true) {
 
 	std::cout << std::endl;
 }
+
+} // namespace ReSampler
 
 #endif // FRACTION_H

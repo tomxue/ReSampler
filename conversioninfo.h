@@ -18,6 +18,8 @@
 #include <string>
 #include "csv.h"
 
+namespace ReSampler {
+
 typedef enum {
 	relaxed,
 	normal,
@@ -104,5 +106,8 @@ static_assert(std::is_copy_constructible<ConversionInfo>::value,
 static_assert(std::is_copy_assignable<ConversionInfo>::value,
 	"ConversionInfo must be copy assignable");
 
+} // namespace ReSampler
+
 #endif // CONVERSIONINFO_H
+
 

@@ -61,6 +61,8 @@
 #endif
 #endif
 
+namespace ReSampler {
+
 template <typename FloatType>
 class FIRFilter {
 
@@ -999,6 +1001,8 @@ void testSinAccuracy() {
 	std::cout << "maxError: " << std::setprecision(33) << maxError << std::endl;
 	std::cout << "worstT: " << worstT << std::endl;
 }
+
+} // namespace ReSampler
 
 // *Marple, S. L. "Computing the Discrete-Time Analytic Signal via FFT." IEEE Transactions on Signal Processing. Vol. 47, 1999, pp. 2600�2603
 

@@ -34,45 +34,71 @@
 #include <type_traits>
 #include <vector>
 #include <string>
+#include <iostream>
 #include <map>
+
+#if defined (_MSC_VER)
+#define TEMPFILE_OPEN_METHOD_WINAPI
+#define NOMINMAX
+#include <Windows.h>
+#include <codecvt>
+
+//#define TEMPFILE_OPEN_METHOD_STD_TMPNAM
+// 1. tempnam() is problematic :-)
+// 2. tmpfile() doesn't seem to work reliably with MSVC - probably related to this:
+// http://www.mega-nerd.com/libsndfile/api.html#open_fd (see note regarding differing versions of MSVC runtime DLL)
+
+#elif (defined (__MINGW64__) || defined (__MINGW32__)) && (defined (_WIN32) || defined (_WIN64))
+#define TEMPFILE_OPEN_METHOD_WINAPI
+#define UNICODE // turns TCHAR into wchar_t
+#include <windows.h>
+#include <codecvt>
+
+#else
+#define TEMPFILE_OPEN_METHOD_STD_TMPFILE
+//#define TEMPFILE_OPEN_METHOD_MKSTEMP
+
+#endif
+
+namespace ReSampler {
 
 const std::string strVersion("2.0.8");
 const std::string strUsage("usage: ReSampler -i <inputfile> [-o <outputfile>] -r <samplerate> [-b <bitformat>] [-n [<normalization factor>]]\n");
 const std::string strExtraOptions(
-	"--help\n"
-	"--version\n"
-	"--compiler\n"
-	"--sndfile-version\n"
-	"--listsubformats <ext>\n"
-	"--showDitherProfiles\n"
-	"--gain [<amount>]\n"
-	"--doubleprecision\n"
-	"--dither [<amount>] [--autoblank] [--ns [<ID>]] [--flat-tpdf] [--seed [<num>]] [--quantize-bits <number of bits>]\n"
-	"--noDelayTrim\n"
-	"--minphase\n"
-	"--flacCompression <compressionlevel>\n"
-	"--vorbisQuality <quality>\n"
-	"--noClippingProtection\n"
-	"--relaxedLPF\n"
-	"--steepLPF\n"
-	"--lpf-cutoff <percentage> [--lpf-transition <percentage>]\n"
-	"--mt\n"
-	"--rf64\n"
-	"--noPeakChunk\n"
-	"--noMetadata\n"
-	"--singleStage\n"
-	"--multiStage\n"
-	"--maxStages\n"
-	"--showStages\n"
-	"--rawInput <samplerate> <bitformat> [numChannels]\n"
+		"--help\n"
+		"--version\n"
+		"--compiler\n"
+		"--sndfile-version\n"
+		"--listsubformats <ext>\n"
+		"--showDitherProfiles\n"
+		"--gain [<amount>]\n"
+		"--doubleprecision\n"
+		"--dither [<amount>] [--autoblank] [--ns [<ID>]] [--flat-tpdf] [--seed [<num>]] [--quantize-bits <number of bits>]\n"
+		"--noDelayTrim\n"
+		"--minphase\n"
+		"--flacCompression <compressionlevel>\n"
+		"--vorbisQuality <quality>\n"
+		"--noClippingProtection\n"
+		"--relaxedLPF\n"
+		"--steepLPF\n"
+		"--lpf-cutoff <percentage> [--lpf-transition <percentage>]\n"
+		"--mt\n"
+		"--rf64\n"
+		"--noPeakChunk\n"
+		"--noMetadata\n"
+		"--singleStage\n"
+		"--multiStage\n"
+		"--maxStages\n"
+		"--showStages\n"
+		"--rawInput <samplerate> <bitformat> [numChannels]\n"
 
-#if defined (_WIN32) || defined (_WIN64)
-	"--tempDir <path>\n"
-#endif
+		#if defined (_WIN32) || defined (_WIN64)
+		"--tempDir <path>\n"
+		#endif
 
-	"--showTempFile\n"
-	"--noTempFile\n"
-);
+		"--showTempFile\n"
+		"--noTempFile\n"
+		);
 
 const double clippingTrim = 1.0 - (1.0 / (1 << 23));
 const int maxClippingProtectionAttempts = 3;
@@ -80,7 +106,7 @@ const int maxClippingProtectionAttempts = 3;
 #define BUFFERSIZE 32768 // buffer size for file reads
 
 // map of commandline subformats to libsndfile subformats:
-const std::map<std::string, int> subFormats = { 
+const std::map<std::string, int> subFormats = {
 	{ "s8",SF_FORMAT_PCM_S8 },
 	{ "u8",SF_FORMAT_PCM_U8 },
 	{ "8",SF_FORMAT_PCM_U8 },	// signed or unsigned depends on major format of output file eg. wav files unsigned
@@ -163,29 +189,6 @@ struct MetaData
 
 };
 
-#if defined (_MSC_VER)
-#define TEMPFILE_OPEN_METHOD_WINAPI
-#define NOMINMAX
-#include <Windows.h>
-#include <codecvt>
-
-//#define TEMPFILE_OPEN_METHOD_STD_TMPNAM
-// 1. tempnam() is problematic :-)
-// 2. tmpfile() doesn't seem to work reliably with MSVC - probably related to this:
-// http://www.mega-nerd.com/libsndfile/api.html#open_fd (see note regarding differing versions of MSVC runtime DLL)
-
-#elif (defined (__MINGW64__) || defined (__MINGW32__)) && (defined (_WIN32) || defined (_WIN64)) 
-#define TEMPFILE_OPEN_METHOD_WINAPI
-#define UNICODE // turns TCHAR into wchar_t
-#include <windows.h>
-#include <codecvt>
-
-#else
-#define TEMPFILE_OPEN_METHOD_STD_TMPFILE
-//#define TEMPFILE_OPEN_METHOD_MKSTEMP
-
-#endif
-
 bool checkSSE2();
 bool checkAVX();
 bool showBuildVersion();
@@ -202,13 +205,13 @@ bool checkWarnOutputSize(sf_count_t inputSamples, int bytesPerSample, int numera
 template<typename IntType> std::string fmtNumberWithCommas(IntType n);
 void printSamplePosAsTime(sf_count_t samplePos, unsigned int sampleRate);
 
-void generateExpSweep(const std::string & filename, 
-	int sampleRate = 96000, // samplerate of generated file
-	int format = SF_FORMAT_WAV | SF_FORMAT_FLOAT, // format of generated file
-	double duration = 10.0, // approximate duration in seconds 
-	int octaves = 12, // number of octaves below Nyquist for lowest frequency 
-	double amplitude_dB = -3.0 // amplitude in dB relative to FS
-);
+void generateExpSweep(const std::string & filename,
+					  int sampleRate = 96000, // samplerate of generated file
+					  int format = SF_FORMAT_WAV | SF_FORMAT_FLOAT, // format of generated file
+					  double duration = 10.0, // approximate duration in seconds
+					  int octaves = 12, // number of octaves below Nyquist for lowest frequency
+					  double amplitude_dB = -3.0 // amplitude in dB relative to FS
+		);
 
 bool getMetaData(MetaData& metadata, SndfileHandle& infile);
 bool setMetaData(const MetaData& metadata, SndfileHandle& outfile);
@@ -219,7 +222,7 @@ template <typename InputIterator>
 int runCommand(InputIterator first, InputIterator last)
 {
 	std::vector<const char*> argv;
-	for(auto it = first; it != last; ++it) {
+	for (auto it = first; it != last; ++it) {
 		argv.push_back(it->c_str());
 	}
 
@@ -231,5 +234,7 @@ int runCommand(const ContainerType& args)
 {
 	return runCommand(args.cbegin(), args.cend());
 };
+
+} // namespace ReSampler
 
 #endif // RESAMPLER_H

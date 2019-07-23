@@ -20,6 +20,8 @@
 #include "fraction.h"
 #include "ReSampler.h"
 
+namespace ReSampler {
+
 static_assert(std::is_copy_constructible<ConversionInfo>::value, "ConversionInfo needs to be copy Constructible");
 static_assert(std::is_copy_assignable<ConversionInfo>::value, "ConversionInfo needs to be copy Assignable");
 
@@ -405,5 +407,7 @@ private:
 	bool isBypassMode;
 	double gain;
 };
+
+} // namespace ReSampler
 
 #endif // SRCONVERT_H

@@ -24,6 +24,8 @@
 
 #pragma pack(push, r1, 1)
 
+namespace ReSampler {
+
 struct dffChunkHeader {
 	uint32_t ckID; // chunkid
 	uint64_t ckDataSize; // chunk data size, in bytes
@@ -538,5 +540,7 @@ private:
 		}
 	}
 };
+
+} // namespace ReSampler
 
 #endif // DFF_H_

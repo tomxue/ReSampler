@@ -39,6 +39,8 @@
 //                                                                                    //
 ////////////////////////////////////////////////////////////////////////////////////////
 
+namespace ReSampler {
+
 // parseGlobalOptions() - result indicates whether to terminate.
 bool parseGlobalOptions(int argc, char * argv[]) {
 
@@ -427,8 +429,8 @@ bool convert(ConversionInfo& ci)
 
 	else { // no peak detection
 		peakInputSample = ci.bNormalize ?
-			0.5  /* ... a guess, since we haven't actually measured the peak (in the case of DSD, it is a good guess.) */ :
-			1.0;
+					0.5  /* ... a guess, since we haven't actually measured the peak (in the case of DSD, it is a good guess.) */ :
+					1.0;
 	}
 
 	if (ci.bNormalize) { // echo Normalization settings to user
@@ -450,7 +452,7 @@ bool convert(ConversionInfo& ci)
 	// echo conversion ratio to user:
 	FloatType resamplingFactor = static_cast<FloatType>(ci.outputSampleRate) / ci.inputSampleRate;
 	std::cout << "Conversion ratio: " << resamplingFactor
-		<< " (" << fraction.numerator << ":" << fraction.denominator << ")" << std::endl;
+			  << " (" << fraction.numerator << ":" << fraction.denominator << ")" << std::endl;
 
 	// if the outputFormat is zero, it means "No change to file format"
 	// if output file format has changed, use outputFormat. Otherwise, use same format as infile:
@@ -463,9 +465,9 @@ bool convert(ConversionInfo& ci)
 
 	// for wav files, determine whether to switch to rf64 mode:
 	if (((outputFileFormat & SF_FORMAT_TYPEMASK) == SF_FORMAT_WAV) ||
-		((outputFileFormat & SF_FORMAT_TYPEMASK) == SF_FORMAT_WAVEX)) {
+			((outputFileFormat & SF_FORMAT_TYPEMASK) == SF_FORMAT_WAVEX)) {
 		if (ci.bRf64 ||
-			checkWarnOutputSize(inputSampleCount, getSfBytesPerSample(outputFileFormat), fraction.numerator, fraction.denominator)) {
+				checkWarnOutputSize(inputSampleCount, getSfBytesPerSample(outputFileFormat), fraction.numerator, fraction.denominator)) {
 			std::cout << "Switching to rf64 format !" << std::endl;
 			outputFileFormat &= ~SF_FORMAT_TYPEMASK; // clear file type
 			outputFileFormat |= SF_FORMAT_RF64;
@@ -533,12 +535,12 @@ bool convert(ConversionInfo& ci)
 
 	// Calculate initial gain:
 	FloatType gain = ci.gain * converters[0].getGain() *
-		(ci.bNormalize ? fraction.numerator * (ci.limit / peakInputSample) : fraction.numerator * ci.limit);
+			(ci.bNormalize ? fraction.numerator * (ci.limit / peakInputSample) : fraction.numerator * ci.limit);
 
 	// todo: more testing with very low bit depths (eg 4 bits)
 	if (ci.bDither) { // allow headroom for dithering:
 		FloatType ditherCompensation =
-			(pow(2, outputSignalBits - 1) - pow(2, ci.ditherAmount - 1)) / pow(2, outputSignalBits - 1); // eg 32767/32768 = 0.999969 (-0.00027 dB)
+				(pow(2, outputSignalBits - 1) - pow(2, ci.ditherAmount - 1)) / pow(2, outputSignalBits - 1); // eg 32767/32768 = 0.999969 (-0.00027 dB)
 		gain *= ditherCompensation;
 	}
 
@@ -828,7 +830,7 @@ bool convert(ConversionInfo& ci)
 					for (size_t s = 0; s < samplesRead; s += nChannels) {
 						for (int ch = 0; ch < nChannels; ++ch) {
 							FloatType smpl = ci.bDither ? ditherers[ch].dither(gain * inputBlock[i]) :
-								gain * inputBlock[i];
+														  gain * inputBlock[i];
 							peakOutputSample = std::max(std::abs(smpl), peakOutputSample);
 							outBuf[i++] = smpl;
 						}
@@ -845,7 +847,7 @@ bool convert(ConversionInfo& ci)
 					// conditionally send progress update:
 					if (totalSamplesRead > nextProgressThreshold) {
 						int progressPercentage = std::min(static_cast<int>(99),
-							static_cast<int>(100 * totalSamplesRead / inputSampleCount));
+														  static_cast<int>(100 * totalSamplesRead / inputSampleCount));
 						std::cout << progressPercentage << "%\b\b\b" << std::flush;
 						nextProgressThreshold += incrementalProgressThreshold;
 					}
@@ -970,7 +972,7 @@ SndfileHandle* getTempFile(int inputFileFormat, int nChannels, const ConversionI
 		// disable floating-point normalisation (important - we want to record/recover floating point values exactly)
 		if (sizeof(FloatType) == 8) {
 			tmpSndfileHandle->command(SFC_SET_NORM_DOUBLE, NULL,
-				SF_FALSE); // http://www.mega-nerd.com/libsndfile/command.html#SFC_SET_NORM_DOUBLE
+									  SF_FALSE); // http://www.mega-nerd.com/libsndfile/command.html#SFC_SET_NORM_DOUBLE
 		}
 		else {
 			tmpSndfileHandle->command(SFC_SET_NORM_FLOAT, NULL, SF_FALSE);
@@ -1032,8 +1034,8 @@ bool setMetaData(const MetaData& metadata, SndfileHandle& outfile) {
 	if (!metadata.genre.empty()) outfile.setString(SF_STR_GENRE, metadata.genre.c_str());
 
 	if (((outfile.format() &  SF_FORMAT_TYPEMASK) == SF_FORMAT_WAV) ||
-		((outfile.format() &  SF_FORMAT_TYPEMASK) == SF_FORMAT_WAVEX) ||
-		((outfile.format() &  SF_FORMAT_TYPEMASK) == SF_FORMAT_RF64)) { /* some sort of wav file */
+			((outfile.format() &  SF_FORMAT_TYPEMASK) == SF_FORMAT_WAVEX) ||
+			((outfile.format() &  SF_FORMAT_TYPEMASK) == SF_FORMAT_RF64)) { /* some sort of wav file */
 
 		// attempt to write bext / cart chunks:
 		if (metadata.has_bext_fields) {
@@ -1042,9 +1044,9 @@ bool setMetaData(const MetaData& metadata, SndfileHandle& outfile) {
 
 		if (metadata.has_cart_chunk) {
 			outfile.command(SFC_SET_CART_INFO,
-				(void*)&metadata.cartInfo,
-				sizeof(metadata.cartInfo) - MAX_CART_TAG_TEXT_SIZE + metadata.cartInfo.tag_text_size // (size of cartInfo WITHOUT tag text) + (actual size of tag text)
-			);
+							(void*)&metadata.cartInfo,
+							sizeof(metadata.cartInfo) - MAX_CART_TAG_TEXT_SIZE + metadata.cartInfo.tag_text_size // (size of cartInfo WITHOUT tag text) + (actual size of tag text)
+							);
 		}
 	}
 
@@ -1227,7 +1229,7 @@ bool checkAVX() {
 		__cpuid(cpuInfo, 1);
 		if (cpuInfo[2] & (1 << 28)) {
 			bAVXok = true; // Note: this test only confirms CPU AVX capability, and does not check OS capability.
-						   // to-do: check for AVX2 ...
+			// to-do: check for AVX2 ...
 		}
 	}
 	if (bAVXok) {
@@ -1272,16 +1274,16 @@ void showCompiler() {
 	// https://sourceforge.net/p/predef/wiki/Compilers/
 #if defined (__clang__)
 	std::cout << "Clang " << __clang_major__ << "."
-		<< __clang_minor__ << "."
-		<< __clang_patchlevel__ << std::endl;
+			  << __clang_minor__ << "."
+			  << __clang_patchlevel__ << std::endl;
 #elif defined (__MINGW64__)
 	std::cout << "minGW-w64" << std::endl;
 #elif defined (__MINGW32__)
 	std::cout << "minGW" << std::endl;
 #elif defined (__GNUC__)
 	std::cout << "gcc " << __GNUC__ << "."
-		<< __GNUC_MINOR__ << "."
-		<< __GNUC_PATCHLEVEL__ << std::endl;
+			  << __GNUC_MINOR__ << "."
+			  << __GNUC_PATCHLEVEL__ << std::endl;
 #elif defined (_MSC_VER)
 	std::cout << "Visual C++ " << _MSC_FULL_VER << std::endl;
 #elif defined (__INTEL_COMPILER)
@@ -1449,3 +1451,5 @@ template bool convert<DsfFile, float>(ConversionInfo&);
 template bool convert<DsfFile, double>(ConversionInfo&);
 template bool convert<SndfileHandle, float>(ConversionInfo&);
 template bool convert<SndfileHandle, double>(ConversionInfo&);
+
+} // namespace ReSampler

@@ -17,6 +17,8 @@
 // class RaiiTimer : starts a high-resolution timer upon construction and prints elapsed time to stdout upon destruction
 // For convenience, a reference time value (in ms) for comparison may be provided using the parameter msComparison.
 
+namespace ReSampler {
+
 class RaiiTimer {
 public:
 
@@ -42,5 +44,7 @@ private:
 	std::chrono::time_point<std::chrono::high_resolution_clock> endTimer;
 	double msComparison;
 };
+
+} // namespace ReSampler
 
 #endif // _RAIITIMER_H
