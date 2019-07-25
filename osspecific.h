@@ -22,6 +22,7 @@
 #endif
 
 #else // Non-Windows:
+#include <cstdint>
 typedef uint64_t __int64;
 #define stricmp strcasecmp
 #endif // ends Non-Windows

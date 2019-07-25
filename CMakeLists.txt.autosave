@@ -111,7 +111,7 @@ else ()
     set(SOURCE_FILES
             /usr/include/sndfile.h
             /usr/include/sndfile.hh
-            /usr/include/fftw3.h
+            /usr/include/fftw3.he
             alignedmalloc.h
             biquad.h
             conversioninfo.h

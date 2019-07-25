@@ -17,6 +17,7 @@
 #include <iostream>
 #include <iomanip>
 #include <complex>
+#include <cstring>
 #include <cstdint>
 #include <cassert>
 #include <vector>
