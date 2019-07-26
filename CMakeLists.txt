@@ -22,6 +22,7 @@ if(WIN32)
             dsf.h
             FIRFilter.h
             fraction.h
+            factorial.h
             noiseshape.h
             osspecific.h
             raiitimer.h
@@ -54,6 +55,7 @@ elseif (APPLE)
             dsf.h
             FIRFilter.h
             fraction.h
+            factorial.h
             noiseshape.h
             osspecific.h
             raiitimer.h
@@ -93,6 +95,7 @@ elseif(ANDROID)
             dsf.h
             FIRFilter.h
             fraction.h
+            factorial.h
             noiseshape.h
             osspecific.h
             raiitimer.h
@@ -121,6 +124,7 @@ else ()
             dsf.h
             FIRFilter.h
             fraction.h
+            factorial.h
             noiseshape.h
             osspecific.h
             raiitimer.h

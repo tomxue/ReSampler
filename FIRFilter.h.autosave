@@ -32,6 +32,8 @@
 
 #include <fftw3.h>
 
+
+
 #define WRAP_WITH_MEMCPY
 #define FILTERSIZE_LIMIT 131071
 #define FILTERSIZE_BASE 103
@@ -61,8 +63,7 @@
 
 namespace ReSampler {
 
-#include "alignedmalloc.h"
-#include "factorial.h"
+
 
 template <typename FloatType>
 class FIRFilter {
