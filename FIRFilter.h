@@ -12,6 +12,9 @@
 #ifndef FIRFFILTER_H_
 #define FIRFFILTER_H_
 
+#include "alignedmalloc.h"
+#include "factorial.h"
+
 #include <typeinfo>
 #include <algorithm>
 #include <iostream>
@@ -60,9 +63,6 @@
 #endif
 
 namespace ReSampler {
-
-#include "alignedmalloc.h"
-#include "factorial.h"
 
 template <typename FloatType>
 class FIRFilter {
