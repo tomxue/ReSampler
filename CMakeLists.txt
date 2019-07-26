@@ -1,17 +1,17 @@
 cmake_minimum_required(VERSION 3.6)
-project(ReSampler)
-
 set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_FLAGS "-Wall -pthread -m64")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -pthread -m64")
 set(CMAKE_CXX_FLAGS_DEBUG "-g")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
+
+project(ReSampler)
 
 if(WIN32)
 
     set(SOURCE_FILES
-            libsndfile/include/sndfile.h
-            libsndfile/include/sndfile.hh
-            fftw64/fftw3.h
+            #libsndfile/include/sndfile.h
+            #libsndfile/include/sndfile.hh
+            #fftw64/fftw3.h
             alignedmalloc.h
             biquad.h
             conversioninfo.h
