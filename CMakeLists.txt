@@ -7,11 +7,7 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
 project(ReSampler)
 
 if(WIN32)
-
     set(SOURCE_FILES
-            #libsndfile/include/sndfile.h
-            #libsndfile/include/sndfile.hh
-            #fftw64/fftw3.h
             alignedmalloc.h
             biquad.h
             conversioninfo.h
