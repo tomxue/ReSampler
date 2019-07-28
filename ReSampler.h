@@ -36,6 +36,7 @@
 #include <string>
 #include <iostream>
 #include <map>
+#include <functional>
 
 #if defined (_MSC_VER)
 #define TEMPFILE_OPEN_METHOD_WINAPI
@@ -187,6 +188,15 @@ struct MetaData
 	bool has_cart_chunk;
 	LargeSFCartInfo cartInfo;
 
+};
+
+class OutputManager {
+	static std::function<void(int)> progressFunc;
+
+public:
+	static std::function<void (int)> getProgressFunc();
+	static void setProgressFunc(const std::function<void (int)> &value);
+	static void callProgressFunc(int percentComplete);
 };
 
 bool checkSSE2();

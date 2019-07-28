@@ -756,7 +756,8 @@ bool convert(ConversionInfo& ci)
 			// conditionally send progress update:
 			if (totalSamplesRead > nextProgressThreshold) {
 				int progressPercentage = std::min(static_cast<int>(99), static_cast<int>(100 * totalSamplesRead / inputSampleCount));
-				std::cout << progressPercentage << "%\b\b\b" << std::flush;
+				//std::cout << progressPercentage << "%\b\b\b" << std::flush;
+				OutputManager::callProgressFunc(progressPercentage);
 				nextProgressThreshold += incrementalProgressThreshold;
 			}
 
@@ -848,7 +849,8 @@ bool convert(ConversionInfo& ci)
 					if (totalSamplesRead > nextProgressThreshold) {
 						int progressPercentage = std::min(static_cast<int>(99),
 														  static_cast<int>(100 * totalSamplesRead / inputSampleCount));
-						std::cout << progressPercentage << "%\b\b\b" << std::flush;
+						//std::cout << progressPercentage << "%\b\b\b" << std::flush;
+						OutputManager::callProgressFunc(progressPercentage);
 						nextProgressThreshold += incrementalProgressThreshold;
 					}
 
@@ -1451,5 +1453,23 @@ template bool convert<DsfFile, float>(ConversionInfo&);
 template bool convert<DsfFile, double>(ConversionInfo&);
 template bool convert<SndfileHandle, float>(ConversionInfo&);
 template bool convert<SndfileHandle, double>(ConversionInfo&);
+
+std::function<void(int)> OutputManager::progressFunc = [](int percentComplete) {
+	std::cout << percentComplete << "%\b\b\b" << std::flush;
+};
+
+std::function<void (int)> OutputManager::getProgressFunc()
+{
+	return progressFunc;
+}
+
+void OutputManager::setProgressFunc(const std::function<void (int)> &value)
+{
+	progressFunc = value;
+}
+
+void OutputManager::callProgressFunc(int percentComplete) {
+	return progressFunc(percentComplete);
+}
 
 } // namespace ReSampler
