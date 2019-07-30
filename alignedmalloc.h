@@ -33,8 +33,9 @@
 
 inline void* aligned_malloc(size_t size, size_t alignment) {
 	
-	if (size == 0)
+	if (size == 0) {
 		return nullptr;
+	}
 	
 #ifdef _WIN32 
 	return _aligned_malloc(size, alignment);
