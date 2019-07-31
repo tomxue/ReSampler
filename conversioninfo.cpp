@@ -16,7 +16,7 @@ namespace ReSampler {
 
 std::string sanitize(const std::string& str) {
 	std::string r(str);
-	auto s = r.find_first_not_of('-'); // get position of first non-hyphen
+	auto s = static_cast<std::string::iterator::difference_type>(r.find_first_not_of('-')); // get position of first non-hyphen
 	r.erase(std::remove(r.begin() + s, r.end(), '-'), r.end()); // remove all hyphens after the first non-hyphen
 	std::transform(r.begin(), r.end(), r.begin(), ::tolower); // change to lower-case
 	return r;

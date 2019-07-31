@@ -41,7 +41,7 @@ inline void* aligned_malloc(size_t size, size_t alignment) {
 	return _aligned_malloc(size, alignment);
 #else 
 	void *memory;
-	return posix_memalign(&memory, alignment, size) ? 0 : memory; // (note: posix_memalign returns 0 if successful, non-zero error code if not)
+	return posix_memalign(&memory, alignment, size) ? nullptr : memory; // (note: posix_memalign returns 0 if successful, non-zero error code if not)
 #endif
 
 }
