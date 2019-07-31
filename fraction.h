@@ -95,7 +95,7 @@ std::set<std::vector<int>> getnFactors(const std::vector<int> &primes, int maxFa
 			return;
 		}
 
-		int maxFirstItems = static_cast<int>(primeFactors.size() - (numFactors - 1));
+		int maxFirstItems = static_cast<int>(primeFactors.size()) - numFactors - 1;
 		for(int j = 1; j <= maxFirstItems; j++) {
 			currentFactors[numFactors-1] = std::accumulate(primeFactors.begin(), primeFactors.begin() + j, 1, std::multiplies<int>());
 			std::vector<int> remainingItems(primeFactors.begin() + j, primeFactors.end());
