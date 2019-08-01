@@ -37,6 +37,7 @@ bool getCmdlineParam(char** begin, char** end, const std::string& option, T& par
 					parameter = static_cast<T>(std::stof(*next));
 				}
 				catch (std::invalid_argument& e) {
+					(void)e; // unused
 					// leave parameter unchanged
 				}
 			}
