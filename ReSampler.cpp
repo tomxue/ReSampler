@@ -192,13 +192,14 @@ bool determineBestBitFormat(std::string& bitFormat, const ConversionInfo& ci)
 			if (sf_format_check(&sfinfo)) { // Match: infile's subformat is valid for outfile's format
 				break;
 			}
-			else { // infile's subformat is not valid for outfile's format; use outfile's default subformat
-				std::cout << "Output file format " << outFileExt << " and subformat " << bitFormat << " combination not valid ... ";
-				bitFormat.clear();
-				bitFormat = defaultSubFormats.find(outFileExt)->second;
-				std::cout << "defaulting to " << bitFormat << std::endl;
-				break;
-			}
+
+			// infile's subformat is not valid for outfile's format; use outfile's default subformat
+			std::cout << "Output file format " << outFileExt << " and subformat " << bitFormat << " combination not valid ... ";
+			bitFormat.clear();
+			bitFormat = defaultSubFormats.find(outFileExt)->second;
+			std::cout << "defaulting to " << bitFormat << std::endl;
+			break;
+			
 		}
 	}
 	return true;
@@ -518,6 +519,7 @@ bool convert(ConversionInfo& ci)
 
 	// make a vector of ditherers (one ditherer for each channel):
 	std::vector<Ditherer<FloatType>> ditherers;
+	ditherers.reserve(static_cast<size_t>(nChannels));
 	auto seed = static_cast<int>(ci.bUseSeed ? ci.seed : time(nullptr));
 
 	for (int n = 0; n < nChannels; n++) {
@@ -529,6 +531,7 @@ bool convert(ConversionInfo& ci)
 
 	// make a vector of Resamplers
 	std::vector<Converter<FloatType>> converters;
+	converters.reserve(static_cast<size_t>(nChannels));
 	for (int n = 0; n < nChannels; n++) {
 		converters.emplace_back(ci);
 	}
