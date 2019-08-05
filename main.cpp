@@ -71,7 +71,7 @@ int main(int argc, char * argv[])
 	//atexit(androidCleanup);
 #endif
 
-	bool result = ReSampler::runCommand(argc, argv);
+	int result = ReSampler::runCommand(argc, argv);
 
 #ifdef COMPILING_ON_ANDROID
 	androidCleanup();

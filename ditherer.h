@@ -409,7 +409,7 @@ private:
 		FloatType filterOutput = 0.0;
 		
 		// macc with coefficients:
-		for (size_t k = 0; k < FIRLength; k++) {
+		for (int k = 0; k < FIRLength; k++) {
 			filterOutput += *historyPtr-- * FIRCoeffs[k];
 		}
 

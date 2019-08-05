@@ -356,7 +356,7 @@ private:
 		numVecElements = 1; // Scalar mode
 #endif
 
-		alignMask = -static_cast<uintptr_t>(numVecElements);
+		alignMask = static_cast<uintptr_t>(-numVecElements);
 		paddedLength = (length & alignMask) + numVecElements;
 	}
 
@@ -840,7 +840,7 @@ void makeMinPhase(FloatType* pFIRcoeffs, size_t length)
 	std::reverse(complexOutput.begin(), complexOutput.end());
 
 	// write all the real parts back to coeff array:
-	int n = 0;
+	size_t n = 0;
 	for (auto &c : complexOutput) {
 		if (n < length)
 			pFIRcoeffs[n] = c.real();	
@@ -909,14 +909,14 @@ std::vector<FloatType> makeMinPhase2(const FloatType* pFIRcoeffs, size_t length)
 // dumpKaiserWindow() - utility function for displaying Kaiser Window:
 void dumpKaiserWindow(size_t length, double Beta) {
 	std::vector<double> f(length, 1);
-	applyKaiserWindow<double>(f.data(), length, Beta);
-	for (int i = 0; i < length; ++i) {
+	applyKaiserWindow<double>(f.data(), static_cast<int>(length), Beta);
+	for (size_t i = 0; i < length; ++i) {
 		std::cout << i << ": " << f[i] << std::endl;
 	}
 
 	std::vector<double> g(length, 1);
-	applyKaiserWindow<double>(g.data(), length, Beta);
-	for (int i = 0; i < length; ++i) {
+	applyKaiserWindow<double>(g.data(), static_cast<int>(length), Beta);
+	for (size_t i = 0; i < length; ++i) {
 		std::cout << i << ": " << g[i] << std::endl;
 	}
 }
@@ -929,12 +929,12 @@ void assertKaiserWindow(size_t length, double Beta) {
 	const double lower = 1.0 - tolerance;
 
 	std::vector<double> f(length, 1);
-	applyKaiserWindow2<double>(f.data(), length, Beta);
+	applyKaiserWindow2<double>(f.data(), static_cast<int>(length), Beta);
 
 	std::vector<double> g(length, 1);
-	applyKaiserWindow<double>(g.data(), length, Beta);
+	applyKaiserWindow<double>(g.data(), static_cast<int>(length), Beta);
 
-	for (int i = 0; i < length; ++i) {
+	for (size_t i = 0; i < length; ++i) {
 		double ratio = f[i] / g[i];
 		assert(ratio < upper && ratio > lower);
 	}

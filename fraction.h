@@ -127,11 +127,11 @@ std::vector<std::vector<Fraction>> getConversionStageCandidates(Fraction f, int 
 	int maxPossibleStages = static_cast<int>(std::max(numeratorPrimes.size(), denominatorPrimes.size())); // determines just how many stages can be formed
 	int numStages = std::max(1, std::min(maxStages, maxPossibleStages)); // determines exactly how many stages we will have 
 	
-	while (numeratorPrimes.size() < numStages) { // pad with 1s at front
+	while (numeratorPrimes.size() < static_cast<size_t>(numStages)) { // pad with 1s at front
 		numeratorPrimes.insert(numeratorPrimes.begin(), numStages - numeratorPrimes.size(), 1);
 	}
 
-	while (denominatorPrimes.size() < numStages) { // pad with 1s at front
+	while (denominatorPrimes.size() < static_cast<size_t>(numStages)) { // pad with 1s at front
 		denominatorPrimes.insert(denominatorPrimes.begin(), numStages - denominatorPrimes.size(), 1);
 	}
 

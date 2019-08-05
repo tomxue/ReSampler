@@ -686,7 +686,7 @@ bool convert(ConversionInfo& ci)
 
 			// de-interleave into channel buffers
 			size_t i = 0;
-			for (size_t s = 0; s < samplesRead; s += nChannels) {
+			for (int s = 0; s < samplesRead; s += nChannels) {
 				for (int ch = 0; ch < nChannels; ++ch) {
 					inputChannelBuffers[ch][i] = inputBlock[s + ch];
 				}
@@ -830,7 +830,7 @@ bool convert(ConversionInfo& ci)
 
 					// de-interleave into channels, apply gain, add dither, and save to output buffer
 					size_t i = 0;
-					for (size_t s = 0; s < samplesRead; s += nChannels) {
+					for (int s = 0; s < samplesRead; s += nChannels) {
 						for (int ch = 0; ch < nChannels; ++ch) {
 							FloatType smpl = ci.bDither ? ditherers[ch].dither(gain * inputBlock[i]) :
 														  gain * inputBlock[i];
@@ -912,7 +912,7 @@ SndfileHandle* getTempFile(int inputFileFormat, int nChannels, const ConversionI
 	DWORD pathLen;
 
 	if (!ci.tmpDir.empty()) {
-		pathLen = ci.tmpDir.length();
+		pathLen = static_cast<DWORD>(ci.tmpDir.length());
 		std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>, wchar_t> widener;
 		wcscpy_s(_tmpPathname, MAX_PATH, widener.from_bytes(ci.tmpDir).c_str());
 	}
