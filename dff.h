@@ -12,6 +12,10 @@
 
 #include "osspecific.h"
 
+#ifdef BYTESWAP_METHOD_MSVCRT
+#include <stdlib.h>
+#endif
+
 #include <algorithm>
 #include <iostream>
 #include <cassert>
@@ -21,7 +25,6 @@
 
 #define DFF_MAX_CHANNELS 6 
 #define DFF_FORMAT 0x00300000 // note: take care to make sure this doesn't clash with future libsndfile formats (unlikely)
-
 #pragma pack(push, r1, 1)
 
 namespace ReSampler {
@@ -311,6 +314,7 @@ private:
 		chunkHeader->ckDataSize = bigEndianRead64();
 	}
 
+#if !defined(BYTESWAP_METHOD_MSVCRT) && !defined(BYTESWAP_METHOD_BUILTIN)
 	uint16_t swapEndian(uint16_t x) {
 		union {
 			struct {
@@ -371,7 +375,7 @@ private:
 		z.h = y.a;
 		return z.n;
 	}
-
+#endif
 
 	uint8_t bigEndianRead8() {
 		uint8_t v;
@@ -382,19 +386,43 @@ private:
 	uint16_t bigEndianRead16() {
 		uint16_t v;
 		file.read((char*)&v, sizeof(v));
+
+#if  defined(BYTESWAP_METHOD_MSVCRT)
+		return _byteswap_ushort(v);
+#elif defined(BYTESWAP_METHOD_BUILTIN)
+		return __builtin_bswap16(v);
+#else
 		return swapEndian(v);
+#endif
+
 	}
 
 	uint32_t bigEndianRead32() {
 		uint32_t v;
 		file.read((char*)&v, sizeof(v));
+
+#if  defined(BYTESWAP_METHOD_MSVCRT)
+		return _byteswap_ulong(v);
+#elif defined(BYTESWAP_METHOD_BUILTIN)
+		return __builtin_bswap32(v);
+#else
 		return swapEndian(v);
+#endif
+
 	}
 
 	uint64_t bigEndianRead64() {
 		uint64_t v;
 		file.read((char*)&v, sizeof(v));
+
+#if  defined(BYTESWAP_METHOD_MSVCRT)
+		return _byteswap_uint64(v);
+#elif defined(BYTESWAP_METHOD_BUILTIN)
+		return __builtin_bswap64(v);
+#else
 		return swapEndian(v);
+#endif
+
 	}
 
 	// readPropChunks() : read the sub-chunks of PROP chunk

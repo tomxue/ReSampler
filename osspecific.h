@@ -10,7 +10,7 @@
 #ifndef OSSPECIFIC_H
 #define OSSPECIFIC_H 1
 
-// macros which address differences between operating systems go here. 
+// macros which address differences between compilers / operating systems go here.
 
 #ifdef _WIN32
 
@@ -19,6 +19,9 @@
 #define NOMINMAX // disable min() and max() macros (use std:: library instead)
 #pragma warning(disable : 4996) // suppress pointless MS "deprecation" warnings
 #pragma warning(disable : 4244) // suppress double-to-float warnings
+//#define BYTESWAP_METHOD_MSVCRT
+#else
+#define BYTESWAP_METHOD_BUILTIN
 #endif
 
 #else // Non-Windows:
