@@ -151,7 +151,7 @@ int getDefaultNoiseShape(int sampleRate) {
 	else {
 		return DitherProfileID::flat_f;
 	}
-};
+}
 
 // fromCmdLineArgs()
 // Return value indicates whether caller should continue execution (ie true: continue, false: terminate)

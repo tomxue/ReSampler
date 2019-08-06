@@ -237,13 +237,13 @@ int runCommand(InputIterator first, InputIterator last)
 	}
 
 	return runCommand(argv.size(), const_cast<char**>(argv.data()));
-};
+}
 
 template <typename ContainerType>
 int runCommand(const ContainerType& args)
 {
 	return runCommand(args.cbegin(), args.cend());
-};
+}
 
 } // namespace ReSampler
 
