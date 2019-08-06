@@ -19,15 +19,16 @@
 #define NOMINMAX // disable min() and max() macros (use std:: library instead)
 #pragma warning(disable : 4996) // suppress pointless MS "deprecation" warnings
 #pragma warning(disable : 4244) // suppress double-to-float warnings
-//#define BYTESWAP_METHOD_MSVCRT
+#define BYTESWAP_METHOD_MSVCRT
 #else
-#define BYTESWAP_METHOD_BUILTIN
+#define BYTESWAP_METHOD_BUILTIN // note : gcc >= 4.8.1 , clang >= 3.5
 #endif
 
 #else // Non-Windows:
 #include <cstdint>
 typedef uint64_t __int64;
 #define stricmp strcasecmp
+#define BYTESWAP_METHOD_BUILTIN
 #endif // ends Non-Windows
 
 #endif // OSSPECIFIC_H
