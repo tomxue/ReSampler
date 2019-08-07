@@ -704,7 +704,7 @@ bool convert(ConversionInfo& ci)
 
 			for (int ch = 0; ch < nChannels; ++ch) { // run convert stage for each channel (concurrently)
 
-				auto kernel = [&, ch](int x = 0) {
+				auto kernel = [&, ch](int) {
 					FloatType* iBuf = inputChannelBuffers[ch].data();
 					FloatType* oBuf = outputChannelBuffers[ch].data();
 					size_t o = 0;
@@ -728,7 +728,7 @@ bool convert(ConversionInfo& ci)
 					results[ch] = threadPool.push(kernel);
 				}
 				else {
-					Result res = kernel();
+					Result res = kernel(0);
 					peakOutputSample = std::max(peakOutputSample, res.peak);
 					outputBlockIndex = res.outBlockindex;
 				}
