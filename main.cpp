@@ -67,8 +67,6 @@ int main(int argc, char * argv[])
 #ifdef COMPILING_ON_ANDROID
 	std::cout.rdbuf(new androidbuf(ANDROID_LOG_INFO, "ReSampler"));
 	std::cerr.rdbuf(new androidbuf(ANDROID_LOG_ERROR, "ReSampler"));
-	// register android cleanup function
-	//atexit(androidCleanup);
 #endif
 
 	int result = ReSampler::runCommand(argc, argv);
