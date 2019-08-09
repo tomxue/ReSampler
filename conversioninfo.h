@@ -69,8 +69,10 @@ struct ConversionInfo
 	bool bSingleStage;
 	bool bMultiStage;
 	bool bShowStages;
+	int progressUpdates;
 	int overSamplingFactor;
 	bool bBadParams;
+
 	std::string appName;
 
 #if defined (_WIN32) || defined (_WIN64)

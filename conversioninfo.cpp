@@ -202,6 +202,7 @@ bool ConversionInfo::fromCmdLineArgs(int argc, char** argv) {
 	bTmpFile = true;
 	bShowTempFile = false;
 	overSamplingFactor = 1;
+	progressUpdates = 10;
 	bBadParams = false;
 	appName.clear();
 	bRawInput = false;
@@ -235,6 +236,7 @@ bool ConversionInfo::fromCmdLineArgs(int argc, char** argv) {
 	bSingleStage = getCmdlineParam(argv, argv + argc, "--singleStage");
 	bMultiStage = getCmdlineParam(argv, argv + argc, "--multiStage");
 	integerWriteScalingStyle = getCmdlineParam(argv, argv + argc, "--pow2clip") ? IntegerWriteScalingStyle::Pow2Clip : IntegerWriteScalingStyle::Pow2Minus1;
+	getCmdlineParam(argv, argv + argc, "--progress-updates", progressUpdates);
 
 #if defined (_WIN32) || defined (_WIN64)
 	getCmdlineParam(argv, argv + argc, "--tempDir", tmpDir);
@@ -315,6 +317,7 @@ bool ConversionInfo::fromCmdLineArgs(int argc, char** argv) {
 	constrainInt(maxStages, 1, 10);
 	constrainDouble(lpfCutoff, 1.0, 99.9);
 	constrainDouble(lpfTransitionWidth, 0.1, 400.0);
+	constrainInt(progressUpdates, 0, 100);
 
 	if (bNormalize) {
 		if (normalizeAmount <= 0.0)
