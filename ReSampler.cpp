@@ -673,7 +673,7 @@ bool convert(ConversionInfo& ci)
 
 		peakOutputSample = 0.0;
 		totalSamplesRead = 0;
-		sf_count_t incrementalProgressThreshold = inputSampleCount / 10;
+		sf_count_t incrementalProgressThreshold = (ci.progressUpdates > 0 ) ? inputSampleCount / ci.progressUpdates : inputSampleCount + 1;
 		sf_count_t nextProgressThreshold = incrementalProgressThreshold;
 
 		int outStartOffset = std::min(groupDelay * nChannels, static_cast<int>(outputBlockSize) - nChannels);
@@ -816,7 +816,6 @@ bool convert(ConversionInfo& ci)
 				std::vector<FloatType> outBuf(inputBlockSize, 0);
 				peakOutputSample = 0.0;
 				totalSamplesRead = 0;
-				incrementalProgressThreshold = inputSampleCount / 10;
 				nextProgressThreshold = incrementalProgressThreshold;
 
 				tmpSndfileHandle->seek(0, SEEK_SET);
