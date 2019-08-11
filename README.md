@@ -169,6 +169,8 @@ the entire conversion will need to be performed again if clipping is detected.
 
 **--raw-input &lt;samplerate&gt; &lt;bit-format&gt; [number of channels]** : read raw input data (ie with no header). Since there is no header, you must specify the sample rate, bit format, and number of channels of the input file using the syntax above. If the number of channels is omitted, single-channel (mono) input is assumed. Accepted bit formats for raw input are: 8, s8, u8, 16, 24, 32, 32f, 64f, alaw, ulaw, gsm610, dwvw12, dwvw16, dwvw24, vox-adpcm
 
+**--progress-updates &lt;0..100&gt;** : number of progress update notifications to be sent by the converter throughout the conversion. (0 = no updates, 100 = every 1% etc)
+
 #### Example
 
 To convert a 24-bit, 96kHz .wav input file to 16-bit, 44.1kHz .flac output file, with steep lowpass filter and dithering:
