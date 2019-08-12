@@ -329,13 +329,13 @@ public:
 
 private:
 	int length;
-	int paddedLength;
+	int paddedLength{};
 
 	FloatType* signal; // Double-length signal buffer, to facilitate fast emulation of a circular buffe
 	int currentIndex;
 	int lastPut;
-	int numVecElements;
-	uintptr_t alignMask;
+	int numVecElements{};
+	uintptr_t alignMask{};
 
 	// Polyphase Filter Kernel table:
 
