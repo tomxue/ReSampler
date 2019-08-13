@@ -811,16 +811,6 @@ void makeMinPhase(FloatType* pFIRcoeffs, size_t length)
 		complexInput.emplace_back(0, 0);
 	}
 
-	/*
-	// pad with trailing zeros
-	for (int n = 0; n < fftLength; ++n) {
-		if (n<length)
-			complexInput.push_back({ pFIRcoeffs[n], 0 });
-		else
-			complexInput.push_back({ 0, 0 }); // pad remainder with zeros
-	}
-	*/
-
 	assert(complexInput.size() == fftLength); // make sure padding worked properly.
 
 	// Formula is as follows:
@@ -848,59 +838,6 @@ void makeMinPhase(FloatType* pFIRcoeffs, size_t length)
 			break;
 		++n;
 	}
-}
-
-// makeMinPhase2() : take linear-phase FIR filter coefficients, and return a new vector of minimum-phase coefficients
-template<typename FloatType>
-std::vector<FloatType> makeMinPhase2(const FloatType* pFIRcoeffs, size_t length)
-{
-	auto fftLength = static_cast<size_t>(pow(2, 2.0 + ceil(log2(length)))); // use FFT 4x larger than (length rounded-up to power-of-2)
-
-	std::vector <std::complex<double>> complexInput;
-	std::vector <std::complex<double>> complexOutput;
-
-	// Pad zeros on either side of FIR:
-
-	size_t frontPaddingLength = (fftLength - length) / 2;
-	size_t backPaddingLength = fftLength - frontPaddingLength - length;
-
-	for (size_t n = 0; n < frontPaddingLength; ++n) {
-		complexInput.emplace_back(0, 0);
-	}
-
-	for (size_t n = 0; n < length; ++n) {
-		complexInput.push_back({ pFIRcoeffs[n], 0 });
-	}
-
-	for (size_t n = 0; n < backPaddingLength; ++n) {
-		complexInput.emplace_back(0, 0);
-	}
-
-	assert(complexInput.size() == fftLength); // make sure padding worked properly.
-
-	// Formula is as follows:
-
-	// take the reversed array of
-	// the real parts of
-	// the ifft of
-	// e to the power of
-	// the Analytic Signal of
-	// the real parts of 
-	// the log of
-	// the dynamic-ranged limited version of
-	// the fft of 
-	// the original filter
-
-	complexOutput = realV(ifftV(expV(AnalyticSignalV(realV(logV(limitDynRangeV(fftV(complexInput), -190)))))));
-	std::reverse(complexOutput.begin(), complexOutput.end());
-
-	std::vector<FloatType> minPhaseCoeffs;
-	minPhaseCoeffs.reserve(complexOutput.size());
-	for (auto & c : complexOutput) {
-		minPhaseCoeffs.push_back(c.real());
-	}
-
-	return minPhaseCoeffs;
 }
 
 ///////////////////////////////////////////////////////////////////////
