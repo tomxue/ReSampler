@@ -562,13 +562,11 @@ template<typename FloatType> FloatType calcKaiserBeta(FloatType dB)
 	if ((dB >= 21.0) && (dB <= 50.0)) {
 		return 0.5842 * pow((dB - 21), 0.4) + 0.07886 * (dB - 21);
 	}
-	else if (dB > 50.0) {
+	if (dB > 50.0) {
 		return 0.1102 * (dB - 8.7);
 	}
-	else
-	{
-		return 0;
-	}
+	
+	return 0;
 }
 
 // I0() : 0th-order Modified Bessel function of the first kind:
