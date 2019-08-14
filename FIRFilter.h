@@ -559,7 +559,7 @@ template<typename FloatType> FloatType calcKaiserBeta(FloatType dB)
 	{
 		return 0;
 	}
-	else if ((dB >= 21.0) && (dB <= 50.0)) {
+	if ((dB >= 21.0) && (dB <= 50.0)) {
 		return 0.5842 * pow((dB - 21), 0.4) + 0.07886 * (dB - 21);
 	}
 	else if (dB > 50.0) {
