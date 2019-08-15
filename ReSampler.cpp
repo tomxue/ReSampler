@@ -718,7 +718,7 @@ bool convert(ConversionInfo& ci)
 						outputBlock[localOutputBlockIndex + ch] = outputSample; // interleave
 						localOutputBlockIndex += nChannels;
 					}
-					Result res;
+					Result res{};
 					res.outBlockindex = localOutputBlockIndex;
 					res.peak = localPeak;
 					return res;
