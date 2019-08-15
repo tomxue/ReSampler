@@ -399,8 +399,8 @@ private:
 	ConversionInfo ci;
 	double groupDelay;
 	std::vector<ResamplingStage<FloatType>> convertStages;
-	int numStages;
-	int indexOfLastStage;
+	int numStages{};
+	int indexOfLastStage{};
 	std::vector<std::vector<FloatType>> intermediateOutputBuffers;	// intermediate output buffer for each ConvertStage;
 	std::vector<std::string> stageCommandLines;
 	bool isMultistage;
