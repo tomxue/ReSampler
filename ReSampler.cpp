@@ -465,8 +465,7 @@ bool convert(ConversionInfo& ci)
 	}
 
 	// for wav files, determine whether to switch to rf64 mode:
-	if (((outputFileFormat & SF_FORMAT_TYPEMASK) == SF_FORMAT_WAV) ||
-			((outputFileFormat & SF_FORMAT_TYPEMASK) == SF_FORMAT_WAVEX)) {
+	if ((outputFileFormat & SF_FORMAT_TYPEMASK) == SF_FORMAT_WAV || (outputFileFormat & SF_FORMAT_TYPEMASK) == SF_FORMAT_WAVEX) {
 		if (ci.bRf64 ||
 				checkWarnOutputSize(inputSampleCount, getSfBytesPerSample(outputFileFormat), fraction.numerator, fraction.denominator)) {
 			std::cout << "Switching to rf64 format !" << std::endl;
@@ -537,8 +536,8 @@ bool convert(ConversionInfo& ci)
 	}
 
 	// Calculate initial gain:
-	FloatType gain = ci.gain * converters[0].getGain() *
-			(ci.bNormalize ? fraction.numerator * (ci.limit / peakInputSample) : fraction.numerator * ci.limit);
+	FloatType gain = static_cast<FloatType>(ci.gain) * static_cast<FloatType>(converters[0].getGain()) *
+			static_cast<FloatType>(ci.bNormalize ? fraction.numerator * (ci.limit / static_cast<double>(peakInputSample)) : fraction.numerator * ci.limit);
 
 	// todo: more testing with very low bit depths (eg 4 bits)
 	if (ci.bDither) { // allow headroom for dithering:
