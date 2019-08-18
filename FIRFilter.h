@@ -471,7 +471,7 @@ double FIRFilter<double>::get() {
 #elif defined(USE_SIMD) && defined(USE_SIMD_FOR_DOUBLES) && !defined(FIR_QUAD_PRECISION)
 
 template <>
-double FIRFilter<double>::get() {
+inline double FIRFilter<double>::get() {
 
 	// SSE Implementation: Processes two doubles at a time.
 
@@ -570,7 +570,7 @@ template<typename FloatType> FloatType calcKaiserBeta(FloatType dB)
 }
 
 // I0() : 0th-order Modified Bessel function of the first kind:
-double I0(double z)
+inline double I0(double z)
 {
 	double result = 0.0;
 	for (int k = 0; k < 34; ++k) {
@@ -642,7 +642,7 @@ template<typename FloatType> bool applyKaiserWindow2(FloatType* filter, int Leng
 // the following is a set of Complex-In, Complex-Out transforms used for constructing a minimum-Phase FIR:
 
 // logV() : logarithm of a vector of Complex doubles
-std::vector<std::complex<double>>
+inline std::vector<std::complex<double>>
 logV(const std::vector<std::complex<double>>& input) {
 	std::vector<std::complex<double>> output(input.size(), 0);
 	std::transform(input.begin(), input.end(), output.begin(),
@@ -652,7 +652,7 @@ logV(const std::vector<std::complex<double>>& input) {
 
 // limitDynRangeV() : set a limit (-dB) on how quiet signal is allowed to be below the peak. 
 // Guaranteed to never return zero.
-std::vector<std::complex<double>>
+inline std::vector<std::complex<double>>
 limitDynRangeV(const std::vector<std::complex<double>>& input, double dynRangeDB) {
 	double dynRangeLinear = pow(10, std::abs(dynRangeDB) / 20.0); // will give same result for positive or negative dB values.
 	
@@ -688,7 +688,7 @@ limitDynRangeV(const std::vector<std::complex<double>>& input, double dynRangeDB
 }
 
 // realV() : real parts of a vector of Complex doubles
-std::vector<std::complex<double>>
+inline std::vector<std::complex<double>>
 realV(const std::vector<std::complex<double>>& input) {
 	std::vector<std::complex<double>> output(input.size(), 0);
 	std::transform(input.begin(), input.end(), output.begin(),
@@ -697,7 +697,7 @@ realV(const std::vector<std::complex<double>>& input) {
 }
 
 // imagV() : imaginary parts of a vector of Complex doubles (answer placed in imaginary part of output):
-std::vector<std::complex<double>>
+inline std::vector<std::complex<double>>
 imagV(const std::vector<std::complex<double>>& input) {
 	std::vector<std::complex<double>> output(input.size(), 0);
 	std::transform(input.begin(), input.end(), output.begin(),
@@ -706,7 +706,7 @@ imagV(const std::vector<std::complex<double>>& input) {
 }
 
 // expV() : exp of a vector of Complex doubles
-std::vector<std::complex<double>>
+inline std::vector<std::complex<double>>
 expV(const std::vector<std::complex<double>>& input) {
 	std::vector<std::complex<double>> output(input.size(), 0);
 	std::transform(input.begin(), input.end(), output.begin(),
@@ -715,7 +715,7 @@ expV(const std::vector<std::complex<double>>& input) {
 }
 
 // fftV() : FFT of vector of Complex doubles
-std::vector<std::complex<double>>
+inline std::vector<std::complex<double>>
 fftV(std::vector<std::complex<double>> input) {
 	
 	std::vector<std::complex<double>> output(input.size(), 0); // output vector
@@ -734,7 +734,7 @@ fftV(std::vector<std::complex<double>> input) {
 }
 
 // ifftV() : Inverse FFT of vector of Complex doubles
-std::vector<std::complex<double>>
+inline std::vector<std::complex<double>>
 ifftV(std::vector<std::complex<double>> input) {
 
 	std::vector<std::complex<double>> output(input.size(), 0); // output vector
@@ -763,7 +763,7 @@ ifftV(std::vector<std::complex<double>> input) {
 // The hilbert Transform is placed in the imaginary part, and the original input is in the real part.)
 // See Footnote* below for more information on algorithm ...
 
-std::vector<std::complex<double>>
+inline std::vector<std::complex<double>>
 AnalyticSignalV(const std::vector<std::complex<double>>& input) {
 
 	std::vector<std::complex<double>> U = fftV(input);
@@ -842,7 +842,7 @@ void makeMinPhase(FloatType* pFIRcoeffs, size_t length)
 // utility functions:
 
 // dumpKaiserWindow() - utility function for displaying Kaiser Window:
-void dumpKaiserWindow(size_t length, double Beta) {
+inline void dumpKaiserWindow(size_t length, double Beta) {
 	std::vector<double> f(length, 1);
 	applyKaiserWindow<double>(f.data(), static_cast<int>(length), Beta);
 	for (size_t i = 0; i < length; ++i) {
@@ -857,7 +857,7 @@ void dumpKaiserWindow(size_t length, double Beta) {
 }
 
 // asserts that the two Kaiser Window formulas agree with each other (within a specified tolerance)
-void assertKaiserWindow(size_t length, double Beta) {
+inline void assertKaiserWindow(size_t length, double Beta) {
 
 	const double tolerance = 0.001;
 	const double upper = 1.0 + tolerance;
@@ -882,7 +882,7 @@ template<typename FloatType> void dumpFilter(const FloatType* Filter, int Length
 	}
 }
 
-void dumpComplexVector(const std::vector<std::complex<double>>& v)
+inline void dumpComplexVector(const std::vector<std::complex<double>>& v)
 {
 	for (auto &c : v) {
 		std::cout << c.real() << "+" << c.imag() << "i" << std::endl;
@@ -913,7 +913,7 @@ void dumpFFT(FloatType* data, size_t length)
 	}
 }
 
-void testSinAccuracy() {
+inline void testSinAccuracy() {
 	
 	const int numSteps = 10000000;
 	const double inc = M_PI / numSteps;
