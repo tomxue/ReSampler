@@ -4,7 +4,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -pthread -m64")
 set(CMAKE_CXX_FLAGS_DEBUG "-g")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
 
-project(ReSampler)
+project(ReSampler C CXX)
 
 if(WIN32)
     set(SOURCE_FILES
