@@ -73,6 +73,13 @@ g++ -pthread -std=gnu++11 main.cpp ReSampler.cpp conversioninfo.cpp -lfftw3 -lsn
 clang++ -pthread -std=c++11 main.cpp ReSampler.cpp conversioninfo.cpp -lfftw3 -lsndfile -o ReSampler-clang -O3
 ~~~
 
+#### using cmake:
+~~~
+cd path-to-where-you-want-the-binary
+cmake path-to-ReSampler
+make
+~~~
+
 # misc tasks:
 
 ## setting up C++ environment in vscode
