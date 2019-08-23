@@ -1,10 +1,10 @@
-cmake_minimum_required(VERSION 3.6)
-set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -pthread -m64")
-set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g")
-set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
-
 project(ReSampler C CXX)
+cmake_minimum_required(VERSION 3.6)
+find_package(Threads REQUIRED)
+set(CMAKE_CXX_STANDARD 11)
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -m64")
+#set(CMAKE_CXX_FLAGS_DEBUG "-g")
+#set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
 
 if(WIN32)
     set(SOURCE_FILES
@@ -103,14 +103,9 @@ elseif(ANDROID)
     add_library(ReSampler SHARED ${SOURCE_FILES})
     target_link_libraries(ReSampler sndfile fftw3 log)
 else ()
-    include_directories(/usr/include)
-    link_directories(/usr/lib)
-    link_libraries(-lfftw3 -lsndfile)
 
+	include_directories(libsndfile/include fftw64)
     set(SOURCE_FILES
-            /usr/include/sndfile.h
-            /usr/include/sndfile.hh
-            /usr/include/fftw3.h
             alignedmalloc.h
             biquad.h
             conversioninfo.h
@@ -127,8 +122,11 @@ else ()
             main.cpp
             ReSampler.cpp
             ReSampler.h
-            srconvert.h csv.h
+			srconvert.h
+			csv.h
             conversioninfo.cpp)
 
     add_executable(ReSampler ${SOURCE_FILES})
+	target_link_libraries(ReSampler fftw3 sndfile ${CMAKE_THREAD_LIBS_INIT})
+
 endif()
