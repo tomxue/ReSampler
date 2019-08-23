@@ -123,7 +123,6 @@ else ()
             ReSampler.cpp
             ReSampler.h
 			srconvert.h
-			csv.h
             conversioninfo.cpp)
 
     add_executable(ReSampler ${SOURCE_FILES})
