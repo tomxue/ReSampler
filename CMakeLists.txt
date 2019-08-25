@@ -76,20 +76,18 @@ elseif (WIN32)
         link_directories(libsndfile/lib fftw64)
     endif()
 
+    add_library(ReSamplerLib ${SOURCE_FILES})
 
     if(MSVC_VERSION GREATER 1700)
         message(STATUS "Visual Studio")
-        add_library(ReSamplerLib ${SOURCE_FILES})
-        add_executable(ReSampler main.cpp)
         target_link_libraries(ReSamplerLib libsndfile-1.lib libfftw3-3.lib ${CMAKE_THREAD_LIBS_INIT})
-        target_link_libraries(ReSampler ReSamplerLib)
     else()
         message(STATUS "NOT Visual Studio")
-        add_library(ReSamplerLib SHARED ${SOURCE_FILES})
         target_link_libraries(ReSamplerLib libsndfile-1 libfftw3-3 ${CMAKE_THREAD_LIBS_INIT})
-        add_executable(ReSampler main.cpp)
-        target_link_libraries(ReSampler ReSamplerLib)
     endif()
+
+    add_executable(ReSampler main.cpp)
+    target_link_libraries(ReSampler ReSamplerLib)
 
 else()
     set(SOURCE_FILES
