@@ -23,70 +23,97 @@ if(ANDROID)
     include_directories($CMAKE_SOURCE_DIR/android/src/libsndfile/src)
 
     set(SOURCE_FILES
-            alignedmalloc.h
-            biquad.h
-            conversioninfo.h
-            conversioninfo.cpp
-            csv.h
-            dff.h
-            ditherer.h
-            dsf.h
-            FIRFilter.h
-            fraction.h
-            factorial.h
-            noiseshape.h
-            osspecific.h
-            raiitimer.h
-            main.cpp
-            ReSampler.cpp
-            ReSampler.h
-            srconvert.h)
+        alignedmalloc.h
+        biquad.h
+        conversioninfo.h
+        conversioninfo.cpp
+        csv.h
+        dff.h
+        ditherer.h
+        dsf.h
+        FIRFilter.h
+        fraction.h
+        factorial.h
+        noiseshape.h
+        osspecific.h
+        raiitimer.h
+        main.cpp
+        ReSampler.cpp
+        ReSampler.h
+        srconvert.h)
 
     add_library(ReSampler SHARED ${SOURCE_FILES})
     target_link_libraries(ReSampler sndfile fftw3 log)
 
-else ()
+elseif (WIN32)
 
     set(SOURCE_FILES
-            alignedmalloc.h
-            biquad.h
-            conversioninfo.h
-            csv.h
-            dff.h
-            ditherer.h
-            dsf.h
-            FIRFilter.h
-            fraction.h
-            factorial.h
-            noiseshape.h
-            osspecific.h
-            raiitimer.h
-            ReSampler.cpp
-            ReSampler.h
-			srconvert.h
-            conversioninfo.cpp)
-if(WIN32)
+        alignedmalloc.h
+        biquad.h
+        conversioninfo.h
+        csv.h
+        dff.h
+        ditherer.h
+        dsf.h
+        FIRFilter.h
+        fraction.h
+        factorial.h
+        noiseshape.h
+        osspecific.h
+        raiitimer.h
+        ReSampler.cpp
+        ReSampler.h
+        srconvert.h
+        conversioninfo.cpp)
 
-if(CMAKE_SIZEOF_VOID_P EQUAL 4)
-	message(STATUS "Windows 32-bit")
-	include_directories(libsndfile/include fftw32)
-	link_directories(libsndfile32/lib fftw32)
-else()
-	message(STATUS "Windows 64-bit")
-	include_directories(libsndfile/include fftw64)
-	link_directories(libsndfile/lib fftw64)
-endif()
-	
-	add_library(ReSamplerLib ${SOURCE_FILES})
-	add_executable(ReSampler main.cpp)
-	target_link_libraries(ReSamplerLib libsndfile-1.lib libfftw3-3.lib ${CMAKE_THREAD_LIBS_INIT})
-	target_link_libraries(ReSampler ReSamplerLib)
-endif()
+    if(CMAKE_SIZEOF_VOID_P EQUAL 4)
+        message(STATUS "Windows 32-bit")
+        include_directories(libsndfile/include fftw32)
+        link_directories(libsndfile32/lib fftw32)
+    else()
+        message(STATUS "Windows 64-bit")
+        include_directories(libsndfile/include fftw64)
+        link_directories(libsndfile/lib fftw64)
+    endif()
+
+
+    if(MSVC_VERSION GREATER 1700)
+        message(STATUS "Visual Studio")
+        add_library(ReSamplerLib ${SOURCE_FILES})
+        add_executable(ReSampler main.cpp)
+        target_link_libraries(ReSamplerLib libsndfile-1.lib libfftw3-3.lib ${CMAKE_THREAD_LIBS_INIT})
+        target_link_libraries(ReSampler ReSamplerLib)
+    else()
+        message(STATUS "NOT Visual Studio")
+        add_library(ReSamplerLib SHARED ${SOURCE_FILES})
+        target_link_libraries(ReSamplerLib libsndfile-1 libfftw3-3 ${CMAKE_THREAD_LIBS_INIT})
+        add_executable(ReSampler main.cpp)
+        target_link_libraries(ReSampler ReSamplerLib)
+    endif()
 
 else()
-	# not Windows
-	add_library(ReSamplerLib SHARED ${SOURCE_FILES})
-	target_link_libraries(ReSamplerLib sndfile fftw3 ${CMAKE_THREAD_LIBS_INIT})
-	add_executable(ReSampler main.cpp)
-	target_link_libraries(ReSampler ReSamplerLib)
+    set(SOURCE_FILES
+        alignedmalloc.h
+        biquad.h
+        conversioninfo.h
+        csv.h
+        dff.h
+        ditherer.h
+        dsf.h
+        FIRFilter.h
+        fraction.h
+        factorial.h
+        noiseshape.h
+        osspecific.h
+        raiitimer.h
+        ReSampler.cpp
+        ReSampler.h
+        srconvert.h
+        conversioninfo.cpp)
+
+    add_library(ReSamplerLib SHARED ${SOURCE_FILES})
+    target_link_libraries(ReSamplerLib ReSamplerLib fftw3 sndfile ${CMAKE_THREAD_LIBS_INIT})
+    add_executable(ReSampler main.cpp)
+    target_link_libraries(ReSampler ReSamplerLib)
+
 endif()
