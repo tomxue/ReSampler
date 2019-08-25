@@ -119,13 +119,13 @@ else ()
             noiseshape.h
             osspecific.h
             raiitimer.h
-            main.cpp
             ReSampler.cpp
             ReSampler.h
 			srconvert.h
             conversioninfo.cpp)
 
-    add_executable(ReSampler ${SOURCE_FILES})
-	target_link_libraries(ReSampler fftw3 sndfile ${CMAKE_THREAD_LIBS_INIT})
+	add_library(ReSamplerLib ${SOURCE_FILES})
+	add_executable(ReSampler main.cpp)
+	target_link_libraries(ReSampler ReSamplerLib fftw3 sndfile ${CMAKE_THREAD_LIBS_INIT})
 
 endif()
