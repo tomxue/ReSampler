@@ -3,65 +3,6 @@ cmake_minimum_required(VERSION 3.6)
 find_package(Threads REQUIRED)
 set(CMAKE_CXX_STANDARD 11)
 
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -m64")
-#set(CMAKE_CXX_FLAGS_DEBUG "-g")
-#set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
-
-#if(WIN32)
-#    set(SOURCE_FILES
-#            alignedmalloc.h
-#            biquad.h
-#            conversioninfo.h
-#            conversioninfo.cpp
-#            csv.h
-#            dff.h
-#            ditherer.h
-#            dsf.h
-#            FIRFilter.h
-#            fraction.h
-#            factorial.h
-#            noiseshape.h
-#            osspecific.h
-#            raiitimer.h
-#            main.cpp
-#            ReSampler.cpp
-#            ReSampler.h
-#            srconvert.h)
-
-#    include_directories(libsndfile/include fftw64)
-#    link_directories(libsndfile/lib fftw64)
-#    link_libraries(libsndfile-1  libfftw3-3)
-#    add_executable(ReSampler ${SOURCE_FILES})
-
-#elseif (APPLE)
-#    include_directories(/usr/local/include)
-#    link_directories(/usr/local/lib)
-#    link_libraries(-lfftw3 -lsndfile)
-
-#    set(SOURCE_FILES
-#            /usr/local/include/sndfile.h
-#            /usr/local/include/sndfile.hh
-#            /usr/local/include/fftw3.h
-#            alignedmalloc.h
-#            biquad.h
-#            conversioninfo.h
-#            conversioninfo.cpp
-#            csv.h
-#            dff.h
-#            ditherer.h
-#            dsf.h
-#            FIRFilter.h
-#            fraction.h
-#            factorial.h
-#            noiseshape.h
-#            osspecific.h
-#            raiitimer.h
-#            main.cpp
-#            ReSampler.cpp
-#            ReSampler.h
-#            srconvert.h)
-
-#    add_executable(ReSampler ${SOURCE_FILES})
 if(ANDROID)
 
     add_subdirectory (android/src/fftw-3.3.8)
