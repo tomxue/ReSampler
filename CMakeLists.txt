@@ -47,7 +47,6 @@ if(ANDROID)
 
 else ()
 
-	include_directories(libsndfile/include fftw64)
     set(SOURCE_FILES
             alignedmalloc.h
             biquad.h
@@ -66,9 +65,28 @@ else ()
             ReSampler.h
 			srconvert.h
             conversioninfo.cpp)
+if(WIN32)
 
-	add_library(ReSamplerLib SHARED ${SOURCE_FILES})
+if(CMAKE_SIZEOF_VOID_P EQUAL 4)
+	message(STATUS "Windows 32-bit")
+	include_directories(libsndfile/include fftw32)
+	link_directories(libsndfile32/lib fftw32)
+else()
+	message(STATUS "Windows 64-bit")
+	include_directories(libsndfile/include fftw64)
+	link_directories(libsndfile/lib fftw64)
+endif()
+	
+	add_library(ReSamplerLib ${SOURCE_FILES})
 	add_executable(ReSampler main.cpp)
-	target_link_libraries(ReSampler ReSamplerLib fftw3 sndfile ${CMAKE_THREAD_LIBS_INIT})
+	target_link_libraries(ReSamplerLib libsndfile-1.lib libfftw3-3.lib ${CMAKE_THREAD_LIBS_INIT})
+	target_link_libraries(ReSampler ReSamplerLib)
+endif()
 
+else()
+	# not Windows
+	add_library(ReSamplerLib SHARED ${SOURCE_FILES})
+	target_link_libraries(ReSamplerLib sndfile fftw3 ${CMAKE_THREAD_LIBS_INIT})
+	add_executable(ReSampler main.cpp)
+	target_link_libraries(ReSampler ReSamplerLib)
 endif()
