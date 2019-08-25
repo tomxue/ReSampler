@@ -6,62 +6,62 @@ set(CMAKE_CXX_STANDARD 11)
 #set(CMAKE_CXX_FLAGS_DEBUG "-g")
 #set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
 
-if(WIN32)
-    set(SOURCE_FILES
-            alignedmalloc.h
-            biquad.h
-            conversioninfo.h
-            conversioninfo.cpp
-            csv.h
-            dff.h
-            ditherer.h
-            dsf.h
-            FIRFilter.h
-            fraction.h
-            factorial.h
-            noiseshape.h
-            osspecific.h
-            raiitimer.h
-            main.cpp
-            ReSampler.cpp
-            ReSampler.h
-            srconvert.h)
+#if(WIN32)
+#    set(SOURCE_FILES
+#            alignedmalloc.h
+#            biquad.h
+#            conversioninfo.h
+#            conversioninfo.cpp
+#            csv.h
+#            dff.h
+#            ditherer.h
+#            dsf.h
+#            FIRFilter.h
+#            fraction.h
+#            factorial.h
+#            noiseshape.h
+#            osspecific.h
+#            raiitimer.h
+#            main.cpp
+#            ReSampler.cpp
+#            ReSampler.h
+#            srconvert.h)
 
-    include_directories(libsndfile/include fftw64)
-    link_directories(libsndfile/lib fftw64)
-    link_libraries(libsndfile-1  libfftw3-3)
-    add_executable(ReSampler ${SOURCE_FILES})
+#    include_directories(libsndfile/include fftw64)
+#    link_directories(libsndfile/lib fftw64)
+#    link_libraries(libsndfile-1  libfftw3-3)
+#    add_executable(ReSampler ${SOURCE_FILES})
 
-elseif (APPLE)
-    include_directories(/usr/local/include)
-    link_directories(/usr/local/lib)
-    link_libraries(-lfftw3 -lsndfile)
+#elseif (APPLE)
+#    include_directories(/usr/local/include)
+#    link_directories(/usr/local/lib)
+#    link_libraries(-lfftw3 -lsndfile)
 
-    set(SOURCE_FILES
-            /usr/local/include/sndfile.h
-            /usr/local/include/sndfile.hh
-            /usr/local/include/fftw3.h
-            alignedmalloc.h
-            biquad.h
-            conversioninfo.h
-            conversioninfo.cpp
-            csv.h
-            dff.h
-            ditherer.h
-            dsf.h
-            FIRFilter.h
-            fraction.h
-            factorial.h
-            noiseshape.h
-            osspecific.h
-            raiitimer.h
-            main.cpp
-            ReSampler.cpp
-            ReSampler.h
-            srconvert.h)
+#    set(SOURCE_FILES
+#            /usr/local/include/sndfile.h
+#            /usr/local/include/sndfile.hh
+#            /usr/local/include/fftw3.h
+#            alignedmalloc.h
+#            biquad.h
+#            conversioninfo.h
+#            conversioninfo.cpp
+#            csv.h
+#            dff.h
+#            ditherer.h
+#            dsf.h
+#            FIRFilter.h
+#            fraction.h
+#            factorial.h
+#            noiseshape.h
+#            osspecific.h
+#            raiitimer.h
+#            main.cpp
+#            ReSampler.cpp
+#            ReSampler.h
+#            srconvert.h)
 
-    add_executable(ReSampler ${SOURCE_FILES})
-elseif(ANDROID)
+#    add_executable(ReSampler ${SOURCE_FILES})
+if(ANDROID)
 
     add_subdirectory (android/src/fftw-3.3.8)
     set(BUILD_SHARED_LIBS_SAVED "${BUILD_SHARED_LIBS}")
@@ -102,6 +102,7 @@ elseif(ANDROID)
 
     add_library(ReSampler SHARED ${SOURCE_FILES})
     target_link_libraries(ReSampler sndfile fftw3 log)
+
 else ()
 
 	include_directories(libsndfile/include fftw64)
@@ -124,7 +125,7 @@ else ()
 			srconvert.h
             conversioninfo.cpp)
 
-	add_library(ReSamplerLib ${SOURCE_FILES})
+	add_library(ReSamplerLib SHARED ${SOURCE_FILES})
 	add_executable(ReSampler main.cpp)
 	target_link_libraries(ReSampler ReSamplerLib fftw3 sndfile ${CMAKE_THREAD_LIBS_INIT})
 
