@@ -38,29 +38,6 @@
 #include <map>
 #include <functional>
 
-#if defined (_MSC_VER)
-#define TEMPFILE_OPEN_METHOD_WINAPI
-#define NOMINMAX
-#include <Windows.h>
-#include <codecvt>
-
-//#define TEMPFILE_OPEN_METHOD_STD_TMPNAM
-// 1. tempnam() is problematic :-)
-// 2. tmpfile() doesn't seem to work reliably with MSVC - probably related to this:
-// http://www.mega-nerd.com/libsndfile/api.html#open_fd (see note regarding differing versions of MSVC runtime DLL)
-
-#elif (defined (__MINGW64__) || defined (__MINGW32__)) && (defined (_WIN32) || defined (_WIN64))
-#define TEMPFILE_OPEN_METHOD_WINAPI
-#define UNICODE // turns TCHAR into wchar_t
-#include <windows.h>
-#include <codecvt>
-
-#else
-#define TEMPFILE_OPEN_METHOD_STD_TMPFILE
-//#define TEMPFILE_OPEN_METHOD_MKSTEMP
-
-#endif
-
 namespace ReSampler {
 
 const std::string strVersion("2.0.8");
