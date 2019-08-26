@@ -80,9 +80,17 @@ else()
 
         add_library(ReSamplerLib ${SOURCE_FILES})
 
-        if(MSVC_VERSION GREATER 1700)
+        if(MSVC)
             message(STATUS "Visual Studio")
             target_link_libraries(ReSamplerLib libsndfile-1.lib libfftw3-3.lib ${CMAKE_THREAD_LIBS_INIT})
+
+            if(NOT CMAKE_SIZEOF_VOID_P EQUAL 4)
+                # create additional 64-bit config: ReleaseAVX
+                set (CMAKE_CONFIGURATION_TYPES "Debug;Release;ReleaseAVX" CACHE STRING "" FORCE)
+                set (CMAKE_CXX_FLAGS_RELEASEAVX ${CMAKE_CXX_FLAGS_RELEASE} /arch:AVX /DUSE_AVX)
+                set (CMAKE_EXE_LINKER_FLAGS_RELEASEAVX ${CMAKE_EXE_LINKER_FLAGS_RELEASE})
+            endif()
+
         else()
             message(STATUS "NOT Visual Studio")
             target_link_libraries(ReSamplerLib libsndfile-1 libfftw3-3 ${CMAKE_THREAD_LIBS_INIT})
