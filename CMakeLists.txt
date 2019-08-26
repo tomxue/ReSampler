@@ -90,6 +90,14 @@ elseif (WIN32)
     target_link_libraries(ReSampler ReSamplerLib)
 
 else()
+
+    if(APPLE)
+        # since Mojave, cmake no longer finds these automatically:
+        # (see https://stackoverflow.com/questions/54068035/linking-not-working-in-homebrews-cmake-since-mojave)
+        include_directories(/usr/local/include)
+        link_directories(/usr/local/lib)
+    endif()
+
     set(SOURCE_FILES
         alignedmalloc.h
         biquad.h
