@@ -76,7 +76,7 @@ clang++ -pthread -std=c++11 main.cpp ReSampler.cpp conversioninfo.cpp -lfftw3 -l
 #### using cmake:
 ~~~
 cd path-to-where-you-want-the-binary
-cmake path-to-ReSampler
+cmake -DCMAKE_BUILD_TYPE=Release path-to-ReSampler
 make
 ~~~
 

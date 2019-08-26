@@ -118,7 +118,7 @@ else()
         conversioninfo.cpp)
 
     add_library(ReSamplerLib SHARED ${SOURCE_FILES})
-    target_link_libraries(ReSamplerLib ReSamplerLib fftw3 sndfile ${CMAKE_THREAD_LIBS_INIT})
+	target_link_libraries(ReSamplerLib fftw3 sndfile ${CMAKE_THREAD_LIBS_INIT})
     add_executable(ReSampler main.cpp)
     target_link_libraries(ReSampler ReSamplerLib)
 

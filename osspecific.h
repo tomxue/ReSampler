@@ -45,6 +45,7 @@
 #include <cstdint>
 typedef uint64_t __int64;
 #define stricmp strcasecmp
+#define TEMPFILE_OPEN_METHOD_STD_TMPFILE
 #define BYTESWAP_METHOD_BUILTIN
 /* end non-Windows */
 
