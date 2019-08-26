@@ -45,59 +45,8 @@ if(ANDROID)
     add_library(ReSampler SHARED ${SOURCE_FILES})
     target_link_libraries(ReSampler sndfile fftw3 log)
 
-elseif (WIN32)
-
-    set(SOURCE_FILES
-        alignedmalloc.h
-        biquad.h
-        conversioninfo.h
-        csv.h
-        dff.h
-        ditherer.h
-        dsf.h
-        FIRFilter.h
-        fraction.h
-        factorial.h
-        noiseshape.h
-        osspecific.h
-        raiitimer.h
-        ReSampler.cpp
-        ReSampler.h
-        srconvert.h
-        conversioninfo.cpp)
-
-    if(CMAKE_SIZEOF_VOID_P EQUAL 4)
-        message(STATUS "Windows 32-bit")
-        include_directories(libsndfile/include fftw32)
-        link_directories(libsndfile32/lib fftw32)
-    else()
-        message(STATUS "Windows 64-bit")
-        include_directories(libsndfile/include fftw64)
-        link_directories(libsndfile/lib fftw64)
-    endif()
-
-    add_library(ReSamplerLib ${SOURCE_FILES})
-
-    if(MSVC_VERSION GREATER 1700)
-        message(STATUS "Visual Studio")
-        target_link_libraries(ReSamplerLib libsndfile-1.lib libfftw3-3.lib ${CMAKE_THREAD_LIBS_INIT})
-    else()
-        message(STATUS "NOT Visual Studio")
-        target_link_libraries(ReSamplerLib libsndfile-1 libfftw3-3 ${CMAKE_THREAD_LIBS_INIT})
-    endif()
-
-    add_executable(ReSampler main.cpp)
-    target_link_libraries(ReSampler ReSamplerLib)
-
 else()
 
-    if(APPLE)
-        # since Mojave, cmake no longer finds these automatically:
-        # (see https://stackoverflow.com/questions/54068035/linking-not-working-in-homebrews-cmake-since-mojave)
-        include_directories(/usr/local/include)
-        link_directories(/usr/local/lib)
-    endif()
-
     set(SOURCE_FILES
         alignedmalloc.h
         biquad.h
@@ -117,8 +66,42 @@ else()
         srconvert.h
         conversioninfo.cpp)
 
-    add_library(ReSamplerLib SHARED ${SOURCE_FILES})
-	target_link_libraries(ReSamplerLib fftw3 sndfile ${CMAKE_THREAD_LIBS_INIT})
+    if (WIN32)
+
+        if(CMAKE_SIZEOF_VOID_P EQUAL 4)
+            message(STATUS "Windows 32-bit")
+            include_directories(libsndfile/include fftw32)
+            link_directories(libsndfile32/lib fftw32)
+        else()
+            message(STATUS "Windows 64-bit")
+            include_directories(libsndfile/include fftw64)
+            link_directories(libsndfile/lib fftw64)
+        endif()
+
+        add_library(ReSamplerLib ${SOURCE_FILES})
+
+        if(MSVC_VERSION GREATER 1700)
+            message(STATUS "Visual Studio")
+            target_link_libraries(ReSamplerLib libsndfile-1.lib libfftw3-3.lib ${CMAKE_THREAD_LIBS_INIT})
+        else()
+            message(STATUS "NOT Visual Studio")
+            target_link_libraries(ReSamplerLib libsndfile-1 libfftw3-3 ${CMAKE_THREAD_LIBS_INIT})
+        endif()
+
+    else()
+
+        if(APPLE)
+            # since Mojave, cmake no longer finds these automatically:
+            # (see https://stackoverflow.com/questions/54068035/linking-not-working-in-homebrews-cmake-since-mojave)
+            include_directories(/usr/local/include)
+            link_directories(/usr/local/lib)
+        endif()
+
+        add_library(ReSamplerLib SHARED ${SOURCE_FILES})
+        target_link_libraries(ReSamplerLib fftw3 sndfile ${CMAKE_THREAD_LIBS_INIT})
+
+    endif()
+
     add_executable(ReSampler main.cpp)
     target_link_libraries(ReSampler ReSamplerLib)
 
