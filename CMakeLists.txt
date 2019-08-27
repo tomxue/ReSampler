@@ -87,8 +87,8 @@ else()
             if(NOT CMAKE_SIZEOF_VOID_P EQUAL 4)
                 # create additional 64-bit config: ReleaseAVX
                 set (CMAKE_CONFIGURATION_TYPES "Debug;Release;ReleaseAVX" CACHE STRING "" FORCE)
-                set (CMAKE_CXX_FLAGS_RELEASEAVX /arch:avx ${CMAKE_CXX_FLAGS_RELEASE} USE_AVX)
-                set (CMAKE_EXE_LINKER_FLAGS_RELEASEAVX ${CMAKE_EXE_LINKER_FLAGS_RELEASE})
+                set (CMAKE_CXX_FLAGS_RELEASEAVX ${CMAKE_CXX_FLAGS_RELEASE_INIT} " /arch:AVX /DUSE_AVX")
+                set (CMAKE_EXE_LINKER_FLAGS_RELEASEAVX ${CMAKE_EXE_LINKER_FLAGS_RELEASE_INIT})
             endif()
 
         else()
