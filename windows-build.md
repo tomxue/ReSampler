@@ -39,7 +39,7 @@ Quad-Precision build (experimental) - GCC / minGW only:
 
 ### Using CMake
 
-**for IDEs that support CMake, it is usually very easy to simply open the CMakeLists file and start building**
+*for IDEs that support CMake, it is usually very easy to simply open the CMakeLists file and start building*
 
 #### building in Windows using QtCreator
 *even though this project doesn't use any Qt libraries, Qt Creator is nevertheless a good IDE for building this project*  
@@ -59,7 +59,7 @@ cmake -DCMAKE_BUILD_TYPE=Release path-to-ReSampler -G "MinGW Makefiles"
 mingw32-make.exe
 ~~~
 
-**note: annoyingly, you can't run the cmake MinGW Makefiles generator in git-bash on Windows; run it in a command prompt instead**
+*note: annoyingly, you can't run the cmake MinGW Makefiles generator in git-bash on Windows; run it in a command prompt instead*
 
 #### Examples
 
@@ -77,9 +77,7 @@ cmake <ReSamplerPath> -DCMAKE_BUILD_TYPE=Release -DCMAKE_VERBOSE_MAKEFILE:BOOL=O
 
 #### Using CMake to generate a multi-config Visual Studio Project
 
-create a multi-config Visual Studio project
-
-**note: the cmake-generated Visual Studio project is similar to (but not the same as) the one in this Repo, which was created manually**
+*note: the cmake-generated Visual Studio project is similar to (but not the same as) the one in this Repo, which was created manually*
 
 ~~~
 cmake <ReSampler Source Path> -A x64
