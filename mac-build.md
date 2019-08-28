@@ -54,6 +54,13 @@ AVX + FMA Build:
 clang++ -pthread -std=c++11 main.cpp ReSampler.cpp conversioninfo.cpp -lfftw3 -lsndfile -o ReSampler -O3 -DUSE_AVX -DUSE_FMA -mavx -mfma -L/usr/local/lib -I/usr/local/include
 ~~~
 
+#### using cmake:
+~~~
+cd path-to-where-you-want-the-binary
+cmake -DCMAKE_BUILD_TYPE=Release path-to-ReSampler
+make
+~~~
+
 # miscellaneous
 
 ## compiling sndfile-tools 
