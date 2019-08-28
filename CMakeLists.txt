@@ -47,6 +47,22 @@ if(ANDROID)
 
 else()
 
+    if(NOT CMAKE_CONFIGURATION_TYPES)
+        # single-config build (build type decided by CMAKE_BUILD_TYPE )
+        # for single-config builds, add additional configuration(s)
+        set (CMAKE_CXX_FLAGS_RELEASEAVX ${CMAKE_CXX_FLAGS_RELEASE_INIT} " -DUSE_AVX -mavx")
+
+        if(NOT CMAKE_BUILD_TYPE)
+            message(STATUS "build type not specified - using default")
+            set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the build type" FORCE)
+            # Set the possible values of build type for cmake-gui
+            set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo" "ReleaseAVX")
+        endif()
+
+        message(STATUS "build type: '${CMAKE_BUILD_TYPE}'")
+
+    endif()
+
     set(SOURCE_FILES
         alignedmalloc.h
         biquad.h
@@ -97,6 +113,7 @@ else()
 
         else()
             message(STATUS "NOT Visual Studio")
+            set (CMAKE_CXX_FLAGS_RELEASEAVX ${CMAKE_CXX_FLAGS_RELEASE_INIT} " -DUSE_AVX -mavx")
             target_link_libraries(ReSamplerLib libsndfile-1 libfftw3-3 ${CMAKE_THREAD_LIBS_INIT})
         endif()
 

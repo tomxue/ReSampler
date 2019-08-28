@@ -5,7 +5,7 @@
 - Choose the configuration you want (eg Release x64)
 - BUILD !!
 
-#### using minGW-W64 under Windows (to build 64-bit .exe):
+#### using minGW-W64 (with raw compiler invocations) under Windows (to build 64-bit .exe):
 - use MinGW-W64 with Posix Threads and SEH (*tip: install [Git for Windows](https://github.com/git-for-windows) and use Git Bash!*)
 - {...}\MinGW-W64\mingw64\bin must be added to Path
 - unlike *nix systems, there is no standard place to put libraries and include files
@@ -45,3 +45,29 @@ Quad-Precision build (experimental) - GCC / minGW only:
 
 #### building using CLion
 open the CMakeLists.txt in the ReSampler directory as a Project
+
+#### building using CMake from command line (examples)
+
+create a multi-config Visual Studio project
+~~~
+cmake <ReSampler Source Path> -A x64
+~~~
+
+create a multi-config Visual Studio project using a specific generator
+~~~
+cmake <ReSampler Source Path> -G "Visual Studio 14 2015 Win64"
+# or
+cmake <ReSampler Source Path> -G "Visual Studio 14 2015" -A x64
+~~~
+
+create a single-config minGW project (note: annoyingly, you can't run this in git-bash on Windows; run it in a command prompt instead)
+~~~
+cmake <ReSampler Source Path> -DCMAKE_BUILD_TYPE=Debug -G "MinGW Makefiles"
+cmake <ReSampler Source Path> -DCMAKE_BUILD_TYPE=Release -G "MinGW Makefiles"
+cmake <ReSampler Source Path> -DCMAKE_BUILD_TYPE=ReleaseAVX -G "MinGW Makefiles"
+~~~
+
+activate verbose output in make
+~~~
+cmake <ReSamplerPath> -DCMAKE_BUILD_TYPE=Release -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON -G "MinGW Makefiles"
+~~~
