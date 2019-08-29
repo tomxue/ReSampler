@@ -1247,7 +1247,7 @@ bool checkAVX() {
 
 bool showBuildVersion() {
 	std::cout << strVersion << " ";
-#if defined(_M_X64) || defined(__x86_64__) || defined(COMPILING_ON_ANDROID64)
+#if defined(_M_X64) || defined(__x86_64__) || defined(__aarch64__)
 	std::cout << "64-bit version";
 #ifdef USE_AVX
 	std::cout << " AVX build ... ";

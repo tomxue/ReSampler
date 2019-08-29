@@ -12,7 +12,7 @@
 #include <iostream>
 #include <string>
 
-#if defined(__ANDROID__) || defined(__arm__) || defined(__aarch64__)
+#if defined(__ANDROID__)
 
 // define COMPILING_ON_ANDROID macro first before including any user headers
 #define COMPILING_ON_ANDROID
@@ -57,7 +57,7 @@ void androidCleanup() {
 	delete std::cerr.rdbuf(0);
 }
 
-#endif // defined(__ANDROID__) || defined(__arm__) || defined(__aarch64__)
+#endif // defined(__ANDROID__)
 
 #include "ReSampler.h"
 
