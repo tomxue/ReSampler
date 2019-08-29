@@ -89,3 +89,5 @@ cmake <ReSampler Source Path> -G "Visual Studio 14 2015 Win64"
 # or
 cmake <ReSampler Source Path> -G "Visual Studio 14 2015" -A x64
 ~~~
+
+*if you need more help with CMake (and believe me, it's perfectly normal if you do), I have collected some resources (here)[https://gist.github.com/jniemann66/9d3a4f5d20c6710cf7a0bed10905af91]*
