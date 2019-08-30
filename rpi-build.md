@@ -34,6 +34,12 @@ clone this repository to a local directory, and invoke gcc
 g++ -pthread -std=c++11 main.cpp ReSampler.cpp conversioninfo.cpp -lfftw3 -lsndfile -o ReSampler -O3
 ~~~
 
+using specific compiler options for Raspberry Pi 3:
+
+~~~
+g++ -pthread -std=c++11 main.cpp ReSampler.cpp conversioninfo.cpp -lfftw3 -lsndfile -o ReSampler -O3 -mcpu=cortex-a53 -mfloat-abi=hard -mfpu=neon-fp-armv8 -mneon-for-64bits
+~~~
+
 #### using CMake
 
 ~~~
