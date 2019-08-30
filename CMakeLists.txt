@@ -96,14 +96,6 @@ else()
 
         add_library(ReSamplerLib ${SOURCE_FILES})
 
-        #        add_library(ReSamplerLib SHARED ${SOURCE_FILES})
-        #        include (GenerateExportHeader)
-        #        GENERATE_EXPORT_HEADER(ReSamplerLib
-        #            BASE_NAME ReSamplerLib
-        #            EXPORT_MACRO_NAME ReSamplerLib_EXPORTS
-        #            EXPORT_FILE_NAME ReSamplerLib_EXPORTS.h
-        #            STATIC_DEFINE RESAMPLERLIB_EXPORTS_BUILT_AS_STATIC)
-
         if(MSVC)
             message(STATUS "Visual Studio")
             target_link_libraries(ReSamplerLib libsndfile-1.lib libfftw3-3.lib ${CMAKE_THREAD_LIBS_INIT})
