@@ -48,15 +48,17 @@ if(ANDROID)
 else()
 
     if(NOT CMAKE_CONFIGURATION_TYPES)
+
         # single-config build (build type decided by CMAKE_BUILD_TYPE )
         # for single-config builds, add additional configuration(s)
         set (CMAKE_CXX_FLAGS_RELEASEAVX ${CMAKE_CXX_FLAGS_RELEASE_INIT} " -DUSE_AVX -mavx")
+        set (CMAKE_CXX_FLAGS_RELEASEQUADMATH ${CMAKE_CXX_FLAGS_RELEASE_INIT} " -DUSE_QUADMATH")
 
         if(NOT CMAKE_BUILD_TYPE)
             message(STATUS "build type not specified - using default")
             set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the build type" FORCE)
             # Set the possible values of build type for cmake-gui
-            set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo" "ReleaseAVX")
+            set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo" "ReleaseAVX" "ReleaseQuadmath")
         endif()
 
         message(STATUS "build type: '${CMAKE_BUILD_TYPE}'")
@@ -115,11 +117,20 @@ else()
 
         else()
             message(STATUS "NOT Visual Studio")
-            set (CMAKE_CXX_FLAGS_RELEASEAVX ${CMAKE_CXX_FLAGS_RELEASE_INIT} " -DUSE_AVX -mavx")
-            target_link_libraries(ReSamplerLib libsndfile-1 libfftw3-3 ${CMAKE_THREAD_LIBS_INIT})
+
+            if(CMAKE_BUILD_TYPE STREQUAL "ReleaseQuadmath")
+                message(STATUS "Linking with Quadmath library")
+                set(CMAKE_CXX_EXTENSIONS TRUE)
+                target_link_libraries(ReSamplerLib libsndfile-1 libfftw3-3 libquadmath ${CMAKE_THREAD_LIBS_INIT})
+            else()
+                target_link_libraries(ReSamplerLib libsndfile-1 libfftw3-3 ${CMAKE_THREAD_LIBS_INIT})
+            endif()
+
         endif()
 
     else()
+
+        #Not Windows ...
 
         if(APPLE)
             # since Mojave, cmake no longer finds these automatically:
@@ -129,7 +140,13 @@ else()
         endif()
 
         add_library(ReSamplerLib SHARED ${SOURCE_FILES})
-        target_link_libraries(ReSamplerLib fftw3 sndfile ${CMAKE_THREAD_LIBS_INIT})
+        if(CMAKE_BUILD_TYPE STREQUAL "ReleaseQuadmath")
+            message(STATUS "Linking with Quadmath library")
+            set(CMAKE_CXX_EXTENSIONS TRUE)
+            target_link_libraries(ReSamplerLib libsndfile-1 libfftw3-3 libquadmath ${CMAKE_THREAD_LIBS_INIT})
+        else()
+            target_link_libraries(ReSamplerLib libsndfile-1 libfftw3-3 ${CMAKE_THREAD_LIBS_INIT})
+        endif()
 
     endif()
 
