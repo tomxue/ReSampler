@@ -50,7 +50,8 @@ else()
     if(NOT CMAKE_CONFIGURATION_TYPES)
 
         # single-config build (build type decided by CMAKE_BUILD_TYPE )
-        # for single-config builds, add additional configuration(s)
+
+        # for single-config builds, add additional configurations
         set (CMAKE_CXX_FLAGS_RELEASEAVX ${CMAKE_CXX_FLAGS_RELEASE_INIT} " -DUSE_AVX -mavx")
         set (CMAKE_CXX_FLAGS_RELEASEQUADMATH ${CMAKE_CXX_FLAGS_RELEASE_INIT} " -DUSE_QUADMATH")
 
@@ -119,8 +120,8 @@ else()
             message(STATUS "NOT Visual Studio")
 
             if(CMAKE_BUILD_TYPE STREQUAL "ReleaseQuadmath")
+                set(CMAKE_CXX_EXTENSIONS TRUE) # -std=gnu++11 instead of -std=c++11
                 message(STATUS "Linking with Quadmath library")
-                set(CMAKE_CXX_EXTENSIONS TRUE)
                 target_link_libraries(ReSamplerLib libsndfile-1 libfftw3-3 libquadmath ${CMAKE_THREAD_LIBS_INIT})
             else()
                 target_link_libraries(ReSamplerLib libsndfile-1 libfftw3-3 ${CMAKE_THREAD_LIBS_INIT})
@@ -142,7 +143,7 @@ else()
         add_library(ReSamplerLib SHARED ${SOURCE_FILES})
         if(CMAKE_BUILD_TYPE STREQUAL "ReleaseQuadmath")
             message(STATUS "Linking with Quadmath library")
-            set(CMAKE_CXX_EXTENSIONS TRUE)
+            set(CMAKE_CXX_EXTENSIONS TRUE) #gnu
             target_link_libraries(ReSamplerLib libsndfile-1 libfftw3-3 libquadmath ${CMAKE_THREAD_LIBS_INIT})
         else()
             target_link_libraries(ReSamplerLib libsndfile-1 libfftw3-3 ${CMAKE_THREAD_LIBS_INIT})
