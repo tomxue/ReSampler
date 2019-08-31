@@ -143,7 +143,7 @@ else()
         add_library(ReSamplerLib SHARED ${SOURCE_FILES})
         if(CMAKE_BUILD_TYPE STREQUAL "ReleaseQuadmath")
             message(STATUS "Linking with Quadmath library")
-            set(CMAKE_CXX_EXTENSIONS TRUE) #gnu
+            set(CMAKE_CXX_EXTENSIONS TRUE)  # -std=gnu++11 instead of -std=c++11
             target_link_libraries(ReSamplerLib libsndfile-1 libfftw3-3 libquadmath ${CMAKE_THREAD_LIBS_INIT})
         else()
             target_link_libraries(ReSamplerLib libsndfile-1 libfftw3-3 ${CMAKE_THREAD_LIBS_INIT})
