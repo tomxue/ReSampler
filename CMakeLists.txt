@@ -58,9 +58,10 @@ else()
         if(NOT CMAKE_BUILD_TYPE)
             message(STATUS "build type not specified - using default")
             set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the build type" FORCE)
-            # Set the possible values of build type for cmake-gui
-            set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo" "ReleaseAVX" "ReleaseQuadmath")
         endif()
+
+        # Set the possible values of build type for cmake-gui
+        set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo" "ReleaseAVX" "ReleaseQuadmath")
 
         message(STATUS "build type: '${CMAKE_BUILD_TYPE}'")
 
