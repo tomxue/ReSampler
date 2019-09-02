@@ -159,12 +159,12 @@ struct MetaData
 	std::string genre;
 
 	// The following is only relevant for bext chunks in Broadcast Wave files:
-	bool has_bext_fields;
-	SF_BROADCAST_INFO broadcastInfo;
+	bool has_bext_fields{};
+	SF_BROADCAST_INFO broadcastInfo{};
 
 	// The following is only relevant for cart chunks:
-	bool has_cart_chunk;
-	LargeSFCartInfo cartInfo;
+	bool has_cart_chunk{};
+	LargeSFCartInfo cartInfo{};
 
 };
 

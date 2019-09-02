@@ -1341,10 +1341,14 @@ int runCommand(int argc, char** argv) {
 	// Isolate the file extensions
 	std::string inFileExt;
 	std::string outFileExt;
-	if (ci.inputFilename.find_last_of('.') != std::string::npos)
+
+	if (ci.inputFilename.find_last_of('.') != std::string::npos) {
 		inFileExt = ci.inputFilename.substr(ci.inputFilename.find_last_of('.') + 1);
-	if (ci.outputFilename.find_last_of('.') != std::string::npos)
+	}
+
+	if (ci.outputFilename.find_last_of('.') != std::string::npos) {
 		outFileExt = ci.outputFilename.substr(ci.outputFilename.find_last_of('.') + 1);
+	}
 
 	// detect dsf or dff format
 	ci.dsfInput = (inFileExt == "dsf");
@@ -1356,6 +1360,7 @@ int runCommand(int argc, char** argv) {
 	if (ci.csvOutput) {
 		std::cout << "Outputting to csv format" << std::endl;
 	}
+
 	else {
 		if (!ci.outBitFormat.empty()) {  // new output bit format requested
 			ci.outputFormat = determineOutputFormat(outFileExt, ci.outBitFormat);
@@ -1408,14 +1413,15 @@ int runCommand(int argc, char** argv) {
 				ci.bEnablePeakDetection = false;
 				return convert<DsfFile, double>(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
 			}
-			else if (ci.dffInput) {
+
+			if (ci.dffInput) {
 				ci.bEnablePeakDetection = false;
 				return convert<DffFile, double>(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
 			}
-			else {
-				ci.bEnablePeakDetection = true;
-				return convert<SndfileHandle, double>(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
-			}
+			
+			ci.bEnablePeakDetection = true;
+			return convert<SndfileHandle, double>(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
+			
 		}
 
 		else {
@@ -1427,14 +1433,15 @@ int runCommand(int argc, char** argv) {
 				ci.bEnablePeakDetection = false;
 				return convert<DsfFile, float>(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
 			}
-			else if (ci.dffInput) {
+
+			if (ci.dffInput) {
 				ci.bEnablePeakDetection = false;
 				return convert<DffFile, float>(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
 			}
-			else {
-				ci.bEnablePeakDetection = true;
-				return convert<SndfileHandle, float>(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
-			}
+			
+			ci.bEnablePeakDetection = true;
+			return convert<SndfileHandle, float>(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
+			
 		}
 
 	} //ends try block
