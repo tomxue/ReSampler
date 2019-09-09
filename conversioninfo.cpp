@@ -368,10 +368,7 @@ bool ConversionInfo::fromCmdLineArgs(int argc, char** argv) {
 		bBadParams = true;
 	}
 
-	if (bBadParams) {
-		return false;
-	}
-	return true;
+	return !bBadParams;
 }
 
 } // namespace ReSampler
