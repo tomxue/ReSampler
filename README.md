@@ -295,6 +295,8 @@ Resampler was originally developed on Visual C++ 2015, but also compiles just as
 
 [Mac](mac-build.md)
 
+[Raspbian](rpi-build.md)
+
 ----------
 
 ## Description of Binaries included in distribution
