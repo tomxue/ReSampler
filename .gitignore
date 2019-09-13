@@ -22,6 +22,7 @@ cmake-build*/
 #Qt files
 *.pro.user
 *.cpp.autosave
+CMakeLists.txt.user.*
 
 #macOS files
 .DS_Store
