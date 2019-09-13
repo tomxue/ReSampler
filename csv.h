@@ -12,11 +12,7 @@
 #ifndef RESAMPLER_CSV_H
 #define RESAMPLER_CSV_H
 
-#include "osspecific.h"
-
-#include <algorithm>
 #include <iostream>
-#include <iomanip>
 #include <cassert>
 #include <cstdint>
 #include <string>
@@ -24,8 +20,6 @@
 #include <cmath>
 #include <string>
 #include <vector>
-
-namespace ReSampler {
 
 enum CsvOpenMode {
 	csv_read,
@@ -256,7 +250,5 @@ public:
 	}
 
 };
-
-} // namespace ReSampler
 
 #endif //RESAMPLER_CSV_H
