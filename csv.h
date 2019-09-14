@@ -14,6 +14,7 @@
 
 #include "osspecific.h"
 
+#include <algorithm>
 #include <iostream>
 #include <iomanip>
 #include <cassert>
