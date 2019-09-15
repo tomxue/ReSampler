@@ -21,13 +21,10 @@ public:
 	// numerator/input coeffs:			a0,a1,a2
 	// denominator/feedback coeffs:		b1,b2
 
-	Biquad() 
-		: z1(0.0),
-	{
-	}
+	Biquad() = default;
 
 	Biquad(FloatType a0, FloatType a1, FloatType a2, FloatType b1, FloatType b2)
-		: a0(a0), a1(a1), a2(a2), b1(b1), b2(b2),z1(0.0),z2(0.0)
+		: a0(a0), a1(a1), a2(a2), b1(b1), b2(b2)
 	{
 	}
 
@@ -56,7 +53,7 @@ public:
 
 protected:
 	FloatType a0, a1, a2, b1, b2;
-	double z1, z2{0.0};
+	double z1{0.0}, z2{0.0};
 };
 
 } // namespace ReSampler
