@@ -170,7 +170,8 @@ bool determineBestBitFormat(std::string& bitFormat, const ConversionInfo& ci)
 
 	// get total number of major formats:
 	SF_FORMAT_INFO formatinfo;
-	int format, major_count;
+	int format;
+	int major_count;
 	memset(&formatinfo, 0, sizeof(formatinfo));
 	sf_command(nullptr, SFC_GET_FORMAT_MAJOR_COUNT, &major_count, sizeof(int));
 

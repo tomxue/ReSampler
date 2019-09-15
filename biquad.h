@@ -22,7 +22,7 @@ public:
 	// denominator/feedback coeffs:		b1,b2
 
 	Biquad() 
-		: z1(0.0),z2(0.0)
+		: z1(0.0),
 	{
 	}
 
@@ -56,7 +56,7 @@ public:
 
 protected:
 	FloatType a0, a1, a2, b1, b2;
-	double z1, z2;
+	double z1, z2{0.0};
 };
 
 } // namespace ReSampler
