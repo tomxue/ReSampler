@@ -88,6 +88,9 @@ else()
 
     if (WIN32)
 
+        find_library(SNDFILE_LIBRARY NAMES libsndfile-1 libsndfile HINTS ${PROJECT_SOURCE_DIR}/libsndfile/lib)
+        message(STATUS "libsndfile library location: " ${SNDFILE_LIBRARY})
+
         if(CMAKE_SIZEOF_VOID_P EQUAL 4)
             message(STATUS "Windows 32-bit")
             include_directories(libsndfile/include fftw32)
@@ -123,9 +126,9 @@ else()
             if(CMAKE_BUILD_TYPE STREQUAL "ReleaseQuadmath")
                 set(CMAKE_CXX_EXTENSIONS TRUE) # -std=gnu++11 instead of -std=c++11
                 message(STATUS "Linking with Quadmath library")
-                target_link_libraries(ReSamplerLib libsndfile-1 libfftw3-3 libquadmath ${CMAKE_THREAD_LIBS_INIT})
+                target_link_libraries(ReSamplerLib ${SNDFILE_LIBRARY} libfftw3-3 libquadmath ${CMAKE_THREAD_LIBS_INIT})
             else()
-                target_link_libraries(ReSamplerLib libsndfile-1 libfftw3-3 ${CMAKE_THREAD_LIBS_INIT})
+                target_link_libraries(ReSamplerLib ${SNDFILE_LIBRARY} libfftw3-3 ${CMAKE_THREAD_LIBS_INIT})
             endif()
 
         endif()
