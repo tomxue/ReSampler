@@ -272,7 +272,7 @@ public:
 	}
 
 	uint64_t seek(uint64_t pos, int whence) {
-
+		(void)whence; // unused
 		// To-do: allow seeks to positions other than beginning (requires proper calculations)
 		// reset state to initial conditions: 
 		totalBytesRead = 0;

@@ -236,6 +236,7 @@ public:
 	}
 
 	uint64_t seek(uint64_t pos, int whence) {
+		(void)whence; // unused
 		// reset initial conditions:
 		bufferIndex = blockSize; // empty (zero -> full)
 		currentBit = 0;

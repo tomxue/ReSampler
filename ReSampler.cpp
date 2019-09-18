@@ -1133,21 +1133,27 @@ void printSamplePosAsTime(sf_count_t samplePos, unsigned int sampleRate) {
 }
 
 bool testSetMetaData(DsfFile& outfile) {
+	(void)outfile; // unused
 	// stub - to-do
 	return true;
 }
 
 bool testSetMetaData(DffFile& outfile) {
+	(void)outfile; // unused
 	// stub - to-do
 	return true;
 }
 
 bool getMetaData(MetaData& metadata, const DffFile& f) {
+	(void)metadata; // unused
+	(void)f; // unused
 	// stub - to-do
 	return true;
 }
 
 bool getMetaData(MetaData& metadata, const DsfFile& f) {
+	(void)metadata; // unused
+	(void)f; // unused
 	// stub - to-do
 	return true;
 }
