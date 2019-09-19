@@ -1057,7 +1057,6 @@ bool setMetaData(const MetaData& metadata, SndfileHandle& outfile) {
 
 bool testSetMetaData(SndfileHandle& outfile) {
 	MetaData m;
-	memset(&m, 0, sizeof(m));
 	m.title.assign("test title");
 	m.copyright.assign("test copyright");
 	m.software.assign("test software");
