@@ -173,7 +173,7 @@ the entire conversion will need to be performed again if clipping is detected.
 
 #### Example
 
-To convert a 24-bit, 96kHz .wav input file to 16-bit, 44.1kHz .flac output file, with steep lowpass filter and dithering:
+To convert a 96kHz 24-bit .wav input file to 44.1kHz 16-bit .flac output file, with steep lowpass filter and dithering:
 
 ~~~
 ReSampler.exe -i c:\pathto\somefile.wav -o c:\pathto\convertedfile.flac -r 44100 -b 16 --steepLPF --dither
