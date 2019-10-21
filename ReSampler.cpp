@@ -1467,7 +1467,11 @@ template bool convert<SndfileHandle, float>(ConversionInfo&);
 template bool convert<SndfileHandle, double>(ConversionInfo&);
 
 std::function<void(int)> OutputManager::progressFunc = [](int percentComplete) {
-	std::cout << percentComplete << "%\b\b\b" << std::flush;
+	std::cout << percentComplete << "%"
+								 #ifndef COMPILING_ON_ANDROID
+								 << "\b\b\b"
+								 #endif
+								 << std::flush;
 };
 
 std::function<void (int)> OutputManager::getProgressFunc()
