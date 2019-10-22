@@ -27,235 +27,235 @@
 
 namespace ReSampler {
 
-enum CsvOpenMode {
-	csv_read,
-	csv_write
-};
+	enum CsvOpenMode {
+		csv_read,
+		csv_write
+	};
 
-enum CsvSignedness {
-	Signed,
-	Unsigned
-};
+	enum CsvSignedness {
+		Signed,
+		Unsigned
+	};
 
-enum CsvNumericFormat {
-	Integer,
-	FloatingPoint,
-	Fixed,
-	Scientific
-};
+	enum CsvNumericFormat {
+		Integer,
+		FloatingPoint,
+		Fixed,
+		Scientific
+	};
 
-enum CsvNumericBase {
-	Binary = 2,
-	Octal = 8,
-	Decimal = 10,
-	Hexadecimal = 16
-};
+	enum CsvNumericBase {
+		Binary = 2,
+		Octal = 8,
+		Decimal = 10,
+		Hexadecimal = 16
+	};
 
-enum IntegerWriteScalingStyle {
-	Pow2Clip,
-	Pow2Minus1
-};
+	enum IntegerWriteScalingStyle {
+		Pow2Clip,
+		Pow2Minus1
+	};
 
-class CsvFile {
-public:
-	CsvFile(const std::string& path, CsvOpenMode mode = csv_write) : path(path), mode(mode), numChannels(2), numericFormat(Integer), signedness(Signed), numericBase(Decimal), numBits(16), precision(10), integerWriteScalingStyle(Pow2Minus1),
-		intMaxAmplitude(32767), unsignedOffset(0)
-	{
+	class CsvFile {
+	public:
+		CsvFile(const std::string& path, CsvOpenMode mode = csv_write) : path(path), mode(mode), numChannels(2), numericFormat(Integer), signedness(Signed), numericBase(Decimal), numBits(16), precision(10), integerWriteScalingStyle(Pow2Minus1),
+			intMaxAmplitude(32767), unsignedOffset(0)
+		{
 
-		file.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-		currentChannel = 0;
+			file.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+			currentChannel = 0;
 
-		switch (mode) {
-		case csv_read:
-			try {
-				file.open(path, std::ios::in | std::ios::binary);
-				err = false;
-			}
-			catch (std::ios_base::failure& e) {
-				e.what();
-				err = true;
-				return;
-			}
-			break;
+			switch (mode) {
+			case csv_read:
+				try {
+					file.open(path, std::ios::in | std::ios::binary);
+					err = false;
+				}
+				catch (std::ios_base::failure& e) {
+					e.what();
+					err = true;
+					return;
+				}
+				break;
 
-		case csv_write:
-			try {
-				file.open(path, std::ios::out | std::ios::binary);
-				err = false;
-			}
-			catch (std::ios_base::failure& e) {
-				e.what();
-				err = true;
-				return;
-			}
-			break;
-		}
-	}
-
-	bool isErr() const {
-		return err;
-	}
-
-	~CsvFile() {
-		if(file.is_open()) {
-			file.close();
-		}
-	}
-
-	template <typename T>
-	int64_t write(const T* buffer, int64_t count) {
-		if(err) {
-			return 0;
-		}
-		int64_t i;
-		for(i = 0; i < count; i++) {
-			switch(numericFormat) {
-				case CsvNumericFormat::FloatingPoint:
-					file << buffer[i];
-					break;
-
-				default:
-					file << scaleToInt<int>(buffer[i]);
-					break;
-			}
-
-			if(++currentChannel < numChannels) {
-				file << ",";
-			} else {
-				file  << "\r\n";
-				currentChannel = 0;
+			case csv_write:
+				try {
+					file.open(path, std::ios::out | std::ios::binary);
+					err = false;
+				}
+				catch (std::ios_base::failure& e) {
+					e.what();
+					err = true;
+					return;
+				}
+				break;
 			}
 		}
-		return i;
-	}
 
-private:
-	std::string path;
-	CsvOpenMode mode;
-	std::fstream file;
-	int numChannels;
-	CsvNumericFormat numericFormat;
-	double scaleFactor;
-	CsvSignedness signedness;
-	CsvNumericBase numericBase;
-	int numBits;
-	int precision;
-	IntegerWriteScalingStyle integerWriteScalingStyle;
-	int currentChannel;
-	bool err;
-	int intMaxAmplitude;
-	int unsignedOffset;
-
-	template <typename IntType, typename FloatType>
-	IntType scaleToInt(FloatType x) {
-		return unsignedOffset + std::min(std::max(-intMaxAmplitude, static_cast<IntType>(std::round(scaleFactor * x))), intMaxAmplitude - 1);
-	}
-
-	void setStreamFormat() {
-		if(file.is_open()) {
-			file.unsetf(std::ios_base::floatfield);
-			if(numericFormat == FloatingPoint) {
-				file << std::setprecision(precision);
-			} else if (numericFormat == Integer) {
-				file.setf(std::ios_base::fixed);
-				file << std::setprecision(0);
-			}
-			else if (numericFormat == Fixed) {
-				file.setf(std::ios_base::fixed);
-				file << std::setprecision(precision);
-			}
-			else if (numericFormat == Scientific) {
-				file.setf(std::ios_base::scientific, std::ios_base::floatfield);
-				file << std::setprecision(precision);
-			}
-
-			if (numericBase == Hexadecimal) {
-				file.setf(std::ios_base::hex, std::ios_base::basefield);
-				file.setf(std::ios_base::showbase);
-			}
-			else if (numericBase == Octal) {
-				file.setf(std::ios_base::oct, std::ios_base::basefield);
-				file.setf(std::ios_base::showbase);
-			}
-			else {
-				file.setf(std::ios_base::dec, std::ios_base::basefield);
-			}
-
+		bool isErr() const {
+			return err;
 		}
-	}
 
-public:
-	CsvNumericFormat getNumericFormat() const {
-		return numericFormat;
-	}
+		~CsvFile() {
+			if(file.is_open()) {
+				file.close();
+			}
+		}
 
-	void setNumericFormat(CsvNumericFormat numericFormat) {
-		CsvFile::numericFormat = numericFormat;
-		setStreamFormat();
-	}
+		template <typename T>
+		int64_t write(const T* buffer, int64_t count) {
+			if(err) {
+				return 0;
+			}
+			int64_t i;
+			for(i = 0; i < count; i++) {
+				switch(numericFormat) {
+					case CsvNumericFormat::FloatingPoint:
+						file << buffer[i];
+						break;
 
-	CsvSignedness getSignedness() const {
-		return signedness;
-	}
+					default:
+						file << scaleToInt<int>(buffer[i]);
+						break;
+				}
 
-	void setSignedness(CsvSignedness signedness) {
-		CsvFile::signedness = signedness;
-		setStreamFormat();
-	}
+				if(++currentChannel < numChannels) {
+					file << ",";
+				} else {
+					file  << "\r\n";
+					currentChannel = 0;
+				}
+			}
+			return i;
+		}
 
-	CsvNumericBase getNumericBase() const {
-		return numericBase;
-	}
+	private:
+		std::string path;
+		CsvOpenMode mode;
+		std::fstream file;
+		int numChannels;
+		CsvNumericFormat numericFormat;
+		double scaleFactor;
+		CsvSignedness signedness;
+		CsvNumericBase numericBase;
+		int numBits;
+		int precision;
+		IntegerWriteScalingStyle integerWriteScalingStyle;
+		int currentChannel;
+		bool err;
+		int intMaxAmplitude;
+		int unsignedOffset;
 
-	void setNumericBase(CsvNumericBase numericBase) {
-		CsvFile::numericBase = numericBase;
-		setStreamFormat();
-	}
+		template <typename IntType, typename FloatType>
+		IntType scaleToInt(FloatType x) {
+			return unsignedOffset + std::min(std::max(-intMaxAmplitude, static_cast<IntType>(std::round(scaleFactor * x))), intMaxAmplitude - 1);
+		}
 
-	int getNumBits() const {
-		return numBits;
-	}
+		void setStreamFormat() {
+			if(file.is_open()) {
+				file.unsetf(std::ios_base::floatfield);
+				if(numericFormat == FloatingPoint) {
+					file << std::setprecision(precision);
+				} else if (numericFormat == Integer) {
+					file.setf(std::ios_base::fixed);
+					file << std::setprecision(0);
+				}
+				else if (numericFormat == Fixed) {
+					file.setf(std::ios_base::fixed);
+					file << std::setprecision(precision);
+				}
+				else if (numericFormat == Scientific) {
+					file.setf(std::ios_base::scientific, std::ios_base::floatfield);
+					file << std::setprecision(precision);
+				}
 
-	void setNumBits(int numBits) {
-		intMaxAmplitude = 1 << (numBits - 1);
-		unsignedOffset = (signedness == Signed) ? 0 : intMaxAmplitude;
-		scaleFactor = static_cast<double>((integerWriteScalingStyle == Pow2Minus1) ? intMaxAmplitude - 1 : intMaxAmplitude);
-		std::cout << "csv output: number of bits: " << numBits << ", scaleFactor: " << scaleFactor;
-		std::cout << ", integer output range: "
-			<< unsignedOffset + std::max(-intMaxAmplitude, static_cast<int>(std::round(scaleFactor * -1.0)))
-			<< " to "
-			<< unsignedOffset +  std::min(intMaxAmplitude - 1, static_cast<int>(std::round(scaleFactor * 1.0)))
-			<< std::endl;
-		CsvFile::numBits = numBits;
-		setStreamFormat();
-	}
+				if (numericBase == Hexadecimal) {
+					file.setf(std::ios_base::hex, std::ios_base::basefield);
+					file.setf(std::ios_base::showbase);
+				}
+				else if (numericBase == Octal) {
+					file.setf(std::ios_base::oct, std::ios_base::basefield);
+					file.setf(std::ios_base::showbase);
+				}
+				else {
+					file.setf(std::ios_base::dec, std::ios_base::basefield);
+				}
 
-	int getPrecision() const {
-		return precision;
-	}
+			}
+		}
 
-	void setPrecision(int precision) {
-		CsvFile::precision = precision;
-		setStreamFormat();
-	}
+	public:
+		CsvNumericFormat getNumericFormat() const {
+			return numericFormat;
+		}
 
-	IntegerWriteScalingStyle getIntegerWriteScalingStyle() const {
-		return integerWriteScalingStyle;
-	}
+		void setNumericFormat(CsvNumericFormat numericFormat) {
+			CsvFile::numericFormat = numericFormat;
+			setStreamFormat();
+		}
 
-	void setIntegerWriteScalingStyle(IntegerWriteScalingStyle integerWriteScalingStyle) {
-		CsvFile::integerWriteScalingStyle = integerWriteScalingStyle;
-	}
+		CsvSignedness getSignedness() const {
+			return signedness;
+		}
 
-	int getNumChannels() const {
-		return numChannels;
-	}
+		void setSignedness(CsvSignedness signedness) {
+			CsvFile::signedness = signedness;
+			setStreamFormat();
+		}
 
-	void setNumChannels(int numChannels) {
-		CsvFile::numChannels = numChannels;
-	}
+		CsvNumericBase getNumericBase() const {
+			return numericBase;
+		}
 
-};
+		void setNumericBase(CsvNumericBase numericBase) {
+			CsvFile::numericBase = numericBase;
+			setStreamFormat();
+		}
+
+		int getNumBits() const {
+			return numBits;
+		}
+
+		void setNumBits(int numBits) {
+			intMaxAmplitude = 1 << (numBits - 1);
+			unsignedOffset = (signedness == Signed) ? 0 : intMaxAmplitude;
+			scaleFactor = static_cast<double>((integerWriteScalingStyle == Pow2Minus1) ? intMaxAmplitude - 1 : intMaxAmplitude);
+			std::cout << "csv output: number of bits: " << numBits << ", scaleFactor: " << scaleFactor;
+			std::cout << ", integer output range: "
+				<< unsignedOffset + std::max(-intMaxAmplitude, static_cast<int>(std::round(scaleFactor * -1.0)))
+				<< " to "
+				<< unsignedOffset +  std::min(intMaxAmplitude - 1, static_cast<int>(std::round(scaleFactor * 1.0)))
+				<< std::endl;
+			CsvFile::numBits = numBits;
+			setStreamFormat();
+		}
+
+		int getPrecision() const {
+			return precision;
+		}
+
+		void setPrecision(int precision) {
+			CsvFile::precision = precision;
+			setStreamFormat();
+		}
+
+		IntegerWriteScalingStyle getIntegerWriteScalingStyle() const {
+			return integerWriteScalingStyle;
+		}
+
+		void setIntegerWriteScalingStyle(IntegerWriteScalingStyle integerWriteScalingStyle) {
+			CsvFile::integerWriteScalingStyle = integerWriteScalingStyle;
+		}
+
+		int getNumChannels() const {
+			return numChannels;
+		}
+
+		void setNumChannels(int numChannels) {
+			CsvFile::numChannels = numChannels;
+		}
+
+	};
 
 } // namespace ReSampler
 
