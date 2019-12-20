@@ -375,31 +375,6 @@ if (EXISTS ${CMAKE_SOURCE_DIR}/api/fftw3.f03.in)
   install (FILES ${CMAKE_CURRENT_BINARY_DIR}/fftw3.f03 DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 endif ()
 
-if (BUILD_TESTS)
-
-  add_executable (bench ${fftw_libbench2_SOURCE} tests/bench.c tests/hook.c tests/fftw-bench.c)
-
-  if (ENABLE_THREADS AND NOT WITH_COMBINED_THREADS)
-    target_link_libraries (bench ${fftw3_lib}_threads)
-  else ()
-    target_link_libraries (bench ${fftw3_lib})
-  endif ()
-
-
-  enable_testing ()
-
-  if (Threads_FOUND)
-
-    macro (fftw_add_test problem)
-      add_test (NAME ${problem} COMMAND bench -s ${problem})
-    endmacro ()
-
-    fftw_add_test (32x64)
-    fftw_add_test (ib256)
-
-  endif ()
-endif ()
-
 # pkgconfig file
 set (prefix ${CMAKE_INSTALL_PREFIX})
 set (exec_prefix ${CMAKE_INSTALL_PREFIX})

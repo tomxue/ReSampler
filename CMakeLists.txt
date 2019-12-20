@@ -4,13 +4,6 @@ find_package(Threads REQUIRED)
 set(CMAKE_CXX_STANDARD 11)
 
 if(ANDROID)
-    # disable building of tests and executables as we do not need them
-    # fftw
-    option (BUILD_TESTS "Build tests" OFF)
-    # libsndfile
-    set(BUILD_PROGRAMS OFF)
-    set(BUILD_EXAMPLES OFF)
-    set(BUILD_TESTING OFF)
     set(BUILD_SHARED_LIBS_SAVED "${BUILD_SHARED_LIBS}")
     set(BUILD_SHARED_LIBS OFF)
     add_subdirectory (android/src/fftw-3.3.8)
