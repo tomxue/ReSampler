@@ -4,23 +4,13 @@ find_package(Threads REQUIRED)
 set(CMAKE_CXX_STANDARD 11)
 
 if(ANDROID)
-
-    add_subdirectory (android/src/fftw-3.3.8)
     set(BUILD_SHARED_LIBS_SAVED "${BUILD_SHARED_LIBS}")
-    set(BUILD_PROGRAMS_SAVED "${BUILD_PROGRAMS}")
-    set(BUILD_EXAMPLES_SAVED "${BUILD_EXAMPLES}")
-    set(BUILD_TESTING_SAVED "${BUILD_TESTING}")
     set(BUILD_SHARED_LIBS OFF)
-    set(BUILD_PROGRAMS OFF)
-    set(BUILD_EXAMPLES OFF)
-    set(BUILD_TESTING OFF)
-    add_subdirectory (android/src/libsndfile)
-    set(BUILD_SHARED_LIBS "${BUILD_SHARED_LIBS_SAVED}")
-    set(BUILD_PROGRAMS "${BUILD_PROGRAMS_SAVED}")
-    set(BUILD_EXAMPLES "${BUILD_EXAMPLES_SAVED}")
-    set(BUILD_TESTING "${BUILD_TESTING_SAVED}")
+    add_subdirectory (android/src/fftw-3.3.8)
     include_directories(android/src/fftw-3.3.8/api)
+    add_subdirectory (android/src/libsndfile)
     include_directories($CMAKE_SOURCE_DIR/android/src/libsndfile/src)
+    set(BUILD_SHARED_LIBS "${BUILD_SHARED_LIBS_SAVED}")
 
     set(SOURCE_FILES
         alignedmalloc.h

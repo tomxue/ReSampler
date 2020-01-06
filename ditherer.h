@@ -74,7 +74,7 @@ struct DitherProfile {
 const DitherProfile ditherProfileList[] = {
 
 	// id, name, noiseGeneratorType, filterType, intendedSampleRate, N, coeffs, bUseFeedback
-	
+
 	{ flat, "flat tpdf", flatTPDF, bypass, 44100, 1, noiseShaperPassThrough, false },
 	{ legacy, "classic", legacyTPDF, bypass, 44100, 10, noiseShaperPassThrough, true },
 	{ flat_f, "flat tpdf (with error-correction feedback)", flatTPDF, fir, 44100, 1, noiseShaperPassThrough, true },
@@ -206,15 +206,15 @@ public:
 			ditherScaleFactor = 0.0;
 		}
 		else {	// initial state: dithering
-			ditherScaleFactor = maxDitherScaleFactor; 
+			ditherScaleFactor = maxDitherScaleFactor;
 		}
 
 		autoBlankLevelThreshold = static_cast<FloatType>(1.0 / pow(2, 32)); // 1 LSB of 32-bit digital
 		autoBlankTimeThreshold = 30000; // number of zero samples before activating autoblank
 		autoBlankDecayCutoff = static_cast<FloatType>(0.25 * reciprocalSignalMagnitude / randMax);
 		zeroCount = 0;
-		
-	} // Ends Constructor 
+
+	} // Ends Constructor
 
 	void adjustGain(FloatType factor) {
 		gain *= factor;
@@ -228,7 +228,7 @@ public:
 		f3.reset();
 
 		memset(FIRHistory, 0, MAX_FIR_FILTER_SIZE * sizeof(FloatType));
-		
+
 		// re-seed PRNG
 		randGenerator.seed(static_cast<unsigned int>(seed));
 		oldRandom = 0;
@@ -251,12 +251,12 @@ public:
 //                               v
 //                    preDither [G1]
 //                         ^     |   +----------> preQuantize
-//                         |     v   |               
+//                         |     v   |
 //   inSample ----->+( )---+--->(+)--+--[G2]-->[Q]-->--+------> postQuantize
 //                    -    |                           |
 //                    ^    +---------->-( )+<----------+
-//                    |                  |               
-//                 [filter]              | 
+//                    |                  |
+//                 [filter]              |
 //                    |                  v
 //                    +---<---[z^-1]-----+
 //
@@ -291,7 +291,7 @@ FloatType dither(FloatType inSample) {
 	FloatType preQuantize, postQuantize;
 	preQuantize = masterVolume * (preDither + noise);
 	postQuantize = reciprocalSignalMagnitude * round(maxSignalMagnitude * preQuantize); // quantize
-	Z1 = (postQuantize - preDither);		
+	Z1 = (postQuantize - preDither);
 	return postQuantize;
 } // ends function: dither()
 
@@ -325,7 +325,7 @@ private:
 	FloatType autoBlankLevelThreshold;				// input signals below this threshold are considered zero
 	FloatType autoBlankTimeThreshold;				// number of zero samples before activating blanking
 	const FloatType autoBlankDecayFactor = static_cast<FloatType>(0.9995);	// dither level will decrease by this factor for each sample when blanking is active
-	
+
 	// IIR Filter-related stuff:
 	Biquad<double> f1;
 	Biquad<double> f2;
@@ -348,9 +348,9 @@ private:
 	}
 
 	// The sloped TPDF generator remembers and subtracts the previous random number from the new random number,
-	// which is equivalent to applying a [1,-1] 2-tap FIR (also known as the first-difference operator), 
+	// which is equivalent to applying a [1,-1] 2-tap FIR (also known as the first-difference operator),
 	// This yields a first-order 6dB/octave (20dB/decade) highpass magnitude response.
-	// Thus, the resulting noise is violet noise instead of white, which is quite effective for dithering purposes. 
+	// Thus, the resulting noise is violet noise instead of white, which is quite effective for dithering purposes.
 	// It also has the advantage of only calcluating one random number on each iteration, instead of two.
 	FloatType noiseGeneratorSlopedTPDF() {
 		int newRandom = dist(randGenerator);
@@ -405,9 +405,9 @@ private:
 		// put sample at end of buffer:
 		FloatType* historyPtr = &FIRHistory[FIRLength - 1];
 		*historyPtr = x;
-		
+
 		FloatType filterOutput = 0.0;
-		
+
 		// macc with coefficients:
 		for (int k = 0; k < FIRLength; k++) {
 			filterOutput += *historyPtr-- * FIRCoeffs[k];

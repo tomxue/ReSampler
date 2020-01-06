@@ -56,7 +56,7 @@ std::vector<FloatType> makeFilterCoefficients(const ConversionInfo& ci, Fraction
 		makeMinPhase<FloatType>(pFilterTaps, filterSize);
 		//return makeMinPhase2<FloatType>(pFilterTaps, filterSize);
 	}
-	
+
 	return filterTaps;
 }
 
@@ -90,8 +90,8 @@ private:
 	int m;	// decimation index
 	FIRFilter<FloatType> filter;
 	bool bypassMode;
-	
-	// The following typedef defines the type 'ConvertFunction' which is a pointer to any of the member functions which 
+
+	// The following typedef defines the type 'ConvertFunction' which is a pointer to any of the member functions which
 	// take the arguments (FloatType* outBuffer, size_t& outBufferSize, const FloatType* inBuffer, const size_t& inBufferSize) ...
 	typedef void (ResamplingStage::*ConvertFunction) (FloatType* outBuffer, size_t& outBufferSize, const FloatType* inBuffer, const size_t& inBufferSize); // see https://isocpp.org/wiki/faq/pointers-to-members
 	ConvertFunction convertFn;
@@ -121,13 +121,13 @@ private:
 #ifdef	USE_LAZYGET_ON_INTERPOLATE
 				((l == 0) ? filter.put(inBuffer[i]) : filter.putZero());
 				outBuffer[o++] = filter.lazyGet(L);
-#else 
+#else
 				filter.put((l == 0) ? inBuffer[i] : 0);
 				outBuffer[o++] = filter.get();
-#endif	
+#endif
 			}
 		}
-		outBufferSize = o;   
+		outBufferSize = o;
 	}
 
 	// decimate() - decimate and apply filter
@@ -137,7 +137,7 @@ private:
 		for (size_t i = 0; i < inBufferSize; ++i) {
 			filter.put(inBuffer[i]);
 			if (localm == 0) {
-				outBuffer[o++] = filter.get();    
+				outBuffer[o++] = filter.get();
 			}
 			if(++localm == M) {
 				localm = 0;
@@ -146,7 +146,7 @@ private:
 		outBufferSize = o;
 		m = localm;
 	}
-	
+
 	// interpolateAndDecimate()
 	void interpolateAndDecimate(FloatType* outBuffer, size_t& outBufferSize, const FloatType* inBuffer, const size_t& inBufferSize) {
 		size_t o = 0;
@@ -159,12 +159,12 @@ private:
 				if (localm == 0) {
 					outBuffer[o++] = filter.lazyGet(L);
 				}
-#else 
+#else
 				filter.put((l == 0) ? inBuffer[i] : 0);
 				if (localm == 0) {
 					outBuffer[o++] = filter.get();
 				}
-#endif	
+#endif
 				if (++localm == M) {
 					localm = 0;
 				}
@@ -202,7 +202,7 @@ public:
 			isBypassMode = true;
 			Converter::ci.bSingleStage = true;
 		}
-		
+
 		if (Converter::ci.bSingleStage) {
 			isMultistage = false;
 			initSinglestage();
@@ -302,11 +302,11 @@ private:
 			assert(stopFreq > ft); // should always be the case for a LPF
 
 			// set transition frequency (cutoff) and transition width for this stage (they are stored as percentage values)
-			if (i == indexOfLastStage) { // last stage must have the characteristics of the requested parameters: 
+			if (i == indexOfLastStage) { // last stage must have the characteristics of the requested parameters:
 				stageCi.lpfTransitionWidth = ci.lpfTransitionWidth;
 				stageCi.lpfCutoff = ci.lpfCutoff;
 			}
-			else { 
+			else {
 				const double widthReduction = 2.0;
 				stageCi.lpfTransitionWidth = 100.0 * (stopFreq - ft) / (stageCi.outputSampleRate * 0.5) / widthReduction;
 				stageCi.lpfCutoff = 100 - stageCi.lpfTransitionWidth;
@@ -383,7 +383,7 @@ private:
 
 			// set input rate of next stage
 			inputRate = stageCi.outputSampleRate;
-		   
+
 		} // ends loop over i
 
 		if (ci.bShowStages) {

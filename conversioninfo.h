@@ -78,7 +78,7 @@ struct ConversionInfo
 #if defined (_WIN32) || defined (_WIN64)
 	std::string tmpDir;
 #endif
-	
+
 	bool bTmpFile;
 	bool bShowTempFile;
 	bool quantize;

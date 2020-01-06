@@ -21,7 +21,7 @@
 #define COMPILING_ON_ANDROID64
 #endif
 
-#include <Android/log.h>
+#include <android/log.h>
 
 // https://gist.github.com/dzhioev/6127982
 class androidbuf : public std::streambuf {

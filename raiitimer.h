@@ -19,31 +19,31 @@
 
 namespace ReSampler {
 
-class RaiiTimer {
-public:
+	class RaiiTimer {
+	public:
 
-	explicit RaiiTimer(double msComparison = 0.0) : msComparison(msComparison) {
-		beginTimer = std::chrono::high_resolution_clock::now();    
-	}
+		explicit RaiiTimer(double msComparison = 0.0) : msComparison(msComparison) {
+			beginTimer = std::chrono::high_resolution_clock::now();
+		}
 
-	~RaiiTimer() {
-		endTimer = std::chrono::high_resolution_clock::now();
-		auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTimer - beginTimer).count();
-		std::cout << "Time=" << duration << " ms";
-		if(msComparison != 0.0) {
-			double relativeSpeed = msComparison / duration;
-			auto ss = std::cout.precision();
-			std::cout << " [" << std::setprecision(1) << relativeSpeed << "x]" << std::setprecision(
-					static_cast<int>(ss));
-		} 
-		std::cout << "\n" << std::endl;
-	}
+		~RaiiTimer() {
+			endTimer = std::chrono::high_resolution_clock::now();
+			auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTimer - beginTimer).count();
+			std::cout << "Time=" << duration << " ms";
+			if(msComparison != 0.0) {
+				double relativeSpeed = msComparison / duration;
+				auto ss = std::cout.precision();
+				std::cout << " [" << std::setprecision(1) << relativeSpeed << "x]" << std::setprecision(
+						static_cast<int>(ss));
+			}
+			std::cout << "\n" << std::endl;
+		}
 
-private:
-	std::chrono::time_point<std::chrono::high_resolution_clock> beginTimer;
-	std::chrono::time_point<std::chrono::high_resolution_clock> endTimer;
-	double msComparison;
-};
+	private:
+		std::chrono::time_point<std::chrono::high_resolution_clock> beginTimer;
+		std::chrono::time_point<std::chrono::high_resolution_clock> endTimer;
+		double msComparison;
+	};
 
 } // namespace ReSampler
 

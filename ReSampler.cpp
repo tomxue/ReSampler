@@ -200,7 +200,7 @@ bool determineBestBitFormat(std::string& bitFormat, const ConversionInfo& ci)
 			bitFormat = defaultSubFormats.find(outFileExt)->second;
 			std::cout << "defaulting to " << bitFormat << std::endl;
 			break;
-			
+
 		}
 	}
 	return true;
@@ -286,6 +286,25 @@ void listSubFormats(const std::string& f)
 	}
 }
 
+// explicit instantiations - generate all required flavors of convert()
+bool convert_DffFile_Float(ConversionInfo & ci) {
+	return convert<DffFile, float>(ci);
+}
+bool convert_DffFile_Double(ConversionInfo & ci) {
+	return convert<DffFile, double>(ci);
+}
+bool convert_DsfFile_Float(ConversionInfo & ci) {
+	return convert<DsfFile, float>(ci);
+}
+bool convert_DsfFile_Double(ConversionInfo & ci) {
+	return convert<DsfFile, double>(ci);
+}
+bool convert_SndfileHandle_Float(ConversionInfo & ci) {
+	return convert<SndfileHandle, float>(ci);
+}
+bool convert_SndfileHandle_Double(ConversionInfo & ci) {
+	return convert<SndfileHandle, double>(ci);
+}
 // convert()
 
 /* Note: type 'FileReader' MUST implement the following methods:
@@ -1417,17 +1436,17 @@ int runCommand(int argc, char** argv) {
 
 			if (ci.dsfInput) {
 				ci.bEnablePeakDetection = false;
-				return convert<DsfFile, double>(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
+				return convert_DsfFile_Double(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
 			}
 
 			if (ci.dffInput) {
 				ci.bEnablePeakDetection = false;
-				return convert<DffFile, double>(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
+				return convert_DffFile_Double(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
 			}
-			
+
 			ci.bEnablePeakDetection = true;
-			return convert<SndfileHandle, double>(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
-			
+			return convert_SndfileHandle_Double(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
+
 		}
 
 		else {
@@ -1437,17 +1456,17 @@ int runCommand(int argc, char** argv) {
 #endif
 			if (ci.dsfInput) {
 				ci.bEnablePeakDetection = false;
-				return convert<DsfFile, float>(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
+				return convert_DsfFile_Float(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
 			}
 
 			if (ci.dffInput) {
 				ci.bEnablePeakDetection = false;
-				return convert<DffFile, float>(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
+				return convert_DffFile_Float(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
 			}
-			
+
 			ci.bEnablePeakDetection = true;
-			return convert<SndfileHandle, float>(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
-			
+			return convert_SndfileHandle_Float(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
+
 		}
 
 	} //ends try block
@@ -1458,16 +1477,12 @@ int runCommand(int argc, char** argv) {
 	}
 }
 
-// explicit instantiations - generate all required flavors of convert()
-template bool convert<DffFile, float>(ConversionInfo&);
-template bool convert<DffFile, double>(ConversionInfo&);
-template bool convert<DsfFile, float>(ConversionInfo&);
-template bool convert<DsfFile, double>(ConversionInfo&);
-template bool convert<SndfileHandle, float>(ConversionInfo&);
-template bool convert<SndfileHandle, double>(ConversionInfo&);
-
 std::function<void(int)> OutputManager::progressFunc = [](int percentComplete) {
-	std::cout << percentComplete << "%\b\b\b" << std::flush;
+	std::cout << percentComplete << "%"
+								 #ifndef COMPILING_ON_ANDROID
+								 << "\b\b\b"
+								 #endif
+								 << std::flush;
 };
 
 std::function<void (int)> OutputManager::getProgressFunc()

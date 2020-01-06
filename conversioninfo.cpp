@@ -149,7 +149,7 @@ int getDefaultNoiseShape(int sampleRate) {
 	if (sampleRate <= 48000) {
 		return DitherProfileID::standard;
 	}
-	
+
 	return DitherProfileID::flat_f;
 }
 

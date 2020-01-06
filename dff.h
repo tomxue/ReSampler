@@ -176,7 +176,7 @@ public:
 			currentBit = 0;
 			currentChannel = 0;
 			break;
-			
+
 		case Dff_write:
 			break;
 		}
@@ -185,8 +185,8 @@ public:
 	~DffFile() {
 		if (file.is_open())
 			file.close();
-		
-		delete[] inputBuffer;	
+
+		delete[] inputBuffer;
 	}
 
 	// API:
@@ -224,10 +224,10 @@ public:
 			* data is big-endian
 			* Channel interleaving is done at the byte level.
 			* In each byte, the MSB is played first; the LSB is played last.
-		
+
 		*/
 
-		// Caller expects interleaving to be done at the _sample_ level 
+		// Caller expects interleaving to be done at the _sample_ level
 
 		uint64_t samplesRead = 0;
 
@@ -257,7 +257,7 @@ public:
 		return samplesRead;
 	}
 
-	// testRead() : reads the entire file 
+	// testRead() : reads the entire file
 	// and confirms number of samples read equals number of samples expected:
 
 	void testRead() {
@@ -274,7 +274,7 @@ public:
 	uint64_t seek(uint64_t pos, int whence) {
 		(void)whence; // unused
 		// To-do: allow seeks to positions other than beginning (requires proper calculations)
-		// reset state to initial conditions: 
+		// reset state to initial conditions:
 		totalBytesRead = 0;
 		endOfBlock = bufferSize;
 		bufferIndex = endOfBlock; // empty (zero -> full)
@@ -340,7 +340,7 @@ private:
 			};
 			uint32_t n;
 		} y, z;
-		
+
 		y.n = x;
 		z.a = y.d;
 		z.b = y.c;
@@ -433,11 +433,11 @@ private:
 
 			if (err)
 				break;
-			
+
 			getChunkHeader(&nextChunkHeader);
-			
+
 			uint64_t dataSize = nextChunkHeader.ckDataSize;
-			
+
 			switch (nextChunkHeader.ckID) {
 			case CKID_FS:
 				formDSDChunk.propertyChunk.sampleRateChunk.ckID = nextChunkHeader.ckID;
@@ -509,13 +509,13 @@ private:
 		}
 
 		dffChunkHeader nextChunkHeader;
-		
+
 		// read the chunks we care about ...
 		do {
 			getChunkHeader(&nextChunkHeader);
 
 			uint64_t dataSize = nextChunkHeader.ckDataSize;
-			
+
 			switch (nextChunkHeader.ckID) {
 			case CKID_FVER:
 				formDSDChunk.formatVersionChunk.ckID = nextChunkHeader.ckID;
@@ -541,7 +541,7 @@ private:
 
 			default:
 				file.seekg(dataSize, file.cur); // who cares ? skip to next chunk ...
-			} 
+			}
 		} while (nextChunkHeader.ckID != CKID_DSD);
 
 		startOfData = static_cast<uint64_t>(file.tellg()); // should be ready to read data stream now ...

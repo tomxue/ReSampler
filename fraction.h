@@ -50,7 +50,7 @@ inline int gcd(int a, int b) {
 // return a fraction representing the conversion factor
 // eg: input:96000, output:44100 => 147 / 320
 
-inline Fraction getFractionFromSamplerates(int inputRate, int outputRate) 
+inline Fraction getFractionFromSamplerates(int inputRate, int outputRate)
 {
 	Fraction f;
 	f.numerator = (outputRate / gcd(inputRate, outputRate));		// L (eg 147)
@@ -125,8 +125,8 @@ inline std::vector<std::vector<Fraction>> getConversionStageCandidates(Fraction 
 	auto numeratorPrimes = factorize(f.numerator);
 	auto denominatorPrimes = factorize(f.denominator);
 	int maxPossibleStages = static_cast<int>(std::max(numeratorPrimes.size(), denominatorPrimes.size())); // determines just how many stages can be formed
-	int numStages = std::max(1, std::min(maxStages, maxPossibleStages)); // determines exactly how many stages we will have 
-	
+	int numStages = std::max(1, std::min(maxStages, maxPossibleStages)); // determines exactly how many stages we will have
+
 	while (numeratorPrimes.size() < static_cast<size_t>(numStages)) { // pad with 1s at front
 		numeratorPrimes.insert(numeratorPrimes.begin(), numStages - numeratorPrimes.size(), 1);
 	}
@@ -161,7 +161,7 @@ inline std::vector<std::vector<Fraction>> getConversionStageCandidates(Fraction 
 
 		} // ends loop over denominatorGroups
 	} // ends loop over numeratorGroups
-	
+
 	return conversionStageCandidates;
 }
 
@@ -199,11 +199,11 @@ inline std::vector<Fraction> getConversionStages(Fraction f, int maxStages) {
 	if (maxStages <= 1) {
 		return std::vector<Fraction> {f}; // single-stage conversion
 	}
-	
+
 	if (f.numerator == 1 && singleStageOnDecimateOnly) {
 		return std::vector<Fraction> {f}; // single-stage conversion
 	}
-	
+
 	if (f.denominator == 1 && singleStageOnInterpolateOnly) {
 		return std::vector<Fraction> {f}; // single-stage conversion
 	}
@@ -211,8 +211,8 @@ inline std::vector<Fraction> getConversionStages(Fraction f, int maxStages) {
 	struct PresetFractionSet {
 		Fraction master;
 		std::vector<Fraction> components;
-	}; 
-	
+	};
+
 	// hardcoded table of known presets
 	static const std::vector<PresetFractionSet> presetList{
 
@@ -224,7 +224,7 @@ inline std::vector<Fraction> getConversionStages(Fraction f, int maxStages) {
 		{{147,640 }, {{3,5},{7,8},{7,16}}},
 		{{4,1},{{4,1}}}
 	};
-	
+
 	// search for f in table
 	for (auto& preset : presetList) {
 		if (preset.master.numerator == f.numerator && preset.master.denominator == f.denominator) {
@@ -275,8 +275,8 @@ inline void testConverterStageSelection(int numStages, bool unique = true) {
 		struct Cmp { // comparison function object
 			bool operator()(const Result& lhs, const Result& rhs) const {
 				double r1 = static_cast<double>(lhs.fraction.numerator) / lhs.fraction.denominator;
-				double r2 = static_cast<double>(rhs.fraction.numerator) / rhs.fraction.denominator; 
-				return r1 < r2; 
+				double r2 = static_cast<double>(rhs.fraction.numerator) / rhs.fraction.denominator;
+				return r1 < r2;
 			}
 		};
 

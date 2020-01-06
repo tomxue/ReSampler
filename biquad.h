@@ -16,7 +16,7 @@ namespace ReSampler {
 
 template<typename FloatType> class Biquad {
 public:
-	
+
 	// Naming conventions for coefficients are as follows:
 	// numerator/input coeffs:			a0,a1,a2
 	// denominator/feedback coeffs:		b1,b2
@@ -31,7 +31,7 @@ public:
 	FloatType filter(FloatType inSample) {
 
 		// Biquad calculation using transposed Direct Form 2:
-		
+
 		FloatType outSample = inSample * a0 + z1;
 		z1 = inSample * a1 + z2 - b1 * outSample;
 		z2 = inSample * a2 - b2 * outSample;
@@ -47,7 +47,7 @@ public:
 	}
 
 	void reset() {
-		z1 = 0.0; 
+		z1 = 0.0;
 		z2 = 0.0;
 	}
 
