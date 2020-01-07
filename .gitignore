@@ -48,8 +48,8 @@ tests/.DS_Store
 dist
 ReSampler
 ReSampler-clang
-#x64/minGW-W64
-#x64/minGW-W64/*
+x64/minGW-W64
+x64/minGW-W64/*
 [Dd]ebug/
 [Dd]ebugPublic/
 [Rr]eleases/
@@ -60,17 +60,17 @@ bld/
 [Oo]bj/
 AVX_Release/*
 x64/AVX_[Rr]elease/*
-!x64/AVX_[Rr]elease/*.exe
-!x64/AVX_[Rr]elease/*.dll
+#!x64/AVX_[Rr]elease/*.exe
+#!x64/AVX_[Rr]elease/*.dll
 Release/*
-!Release/*.exe
-!release/*.dll
+#!Release/*.exe
+#!release/*.dll
 Release(NoSSE)/*
-!Release(NoSSE)/*.exe
-!Release(NoSSE)/*.dll
+#!Release(NoSSE)/*.exe
+#!Release(NoSSE)/*.dll
 x64/release/*
-!x64/release/*.exe
-!x64/release/*.dll
+#!x64/release/*.exe
+#!x64/release/*.dll
 x64/Release(NoSSE)/*
 x64/Release_AVX/*
 # Visual Studio 2015 cache/options directory
