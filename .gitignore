@@ -48,7 +48,7 @@ tests/.DS_Store
 dist
 ReSampler
 ReSampler-clang
-x64/minGW-W64
+x64/minGW-W64-AVX/*
 x64/minGW-W64/*
 [Dd]ebug/
 [Dd]ebugPublic/
