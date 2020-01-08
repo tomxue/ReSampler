@@ -132,6 +132,12 @@ artifacts/
 # Chutzpah Test files
 _Chutzpah*
 
+# MSVC cmake project files
+ALL_BUILD.vcxproj
+ZERO_CHECK.vcxproj
+ALL_BUILD.vcxproj.filters
+ZERO_CHECK.vcxproj.filters
+
 # Visual C++ cache files
 ipch/
 *.aps
