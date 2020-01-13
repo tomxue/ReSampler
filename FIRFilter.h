@@ -395,7 +395,7 @@ namespace ReSampler {
 		void assertAlignment()
 		{
 	#ifdef COMPILING_ON_ANDROID
-			// TODO: suport 32-byte alignment for android?
+			// TODO: support 32-byte alignment for android?
 	#warning  32-byte alignment is not yet supported when compiling for android
 	#else
 			const std::uintptr_t alignment = ALIGNMENT_SIZE;
