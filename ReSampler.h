@@ -40,7 +40,7 @@
 
 namespace ReSampler {
 
-const std::string strVersion("2.0.8");
+const std::string strVersion("2.0.9");
 const std::string strUsage("usage: ReSampler -i <inputfile> [-o <outputfile>] -r <samplerate> [-b <bitformat>] [-n [<normalization factor>]]\n");
 const std::string strExtraOptions(
 		"--help\n"
