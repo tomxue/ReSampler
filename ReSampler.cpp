@@ -1447,27 +1447,24 @@ int runCommand(int argc, char** argv) {
 			ci.bEnablePeakDetection = true;
 			return convert_SndfileHandle_Double(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
 
-		}
+		} // if (ci.bUseDoublePrecision)
 
-		else {
 
 #ifdef USE_QUADMATH
-			std::cout << "Using quadruple-precision for calculations.\n";
+		std::cout << "Using quadruple-precision for calculations.\n";
 #endif
-			if (ci.dsfInput) {
-				ci.bEnablePeakDetection = false;
-				return convert_DsfFile_Float(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
-			}
-
-			if (ci.dffInput) {
-				ci.bEnablePeakDetection = false;
-				return convert_DffFile_Float(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
-			}
-
-			ci.bEnablePeakDetection = true;
-			return convert_SndfileHandle_Float(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
-
+		if (ci.dsfInput) {
+			ci.bEnablePeakDetection = false;
+			return convert_DsfFile_Float(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
 		}
+
+		if (ci.dffInput) {
+			ci.bEnablePeakDetection = false;
+			return convert_DffFile_Float(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
+		}
+
+		ci.bEnablePeakDetection = true;
+		return convert_SndfileHandle_Float(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
 
 	} //ends try block
 
