@@ -89,7 +89,7 @@ bool getCmdlineParam(char** begin, char** end, const std::string& option)
 {
 	bool found = false;
 	std::vector<std::string> args(begin, end);
-	for (auto &arg : args) {
+	for (const auto &arg : args) {
 		if (sanitize(arg) == sanitize(option)) {
 			found = true;
 			break;
