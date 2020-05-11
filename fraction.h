@@ -216,17 +216,17 @@ inline std::vector<Fraction> getConversionStages(Fraction f, int maxStages) {
 	// hardcoded table of known presets
 	static const std::vector<PresetFractionSet> presetList{
 
-		{{5,147},{{1,3},{1,7},{5,7}}},
-		{{147,40},{{3,2},{7,2},{7,10}}},
-		{{147,80},{{3,2},{7,4},{7,10}}}, // cleanest 3-stage
-		{{147,160},{{3,2},{7,8},{7,10}}},
-		{{147,320}, {{3,5}, {7,8}, {7,8}}},
-		{{147,640 }, {{3,5},{7,8},{7,16}}},
-		{{4,1},{{4,1}}}
+		{{5, 147}, {{1, 3}, {1, 7}, {5, 7}}},
+		{{147, 40}, {{3, 2}, {7, 2}, {7, 10}}},
+		{{147, 80}, {{3, 2}, {7, 4}, {7, 10}}}, // cleanest 3-stage
+		{{147, 160}, {{3, 2}, {7, 8}, {7, 10}}},
+		{{147, 320}, {{3, 5}, {7, 8}, {7, 8}}},
+		{{147, 640 }, {{3, 5}, {7, 8}, {7, 16}}},
+		{{4, 1}, {{4, 1}}}
 	};
 
 	// search for f in table
-	for (auto& preset : presetList) {
+	for (const auto& preset : presetList) {
 		if (preset.master.numerator == f.numerator && preset.master.denominator == f.denominator) {
 			return preset.components;
 		}
