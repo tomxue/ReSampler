@@ -61,6 +61,10 @@ cmake -DCMAKE_BUILD_TYPE=Release path-to-ReSampler
 make
 ~~~
 
+#### Using CMake inside an IDE
+
+*for IDEs that support CMake, it is usually very easy to simply open the CMakeLists file and start building*
+
 # miscellaneous
 
 ## compiling sndfile-tools 
