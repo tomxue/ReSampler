@@ -111,8 +111,6 @@ else()
             endif()
 
         else()
-            message(STATUS "NOT Visual Studio")
-
             if(CMAKE_BUILD_TYPE STREQUAL "ReleaseQuadmath")
                 set(CMAKE_CXX_EXTENSIONS TRUE) # -std=gnu++11 instead of -std=c++11
                 message(STATUS "Linking with Quadmath library")
