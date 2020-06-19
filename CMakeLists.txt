@@ -30,7 +30,10 @@ if(ANDROID)
         main.cpp
         ReSampler.cpp
         ReSampler.h
-        srconvert.h)
+        srconvert.h
+        iqdemodulator.cpp
+        iqdemodulator.h
+        )
 
     add_library(ReSampler SHARED ${SOURCE_FILES})
     target_link_libraries(ReSampler sndfile fftw3 log)
@@ -74,7 +77,10 @@ else()
         ReSampler.cpp
         ReSampler.h
         srconvert.h
-        conversioninfo.cpp)
+        conversioninfo.cpp
+        iqdemodulator.cpp
+        iqdemodulator.h
+        )
 
     if (WIN32)
 
