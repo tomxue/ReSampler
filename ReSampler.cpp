@@ -16,6 +16,7 @@
 #include "fraction.h"
 #include "srconvert.h"
 #include "ditherer.h"
+#include "iqdemodulator.h"
 
 #include <cstdio>
 #include <string>
@@ -305,6 +306,7 @@ bool convert_SndfileHandle_Float(ConversionInfo & ci) {
 bool convert_SndfileHandle_Double(ConversionInfo & ci) {
 	return convert<SndfileHandle, double>(ci);
 }
+
 // convert()
 
 /* Note: type 'FileReader' MUST implement the following methods:
