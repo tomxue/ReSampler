@@ -31,7 +31,6 @@ if(ANDROID)
         ReSampler.cpp
         ReSampler.h
         srconvert.h
-        iqdemodulator.cpp
         iqdemodulator.h
         )
 
@@ -78,7 +77,6 @@ else()
         ReSampler.h
         srconvert.h
         conversioninfo.cpp
-        iqdemodulator.cpp
         iqdemodulator.h
         )
 
