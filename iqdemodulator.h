@@ -1,7 +1,6 @@
 #ifndef IQDEMODULATOR_H
 #define IQDEMODULATOR_H
 
-
 #include <string>
 #include <cstdint>
 #include <memory>
@@ -10,18 +9,6 @@
 
 #include <sndfile.h>
 #include <sndfile.hh>
-
-/* Note: type 'FileReader' MUST implement the following methods:
-constructor(const std::string& fileName)
-constructor(const std::string& fileName, int infileMode, int infileFormat, int infileChannels, int infileRate)
-bool error() // or int error()
-unsigned int channels()
-unsigned int samplerate()
-uint64_t frames()
-int format()
-read(inbuffer, count)
-seek(position, whence)
-*/
 
 namespace  ReSampler {
 
@@ -36,7 +23,6 @@ enum ModulationType
 	DSB,
 	CW
 };
-
 
 class IQFile
 {
