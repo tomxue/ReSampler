@@ -104,7 +104,7 @@ private:
 	template<typename FloatType>
 	FloatType demodulateFM(FloatType i, FloatType q)
 	{
-		static const double maxGain = 60.0;
+		static constexpr double maxGain = 60.0;
 		static const double c = std::pow(10.0, -(maxGain / 20.0));
 
 		// this is actually quite simple, thanks to some clever calculus tricks.
