@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <memory>
 #include <vector>
+#include <iostream>
 
 #include <sndfile.h>
 #include <sndfile.hh>
@@ -37,7 +38,6 @@ enum ModulationType
 };
 
 
-template<typename FloatType>
 class IQFile
 {
 
@@ -71,12 +71,15 @@ public:
 		return sndfileHandle == nullptr ? 0 : sndfileHandle->format();
 	}
 
+	template<typename FloatType>
 	int64_t read(FloatType* inbuffer, int64_t count) {
+
 		if(sndfileHandle == nullptr) {
+			std::cout << "nullptr" << std::endl;
 			return 0LL;
 		}
 
-		if(wavBuffer < count * 2) {
+		if(wavBuffer.size() < count * 2) {
 			wavBuffer.resize(count * 2);
 		}
 
@@ -91,9 +94,11 @@ public:
 	}
 
 	sf_count_t seek(int64_t frames, int whence) {
-		(void)frames; // todo
-		(void)whence;
-		return 0LL;
+		if(sndfileHandle == nullptr) {
+			return 0LL;
+		}
+
+		return sndfileHandle->seek(frames, whence);
 	}
 
 // getters
@@ -109,8 +114,12 @@ public:
 	}
 
 private:
+	template<typename FloatType>
 	FloatType demodulateFM(FloatType i, FloatType q)
 	{
+		// this is actually quite simple, thanks to some clever calculus tricks.
+		// see https://www.embedded.com/dsp-tricks-frequency-demodulation-algorithms/
+
 		i2 = i1;
 		i1 = i0;
         i0 = i;
@@ -118,24 +127,25 @@ private:
         q1 = q0;
         q0 = q;
 
-        return ((q0 - q2) * i1) - ((i0 - i2) * q1);
+		double gain = 1.0 / (0.001 + i * i + q * q); // todo: calcuate correct bias amount to avoid div / 0
+		return gain * (((q0 - q2) * i1) - ((i0 - i2) * q1));
     }
 
 private:
 	// resources
 	std::unique_ptr<SndfileHandle> sndfileHandle;
-	std::vector<FloatType> wavBuffer;
+	std::vector<double> wavBuffer;
 
 	// properties
 	ModulationType modulationType{ModulationType::ModulationTypeNone};
 
 	// state
-    FloatType i0{0.0};
-    FloatType i1{0.0};
-    FloatType i2{0.0};
-    FloatType q0{0.0};
-    FloatType q1{0.0};
-    FloatType q2{0.0};
+	double i0{0.0};
+	double i1{0.0};
+	double i2{0.0};
+	double q0{0.0};
+	double q1{0.0};
+	double q2{0.0};
 
 };
 

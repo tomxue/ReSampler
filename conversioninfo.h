@@ -88,6 +88,8 @@ struct ConversionInfo
 	int rawInputChannels;
 	int rawInputSampleRate;
 	std::string rawInputBitFormat;
+	bool bDemodulateIQ;
+	std::string IQModulationType;
 
 	// functions
 	bool fromCmdLineArgs(int argc, char **argv); // populate ConversionInfo from args

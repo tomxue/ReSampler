@@ -237,6 +237,7 @@ bool ConversionInfo::fromCmdLineArgs(int argc, char** argv) {
 	bMultiStage = getCmdlineParam(argv, argv + argc, "--multiStage");
 	integerWriteScalingStyle = getCmdlineParam(argv, argv + argc, "--pow2clip") ? IntegerWriteScalingStyle::Pow2Clip : IntegerWriteScalingStyle::Pow2Minus1;
 	getCmdlineParam(argv, argv + argc, "--progress-updates", progressUpdates);
+	bDemodulateIQ = getCmdlineParam(argv, argv + argc, "--demodulateIQ", IQModulationType);
 
 #if defined (_WIN32) || defined (_WIN64)
 	getCmdlineParam(argv, argv + argc, "--tempDir", tmpDir);

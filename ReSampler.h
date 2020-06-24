@@ -40,7 +40,7 @@
 
 namespace ReSampler {
 
-const std::string strVersion("2.0.9");
+const std::string strVersion("2.1.0");
 const std::string strUsage("usage: ReSampler -i <inputfile> [-o <outputfile>] -r <samplerate> [-b <bitformat>] [-n [<normalization factor>]]\n");
 const std::string strExtraOptions(
 		"--help\n"
@@ -77,6 +77,7 @@ const std::string strExtraOptions(
 
 		"--showTempFile\n"
 		"--noTempFile\n"
+		"--demodulateIQ [<AM|NFM>]\n"
 		);
 
 const double clippingTrim = 1.0 - (1.0 / (1 << 23));
@@ -191,6 +192,8 @@ bool convert_DsfFile_Float(ConversionInfo & ci);
 bool convert_DsfFile_Double(ConversionInfo & ci);
 bool convert_SndfileHandle_Float(ConversionInfo & ci);
 bool convert_SndfileHandle_Double(ConversionInfo & ci);
+bool convert_IQFile_Float(ConversionInfo & ci);
+bool convert_IQFile_Double(ConversionInfo & ci);
 template<typename FileReader, typename FloatType> bool convert(ConversionInfo & ci);
 template<typename FloatType>
 SndfileHandle* getTempFile(int inputFileFormat, int nChannels, const ConversionInfo& ci, std::string& tmpFilename);
@@ -208,7 +211,7 @@ void generateExpSweep(const std::string & filename,
 					  double amplitude_dB = -3.0 // amplitude in dB relative to FS
 		);
 
-bool getMetaData(MetaData& metadata, SndfileHandle& infile);
+bool getMetaData(MetaData& metadata, SndfileHandle &infile);
 bool setMetaData(const MetaData& metadata, SndfileHandle& outfile);
 void showCompiler();
 int runCommand(int argc, char** argv);

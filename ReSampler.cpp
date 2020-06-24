@@ -306,6 +306,12 @@ bool convert_SndfileHandle_Float(ConversionInfo & ci) {
 bool convert_SndfileHandle_Double(ConversionInfo & ci) {
 	return convert<SndfileHandle, double>(ci);
 }
+bool convert_IQFile_Float(ConversionInfo& ci) {
+	return convert<IQFile, float>(ci);
+}
+bool convert_IQFile_Double(ConversionInfo& ci) {
+	return convert<IQFile, double>(ci);
+}
 
 // convert()
 
@@ -1178,6 +1184,13 @@ bool getMetaData(MetaData& metadata, const DsfFile& f) {
 	return true;
 }
 
+bool getMetaData(MetaData& metadata, const IQFile& f) {
+	(void)metadata; // unused
+	(void)f; // unused
+	// stub - to-do
+	return true;
+}
+
 #ifndef USE_QUADMATH
 
 void generateExpSweep(const std::string& filename, int sampleRate, int format, double duration, int nOctaves, double amplitude_dB) {
@@ -1447,6 +1460,11 @@ int runCommand(int argc, char** argv) {
 			}
 
 			ci.bEnablePeakDetection = true;
+
+			if(ci.bDemodulateIQ) {
+				return convert_IQFile_Double(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
+			}
+
 			return convert_SndfileHandle_Double(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
 
 		} // if (ci.bUseDoublePrecision)
@@ -1466,6 +1484,11 @@ int runCommand(int argc, char** argv) {
 		}
 
 		ci.bEnablePeakDetection = true;
+
+		if(ci.bDemodulateIQ) {
+			return convert_IQFile_Float(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
+		}
+
 		return convert_SndfileHandle_Float(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
 
 	} //ends try block
