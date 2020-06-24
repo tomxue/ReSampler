@@ -6,6 +6,7 @@
 #include <memory>
 #include <vector>
 #include <iostream>
+#include <cmath>
 
 #include <sndfile.h>
 #include <sndfile.hh>
@@ -42,7 +43,7 @@ public:
 	}
 
 	int channels() {
-		return (modulationType == ModulationType::WFM) ? 2 : 1;  // WFM is the only modulation type which can produce stereo
+		return 1;  // I & Q inputs always get demodulated into a single channel
 	}
 
 	int samplerate() {
@@ -103,6 +104,9 @@ private:
 	template<typename FloatType>
 	FloatType demodulateFM(FloatType i, FloatType q)
 	{
+		static const double maxGain = 60.0;
+		static const double c = std::pow(10.0, -(maxGain / 20.0));
+
 		// this is actually quite simple, thanks to some clever calculus tricks.
 		// see https://www.embedded.com/dsp-tricks-frequency-demodulation-algorithms/
 
@@ -113,7 +117,7 @@ private:
         q1 = q0;
         q0 = q;
 
-		double gain = 1.0 / (0.001 + i * i + q * q); // todo: calcuate correct bias amount to avoid div / 0
+		double gain = 1.0 / (c + i * i + q * q);
 		return gain * (((q0 - q2) * i1) - ((i0 - i2) * q1));
     }
 
