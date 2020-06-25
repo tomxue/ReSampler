@@ -7,6 +7,7 @@
 #include <vector>
 #include <iostream>
 #include <cmath>
+#include <functional>
 
 #include <sndfile.h>
 #include <sndfile.hh>
@@ -74,7 +75,13 @@ public:
 
 		int64_t j = 0;
 		for(int64_t i = 0; i < samplesRead; i += 2) {
-			inbuffer[j++] = demodulateFM(wavBuffer.at(i), wavBuffer.at(i + 1));
+			switch(modulationType) {
+			case AM:
+				inbuffer[j++] = demodulateAM(wavBuffer.at(i), wavBuffer.at(i + 1));
+				break;
+			default:
+				inbuffer[j++] = demodulateFM(wavBuffer.at(i), wavBuffer.at(i + 1));
+			}
 		}
 
 		return j;
@@ -121,15 +128,22 @@ private:
 		return gain * (((q0 - q2) * i1) - ((i0 - i2) * q1));
     }
 
+	template<typename FloatType>
+	FloatType demodulateAM(FloatType i, FloatType q)
+	{
+		static constexpr FloatType scale = 0.7071; // << 1/sqrt(2)
+		return scale * std::sqrt(i * i + q * q);
+	}
+
 private:
 	// resources
 	std::unique_ptr<SndfileHandle> sndfileHandle;
 	std::vector<double> wavBuffer;
 
 	// properties
-	ModulationType modulationType{ModulationType::ModulationTypeNone};
+	ModulationType modulationType{ModulationType::NFM};
 
-	// state
+	// registers used for demodulating FM
 	double i0{0.0};
 	double i1{0.0};
 	double i2{0.0};
