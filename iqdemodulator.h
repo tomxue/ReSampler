@@ -7,7 +7,6 @@
 #include <vector>
 #include <iostream>
 #include <cmath>
-#include <functional>
 
 #include <sndfile.h>
 #include <sndfile.hh>
