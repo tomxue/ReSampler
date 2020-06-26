@@ -26,7 +26,7 @@ enum ModulationType
 	CW
 };
 
-static const std::map<std::string, ModulationType> ModulationTypeMap
+static const std::map<std::string, ModulationType> modulationTypeMap
 {
 	{"NONE", ModulationType::ModulationTypeNone},
 	{"NFM", ModulationType::NFM},
