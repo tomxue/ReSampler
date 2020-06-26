@@ -237,7 +237,17 @@ bool ConversionInfo::fromCmdLineArgs(int argc, char** argv) {
 	bMultiStage = getCmdlineParam(argv, argv + argc, "--multiStage");
 	integerWriteScalingStyle = getCmdlineParam(argv, argv + argc, "--pow2clip") ? IntegerWriteScalingStyle::Pow2Clip : IntegerWriteScalingStyle::Pow2Minus1;
 	getCmdlineParam(argv, argv + argc, "--progress-updates", progressUpdates);
+
 	bDemodulateIQ = getCmdlineParam(argv, argv + argc, "--demodulateIQ", IQModulationType);
+	if(getCmdlineParam(argv, argv + argc, "--demodulateIQ")) {
+		std::string s;
+		getCmdlineParam(argv, argv + argc, "--demodulateIQ", s);
+		if(s.compare("AM")==0) {
+			IQModulationType = ModulationType::AM;
+		} else {
+			IQModulationType = ModulationType::NFM;
+		}
+	}
 
 #if defined (_WIN32) || defined (_WIN64)
 	getCmdlineParam(argv, argv + argc, "--tempDir", tmpDir);

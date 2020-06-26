@@ -17,6 +17,7 @@
 #include <list>
 #include <string>
 #include "csv.h"
+#include "iqdemodulator.h"
 
 namespace ReSampler {
 
@@ -89,7 +90,7 @@ struct ConversionInfo
 	int rawInputSampleRate;
 	std::string rawInputBitFormat;
 	bool bDemodulateIQ;
-	std::string IQModulationType;
+	ModulationType IQModulationType;
 
 	// functions
 	bool fromCmdLineArgs(int argc, char **argv); // populate ConversionInfo from args
