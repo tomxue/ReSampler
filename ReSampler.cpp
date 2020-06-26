@@ -357,6 +357,18 @@ bool convert(ConversionInfo& ci)
 			infileRate = ci.rawInputSampleRate;
 			std::cout << "raw input" << std::endl;
 		}
+
+		if(ci.bDemodulateIQ) {
+			infileFormat |= (ci.IQModulationType << 8); // stuff the modulation type into the second-least-significant byte
+			auto k = std::find_if(std::begin(ModulationTypeMap), std::end(ModulationTypeMap), [&](const std::pair<std::string, ModulationType> pair){
+				return pair.second == ci.IQModulationType;
+			});
+			std::string s;
+			if(k != std::end(ModulationTypeMap)) {
+				s = k->first;
+			}
+			std::cout << "IQ demodulation " << s << std::endl;
+		}
 	}
 
 	// Open input file

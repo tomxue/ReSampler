@@ -7,6 +7,7 @@
 #include <vector>
 #include <iostream>
 #include <cmath>
+#include <map>
 
 #include <sndfile.h>
 #include <sndfile.hh>
@@ -15,7 +16,7 @@ namespace  ReSampler {
 
 enum ModulationType
 {
-	ModulationTypeNone,
+	ModulationTypeNone = 0,
 	NFM,
 	AM,
 	LSB,
@@ -23,6 +24,18 @@ enum ModulationType
 	WFM,
 	DSB,
 	CW
+};
+
+static const std::map<std::string, ModulationType> ModulationTypeMap
+{
+	{"NONE", ModulationType::ModulationTypeNone},
+	{"NFM", ModulationType::NFM},
+	{"AM", ModulationType::AM},
+	{"LSB", ModulationType::LSB},
+	{"USB", ModulationType::USB},
+	{"WFM", ModulationType::WFM},
+	{"DSB", ModulationType::DSB},
+	{"CW", ModulationType::CW}
 };
 
 class IQFile
@@ -34,8 +47,17 @@ public:
 	{
 	}
 
-	IQFile(const std::string& fileName, int infileMode, int infileFormat, int infileChannels, int infileRate) : sndfileHandle(new SndfileHandle(fileName, infileMode, infileFormat, infileChannels, infileRate))
+	IQFile(const std::string& fileName, int infileMode, int infileFormat, int infileChannels, int infileRate) :
+		sndfileHandle(new SndfileHandle(fileName, infileMode, infileFormat & 0xFFFF00FF, infileChannels, infileRate))
 	{
+		/* libsndfile format masks:
+			SF_FORMAT_SUBMASK		= 0x0000FFFF,
+			SF_FORMAT_TYPEMASK		= 0x0FFF0000,
+			SF_FORMAT_ENDMASK		= 0x30000000
+		*/
+
+		// extract modulation type from 2nd-last byte of file format code
+		modulationType = static_cast<ModulationType>((infileFormat & 0x0000FF00) >>  8);
 	}
 
 	bool error() {

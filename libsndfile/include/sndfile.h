@@ -72,6 +72,7 @@ enum
 	SF_FORMAT_MPC2K			= 0x210000,		/* Akai MPC 2000 sampler */
 	SF_FORMAT_RF64			= 0x220000,		/* RF64 WAV file */
 
+
 	/* Subtypes from here on. */
 
 	SF_FORMAT_PCM_S8		= 0x0001,		/* Signed 8 bit data */

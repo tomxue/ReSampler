@@ -206,6 +206,7 @@ bool ConversionInfo::fromCmdLineArgs(int argc, char** argv) {
 	bBadParams = false;
 	appName.clear();
 	bRawInput = false;
+	bDemodulateIQ = false;
 
 	// get core parameters:
 	getCmdlineParam(argv, argv + argc, "-i", inputFilename);
