@@ -239,15 +239,17 @@ bool ConversionInfo::fromCmdLineArgs(int argc, char** argv) {
 	integerWriteScalingStyle = getCmdlineParam(argv, argv + argc, "--pow2clip") ? IntegerWriteScalingStyle::Pow2Clip : IntegerWriteScalingStyle::Pow2Minus1;
 	getCmdlineParam(argv, argv + argc, "--progress-updates", progressUpdates);
 
-	bDemodulateIQ = getCmdlineParam(argv, argv + argc, "--demodulateIQ", IQModulationType);
-	if(getCmdlineParam(argv, argv + argc, "--demodulateIQ")) {
+    bDemodulateIQ = getCmdlineParam(argv, argv + argc, "--demodulateIQ");
+    if(bDemodulateIQ) {
 		std::string s;
 		getCmdlineParam(argv, argv + argc, "--demodulateIQ", s);
-		if(s.compare("AM")==0) {
-			IQModulationType = ModulationType::AM;
-		} else {
-			IQModulationType = ModulationType::NFM;
-		}
+        IQModulationType = ModulationType::NFM; // default
+        if(!s.empty()) {
+            auto it = modulationTypeMap.find(s);
+            if(it != modulationTypeMap.end()) {
+                IQModulationType = it->second;
+            }
+        }
 	}
 
 #if defined (_WIN32) || defined (_WIN64)
