@@ -100,7 +100,13 @@ public:
 			case AM:
 				inbuffer[j++] = demodulateAM(wavBuffer.at(i), wavBuffer.at(i + 1));
 				break;
+            case LSB:
+            case USB:
+                // SSB : just copy I-component
+                inbuffer[j++] = wavBuffer.at(i);
+                break;
 			default:
+                // Narrowband FM
 				inbuffer[j++] = demodulateFM(wavBuffer.at(i), wavBuffer.at(i + 1));
 			}
 		}
