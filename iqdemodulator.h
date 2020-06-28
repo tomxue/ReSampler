@@ -40,7 +40,6 @@ static const std::map<std::string, ModulationType> modulationTypeMap
 
 class IQFile
 {
-
 public:
 
 	IQFile(const std::string& fileName) : sndfileHandle(new SndfileHandle(fileName))
@@ -50,13 +49,13 @@ public:
 	IQFile(const std::string& fileName, int infileMode, int infileFormat, int infileChannels, int infileRate) :
 		sndfileHandle(new SndfileHandle(fileName, infileMode, infileFormat & 0xFFFF00FF, infileChannels, infileRate))
 	{
-		/* libsndfile format masks:
-			SF_FORMAT_SUBMASK		= 0x0000FFFF,
-			SF_FORMAT_TYPEMASK		= 0x0FFF0000,
-			SF_FORMAT_ENDMASK		= 0x30000000
-		*/
+        // Extract modulation type from 2nd-last byte of file format code.
+        // (Note: libsndfile has this for the subformat mask:
+        // SF_FORMAT_SUBMASK = 0x0000FFFF
+        // So far, only the least-significant byte has been used. ie: 0x000000FF.
+        // If they ever add more formats in the future which use the upper byte,
+        // then this strategy may need reevaluation ...)
 
-		// extract modulation type from 2nd-last byte of file format code
 		modulationType = static_cast<ModulationType>((infileFormat & 0x0000FF00) >>  8);
 	}
 
@@ -179,7 +178,6 @@ private:
 	double q2{0.0};
 
 };
-
 
 } // namespace  ReSampler
 
