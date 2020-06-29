@@ -8,6 +8,7 @@
 #include <iostream>
 #include <cmath>
 #include <map>
+#include <iostream>
 
 #include <sndfile.h>
 #include <sndfile.hh>
@@ -60,7 +61,17 @@ public:
 	}
 
 	bool error() {
-		return sndfileHandle == nullptr || sndfileHandle->error();
+
+		if(sndfileHandle == nullptr) {
+			return true;
+		}
+
+		if(sndfileHandle->channels() != 2) {
+			std::cout << "2 channels expected for an I/Q input file !" << std::endl;
+			return true;
+		}
+
+		return sndfileHandle->error();
 	}
 
 	int channels() {
