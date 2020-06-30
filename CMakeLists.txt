@@ -32,6 +32,7 @@ if(ANDROID)
         ReSampler.h
         srconvert.h
         iqdemodulator.h
+        mpxdecode.h
         )
 
     add_library(ReSampler SHARED ${SOURCE_FILES})
@@ -78,6 +79,7 @@ else()
         srconvert.h
         conversioninfo.cpp
         iqdemodulator.h
+        mpxdecode.h
         )
 
     if (WIN32)

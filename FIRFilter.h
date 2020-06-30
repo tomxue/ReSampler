@@ -637,7 +637,6 @@ namespace ReSampler {
 		return true;
 	}
 
-
 	// the following is a set of Complex-In, Complex-Out transforms used for constructing a minimum-Phase FIR:
 
 	// logV() : logarithm of a vector of Complex doubles
