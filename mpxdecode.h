@@ -1,5 +1,24 @@
+/*
+* Copyright (C) 2020 Judd Niemann - All Rights Reserved.
+* You may use, distribute and modify this code under the
+* terms of the GNU Lesser General Public License, version 2.1
+*
+* You should have received a copy of GNU Lesser General Public License v2.1
+* with this file. If not, please refer to: https://github.com/jniemann66/ReSampler
+*/
+
 #ifndef MPXDECODE_H
 #define MPXDECODE_H
+
+// FM Broadcast Multiplex Decoder (WIP)
+
+// todo: 19khz bandpass for Pilot Tone
+// todo: 23-53khz bandpass for audio subcarrier
+// todo: audio deemphasis filter (IIR ?)
+// todo: 19khz -> 38khz frequency doubler
+// todo: subcarrier multiplier / demodulator
+// todo: mid / side matrix decoder
+// todo: 15khz lpf for audio channels
 
 #include <vector>
 
@@ -7,7 +26,6 @@
 
 class MpxDecoder
 {
-
     // make 19khz bandpass filter for the Pilot Tone
     template <typename FloatType>
     static std::vector<FloatType> make19KhzBandpass(int sampleRate)
