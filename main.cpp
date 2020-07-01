@@ -61,6 +61,8 @@ void androidCleanup() {
 
 #include "ReSampler.h"
 
+#include "mpxdecode.h"
+
 int main(int argc, char * argv[])
 {
 

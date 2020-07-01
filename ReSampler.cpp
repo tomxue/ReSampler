@@ -17,6 +17,7 @@
 #include "srconvert.h"
 #include "ditherer.h"
 #include "iqdemodulator.h"
+#include "mpxdecode.h"
 
 #include <cstdio>
 #include <string>
