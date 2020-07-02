@@ -65,7 +65,7 @@ void androidCleanup() {
 
 int main(int argc, char * argv[])
 {
-
+    // MpxDecoder::saveFilters1("/tmp/filters.wav");
 #ifdef COMPILING_ON_ANDROID
 	std::cout.rdbuf(new androidbuf(ANDROID_LOG_INFO, "ReSampler"));
 	std::cerr.rdbuf(new androidbuf(ANDROID_LOG_ERROR, "ReSampler"));

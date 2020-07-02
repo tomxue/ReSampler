@@ -28,14 +28,11 @@
 
 class MpxDecoder
 {
-    // make 19khz bandpass filter for the Pilot Tone
     template <typename FloatType>
-    static std::vector<FloatType> make19KhzBandpass(int sampleRate)
+    static std::vector<FloatType> makeBandpass(int sampleRate, double ft1, double ft2)
     {
         // determine cutoff frequency and steepness
         double nyquist = sampleRate / 2.0;
-        double ft1 = 18500.0;
-        double ft2 = 19500.0;
         double steepness = 0.090909091 / (1000.0 / nyquist);
 
         // determine filtersize
@@ -65,14 +62,35 @@ class MpxDecoder
         return filterTaps2;
     }
 
-public:
-    // function for testing / tweaking the performance of the 19khz bandpass
-    static void save19khzFilter(const std::string& filename)
+    // make 19khz bandpass filter for the Pilot Tone
+    template<typename FloatType>
+    static std::vector<FloatType> make19KhzBandpass(int sampleRate)
     {
-        std::vector<double> filt = make19KhzBandpass<double>(192000);
-        SndfileHandle sndfile(filename, SFM_WRITE, SF_FORMAT_WAV | SF_FORMAT_FLOAT, 1, 192000);
-        std::cout << "19khz filter size " << filt.size() << std::endl;
-        sndfile.write(filt.data(), filt.size());
+        return makeBandpass<FloatType>(sampleRate, 18500, 19500);
+    }
+
+    // make 38khz bandpass filter for the Audio Subcarrier
+    template<typename FloatType>
+    static std::vector<FloatType> make38KhzBandpass(int sampleRate)
+    {
+        return makeBandpass<FloatType>(sampleRate, 22000, 54000);
+    }
+
+public:
+    // function for testing / tweaking the performance of the bandpass filters
+    static void saveFilters1(const std::string& filename)
+    {
+        std::vector<double> filt1 = make19KhzBandpass<double>(192000);
+        std::vector<double> filt2 = make38KhzBandpass<double>(192000);
+        SndfileHandle sndfile(filename, SFM_WRITE, SF_FORMAT_WAV | SF_FORMAT_FLOAT, 2, 192000);
+        std::cout << "filter size " << filt1.size() << std::endl;
+        std::vector<double> interleaved;
+        interleaved.reserve(2 * filt1.size());
+        for(int i = 0; i < filt1.size(); i++) {
+            interleaved.push_back(filt1.at(i));
+            interleaved.push_back(filt2.at(i));
+        }
+        sndfile.writef(interleaved.data(), filt1.size());
     }
 };
 
