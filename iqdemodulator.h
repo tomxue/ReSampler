@@ -16,6 +16,7 @@
 #include <memory>
 #include <vector>
 #include <iostream>
+#include <iomanip>
 #include <cmath>
 #include <map>
 #include <iostream>
@@ -71,7 +72,7 @@ public:
 
 		modulationType = static_cast<ModulationType>((infileFormat & 0x0000FF00) >>  8);
 		if(modulationType == WFM) {
-			setDeEmphasisTc(2, infileRate, 50);
+			setDeEmphasisTc(2, sndfileHandle->samplerate(), 50);
 		}
 	}
 
@@ -200,12 +201,12 @@ private:
 	void setDeEmphasisTc(int channels, int sampleRate, double tc = 50.0 /* microseconds */)
 	{
 		deEmphasisFilters.resize(channels);
-		double p1 = -exp(-1.0 / (sampleRate * tc * 10.0e-6));
-		double z1 = 1 + p1;
+		double p1 = -exp(-1.0 / (sampleRate * tc * 0.000001));
+		double z1 = (1 + p1) / 5.0;
 		for(auto& biquad : deEmphasisFilters)
 		{
 			biquad.setCoeffs(z1, z1, 0, p1, 0);
-			std::cout << z1 << "," << p1 << std::endl;
+			std::cout << sampleRate << "," << std::setprecision(9) << z1 << "," << p1 << std::endl;
 			// 0.06501945611827269, 0.06501945611827269, 0, 0.8699610877634546, 0// b0, b1, b2, a1, a2
 			biquad.reset();
 		}
