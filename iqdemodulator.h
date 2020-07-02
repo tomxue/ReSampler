@@ -23,6 +23,8 @@
 #include <sndfile.h>
 #include <sndfile.hh>
 
+#include "biquad.h"
+
 namespace  ReSampler {
 
 enum ModulationType
@@ -68,6 +70,9 @@ public:
         // then this strategy may need reevaluation ...)
 
 		modulationType = static_cast<ModulationType>((infileFormat & 0x0000FF00) >>  8);
+		if(modulationType == WFM) {
+			setDeEmphasisTc(2, infileRate, 50);
+		}
 	}
 
 	bool error() {
@@ -125,6 +130,13 @@ public:
                 // SSB : just copy I-component
                 inbuffer[j++] = wavBuffer.at(i);
                 break;
+			case WFM:
+				// wideband FM
+				// todo: multiplex decode
+				inbuffer[j++] = deEmphasisFilters[0].filter(
+						demodulateFM(wavBuffer.at(i), wavBuffer.at(i + 1))
+				);
+				break;
 			default:
                 // Narrowband FM
 				inbuffer[j++] = demodulateFM(wavBuffer.at(i), wavBuffer.at(i + 1));
@@ -182,10 +194,28 @@ private:
 		return scale * std::sqrt(i * i + q * q);
 	}
 
+	//		double f = 2122.1; // 75 us
+	//		double T1 = 1/(2*pi*fc); // Hz to time constant
+
+	void setDeEmphasisTc(int channels, int sampleRate, double tc = 50.0 /* microseconds */)
+	{
+		deEmphasisFilters.resize(channels);
+		double p1 = -exp(-1.0 / (sampleRate * tc * 10.0e-6));
+		double z1 = 1 + p1;
+		for(auto& biquad : deEmphasisFilters)
+		{
+			biquad.setCoeffs(z1, z1, 0, p1, 0);
+			std::cout << z1 << "," << p1 << std::endl;
+			// 0.06501945611827269, 0.06501945611827269, 0, 0.8699610877634546, 0// b0, b1, b2, a1, a2
+			biquad.reset();
+		}
+	}
+
 private:
 	// resources
 	std::unique_ptr<SndfileHandle> sndfileHandle;
 	std::vector<double> wavBuffer;
+	std::vector<Biquad<double>> deEmphasisFilters;
 
 	// properties
 	ModulationType modulationType{ModulationType::NFM};
