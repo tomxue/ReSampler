@@ -62,18 +62,25 @@ class MpxDecoder
         return filterTaps2;
     }
 
-    // make 19khz bandpass filter for the Pilot Tone
+    // 19khz bandpass filter for the Pilot Tone
     template<typename FloatType>
     static std::vector<FloatType> make19KhzBandpass(int sampleRate)
     {
         return makeBandpass<FloatType>(sampleRate, 18500, 19500);
     }
 
-    // make 38khz bandpass filter for the Audio Subcarrier
+    // 38khz bandpass filter for the Audio Subcarrier
     template<typename FloatType>
     static std::vector<FloatType> make38KhzBandpass(int sampleRate)
     {
         return makeBandpass<FloatType>(sampleRate, 22000, 54000);
+    }
+
+    // 57khz bandpass filter for RDS / RBDS
+    template<typename FloatType>
+    static std::vector<FloatType> make57KhzBandpass(int sampleRate)
+    {
+        return makeBandpass<FloatType>(sampleRate, 54000, 60000);
     }
 
 public:
