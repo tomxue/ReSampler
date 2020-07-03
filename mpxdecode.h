@@ -28,6 +28,11 @@
 
 class MpxDecoder
 {
+    MpxDecoder()
+    {
+        // todo: emplace filters
+    }
+
     template <typename FloatType>
     static std::vector<FloatType> makeBandpass(int sampleRate, double ft1, double ft2)
     {
@@ -99,6 +104,10 @@ public:
         }
         sndfile.writef(interleaved.data(), filt1.size());
     }
+
+private:
+    std::vector<ReSampler::FIRFilter<double>> filters;
+
 };
 
 #endif // MPXDECODE_H
