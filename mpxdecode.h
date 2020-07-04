@@ -28,9 +28,19 @@
 
 class MpxDecoder
 {
-    MpxDecoder()
+    MpxDecoder(int sampleRate)
     {
         // todo: emplace filters
+
+        auto f1 = make19KhzBandpass<double>(sampleRate);
+        auto f2 = make19KhzBandpass<double>(sampleRate);
+        auto f3 = make57KhzBandpass<double>(sampleRate);
+        std::vector<double> f0(f1.size(), 0);
+        f0[(f1.size() - 1) / 2] = 1.0; // single impulse at halfway point
+        filters.emplace_back(f0.data(), f0.size());
+        filters.emplace_back(f1.data(), f1.size());
+        filters.emplace_back(f2.data(), f2.size());
+        filters.emplace_back(f3.data(), f3.size());
     }
 
     template <typename FloatType>
