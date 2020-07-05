@@ -28,6 +28,7 @@
 
 class MpxDecoder
 {
+public:
     MpxDecoder(int sampleRate)
     {
         // create filters
@@ -107,7 +108,6 @@ class MpxDecoder
         return makeBandpass<FloatType>(sampleRate, 54000, 60000);
     }
 
-public:
     // function for testing / tweaking the performance of the bandpass filters
     static void saveFilters1(const std::string& filename)
     {

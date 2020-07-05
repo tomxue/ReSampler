@@ -25,6 +25,7 @@
 #include <sndfile.hh>
 
 #include "biquad.h"
+#include "mpxdecode.h"
 
 namespace  ReSampler {
 
@@ -57,7 +58,7 @@ class IQFile
 public:
 
 	IQFile(const std::string& fileName) : sndfileHandle(new SndfileHandle(fileName))
-	{
+    {
 	}
 
 	IQFile(const std::string& fileName, int infileMode, int infileFormat, int infileChannels, int infileRate) :
@@ -72,7 +73,9 @@ public:
 
 		modulationType = static_cast<ModulationType>((infileFormat & 0x0000FF00) >>  8);
 		if(modulationType == WFM) {
-			setDeEmphasisTc(2, sndfileHandle->samplerate(), 50);
+            int sampleRate = sndfileHandle->samplerate();
+            setDeEmphasisTc(2, sampleRate, 50);
+            mpxDecoder = std::unique_ptr<MpxDecoder>(new MpxDecoder(sampleRate));
 		}
 	}
 
@@ -91,7 +94,11 @@ public:
 	}
 
 	int channels() {
-		return 1;  // I & Q inputs always get demodulated into a single channel
+        if(modulationType == WFM) {
+            return 2; // FM stereo
+        } else {
+            return 1;
+        }
 	}
 
 	int samplerate() {
@@ -124,7 +131,7 @@ public:
 		for(int64_t i = 0; i < samplesRead; i += 2) {
 			switch(modulationType) {
 			case AM:
-				inbuffer[j++] = demodulateAM(wavBuffer.at(i), wavBuffer.at(i + 1));
+                inbuffer [j++] = demodulateAM(wavBuffer.at(i), wavBuffer.at(i + 1));
 				break;
             case LSB:
             case USB:
@@ -135,7 +142,7 @@ public:
 				// wideband FM
 				// todo: multiplex decode
 				inbuffer[j++] = deEmphasisFilters[0].filter(
-						demodulateFM(wavBuffer.at(i), wavBuffer.at(i + 1))
+                    demodulateFM(wavBuffer.at(i), wavBuffer.at(i + 1))
 				);
 				break;
 			default:
@@ -215,6 +222,7 @@ private:
 private:
 	// resources
 	std::unique_ptr<SndfileHandle> sndfileHandle;
+    std::unique_ptr<MpxDecoder> mpxDecoder;
 	std::vector<double> wavBuffer;
 	std::vector<Biquad<double>> deEmphasisFilters;
 
