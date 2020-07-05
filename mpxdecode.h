@@ -12,9 +12,6 @@
 
 // FM Broadcast Multiplex Decoder (WIP)
 
-// todo: 19khz bandpass for Pilot Tone
-// todo: 23-53khz bandpass for audio subcarrier
-// todo: audio deemphasis filter (IIR ?)
 // todo: 19khz -> 38khz frequency doubler
 // todo: subcarrier multiplier / demodulator
 // todo: mid / side matrix decoder
