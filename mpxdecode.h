@@ -30,8 +30,7 @@ class MpxDecoder
 {
     MpxDecoder(int sampleRate)
     {
-        // todo: emplace filters
-
+        // create filters
         auto f1 = make19KhzBandpass<double>(sampleRate);
         auto f2 = make19KhzBandpass<double>(sampleRate);
         auto f3 = make57KhzBandpass<double>(sampleRate);
@@ -41,6 +40,16 @@ class MpxDecoder
         filters.emplace_back(f1.data(), f1.size());
         filters.emplace_back(f2.data(), f2.size());
         filters.emplace_back(f3.data(), f3.size());
+    }
+
+    template<typename FloatType>
+    std::pair<FloatType, FloatType> decode(FloatType input)
+    {
+        for(auto& filter : filters) {
+            filter.put(input);
+        }
+
+        return {filters.at(1).get(), filters.at(2).get()};
     }
 
     template <typename FloatType>
