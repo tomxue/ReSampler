@@ -121,11 +121,11 @@ public:
 			return 0LL;
 		}
 
-		if(wavBuffer.size() < count * 2) {
-			wavBuffer.resize(count * 2);
+        if(wavBuffer.size() < count) {
+            wavBuffer.resize(count);
 		}
 
-		int64_t samplesRead = sndfileHandle->read(wavBuffer.data(), count * 2);
+        int64_t samplesRead = sndfileHandle->read(wavBuffer.data(), count);
 
 		int64_t j = 0;
 		for(int64_t i = 0; i < samplesRead; i += 2) {
@@ -139,12 +139,16 @@ public:
                 inbuffer[j++] = wavBuffer.at(i);
                 break;
 			case WFM:
-				// wideband FM
-				// todo: multiplex decode
-				inbuffer[j++] = deEmphasisFilters[0].filter(
-                    demodulateFM(wavBuffer.at(i), wavBuffer.at(i + 1))
-				);
-				break;
+            {
+                // wideband FM: demodulate, decode, deemphasize
+                std::pair<FloatType, FloatType> decoded = mpxDecoder->decode(demodulateFM(wavBuffer.at(i), wavBuffer.at(i + 1)));
+                auto l = decoded.first;
+                auto r = decoded.second;
+                inbuffer[j++] = l;//deEmphasisFilters[0].filter(l);
+                inbuffer[j++] = r;//deEmphasisFilters[1].filter(r);
+
+            }
+                break;
 			default:
                 // Narrowband FM
 				inbuffer[j++] = demodulateFM(wavBuffer.at(i), wavBuffer.at(i + 1));

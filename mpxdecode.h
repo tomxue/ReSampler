@@ -30,7 +30,7 @@ public:
     {
         // create filters
         auto f1 = make19KhzBandpass<double>(sampleRate);
-        auto f2 = make19KhzBandpass<double>(sampleRate);
+        auto f2 = make38KhzBandpass<double>(sampleRate);
         auto f3 = make57KhzBandpass<double>(sampleRate);
         std::vector<double> f0(f1.size(), 0);
         f0[(f1.size() - 1) / 2] = 1.0; // single impulse at halfway point
@@ -43,11 +43,19 @@ public:
     template<typename FloatType>
     std::pair<FloatType, FloatType> decode(FloatType input)
     {
-        for(auto& filter : filters) {
-            filter.put(input);
-        }
+//        for(auto& filter : filters) {
+//            filter.put(input);
+//        }
 
-        return {filters.at(1).get(), filters.at(2).get()};
+        filters.at(0).put(input);
+        filters.at(1).put(input);
+        filters.at(2).put(input);
+
+        FloatType pilot = filters.at(1).get();
+
+       // return {pilot * pilot - 0.5, filters.at(2).get()};
+        return {pilot, filters.at(2).get()};
+
     }
 
     template <typename FloatType>
@@ -88,7 +96,7 @@ public:
     template<typename FloatType>
     static std::vector<FloatType> make19KhzBandpass(int sampleRate)
     {
-        return makeBandpass<FloatType>(sampleRate, 18500, 19500);
+        return makeBandpass<FloatType>(sampleRate, 18900, 19100);
     }
 
     // 38khz bandpass filter for the Audio Subcarrier
