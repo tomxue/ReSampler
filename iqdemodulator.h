@@ -206,8 +206,9 @@ private:
 		return scale * std::sqrt(i * i + q * q);
 	}
 
-	//		double f = 2122.1; // 75 us
-	//		double T1 = 1/(2*pi*fc); // Hz to time constant
+    //	double tau = 1/(2*pi*f); // Hz to time constant
+    //	double f = 2122.1; // 75 us
+    //  double f = 3183.1; // 50 us
 
 	void setDeEmphasisTc(int channels, int sampleRate, double tc = 50.0 /* microseconds */)
 	{
@@ -216,10 +217,8 @@ private:
 		double z1 = (1 + p1) / 5.0;
 		for(auto& biquad : deEmphasisFilters)
 		{
-			biquad.setCoeffs(z1, z1, 0, p1, 0);
-            //std::cout << sampleRate << "," << std::setprecision(9) << z1 << "," << p1 << std::endl;
-			// 0.06501945611827269, 0.06501945611827269, 0, 0.8699610877634546, 0// b0, b1, b2, a1, a2
-			biquad.reset();
+            biquad.setCoeffs(z1, z1, 0.0, p1, 0.0);
+            biquad.reset();
 		}
 	}
 
