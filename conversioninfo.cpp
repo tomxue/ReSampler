@@ -250,6 +250,7 @@ bool ConversionInfo::fromCmdLineArgs(int argc, char** argv) {
                 IQModulationType = it->second;
             }
         }
+        bUseDoublePrecision = true; // always use double precision for demodulation
 	}
 
 #if defined (_WIN32) || defined (_WIN64)
