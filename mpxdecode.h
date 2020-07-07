@@ -12,11 +12,6 @@
 
 // FM Broadcast Multiplex Decoder (WIP)
 
-// todo: 19khz -> 38khz frequency doubler
-// todo: subcarrier multiplier / demodulator
-// todo: mid / side matrix decoder
-// todo: 15khz lpf for audio channels
-
 #include <vector>
 #include <sndfile.h>
 #include <sndfile.hh>
@@ -32,30 +27,48 @@ public:
         auto f1 = make19KhzBandpass<double>(sampleRate);
         auto f2 = make38KhzBandpass<double>(sampleRate);
         auto f3 = make57KhzBandpass<double>(sampleRate);
+        auto lpf = make15khzLowpass<double>(sampleRate);
         std::vector<double> f0(f1.size(), 0);
         f0[(f1.size() - 1) / 2] = 1.0; // single impulse at halfway point
         filters.emplace_back(f0.data(), f0.size());
         filters.emplace_back(f1.data(), f1.size());
         filters.emplace_back(f2.data(), f2.size());
         filters.emplace_back(f3.data(), f3.size());
+        filters.emplace_back(lpf.data(), lpf.size()); // left lowpass
+        filters.emplace_back(lpf.data(), lpf.size()); // right lowpass
+
+        decreaseRate = std::pow(10.0, -400.0 / sampleRate / 20.0);
+        increaseRate = std::pow(10.0, 400.0 / sampleRate / 20.0);
     }
 
     template<typename FloatType>
     std::pair<FloatType, FloatType> decode(FloatType input)
     {
-//        for(auto& filter : filters) {
-//            filter.put(input);
-//        }
-
         filters.at(0).put(input);
         filters.at(1).put(input);
         filters.at(2).put(input);
 
-        FloatType pilot = filters.at(1).get();
+        FloatType monoRaw = filters.at(0).get();
+        FloatType pilotRaw = filters.at(1).get();
+        FloatType carrierRaw = filters.at(2).get();
+        FloatType pilot = pilotRaw * pilotGain;
+        FloatType pilotAbs = std::fabs(pilot);
 
-       // return {pilot * pilot - 0.5, filters.at(2).get()};
-        return {pilot, filters.at(2).get()};
+        if(pilotAbs > pilotPeak) {
+            pilotPeak = pilotAbs;
+        }
 
+        if(pilotPeak < pilotStableLow) {
+            pilotGain = std::min(pilotMaxGain, pilotGain * increaseRate);
+        } else if(pilotPeak > pilotStableHigh) {
+            pilotGain *= decreaseRate;
+        }
+
+        pilotPeak *= decreaseRate; // always falling
+        FloatType side = (pilot * pilot - 0.4925) * carrierRaw;
+        filters.at(4).put(0.5 * (monoRaw + side));
+        filters.at(5).put(0.5 * (monoRaw - side));
+        return {filters.at(4).get(), filters.at(5).get()};
     }
 
     template <typename FloatType>
@@ -91,6 +104,29 @@ public:
         ReSampler::applyKaiserWindow<FloatType>(pFilterTaps2, filterSize, ReSampler::calcKaiserBeta(sidelobeAtten));
         return filterTaps2;
     }
+
+    // 15khz lowpass for audio output
+    template<typename FloatType>
+    static std::vector<FloatType> make15khzLowpass(int sampleRate)
+    {
+        // determine cutoff frequency and steepness
+        double nyquist = sampleRate / 2.0;
+        double steepness = 0.090909091 / (1000.0 / nyquist);
+
+        // determine filtersize
+        int filterSize = static_cast<int>(
+            std::min<int>(FILTERSIZE_BASE * steepness, FILTERSIZE_LIMIT)
+            | 1 // ensure that filter length is always odd
+        );
+
+        std::vector<FloatType> filterTaps1(filterSize, 0);
+        FloatType* pFilterTaps1 = &filterTaps1[0];
+        ReSampler::makeLPF<FloatType>(pFilterTaps1, filterSize, 15500, sampleRate);
+        int sidelobeAtten = 160;
+        ReSampler::applyKaiserWindow<FloatType>(pFilterTaps1, filterSize, ReSampler::calcKaiserBeta(sidelobeAtten));
+        return filterTaps1;
+    }
+
 
     // 19khz bandpass filter for the Pilot Tone
     template<typename FloatType>
@@ -131,7 +167,13 @@ public:
 
 private:
     std::vector<ReSampler::FIRFilter<double>> filters;
-
+    double pilotPeak{0.0};
+    double pilotGain{1.0};
+    double increaseRate;
+    double decreaseRate;
+    double pilotStableLow{0.98};
+    double pilotStableHigh{0.99};
+    double pilotMaxGain{100.0};
 };
 
 #endif // MPXDECODE_H

@@ -142,11 +142,8 @@ public:
             {
                 // wideband FM: demodulate, decode, deemphasize
                 std::pair<FloatType, FloatType> decoded = mpxDecoder->decode(demodulateFM(wavBuffer.at(i), wavBuffer.at(i + 1)));
-                auto l = decoded.first;
-                auto r = decoded.second;
-                inbuffer[j++] = l;//deEmphasisFilters[0].filter(l);
-                inbuffer[j++] = r;//deEmphasisFilters[1].filter(r);
-
+                inbuffer[j++] = deEmphasisFilters[0].filter(decoded.first);
+                inbuffer[j++] = deEmphasisFilters[1].filter(decoded.second);
             }
                 break;
 			default:
