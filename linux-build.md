@@ -53,6 +53,11 @@ standard 64-bit build:
 g++ -pthread -std=c++11 main.cpp ReSampler.cpp conversioninfo.cpp -lfftw3 -lsndfile -o ReSampler -O3
 ~~~
 
+Note: in practice, you might do something like this:
+~~~
+sudo g++ -pthread -std=c++11 main.cpp ReSampler.cpp conversioninfo.cpp -lfftw3 -lsndfile -o /usr/local/bin/ReSampler -O3
+~~~
+
 AVX Build:
 ~~~
 g++ -pthread -std=c++11 main.cpp ReSampler.cpp conversioninfo.cpp -lfftw3 -lsndfile -o ReSampler -O3 -DUSE_AVX -mavx
