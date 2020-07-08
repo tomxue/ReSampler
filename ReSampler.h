@@ -77,7 +77,7 @@ const std::string strExtraOptions(
 
 		"--showTempFile\n"
 		"--noTempFile\n"
-		"--demodulateIQ [<AM|NFM>]\n"
+        "--demodulateIQ [<AM|LSB|USB|NFM|WFM>]\n"
 		);
 
 const double clippingTrim = 1.0 - (1.0 / (1 << 23));
