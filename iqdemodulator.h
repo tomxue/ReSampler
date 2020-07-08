@@ -72,10 +72,12 @@ public:
         // then this strategy may need reevaluation ...)
 
 		modulationType = static_cast<ModulationType>((infileFormat & 0x0000FF00) >>  8);
-		if(modulationType == WFM) {
-            int sampleRate = sndfileHandle->samplerate();
-            setDeEmphasisTc(2, sampleRate, 50);
-            mpxDecoder = std::unique_ptr<MpxDecoder>(new MpxDecoder(sampleRate));
+        if(modulationType == WFM) {
+            if(samplerate() != 0) {
+                int sampleRate = sndfileHandle->samplerate();
+                setDeEmphasisTc(2, sampleRate, 50);
+                mpxDecoder = std::unique_ptr<MpxDecoder>(new MpxDecoder(sampleRate));
+            }
 		}
 	}
 
@@ -85,7 +87,11 @@ public:
 			return true;
 		}
 
-		if(sndfileHandle->channels() != 2) {
+        if(sndfileHandle->samplerate() == 0) {
+            return true;
+        }
+
+        if(sndfileHandle->channels() != 2) {
 			std::cout << "2 channels expected for an I/Q input file !" << std::endl;
 			return true;
 		}
