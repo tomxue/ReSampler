@@ -65,10 +65,13 @@ public:
         }
 
         pilotPeak *= decreaseRate; // always falling
-        FloatType side = (pilot * pilot - 0.4925) * carrierRaw;
+        FloatType side = 10.0 * (pilot * pilot - 0.4925) * carrierRaw;
         filters.at(4).put(0.5 * (monoRaw + side));
         filters.at(5).put(0.5 * (monoRaw - side));
+
         return {filters.at(4).get(), filters.at(5).get()};
+        // return {carrierRaw, side};
+        // return{monoRaw, side};
     }
 
     template <typename FloatType>
@@ -139,7 +142,7 @@ public:
     template<typename FloatType>
     static std::vector<FloatType> make38KhzBandpass(int sampleRate)
     {
-        return makeBandpass<FloatType>(sampleRate, 22000, 54000);
+        return makeBandpass<FloatType>(sampleRate, 38000, 53000); // we only want half of it
     }
 
     // 57khz bandpass filter for RDS / RBDS
