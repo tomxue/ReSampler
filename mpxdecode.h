@@ -18,6 +18,8 @@
 
 #include "FIRFilter.h"
 
+//#define MPXDECODER_TUNE_PILOT_AGC
+
 class MpxDecoder
 {
 public:
@@ -37,9 +39,22 @@ public:
         filters.emplace_back(lpf.data(), lpf.size()); // left lowpass
         filters.emplace_back(lpf.data(), lpf.size()); // right lowpass
 
-        decreaseRate = std::pow(10.0, -400.0 / sampleRate / 20.0);
-        increaseRate = std::pow(10.0, 400.0 / sampleRate / 20.0);
+        // these values determined experimentally:
+        // (#define MPXDECODER_TUNE_PILOT_AGC to debug & tweak)
+        decreaseRate = std::pow(10.0, /* dB per sec = */ -3200.0 / sampleRate / 20.0);
+        peakDecreaseRate = std::pow(10.0, -450.0 / sampleRate / 20.0);
+        increaseRate = std::pow(10.0, 3200.0 / sampleRate / 20.0);
     }
+
+#ifdef MPXDECODER_TUNE_PILOT_AGC
+    ~MpxDecoder()
+    {
+        int64_t totalCount = plusCount + stableCount + minusCount;
+        std::cout << 100.0 * plusCount / totalCount << "%, "
+                  << 100.0 * stableCount / totalCount << "%, "
+                  << 100.0 * minusCount / totalCount << "%" << std::endl;
+    }
+#endif
 
     template<typename FloatType>
     std::pair<FloatType, FloatType> decode(FloatType input)
@@ -58,20 +73,39 @@ public:
             pilotPeak = pilotAbs;
         }
 
+#ifdef MPXDECODER_TUNE_PILOT_AGC
+        std::cout << pilotGain << ", " << pilotPeak << "\n";
+#endif
+
         if(pilotPeak < pilotStableLow) {
             pilotGain = std::min(pilotMaxGain, pilotGain * increaseRate);
+
+#ifdef MPXDECODER_TUNE_PILOT_AGC
+            plusCount++;
+#endif
+
         } else if(pilotPeak > pilotStableHigh) {
             pilotGain *= decreaseRate;
+
+#ifdef MPXDECODER_TUNE_PILOT_AGC
+            minusCount++;
+#endif
+
+        } else {
+
+#ifdef MPXDECODER_TUNE_PILOT_AGC
+            stableCount++;
+#endif
+
         }
 
-        pilotPeak *= decreaseRate; // always falling
-        FloatType side = 10.0 * (pilot * pilot - 0.4925) * carrierRaw;
+        pilotPeak *= peakDecreaseRate; // always falling
+        // double pilot frequency and multiply with carrierRaw
+        FloatType side = 10.0 * (pilot * pilot - doublerDcOffset) * carrierRaw;
         filters.at(4).put(0.5 * (monoRaw + side));
         filters.at(5).put(0.5 * (monoRaw - side));
 
         return {filters.at(4).get(), filters.at(5).get()};
-        // return {carrierRaw, side};
-        // return{monoRaw, side};
     }
 
     template <typename FloatType>
@@ -130,7 +164,6 @@ public:
         return filterTaps1;
     }
 
-
     // 19khz bandpass filter for the Pilot Tone
     template<typename FloatType>
     static std::vector<FloatType> make19KhzBandpass(int sampleRate)
@@ -170,13 +203,25 @@ public:
 
 private:
     std::vector<ReSampler::FIRFilter<double>> filters;
+
+    static constexpr double pilotStableLow = 0.98;
+    static constexpr double pilotStableHigh = 0.99;
+    static constexpr double doublerDcOffset = 0.5 * (pilotStableLow + pilotStableHigh) / 2;
+
+    double pilotMaxGain = 50.0; // no more than about 40dB of gain should be needed
+
     double pilotPeak{0.0};
     double pilotGain{1.0};
     double increaseRate;
     double decreaseRate;
-    double pilotStableLow{0.98};
-    double pilotStableHigh{0.99};
-    double pilotMaxGain{100.0};
+    double peakDecreaseRate;
+
+#ifdef MPXDECODER_TUNE_PILOT_AGC
+    int64_t plusCount{0};
+    int64_t minusCount{0};
+    int64_t stableCount{0};
+#endif
+
 };
 
 #endif // MPXDECODE_H
