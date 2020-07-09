@@ -1475,6 +1475,9 @@ int runCommand(int argc, char** argv) {
 			ci.bEnablePeakDetection = true;
 
 			if(ci.bDemodulateIQ) {
+                ci.bEnablePeakDetection = false;
+//                ci.normalizeAmount = 1.00;
+//                ci.bNormalize = true;
 				return convert_IQFile_Double(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
 			}
 
