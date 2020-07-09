@@ -132,33 +132,40 @@ public:
 		}
 
         int64_t samplesRead = sndfileHandle->read(wavBuffer.data(), count);
+        int64_t j = 0;
 
-		int64_t j = 0;
-		for(int64_t i = 0; i < samplesRead; i += 2) {
-			switch(modulationType) {
-			case AM:
+        switch(modulationType) {
+        case AM:
+            // Amplitude Modulation
+            for(int64_t i = 0; i < samplesRead; i += 2) {
                 inbuffer [j++] = demodulateAM(wavBuffer.at(i), wavBuffer.at(i + 1));
-				break;
-            case LSB:
-            case USB:
-                // SSB : just copy I-component
+            }
+            break;
+        case LSB:
+        case USB:
+            // Single Side Band
+            for(int64_t i = 0; i < samplesRead; i += 2) {
+                // just copy I-component
                 inbuffer[j++] = wavBuffer.at(i);
-                break;
-			case WFM:
-            {
-                // wideband FM: demodulate, decode, deemphasize
+            }
+            break;
+        case WFM:
+            // Wideband FM:
+            for(int64_t i = 0; i < samplesRead; i += 2) {
+                // demodulate, decode, deemphasize
                 std::pair<FloatType, FloatType> decoded = mpxDecoder->decode(demodulateFM(wavBuffer.at(i), wavBuffer.at(i + 1)));
                 inbuffer[j++] = deEmphasisFilters[0].filter(decoded.first);
                 inbuffer[j++] = deEmphasisFilters[1].filter(decoded.second);
             }
-                break;
-			default:
-                // Narrowband FM
-				inbuffer[j++] = demodulateFM(wavBuffer.at(i), wavBuffer.at(i + 1));
-			}
-		}
+            break;
+        default:
+            // Narrowband FM
+            for(int64_t i = 0; i < samplesRead; i += 2) {
+                inbuffer[j++] = demodulateFM(wavBuffer.at(i), wavBuffer.at(i + 1));
+            }
+        }
 
-		return j;
+        return j;
 	}
 
 	sf_count_t seek(int64_t frames, int whence) {
