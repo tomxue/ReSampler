@@ -1475,9 +1475,14 @@ int runCommand(int argc, char** argv) {
 			ci.bEnablePeakDetection = true;
 
 			if(ci.bDemodulateIQ) {
-                ci.bEnablePeakDetection = false;
-//                ci.normalizeAmount = 1.00;
-//                ci.bNormalize = true;
+                if(ci.IQModulationType == WFM) {
+                    // WFM decoding too slow
+                    ci.bEnablePeakDetection = false;
+                } else {
+                    ci.bEnablePeakDetection = true;
+                    ci.normalizeAmount = 1.00;
+                    ci.bNormalize = true;
+                }
 				return convert_IQFile_Double(ci) ? EXIT_SUCCESS : EXIT_FAILURE;
 			}
 
