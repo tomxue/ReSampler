@@ -65,7 +65,7 @@ public:
 
         FloatType monoRaw = filters.at(0).get();
         FloatType pilotRaw = filters.at(1).get();
-        FloatType carrierRaw = filters.at(2).get();
+        FloatType sideRaw = filters.at(2).get();
         FloatType pilot = pilotRaw * pilotGain;
         FloatType pilotAbs = std::fabs(pilot);
 
@@ -99,12 +99,21 @@ public:
 
         }
 
-        pilotPeak *= peakDecreaseRate; // always falling
-        // double pilot frequency and multiply with carrierRaw
-        FloatType side = 10.0 * (pilot * pilot - doublerDcOffset) * carrierRaw;
+        // decay the peak hold
+        pilotPeak *= peakDecreaseRate;
+
+        // double pilot frequency. Note: amplitude approx 1/2 of full-scale (canonical doubler is 2x^2 - 1)
+        FloatType doubledPilot = pilot * pilot - doublerDcOffset;
+
+        // do the spectrum shift
+        constexpr double scaling = 2.5 * 2 * 2; // 10.0
+        FloatType side = scaling * doubledPilot * sideRaw;
+
+        // separate L, R and put into 15khz filters
         filters.at(4).put(0.5 * (monoRaw + side));
         filters.at(5).put(0.5 * (monoRaw - side));
 
+        // return outputs of 15khz filters
         return {filters.at(4).get(), filters.at(5).get()};
     }
 
