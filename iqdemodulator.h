@@ -91,6 +91,11 @@ public:
             return true;
         }
 
+        if(modulationType == WFM && sndfileHandle->samplerate() < 116000) {
+            std::cout << "Sample Rate not high enough for WFM" << std::endl;
+            return true;
+        }
+
         if(sndfileHandle->channels() != 2) {
 			std::cout << "2 channels expected for an I/Q input file !" << std::endl;
 			return true;
