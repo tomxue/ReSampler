@@ -53,6 +53,8 @@ public:
         std::cout << 100.0 * plusCount / totalCount << "%, "
                   << 100.0 * stableCount / totalCount << "%, "
                   << 100.0 * minusCount / totalCount << "%" << std::endl;
+
+        std::cout << "Peak Pilot Gain: " << peakPilotGain << std::endl;
     }
 #endif
 
@@ -77,27 +79,41 @@ public:
         std::cout << pilotGain << ", " << pilotPeak << "\n";
 #endif
 
-        if(pilotPeak < pilotStableLow) {
-            pilotGain = std::min(pilotMaxGain, pilotGain * increaseRate);
+        if(pilotPeak < pilotStableLow) { // pilot too quiet
+            pilotGain *= increaseRate;
+            if(pilotGain >= pilotMaxGain) {
+                pilotGain = pilotMaxGain;
+                if(pilotPresent) {
+                    pilotPresent = false;
+                    std::cout << "Pilot Tone Lost\n";
+                }
+            }
 
 #ifdef MPXDECODER_TUNE_PILOT_AGC
             plusCount++;
 #endif
 
-        } else if(pilotPeak > pilotStableHigh) {
+        } else if(pilotPeak > pilotStableHigh) { // pilot too loud
             pilotGain *= decreaseRate;
 
 #ifdef MPXDECODER_TUNE_PILOT_AGC
             minusCount++;
 #endif
 
-        } else {
-
+        } else { // stable pilot tone
+            if(!pilotPresent) {
+                pilotPresent = true;
+                std::cout << "Pilot Tone Acquired\n";
+            }
 #ifdef MPXDECODER_TUNE_PILOT_AGC
             stableCount++;
 #endif
 
         }
+
+#ifdef MPXDECODER_TUNE_PILOT_AGC
+        peakPilotGain = std::max(pilotGain, peakPilotGain);
+#endif
 
         // decay the peak hold
         pilotPeak *= peakDecreaseRate;
@@ -110,8 +126,10 @@ public:
         FloatType side = scaling * doubledPilot * sideRaw;
 
         // separate L, R and put into 15khz filters
-        filters.at(4).put(0.5 * (monoRaw + side));
-        filters.at(5).put(0.5 * (monoRaw - side));
+        if(pilotPresent) {
+            filters.at(4).put(pilotPresent ? 0.5 * (monoRaw + side) : monoRaw);
+            filters.at(5).put(pilotPresent ? 0.5 * (monoRaw - side) : monoRaw);
+        }
 
         // return outputs of 15khz filters
         return {filters.at(4).get(), filters.at(5).get()};
@@ -177,7 +195,7 @@ public:
     template<typename FloatType>
     static std::vector<FloatType> make19KhzBandpass(int sampleRate)
     {
-        return makeBandpass<FloatType>(sampleRate, 18950, 19050);
+        return makeBandpass<FloatType>(sampleRate, 18900, 19100);
     }
 
     // 38khz bandpass filter for the Audio Subcarrier
@@ -217,18 +235,21 @@ private:
     static constexpr double pilotStableHigh = 0.99;
     static constexpr double doublerDcOffset = 0.5 * (pilotStableLow + pilotStableHigh) / 2;
 
-    double pilotMaxGain = 50.0; // no more than about 40dB of gain should be needed
+    // if more gain than this is needed, then something is wrong with the Pilot Tone:
+    static constexpr double pilotMaxGain = 25.0;
 
     double pilotPeak{0.0};
     double pilotGain{1.0};
     double increaseRate;
     double decreaseRate;
     double peakDecreaseRate;
+    bool pilotPresent{false};
 
 #ifdef MPXDECODER_TUNE_PILOT_AGC
     int64_t plusCount{0};
     int64_t minusCount{0};
     int64_t stableCount{0};
+    double peakPilotGain{0.0};
 #endif
 
 };
