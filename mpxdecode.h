@@ -83,10 +83,6 @@ public:
             pilotGain *= increaseRate;
             if(pilotGain >= pilotMaxGain) {
                 pilotGain = pilotMaxGain;
-                if(pilotPresent) {
-                    pilotPresent = false;
-                    std::cout << "Pilot Tone Lost\n";
-                }
             }
 
 #ifdef MPXDECODER_TUNE_PILOT_AGC
@@ -101,10 +97,7 @@ public:
 #endif
 
         } else { // stable pilot tone
-            if(!pilotPresent) {
-                pilotPresent = true;
-                std::cout << "Pilot Tone Acquired\n";
-            }
+
 #ifdef MPXDECODER_TUNE_PILOT_AGC
             stableCount++;
 #endif
@@ -126,10 +119,8 @@ public:
         FloatType side = scaling * doubledPilot * sideRaw;
 
         // separate L, R and put into 15khz filters
-        if(pilotPresent) {
-            filters.at(4).put(pilotPresent ? 0.5 * (monoRaw + side) : monoRaw);
-            filters.at(5).put(pilotPresent ? 0.5 * (monoRaw - side) : monoRaw);
-        }
+        filters.at(4).put(0.5 * (monoRaw + side));
+        filters.at(5).put(0.5 * (monoRaw - side));
 
         // return outputs of 15khz filters
         return {filters.at(4).get(), filters.at(5).get()};
@@ -243,7 +234,6 @@ private:
     double increaseRate;
     double decreaseRate;
     double peakDecreaseRate;
-    bool pilotPresent{false};
 
 #ifdef MPXDECODER_TUNE_PILOT_AGC
     int64_t plusCount{0};
