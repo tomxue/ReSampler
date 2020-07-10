@@ -177,7 +177,7 @@ public:
     template<typename FloatType>
     static std::vector<FloatType> make19KhzBandpass(int sampleRate)
     {
-        return makeBandpass<FloatType>(sampleRate, 18900, 19100);
+        return makeBandpass<FloatType>(sampleRate, 18950, 19050);
     }
 
     // 38khz bandpass filter for the Audio Subcarrier
