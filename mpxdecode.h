@@ -20,25 +20,226 @@
 
 //#define MPXDECODER_TUNE_PILOT_AGC
 
+template<typename FloatType>
+struct FMBasebandFilterResult
+{
+	FloatType r0;
+	FloatType r1;
+	FloatType r2;
+	FloatType r3;
+};
+
+template<typename FloatType>
+class FMBasebandFilter
+{
+public:
+	FMBasebandFilter(int sampleRate)
+	{
+		// FIR filters must all be linear-phase and of odd, equal length
+		f1 = make19KhzBandpass(sampleRate);
+		f2 = make38KhzBandpass(sampleRate);
+		f3 = make57KhzBandpass(sampleRate);
+		length = f1.size();
+		lengthBytes = length * sizeof(FloatType);
+		h.resize(f1.size() * 2, 0.0);
+		lowerh = h.data();
+		upperh = h.data() + length;
+		centerTap = (length - 1) / 2;
+		currentIndex = length - 1;
+	}
+
+	FMBasebandFilterResult<FloatType> filter(FloatType input)
+	{
+		FloatType s0 = h.at(centerTap);
+		FloatType s1{0.0};
+		FloatType s2{0.0};
+		FloatType s3{0.0};
+
+		h[currentIndex] = input; // place input into history
+		s0 = h[currentIndex + centerTap]; // delay only
+		int p = currentIndex;
+		for(int j = 0 ; j < length; j++) {
+			FloatType v = h.at(p++);
+			s1 += f1.at(j) * v;
+			s2 += f2.at(j) * v;
+		//	s3 += f3.at(j) * v;
+		}
+
+		if(currentIndex == 0) {
+			memcpy(upperh, lowerh, lengthBytes);
+			currentIndex = length - 1;
+		} else {
+			currentIndex--;
+		}
+
+		return {s0, s1, s2, s3};
+	}
+
+private:
+	int length;
+	int lengthBytes;
+	int currentIndex;
+	int centerTap;
+	FloatType* upperh;
+	FloatType* lowerh;
+	std::vector<FloatType> f1;
+	std::vector<FloatType> f2;
+	std::vector<FloatType> f3;
+	std::vector<FloatType> h;
+
+	static std::vector<FloatType> makeBandpass(int sampleRate, double ft1, double ft2)
+	{
+		// determine cutoff frequency and steepness
+		double nyquist = sampleRate / 2.0;
+		double steepness = 0.090909091 / (1000.0 / nyquist);
+
+		// determine filtersize
+		int filterSize = static_cast<int>(
+					std::min<int>(FILTERSIZE_BASE * steepness, FILTERSIZE_LIMIT)
+					| 1 // ensure that filter length is always odd
+					);
+
+		// lower transition
+		std::vector<FloatType> filterTaps1(filterSize, 0);
+		FloatType* pFilterTaps1 = &filterTaps1[0];
+		ReSampler::makeLPF<FloatType>(pFilterTaps1, filterSize, ft1, sampleRate);
+
+		// upper transition
+		std::vector<FloatType> filterTaps2(filterSize, 0);
+		FloatType* pFilterTaps2 = &filterTaps2[0];
+		ReSampler::makeLPF<FloatType>(pFilterTaps2, filterSize, ft2, sampleRate);
+
+		// make bandpass
+		for(int i = 0; i < filterSize; i++) {
+			filterTaps2[i] -= filterTaps1.at(i);
+		}
+
+		// determine sidelobe attenuation
+		int sidelobeAtten = 60;
+		ReSampler::applyKaiserWindow<FloatType>(pFilterTaps2, filterSize, ReSampler::calcKaiserBeta(sidelobeAtten));
+		return filterTaps2;
+	}
+
+	// 19khz bandpass filter for the Pilot Tone
+	static std::vector<FloatType> make19KhzBandpass(int sampleRate)
+	{
+		return makeBandpass(sampleRate, 18900, 19100);
+	}
+
+	// 38khz bandpass filter for the Audio Subcarrier
+	static std::vector<FloatType> make38KhzBandpass(int sampleRate)
+	{
+		return makeBandpass(sampleRate, 38000, 53000); // we only want half of it
+	}
+
+	// 57khz bandpass filter for RDS / RBDS
+	static std::vector<FloatType> make57KhzBandpass(int sampleRate)
+	{
+		return makeBandpass(sampleRate, 54000, 60000);
+	}
+public:
+	// function for testing / tweaking the performance of the bandpass filters
+	static void saveFilters1(const std::string& filename)
+	{
+		std::vector<FloatType> filt1 = make19KhzBandpass(192000);
+		std::vector<FloatType> filt2 = make38KhzBandpass(192000);
+		SndfileHandle sndfile(filename, SFM_WRITE, SF_FORMAT_WAV | SF_FORMAT_FLOAT, 2, 192000);
+		std::cout << "filter size " << filt1.size() << std::endl;
+		std::vector<double> interleaved;
+		interleaved.reserve(2 * filt1.size());
+		for(int i = 0; i < filt1.size(); i++) {
+			interleaved.push_back(filt1.at(i));
+			interleaved.push_back(filt2.at(i));
+		}
+		sndfile.writef(interleaved.data(), filt1.size());
+	}
+
+};
+
+template<typename FloatType>
+class FMAudioFilter
+{
+public:
+	FMAudioFilter(int sampleRate)
+	{
+		make15khzLowpass(sampleRate);
+		length = lpf.size();
+		lengthBytes = length * sizeof(FloatType);
+		h0.resize(length * 2, 0.0);
+		h1.resize(length * 2, 0.0);
+		lowerh0 = h0.data();
+		upperh0 = h0.data() + length;
+		lowerh1 = h1.data();
+		upperh1 = h1.data() + length;
+		currentIndex = length - 1;
+	}
+
+	std::pair<FloatType, FloatType> filter(FloatType left, FloatType right)
+	{
+		FloatType s0{0.0};
+		FloatType s1{0.0};
+
+		// place input into history
+		h0[currentIndex] = left;
+		h1[currentIndex] = right;
+
+		int p = currentIndex;
+		for(int j = 0 ; j < length; j++) {
+			FloatType v0 = h0.at(p);
+			FloatType v1 = h1.at(p);
+			FloatType c = lpf.at(j);
+			s0 += c * v0;
+			s1 += c * v1;
+			p++;
+		}
+
+		if(currentIndex == 0) {
+			memcpy(upperh0, lowerh0, lengthBytes);
+			memcpy(upperh1, lowerh1, lengthBytes);
+			currentIndex = length - 1;
+		} else {
+			currentIndex--;
+		}
+
+		return {s0, s1};
+	}
+
+private:
+	std::vector<FloatType> lpf;
+	std::vector<FloatType> h0;
+	std::vector<FloatType> h1;
+	int length;
+	int lengthBytes;
+	int currentIndex;
+	FloatType* lowerh0;
+	FloatType* upperh0;
+	FloatType* lowerh1;
+	FloatType* upperh1;
+
+	void make15khzLowpass(int sampleRate)
+	{
+		// determine cutoff frequency and steepness
+		double nyquist = sampleRate / 2.0;
+		double steepness = 0.090909091 / (1000.0 / nyquist);
+
+		// determine filtersize
+		int filterSize = static_cast<int>(
+			std::min<int>(FILTERSIZE_BASE * steepness, FILTERSIZE_LIMIT)
+			| 1 // ensure that filter length is always odd
+		);
+
+		lpf.resize(filterSize, 0.0);
+		ReSampler::makeLPF<FloatType>(lpf.data(), filterSize, 15500, sampleRate);
+		int sidelobeAtten = 160;
+		ReSampler::applyKaiserWindow<FloatType>(lpf.data(), filterSize, ReSampler::calcKaiserBeta(sidelobeAtten));
+	}
+};
+
 class MpxDecoder
 {
 public:
-    MpxDecoder(int sampleRate)
+	MpxDecoder(int sampleRate) : basebandFilter(sampleRate), audioFilter(sampleRate)
     {
-        // create filters
-        auto f1 = make19KhzBandpass<double>(sampleRate);
-        auto f2 = make38KhzBandpass<double>(sampleRate);
-        auto f3 = make57KhzBandpass<double>(sampleRate);
-        auto lpf = make15khzLowpass<double>(sampleRate);
-        std::vector<double> f0(f1.size(), 0);
-        f0[(f1.size() - 1) / 2] = 1.0; // single impulse at halfway point
-        filters.emplace_back(f0.data(), f0.size());
-        filters.emplace_back(f1.data(), f1.size());
-        filters.emplace_back(f2.data(), f2.size());
-        filters.emplace_back(f3.data(), f3.size());
-        filters.emplace_back(lpf.data(), lpf.size()); // left lowpass
-        filters.emplace_back(lpf.data(), lpf.size()); // right lowpass
-
         // these values determined experimentally:
         // (#define MPXDECODER_TUNE_PILOT_AGC to debug & tweak)
         decreaseRate = std::pow(10.0, /* dB per sec = */ -3200.0 / sampleRate / 20.0);
@@ -61,13 +262,10 @@ public:
     template<typename FloatType>
     std::pair<FloatType, FloatType> decode(FloatType input)
     {
-        filters.at(0).put(input);
-        filters.at(1).put(input);
-        filters.at(2).put(input);
-
-        FloatType monoRaw = filters.at(0).get();
-        FloatType pilotRaw = filters.at(1).get();
-        FloatType sideRaw = filters.at(2).get();
+		FMBasebandFilterResult<FloatType> filtered = basebandFilter.filter(input);
+		FloatType monoRaw = filtered.r0;
+		FloatType pilotRaw = filtered.r1;
+		FloatType sideRaw = filtered.r2;
         FloatType pilot = pilotRaw * pilotGain;
         FloatType pilotAbs = std::fabs(pilot);
 
@@ -118,109 +316,13 @@ public:
         constexpr double scaling = 2.5 * 2 * 2; // 10.0
         FloatType side = scaling * doubledPilot * sideRaw;
 
-        // separate L, R and put into 15khz filters
-        filters.at(4).put(0.5 * (monoRaw + side));
-        filters.at(5).put(0.5 * (monoRaw - side));
-
-        // return outputs of 15khz filters
-        return {filters.at(4).get(), filters.at(5).get()};
-    }
-
-    template <typename FloatType>
-    static std::vector<FloatType> makeBandpass(int sampleRate, double ft1, double ft2)
-    {
-        // determine cutoff frequency and steepness
-        double nyquist = sampleRate / 2.0;
-        double steepness = 0.090909091 / (1000.0 / nyquist);
-
-        // determine filtersize
-        int filterSize = static_cast<int>(
-            std::min<int>(FILTERSIZE_BASE * steepness, FILTERSIZE_LIMIT)
-            | 1 // ensure that filter length is always odd
-        );
-
-        // lower transition
-        std::vector<FloatType> filterTaps1(filterSize, 0);
-        FloatType* pFilterTaps1 = &filterTaps1[0];
-        ReSampler::makeLPF<FloatType>(pFilterTaps1, filterSize, ft1, sampleRate);
-
-        // upper transition
-        std::vector<FloatType> filterTaps2(filterSize, 0);
-        FloatType* pFilterTaps2 = &filterTaps2[0];
-        ReSampler::makeLPF<FloatType>(pFilterTaps2, filterSize, ft2, sampleRate);
-
-        // make bandpass
-        for(int i = 0; i < filterSize; i++) {
-            filterTaps2[i] -= filterTaps1.at(i);
-        }
-
-        // determine sidelobe attenuation
-        int sidelobeAtten = 60;
-        ReSampler::applyKaiserWindow<FloatType>(pFilterTaps2, filterSize, ReSampler::calcKaiserBeta(sidelobeAtten));
-        return filterTaps2;
-    }
-
-    // 15khz lowpass for audio output
-    template<typename FloatType>
-    static std::vector<FloatType> make15khzLowpass(int sampleRate)
-    {
-        // determine cutoff frequency and steepness
-        double nyquist = sampleRate / 2.0;
-        double steepness = 0.090909091 / (1000.0 / nyquist);
-
-        // determine filtersize
-        int filterSize = static_cast<int>(
-            std::min<int>(FILTERSIZE_BASE * steepness, FILTERSIZE_LIMIT)
-            | 1 // ensure that filter length is always odd
-        );
-
-        std::vector<FloatType> filterTaps1(filterSize, 0);
-        FloatType* pFilterTaps1 = &filterTaps1[0];
-        ReSampler::makeLPF<FloatType>(pFilterTaps1, filterSize, 15500, sampleRate);
-        int sidelobeAtten = 160;
-        ReSampler::applyKaiserWindow<FloatType>(pFilterTaps1, filterSize, ReSampler::calcKaiserBeta(sidelobeAtten));
-        return filterTaps1;
-    }
-
-    // 19khz bandpass filter for the Pilot Tone
-    template<typename FloatType>
-    static std::vector<FloatType> make19KhzBandpass(int sampleRate)
-    {
-        return makeBandpass<FloatType>(sampleRate, 18900, 19100);
-    }
-
-    // 38khz bandpass filter for the Audio Subcarrier
-    template<typename FloatType>
-    static std::vector<FloatType> make38KhzBandpass(int sampleRate)
-    {
-        return makeBandpass<FloatType>(sampleRate, 38000, 53000); // we only want half of it
-    }
-
-    // 57khz bandpass filter for RDS / RBDS
-    template<typename FloatType>
-    static std::vector<FloatType> make57KhzBandpass(int sampleRate)
-    {
-        return makeBandpass<FloatType>(sampleRate, 54000, 60000);
-    }
-
-    // function for testing / tweaking the performance of the bandpass filters
-    static void saveFilters1(const std::string& filename)
-    {
-        std::vector<double> filt1 = make19KhzBandpass<double>(192000);
-        std::vector<double> filt2 = make38KhzBandpass<double>(192000);
-        SndfileHandle sndfile(filename, SFM_WRITE, SF_FORMAT_WAV | SF_FORMAT_FLOAT, 2, 192000);
-        std::cout << "filter size " << filt1.size() << std::endl;
-        std::vector<double> interleaved;
-        interleaved.reserve(2 * filt1.size());
-        for(int i = 0; i < filt1.size(); i++) {
-            interleaved.push_back(filt1.at(i));
-            interleaved.push_back(filt2.at(i));
-        }
-        sndfile.writef(interleaved.data(), filt1.size());
+		// separate L, R and return filtered result
+		return audioFilter.filter(0.5 * (monoRaw + side), 0.5 * (monoRaw - side));
     }
 
 private:
-    std::vector<ReSampler::FIRFilter<double>> filters;
+	FMBasebandFilter<double> basebandFilter;
+	FMAudioFilter<double> audioFilter;
 
     static constexpr double pilotStableLow = 0.98;
     static constexpr double pilotStableHigh = 0.99;
