@@ -435,7 +435,7 @@ namespace ReSampler {
 	#if defined(USE_AVX)
 
 	template <>
-	double FIRFilter<double>::get() {
+    inline double FIRFilter<double>::get() {
 
 		// AVX implementation: Processes four doubles at a time.
 
