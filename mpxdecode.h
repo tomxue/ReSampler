@@ -40,10 +40,7 @@ public:
 		f2 = make38KhzBandpass(sampleRate);
 		f3 = make57KhzBandpass(sampleRate);
 		length = f1.size();
-		lengthBytes = length * sizeof(FloatType);
-		h.resize(f1.size() * 2, 0.0);
-		lowerh = h.data();
-		upperh = h.data() + length;
+        h.resize(length, 0.0);
 		centerTap = (length - 1) / 2;
 		currentIndex = length - 1;
 	}
@@ -56,17 +53,21 @@ public:
 		FloatType s3{0.0};
 
 		h[currentIndex] = input; // place input into history
-		s0 = h[currentIndex + centerTap]; // delay only
+        int d = currentIndex + centerTap;
+        s0 = h[d >= length ? d - length : d]; // delay only
 		int p = currentIndex;
 		for(int j = 0 ; j < length; j++) {
 			FloatType v = h.at(p++);
-			s1 += f1.at(j) * v;
+            if(p == length) {
+                p = 0;
+            }
+            s1 += f1.at(j) * v;
 			s2 += f2.at(j) * v;
+
 		//	s3 += f3.at(j) * v;
 		}
 
 		if(currentIndex == 0) {
-			memcpy(upperh, lowerh, lengthBytes);
 			currentIndex = length - 1;
 		} else {
 			currentIndex--;
@@ -77,11 +78,8 @@ public:
 
 private:
 	int length;
-	int lengthBytes;
 	int currentIndex;
 	int centerTap;
-	FloatType* upperh;
-	FloatType* lowerh;
 	std::vector<FloatType> f1;
 	std::vector<FloatType> f2;
 	std::vector<FloatType> f3;
@@ -153,7 +151,6 @@ public:
 		}
 		sndfile.writef(interleaved.data(), filt1.size());
 	}
-
 };
 
 template<typename FloatType>
@@ -163,59 +160,17 @@ public:
 	FMAudioFilter(int sampleRate)
 	{
 		make15khzLowpass(sampleRate);
-		length = lpf.size();
-		lengthBytes = length * sizeof(FloatType);
-		h0.resize(length * 2, 0.0);
-		h1.resize(length * 2, 0.0);
-		lowerh0 = h0.data();
-		upperh0 = h0.data() + length;
-		lowerh1 = h1.data();
-		upperh1 = h1.data() + length;
-		currentIndex = length - 1;
 	}
 
 	std::pair<FloatType, FloatType> filter(FloatType left, FloatType right)
 	{
-		FloatType s0{0.0};
-		FloatType s1{0.0};
-
-		// place input into history
-		h0[currentIndex] = left;
-		h1[currentIndex] = right;
-
-		int p = currentIndex;
-		for(int j = 0 ; j < length; j++) {
-			FloatType v0 = h0.at(p);
-			FloatType v1 = h1.at(p);
-			FloatType c = lpf.at(j);
-			s0 += c * v0;
-			s1 += c * v1;
-			p++;
-		}
-
-		if(currentIndex == 0) {
-			memcpy(upperh0, lowerh0, lengthBytes);
-			memcpy(upperh1, lowerh1, lengthBytes);
-			currentIndex = length - 1;
-		} else {
-			currentIndex--;
-		}
-
-		return {s0, s1};
+        filters[0].put(left);
+        filters[1].put(right);
+        return {filters[0].get(), filters[1].get()};
 	}
 
 private:
-	std::vector<FloatType> lpf;
-	std::vector<FloatType> h0;
-	std::vector<FloatType> h1;
-	int length;
-	int lengthBytes;
-	int currentIndex;
-	FloatType* lowerh0;
-	FloatType* upperh0;
-	FloatType* lowerh1;
-	FloatType* upperh1;
-
+    std::vector<ReSampler::FIRFilter<FloatType>> filters;
 	void make15khzLowpass(int sampleRate)
 	{
 		// determine cutoff frequency and steepness
@@ -228,10 +183,12 @@ private:
 			| 1 // ensure that filter length is always odd
 		);
 
-		lpf.resize(filterSize, 0.0);
+        std::vector<FloatType> lpf(filterSize, 0.0);
 		ReSampler::makeLPF<FloatType>(lpf.data(), filterSize, 15500, sampleRate);
 		int sidelobeAtten = 160;
 		ReSampler::applyKaiserWindow<FloatType>(lpf.data(), filterSize, ReSampler::calcKaiserBeta(sidelobeAtten));
+        filters.emplace_back(lpf.data(), lpf.size()); // left lowpass
+        filters.emplace_back(lpf.data(), lpf.size()); // right lowpass
 	}
 };
 
@@ -239,7 +196,7 @@ class MpxDecoder
 {
 public:
 	MpxDecoder(int sampleRate) : basebandFilter(sampleRate), audioFilter(sampleRate)
-    {
+    { 
         // these values determined experimentally:
         // (#define MPXDECODER_TUNE_PILOT_AGC to debug & tweak)
         decreaseRate = std::pow(10.0, /* dB per sec = */ -3200.0 / sampleRate / 20.0);
@@ -322,6 +279,7 @@ public:
 
 private:
 	FMBasebandFilter<double> basebandFilter;
+    std::vector<ReSampler::FIRFilter<double>> audioFilters;
 	FMAudioFilter<double> audioFilter;
 
     static constexpr double pilotStableLow = 0.98;
