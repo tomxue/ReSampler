@@ -165,8 +165,10 @@ public:
     static std::vector<FloatType> make15khzLowpass(int sampleRate)
     {
         // determine cutoff frequency and steepness
+        constexpr FloatType ft = 15500;
+        constexpr FloatType transitionHz = 3500.0;
         double nyquist = sampleRate / 2.0;
-        double steepness = 0.090909091 / (3500.0 / nyquist);
+        double steepness = 0.090909091 / (transitionHz / nyquist);
 
         // determine filtersize
         int filterSize = static_cast<int>(
@@ -176,7 +178,7 @@ public:
 
         std::vector<FloatType> filterTaps1(filterSize, 0);
         FloatType* pFilterTaps1 = &filterTaps1[0];
-        ReSampler::makeLPF<FloatType>(pFilterTaps1, filterSize, 15500, sampleRate);
+        ReSampler::makeLPF<FloatType>(pFilterTaps1, filterSize, ft, sampleRate);
         int sidelobeAtten = 160;
         ReSampler::applyKaiserWindow<FloatType>(pFilterTaps1, filterSize, ReSampler::calcKaiserBeta(sidelobeAtten));
         return filterTaps1;
