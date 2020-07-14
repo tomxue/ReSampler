@@ -166,7 +166,7 @@ public:
     {
         // determine cutoff frequency and steepness
         double nyquist = sampleRate / 2.0;
-        double steepness = 0.090909091 / (1000.0 / nyquist);
+        double steepness = 0.090909091 / (3500.0 / nyquist);
 
         // determine filtersize
         int filterSize = static_cast<int>(
