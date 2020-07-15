@@ -32,6 +32,12 @@ public:
         auto lpf = make15khzLowpass<double>(sampleRate);
         std::vector<double> f0(f1.size(), 0);
         f0[(f1.size() - 1) / 2] = 1.0; // single impulse at halfway point
+
+        length = f1.size();
+                delayLine.resize(length, 0.0);
+                centerTap = (length - 1) / 2;
+                currentIndex = length - 1;
+
         filters.emplace_back(f0.data(), f0.size());
         filters.emplace_back(f1.data(), f1.size());
         filters.emplace_back(f2.data(), f2.size());
@@ -61,11 +67,28 @@ public:
     template<typename FloatType>
     std::pair<FloatType, FloatType> decode(FloatType input)
     {
+
+        //todo: clean up
+
+#ifdef USE_FIR_AS_DELAY
         filters.at(0).put(input);
+        FloatType monoRaw = filters.at(0).get();
+#else
+        delayLine[currentIndex] = input; // place input into history
+        if(currentIndex == 0) {
+            currentIndex = length - 1;
+        } else {
+            currentIndex--;
+        }
+        int d = currentIndex + centerTap;
+        FloatType monoRaw = delayLine[d >= length ? d - length : d];
+#endif
+
+        // --- //
+
         filters.at(1).put(input);
         filters.at(2).put(input);
 
-        FloatType monoRaw = filters.at(0).get();
         FloatType pilotRaw = filters.at(1).get();
         FloatType sideRaw = filters.at(2).get();
         FloatType pilot = pilotRaw * pilotGain;
@@ -256,6 +279,11 @@ private:
 
     // if more gain than this is needed, then something is wrong with the Pilot Tone:
     static constexpr double pilotMaxGain = 25.0;
+
+    std::vector<double> delayLine;
+    int length;
+    int currentIndex;
+    int centerTap;
 
 	bool lowpassEnabled; //{true}; // do final stereo 15khz LPF or not ?
     double pilotPeak{0.0};
