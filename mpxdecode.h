@@ -118,12 +118,18 @@ public:
         constexpr double scaling = 2.5 * 2 * 2; // 10.0
         FloatType side = scaling * doubledPilot * sideRaw;
 
-        // separate L, R and put into 15khz filters
-        filters.at(4).put(0.5 * (monoRaw + side));
-        filters.at(5).put(0.5 * (monoRaw - side));
+		// separate L, R stereo channels
+		FloatType left = 0.5 * (monoRaw + side);
+		FloatType right = 0.5 * (monoRaw - side);
 
-        // return outputs of 15khz filters
-        return {filters.at(4).get(), filters.at(5).get()};
+		if(!lowpassEnabled) {
+			return {left, right};
+		}
+
+		// filter & return outputs
+		filters.at(4).put(left);
+		filters.at(5).put(right);
+		return {filters.at(4).get(), filters.at(5).get()};
     }
 
     template <typename FloatType>
@@ -164,11 +170,9 @@ public:
     template<typename FloatType>
     static std::vector<FloatType> make15khzLowpass(int sampleRate)
     {
-        // determine cutoff frequency and steepness
-        constexpr FloatType ft = 15500;
-        constexpr FloatType transitionHz = 3500.0;
+		// determine filter steepness
         double nyquist = sampleRate / 2.0;
-        double steepness = 0.090909091 / (transitionHz / nyquist);
+		double steepness = 0.090909091 / (lpfW / nyquist);
 
         // determine filtersize
         int filterSize = static_cast<int>(
@@ -178,7 +182,7 @@ public:
 
         std::vector<FloatType> filterTaps1(filterSize, 0);
         FloatType* pFilterTaps1 = &filterTaps1[0];
-        ReSampler::makeLPF<FloatType>(pFilterTaps1, filterSize, ft, sampleRate);
+		ReSampler::makeLPF<FloatType>(pFilterTaps1, filterSize, lpfT, sampleRate);
         int sidelobeAtten = 160;
         ReSampler::applyKaiserWindow<FloatType>(pFilterTaps1, filterSize, ReSampler::calcKaiserBeta(sidelobeAtten));
         return filterTaps1;
@@ -221,9 +225,31 @@ public:
         sndfile.writef(interleaved.data(), filt1.size());
     }
 
-private:
-    std::vector<ReSampler::FIRFilter<double>> filters;
+	static double getLpfT()
+	{
+		return lpfT;
+	}
 
+	static double getLpfW()
+	{
+		return lpfW;
+	}
+
+	bool getLowpassEnabled() const
+	{
+		return lowpassEnabled;
+	}
+
+	void setLowpassEnabled(bool value)
+	{
+		lowpassEnabled = value;
+	}
+
+private:
+	std::vector<ReSampler::FIRFilter<double>> filters;
+
+	static constexpr double lpfT = 15500.0;	// LPF transition freq (Hz)
+	static constexpr double lpfW = 3500.0;	// LPF transition width (Hz)
     static constexpr double pilotStableLow = 0.98;
     static constexpr double pilotStableHigh = 0.99;
     static constexpr double doublerDcOffset = 0.5 * (pilotStableLow + pilotStableHigh) / 2;
@@ -231,6 +257,7 @@ private:
     // if more gain than this is needed, then something is wrong with the Pilot Tone:
     static constexpr double pilotMaxGain = 25.0;
 
+	bool lowpassEnabled; //{true}; // do final stereo 15khz LPF or not ?
     double pilotPeak{0.0};
     double pilotGain{1.0};
     double increaseRate;
@@ -247,3 +274,11 @@ private:
 };
 
 #endif // MPXDECODE_H
+
+
+
+
+
+
+
+

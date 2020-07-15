@@ -1476,8 +1476,27 @@ int runCommand(int argc, char** argv) {
 
 			if(ci.bDemodulateIQ) {
                 if(ci.IQModulationType == WFM) {
-                    // WFM decoding too slow
+					// WFM decoding too slow to read peaks
                     ci.bEnablePeakDetection = false;
+
+					// determine the strategy for lowpass-filtering
+					if(ci.outputSampleRate <= 30000) {
+						// deactivate MPX Decoder's LPF - just use the Sample Rate Converter's lowpass
+						ci.IQModulationType = WFM_NO_LOWPASS;
+
+					} else if(ci.outputSampleRate <= 96000) {
+						// deactivate MPX Decoder's LPF
+						ci.IQModulationType = WFM_NO_LOWPASS;
+
+						// use the Sample Rate Converter's lowpass, but change the cutoff to 15khz etc
+						ci.lpfCutoff =
+							100.0 * MpxDecoder::getLpfT() / (0.5 * ci.outputSampleRate); // converts absolute freq (Hz) to % of output nyquist
+						ci.lpfTransitionWidth =
+							100.0 * MpxDecoder::getLpfW() / (0.5 * ci.outputSampleRate);
+					}/* else {
+						// leave MPX decoder's LPF active
+					}*/
+
                 } else {
                     ci.bEnablePeakDetection = true;
                     ci.normalizeAmount = 1.00;

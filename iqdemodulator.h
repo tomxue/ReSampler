@@ -37,6 +37,7 @@ enum ModulationType
 	LSB,
 	USB,
 	WFM,
+	WFM_NO_LOWPASS,
 	DSB,
 	CW
 };
@@ -72,11 +73,18 @@ public:
         // then this strategy may need reevaluation ...)
 
 		modulationType = static_cast<ModulationType>((infileFormat & 0x0000FF00) >>  8);
-        if(modulationType == WFM) {
+		bool enableLowpass = true;
+		if(modulationType == WFM_NO_LOWPASS) {
+			enableLowpass = false;
+			modulationType = WFM;
+		}
+
+		if(modulationType == WFM) {
             if(samplerate() != 0) {
                 int sampleRate = sndfileHandle->samplerate();
                 setDeEmphasisTc(2, sampleRate, 50);
                 mpxDecoder = std::unique_ptr<MpxDecoder>(new MpxDecoder(sampleRate));
+				mpxDecoder->setLowpassEnabled(enableLowpass);
             }
 		}
 	}
