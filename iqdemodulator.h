@@ -59,18 +59,18 @@ class IQFile
 public:
 
 	IQFile(const std::string& fileName) : sndfileHandle(new SndfileHandle(fileName))
-    {
+	{
 	}
 
 	IQFile(const std::string& fileName, int infileMode, int infileFormat, int infileChannels, int infileRate) :
 		sndfileHandle(new SndfileHandle(fileName, infileMode, infileFormat & 0xFFFF00FF, infileChannels, infileRate))
 	{
-        // Extract modulation type from 2nd-last byte of file format code.
-        // (Note: libsndfile has this for the subformat mask:
-        // SF_FORMAT_SUBMASK = 0x0000FFFF
-        // So far, only the least-significant byte has been used. ie: 0x000000FF.
-        // If they ever add more formats in the future which use the upper byte,
-        // then this strategy may need reevaluation ...)
+		// Extract modulation type from 2nd-last byte of file format code.
+		// (Note: libsndfile has this for the subformat mask:
+		// SF_FORMAT_SUBMASK = 0x0000FFFF
+		// So far, only the least-significant byte has been used. ie: 0x000000FF.
+		// If they ever add more formats in the future which use the upper byte,
+		// then this strategy may need reevaluation ...)
 
 		modulationType = static_cast<ModulationType>((infileFormat & 0x0000FF00) >>  8);
 		bool enableLowpass = true;
@@ -80,12 +80,12 @@ public:
 		}
 
 		if(modulationType == WFM) {
-            if(samplerate() != 0) {
-                int sampleRate = sndfileHandle->samplerate();
+			if(samplerate() != 0) {
+				int sampleRate = sndfileHandle->samplerate();
 				setDeEmphasisTc(2, sampleRate, 50);
-                mpxDecoder = std::unique_ptr<MpxDecoder>(new MpxDecoder(sampleRate));
+				mpxDecoder = std::unique_ptr<MpxDecoder>(new MpxDecoder(sampleRate));
 				mpxDecoder->setLowpassEnabled(enableLowpass);
-            }
+			}
 		}
 	}
 
@@ -95,16 +95,16 @@ public:
 			return true;
 		}
 
-        if(sndfileHandle->samplerate() == 0) {
-            return true;
-        }
+		if(sndfileHandle->samplerate() == 0) {
+			return true;
+		}
 
-        if(modulationType == WFM && sndfileHandle->samplerate() < 116000) {
-            std::cout << "Sample Rate not high enough for WFM" << std::endl;
-            return true;
-        }
+		if(modulationType == WFM && sndfileHandle->samplerate() < 116000) {
+			std::cout << "Sample Rate not high enough for WFM" << std::endl;
+			return true;
+		}
 
-        if(sndfileHandle->channels() != 2) {
+		if(sndfileHandle->channels() != 2) {
 			std::cout << "2 channels expected for an I/Q input file !" << std::endl;
 			return true;
 		}
@@ -113,11 +113,11 @@ public:
 	}
 
 	int channels() {
-        if(modulationType == WFM) {
-            return 2; // FM stereo
-        } else {
-            return 1;
-        }
+		if(modulationType == WFM) {
+			return 2; // FM stereo
+		} else {
+			return 1;
+		}
 	}
 
 	int samplerate() {
@@ -140,45 +140,45 @@ public:
 			return 0LL;
 		}
 
-        if(wavBuffer.size() < count) {
-            wavBuffer.resize(count);
+		if(wavBuffer.size() < count) {
+			wavBuffer.resize(count);
 		}
 
-        int64_t samplesRead = sndfileHandle->read(wavBuffer.data(), count);
-        int64_t j = 0;
+		int64_t samplesRead = sndfileHandle->read(wavBuffer.data(), count);
+		int64_t j = 0;
 
-        switch(modulationType) {
-        case AM:
-            // Amplitude Modulation
-            for(int64_t i = 0; i < samplesRead; i += 2) {
-                inbuffer [j++] = demodulateAM(wavBuffer.at(i), wavBuffer.at(i + 1));
-            }
-            break;
-        case LSB:
-        case USB:
-            // Single Side Band
-            for(int64_t i = 0; i < samplesRead; i += 2) {
-                // just copy I-component
-                inbuffer[j++] = wavBuffer.at(i);
-            }
-            break;
-        case WFM:
-            // Wideband FM:
-            for(int64_t i = 0; i < samplesRead; i += 2) {
-                // demodulate, decode, deemphasize
-                std::pair<FloatType, FloatType> decoded = mpxDecoder->decode(demodulateFM(wavBuffer.at(i), wavBuffer.at(i + 1)));
-                inbuffer[j++] = deEmphasisFilters[0].filter(decoded.first);
-                inbuffer[j++] = deEmphasisFilters[1].filter(decoded.second);
-            }
-            break;
-        default:
-            // Narrowband FM
-            for(int64_t i = 0; i < samplesRead; i += 2) {
-                inbuffer[j++] = demodulateFM(wavBuffer.at(i), wavBuffer.at(i + 1));
-            }
-        }
+		switch(modulationType) {
+		case AM:
+			// Amplitude Modulation
+			for(int64_t i = 0; i < samplesRead; i += 2) {
+				inbuffer [j++] = demodulateAM(wavBuffer.at(i), wavBuffer.at(i + 1));
+			}
+			break;
+		case LSB:
+		case USB:
+			// Single Side Band
+			for(int64_t i = 0; i < samplesRead; i += 2) {
+				// just copy I-component
+				inbuffer[j++] = wavBuffer.at(i);
+			}
+			break;
+		case WFM:
+			// Wideband FM:
+			for(int64_t i = 0; i < samplesRead; i += 2) {
+				// demodulate, decode, deemphasize
+				std::pair<FloatType, FloatType> decoded = mpxDecoder->decode(demodulateFM(wavBuffer.at(i), wavBuffer.at(i + 1)));
+				inbuffer[j++] = deEmphasisFilters[0].filter(decoded.first);
+				inbuffer[j++] = deEmphasisFilters[1].filter(decoded.second);
+			}
+			break;
+		default:
+			// Narrowband FM
+			for(int64_t i = 0; i < samplesRead; i += 2) {
+				inbuffer[j++] = demodulateFM(wavBuffer.at(i), wavBuffer.at(i + 1));
+			}
+		}
 
-        return j;
+		return j;
 	}
 
 	sf_count_t seek(int64_t frames, int whence) {
@@ -189,13 +189,13 @@ public:
 		return sndfileHandle->seek(frames, whence);
 	}
 
-// getters
+	// getters
 	ModulationType getModulationType() const
 	{
 		return modulationType;
 	}
 
-// setters
+	// setters
 	void setModulationType(const ModulationType &value)
 	{
 		modulationType = value;
@@ -213,14 +213,14 @@ private:
 
 		i2 = i1;
 		i1 = i0;
-        i0 = i;
-        q2 = q1;
-        q1 = q0;
-        q0 = q;
+		i0 = i;
+		q2 = q1;
+		q1 = q0;
+		q0 = q;
 
 		double gain = 1.0 / (c + i * i + q * q);
 		return gain * (((q0 - q2) * i1) - ((i0 - i2) * q1));
-    }
+	}
 
 	template<typename FloatType>
 	FloatType demodulateAM(FloatType i, FloatType q)
@@ -229,9 +229,9 @@ private:
 		return scale * std::sqrt(i * i + q * q);
 	}
 
-    //	double tau = 1/(2*pi*f); // Hz to time constant
-    //	double f = 2122.1; // 75 us
-    //  double f = 3183.1; // 50 us
+	//	double tau = 1/(2*pi*f); // Hz to time constant
+	//	double f = 2122.1; // 75 us
+	//  double f = 3183.1; // 50 us
 
 	void setDeEmphasisTc(int channels, int sampleRate, double tc = 50.0 /* microseconds */)
 	{
@@ -240,15 +240,15 @@ private:
 		double z1 = (1 + p1) / 5.0;
 		for(auto& biquad : deEmphasisFilters)
 		{
-            biquad.setCoeffs(z1, z1, 0.0, p1, 0.0);
-            biquad.reset();
+			biquad.setCoeffs(z1, z1, 0.0, p1, 0.0);
+			biquad.reset();
 		}
 	}
 
 private:
 	// resources
 	std::unique_ptr<SndfileHandle> sndfileHandle;
-    std::unique_ptr<MpxDecoder> mpxDecoder;
+	std::unique_ptr<MpxDecoder> mpxDecoder;
 	std::vector<double> wavBuffer;
 	std::vector<Biquad<double>> deEmphasisFilters;
 
