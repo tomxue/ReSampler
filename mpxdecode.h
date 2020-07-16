@@ -265,7 +265,7 @@ private:
     static constexpr double doublerDcOffset = 0.5 * (pilotStableLow + pilotStableHigh) / 2;
 
     // if more gain than this is needed, then something is wrong with the Pilot Tone:
-    static constexpr double pilotMaxGain = 25.0;
+    static constexpr double pilotMaxGain = 40.0;
 
     std::vector<double> delayLine;
     int length;
