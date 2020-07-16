@@ -26,14 +26,12 @@ public:
     MpxDecoder(int sampleRate)
     {
         // create filters
-        auto f1 = make19KhzBandpass<double>(sampleRate);
-        auto f2 = make38KhzBandpass<double>(sampleRate);
-        auto f3 = make57KhzBandpass<double>(sampleRate);
+        auto f0 = make19KhzBandpass<double>(sampleRate);
+        auto f1 = make38KhzBandpass<double>(sampleRate);
+        auto f2 = make57KhzBandpass<double>(sampleRate);
         auto lpf = make15khzLowpass<double>(sampleRate);
-        std::vector<double> f0(f1.size(), 0);
-        f0[(f1.size() - 1) / 2] = 1.0; // single impulse at halfway point
 
-        length = f1.size();
+        length = f0.size();
                 delayLine.resize(length, 0.0);
                 centerTap = (length - 1) / 2;
                 currentIndex = length - 1;
@@ -41,7 +39,6 @@ public:
         filters.emplace_back(f0.data(), f0.size());
         filters.emplace_back(f1.data(), f1.size());
         filters.emplace_back(f2.data(), f2.size());
-        filters.emplace_back(f3.data(), f3.size());
         filters.emplace_back(lpf.data(), lpf.size()); // left lowpass
         filters.emplace_back(lpf.data(), lpf.size()); // right lowpass
 
@@ -67,13 +64,6 @@ public:
     template<typename FloatType>
     std::pair<FloatType, FloatType> decode(FloatType input)
     {
-
-        //todo: clean up
-
-#ifdef USE_FIR_AS_DELAY
-        filters.at(0).put(input);
-        FloatType monoRaw = filters.at(0).get();
-#else
         delayLine[currentIndex] = input; // place input into history
         if(currentIndex == 0) {
             currentIndex = length - 1;
@@ -82,15 +72,12 @@ public:
         }
         int d = currentIndex + centerTap;
         FloatType monoRaw = delayLine[d >= length ? d - length : d];
-#endif
 
-        // --- //
-
+        filters.at(0).put(input);
         filters.at(1).put(input);
-        filters.at(2).put(input);
 
-        FloatType pilotRaw = filters.at(1).get();
-        FloatType sideRaw = filters.at(2).get();
+        FloatType pilotRaw = filters.at(0).get();
+        FloatType sideRaw = filters.at(1).get();
         FloatType pilot = pilotRaw * pilotGain;
         FloatType pilotAbs = std::fabs(pilot);
 
@@ -150,9 +137,9 @@ public:
 		}
 
 		// filter & return outputs
-		filters.at(4).put(left);
-		filters.at(5).put(right);
-		return {filters.at(4).get(), filters.at(5).get()};
+        filters.at(3).put(left);
+        filters.at(4).put(right);
+        return {filters.at(3).get(), filters.at(4).get()};
     }
 
     template <typename FloatType>
