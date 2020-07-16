@@ -13,26 +13,28 @@
 - locations of library files can be specified by -Ldir
 - if libraries are .lib (instead of .a), use -llib&lt;name&gt; instead of -l&lt;name&gt; 
 - launch from git bash
-- depends on these 64-bit dlls: **libfftw3-3.dll  libgcc_s_seh-1.dll  libsndfile-1.dll  libstdc++-6.dll  libwinpthread-1.dll**
+- depends on these 64-bit dlls: **libfftw3-3.dll  libgcc_s_seh-1.dll  libsndfile-1.dll  libstdc++-6.dll  libwinpthread-1.dll** - ensure that they are present in the same folder as the executable
+
+*note: the following examples assume the ReSampler executable is to be placed in the folder **c:\bin**:*
 
 standard 64-bit build:
 ~~~
-g++ -pthread -std=c++11 main.cpp ReSampler.cpp conversioninfo.cpp -Ilibsndfile/include -Ifftw64 -Lfftw64 -llibfftw3-3 -Llibsndfile/lib -llibsndfile-1 -o x64/minGW-W64/ReSampler.exe -O3
+ g++ -pthread -std=c++11 main.cpp ReSampler.cpp conversioninfo.cpp -Ilibsndfile/include -Ifftw64 -Lfftw64 -llibfftw3-3 -Llibsndfile/lib -llibsndfile-1 -O3 -o /c/bin/ReSampler.exe
 ~~~
 
 AVX build:
 ~~~
-g++ -pthread -std=c++11 main.cpp ReSampler.cpp conversioninfo.cpp -Ilibsndfile/include -Ifftw64 -Lfftw64 -llibfftw3-3 -Llibsndfile/lib -llibsndfile-1 -o x64/minGW-W64-AVX/ReSampler.exe -O3 -DUSE_AVX -mavx
+g++ -pthread -std=c++11 main.cpp ReSampler.cpp conversioninfo.cpp -Ilibsndfile/include -Ifftw64 -Lfftw64 -llibfftw3-3 -Llibsndfile/lib -llibsndfile-1 -O3 -DUSE_AVX -mavx -o /c/bin/ReSampler.exe
 ~~~
 
 AVX + FMA build (requires >= Intel Haswell or AMD PileDriver):
 ~~~
-g++ -pthread -std=c++11 main.cpp ReSampler.cpp conversioninfo.cpp -Ilibsndfile/include -Ifftw64 -Lfftw64 -llibfftw3-3 -Llibsndfile/lib -llibsndfile-1 -o x64/minGW-W64-AVX/ReSampler.exe -O3 -DUSE_AVX -DUSE_FMA -mavx -mfma
+g++ -pthread -std=c++11 main.cpp ReSampler.cpp conversioninfo.cpp -Ilibsndfile/include -Ifftw64 -Lfftw64 -llibfftw3-3 -Llibsndfile/lib -llibsndfile-1 -O3 -DUSE_AVX -DUSE_FMA -mavx -mfma -o /c/bin/ReSampler.exe
 ~~~
 
 Quad-Precision build (experimental) - GCC / minGW only:
 ~~~
- g++ -pthread -std=gnu++11 main.cpp ReSampler.cpp conversioninfo.cpp -Ilibsndfile/include -Ifftw64 -Lfftw64 -llibfftw3-3 -Llibsndfile/lib -llibsndfile-1 -lquadmath -o x64/minGW-W64/ReSampler-QuadMath.exe -O3 -DUSE_QUADMATH
+ g++ -pthread -std=gnu++11 main.cpp ReSampler.cpp conversioninfo.cpp -Ilibsndfile/include -Ifftw64 -Lfftw64 -llibfftw3-3 -Llibsndfile/lib -llibsndfile-1 -lquadmath -O3 -DUSE_QUADMATH -o /c/bin/ReSampler-QuadMath.exe
 ~~~
 
 *note the use of **-std=gnu++11** to enable the gcc-specific language extensions for quad precision - the 'Q' initializer suffix and __float128 type*
