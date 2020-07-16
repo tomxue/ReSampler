@@ -82,7 +82,7 @@ public:
 		if(modulationType == WFM) {
             if(samplerate() != 0) {
                 int sampleRate = sndfileHandle->samplerate();
-                setDeEmphasisTc(2, sampleRate, 50);
+				setDeEmphasisTc(2, sampleRate, 50);
                 mpxDecoder = std::unique_ptr<MpxDecoder>(new MpxDecoder(sampleRate));
 				mpxDecoder->setLowpassEnabled(enableLowpass);
             }
