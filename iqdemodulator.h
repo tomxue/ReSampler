@@ -222,6 +222,20 @@ private:
 		return gain * (((q0 - q2) * i1) - ((i0 - i2) * q1));
 	}
 
+    const std::vector<double> differentiator_coeffs{
+        0.0035,
+        -0.0140,
+        0.0401,
+        -0.1321,
+        1.2639,
+        -1.2639,
+        0.1321,
+        -0.0401,
+        0.0140,
+        -0.0035
+    };
+
+
 	template<typename FloatType>
 	FloatType demodulateAM(FloatType i, FloatType q)
 	{
