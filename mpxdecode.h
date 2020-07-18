@@ -126,7 +126,7 @@ public:
 
         // do the spectrum shift
         constexpr double scaling = 2.5 * 2 * 2; // 10.0
-        FloatType side = scaling * doubledPilot * sideRaw;
+		FloatType side = scaling * doubledPilot * sideRaw;
 
 		// separate L, R stereo channels
 		FloatType left = 0.5 * (monoRaw + side);
@@ -137,8 +137,8 @@ public:
 		}
 
 		// filter & return outputs
-        filters.at(3).put(left);
-        filters.at(4).put(right);
+		filters.at(3).put(left);
+		filters.at(4).put(right);
         return {filters.at(3).get(), filters.at(4).get()};
     }
 

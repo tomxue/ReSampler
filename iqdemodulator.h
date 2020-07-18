@@ -85,6 +85,8 @@ public:
 				setDeEmphasisTc(2, sampleRate, 50);
 				mpxDecoder = std::unique_ptr<MpxDecoder>(new MpxDecoder(sampleRate));
 				mpxDecoder->setLowpassEnabled(enableLowpass);
+				historyI.resize(differentiatorLength, 0.0);
+				historyQ.resize(differentiatorLength, 0.0);
 			}
 		}
 	}
@@ -166,7 +168,7 @@ public:
 			// Wideband FM:
 			for(int64_t i = 0; i < samplesRead; i += 2) {
 				// demodulate, decode, deemphasize
-				std::pair<FloatType, FloatType> decoded = mpxDecoder->decode(demodulateFM(wavBuffer.at(i), wavBuffer.at(i + 1)));
+				std::pair<FloatType, FloatType> decoded = mpxDecoder->decode(demodulateFM2(wavBuffer.at(i), wavBuffer.at(i + 1)));
 				inbuffer[j++] = deEmphasisFilters[0].filter(decoded.first);
 				inbuffer[j++] = deEmphasisFilters[1].filter(decoded.second);
 			}
@@ -222,19 +224,74 @@ private:
 		return gain * (((q0 - q2) * i1) - ((i0 - i2) * q1));
 	}
 
-    const std::vector<double> differentiator_coeffs{
-        0.0035,
-        -0.0140,
-        0.0401,
-        -0.1321,
-        1.2639,
-        -1.2639,
-        0.1321,
-        -0.0401,
-        0.0140,
-        -0.0035
-    };
+	template<typename FloatType>
+	FloatType demodulateFM2(FloatType i, FloatType q)
+	{
+		static constexpr double differentiatorCoeffs[]
+		{
+			0.0035,
+			-0.0140,
+			0.0401,
+			-0.1321,
+			1.2639,
+			-1.2639,
+			0.1321,
+			-0.0401,
+			0.0140,
+			-0.0035
+		};
 
+		static constexpr double maxGain = 60.0;
+		static const double c = std::pow(10.0, -(maxGain / 20.0));
+		FloatType dI{0.0}; // differentiated I
+		FloatType dQ{0.0}; // differentiated Q
+
+		 // place input into history
+		historyI[differentiatorIndex] = i;
+		historyQ[differentiatorIndex] = q;
+
+		// get position of delay tap
+		int delayOffset = 4;
+		FloatType delayedI;
+		FloatType delayedQ;
+		int delayIndex = differentiatorIndex + delayOffset;
+		if(delayIndex >= differentiatorLength) {
+			delayIndex -= differentiatorLength;
+		}
+
+		// get delayed values from history
+		delayedI = historyI.at(delayIndex);
+		delayedQ = historyQ.at(delayIndex);
+
+		// perform the convolution
+		int p = differentiatorIndex;
+		for(int j = 0 ; j < differentiatorLength; j++) {
+			FloatType vI = historyI.at(p);
+			FloatType vQ = historyQ.at(p);
+			if(++p == differentiatorLength) {
+				p = 0; // wrap
+			}
+			dI += differentiatorCoeffs[j] * vI;
+			dQ += differentiatorCoeffs[j] * vQ;
+		}
+
+		// update the current index
+		if(differentiatorIndex == 0) {
+			differentiatorIndex = differentiatorLength - 1; // wrap
+		} else {
+			differentiatorIndex--;
+		}
+
+		double gain = 1.0 / (c + delayedI * delayedI + delayedQ * delayedQ);
+		return gain * (dQ * delayedI - dI  * delayedQ);
+	}
+
+
+	static constexpr int differentiatorLength = 10;
+
+	std::vector<double> historyI;
+	std::vector<double> historyQ;
+	int differentiatorIndex{differentiatorLength - 1};
 
 	template<typename FloatType>
 	FloatType demodulateAM(FloatType i, FloatType q)
