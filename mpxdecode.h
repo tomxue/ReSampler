@@ -235,6 +235,50 @@ public:
         sndfile.writef(interleaved.data(), filt1.size());
     }
 
+    static void saveFilters2(const std::string& filename)
+    {
+
+        std::vector<double> d{
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0035,
+            -0.0140,
+            0.0401,
+            -0.1321,
+            1.2639,
+            -1.2639,
+            0.1321,
+            -0.0401,
+            0.0140,
+            -0.0035,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+        };
+
+
+        SndfileHandle sndfile(filename, SFM_WRITE, SF_FORMAT_WAV | SF_FORMAT_FLOAT, 2, 2000);
+        std::cout << "filter size " << d.size() << std::endl;
+        std::vector<double> interleaved;
+        interleaved.reserve(2 * d.size());
+        for(int i = 0; i < d.size(); i++) {
+            interleaved.push_back(d.at(i));
+            interleaved.push_back(d.at(i));
+        }
+        sndfile.writef(interleaved.data(), d.size());
+    }
+
 	static double getLpfT()
 	{
 		return lpfT;

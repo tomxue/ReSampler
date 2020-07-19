@@ -168,7 +168,7 @@ public:
 			// Wideband FM:
 			for(int64_t i = 0; i < samplesRead; i += 2) {
 				// demodulate, decode, deemphasize
-				std::pair<FloatType, FloatType> decoded = mpxDecoder->decode(demodulateFM2(wavBuffer.at(i), wavBuffer.at(i + 1)));
+                std::pair<FloatType, FloatType> decoded = mpxDecoder->decode(demodulateFM(wavBuffer.at(i), wavBuffer.at(i + 1)));
 				inbuffer[j++] = deEmphasisFilters[0].filter(decoded.first);
 				inbuffer[j++] = deEmphasisFilters[1].filter(decoded.second);
 			}
@@ -207,7 +207,7 @@ private:
 	template<typename FloatType>
 	FloatType demodulateFM(FloatType i, FloatType q)
 	{
-		static constexpr double maxGain = 60.0;
+        static constexpr double maxGain = 60.0;
 		static const double c = std::pow(10.0, -(maxGain / 20.0));
 
 		// this is actually quite simple, thanks to some clever calculus tricks.
@@ -220,7 +220,8 @@ private:
 		q1 = q0;
 		q0 = q;
 
-		double gain = 1.0 / (c + i * i + q * q);
+    //	double gain = 1.0 / (c + i * i + q * q);
+        double gain = 1.0 / (c + i1 * i1 + q1 * q1);
 		return gain * (((q0 - q2) * i1) - ((i0 - i2) * q1));
 	}
 
@@ -241,7 +242,7 @@ private:
 			-0.0035
 		};
 
-		static constexpr double maxGain = 60.0;
+        static constexpr double maxGain = 50.0;
 		static const double c = std::pow(10.0, -(maxGain / 20.0));
 		FloatType dI{0.0}; // differentiated I
 		FloatType dQ{0.0}; // differentiated Q
@@ -251,7 +252,7 @@ private:
 		historyQ[differentiatorIndex] = q;
 
 		// get position of delay tap
-		int delayOffset = 4;
+        constexpr int delayOffset = differentiatorLength / 2;
 		FloatType delayedI;
 		FloatType delayedQ;
 		int delayIndex = differentiatorIndex + delayOffset;
@@ -282,12 +283,14 @@ private:
 			differentiatorIndex--;
 		}
 
-		double gain = 1.0 / (c + delayedI * delayedI + delayedQ * delayedQ);
+        double gain = 1.0 / (c + delayedI * delayedI + delayedQ * delayedQ);
+        std::cout << gain << std::endl;
+//        double gain = 1.0 / (c + i * i + q * q);
 		return gain * (dQ * delayedI - dI  * delayedQ);
 	}
 
 
-	static constexpr int differentiatorLength = 10;
+    static constexpr int differentiatorLength = 10;
 
 	std::vector<double> historyI;
 	std::vector<double> historyQ;
