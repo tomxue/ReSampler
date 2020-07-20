@@ -242,7 +242,7 @@ private:
 			-0.0035
 		};
 
-        static constexpr double maxGain = 50.0;
+        static constexpr double maxGain = 40.0;
 		static const double c = std::pow(10.0, -(maxGain / 20.0));
 		FloatType dI{0.0}; // differentiated I
 		FloatType dQ{0.0}; // differentiated Q
