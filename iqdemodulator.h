@@ -20,7 +20,6 @@
 #include <cmath>
 #include <map>
 #include <iostream>
-#include <complex>
 
 #include <sndfile.h>
 #include <sndfile.hh>
@@ -88,22 +87,6 @@ public:
 				mpxDecoder->setLowpassEnabled(enableLowpass);
 				historyI.resize(differentiatorLength, 0.0);
 				historyQ.resize(differentiatorLength, 0.0);
-                thetaHistory.resize(differentiatorLength, 0.0);
-
-//                for(int i = 0; i < 360; i+= 10)
-//                {
-//                    double th = 2 * M_PI * i / 360.0;
-//                    auto z = std::polar(1.0, th);
-//                    std::cout << i << ", " << demodulateFM3(z.real(), z.imag()) << "\n";
-//                }
-
-//                for(int i = 0; i > -720; i-= 10)
-//                {
-//                    double th = 2 * M_PI * i / 360.0;
-//                    auto z = std::polar(1.0, th);
-//                    std::cout << i << ", " << demodulateFM3(z.real(), z.imag()) << "\n";
-//                }
-
 			}
 		}
 	}
@@ -306,67 +289,6 @@ private:
 		return gain * (dQ * delayedI - dI  * delayedQ);
 	}
 
-    template<typename FloatType>
-    FloatType demodulateFM3(FloatType i, FloatType q)
-    {
-        static constexpr double differentiatorCoeffs[]
-        {
-            0.0035,
-            -0.0140,
-            0.0401,
-            -0.1321,
-            1.2639,
-            -1.2639,
-            0.1321,
-            -0.0401,
-            0.0140,
-            -0.0035
-        };
-
-        double newAtan2 = atan2(q, i);
-        double d = newAtan2 - oldAtan2;
-
-        if (i < 0 && newAtan2 * oldAtan2 < 0) {
-            // sign change occurred in left quadrants
-            if(q > 0) { // - to + : clockwise
-                d -= 2*M_PI;
-            } else { // + to - : anticlockwise
-                d += 2*M_PI;
-            }
-        }
-
-        oldAtan2 = newAtan2;
-        theta += d;
-//        std::cout << "theta " << (360/(2*M_PI))* theta << "\n";
-
-         // place input into history
-        thetaHistory[differentiatorIndex] = theta;
-
-
-        // perform the convolution
-        double dT{0.0}; // accumulator (derivative)
-        int p = differentiatorIndex;
-        for(int j = 0 ; j < differentiatorLength; j++) {
-            FloatType vT = thetaHistory.at(p++);
-            if(p == differentiatorLength) {
-                p = 0; // wrap
-            }
-            dT += differentiatorCoeffs[j] * vT;
-        }
-
-        // update the current index
-        if(differentiatorIndex == 0) {
-            differentiatorIndex = differentiatorLength - 1; // wrap
-        } else {
-            differentiatorIndex--;
-        }
-       // return d;
-        return dT;
-    }
-
-
-
-
 	template<typename FloatType>
 	FloatType demodulateAM(FloatType i, FloatType q)
 	{
@@ -406,9 +328,6 @@ private:
 
     std::vector<double> historyI;
     std::vector<double> historyQ;
-    std::vector<double> thetaHistory;
-    double oldAtan2{0.0};
-    double theta{0.0};
     int differentiatorIndex{differentiatorLength - 1};
 
 	double i0{0.0};
