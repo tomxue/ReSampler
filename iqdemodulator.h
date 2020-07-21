@@ -220,7 +220,6 @@ private:
 		q1 = q0;
 		q0 = q;
 
-    //	double gain = 1.0 / (c + i * i + q * q);
         double gain = 1.0 / (c + i1 * i1 + q1 * q1);
 		return gain * (((q0 - q2) * i1) - ((i0 - i2) * q1));
 	}
@@ -309,8 +308,7 @@ private:
 		deEmphasisFilters.resize(channels);
 		double p1 = -exp(-1.0 / (sampleRate * tc * 0.000001));
 		double z1 = (1 + p1) / 5.0;
-		for(auto& biquad : deEmphasisFilters)
-		{
+        for(auto& biquad : deEmphasisFilters) {
 			biquad.setCoeffs(z1, z1, 0.0, p1, 0.0);
 			biquad.reset();
 		}
@@ -327,20 +325,16 @@ private:
 	ModulationType modulationType{ModulationType::NFM};
 
 	// registers used for demodulating FM
-
     static constexpr int differentiatorLength = 10;
-
     std::vector<double> historyI;
     std::vector<double> historyQ;
     int differentiatorIndex{differentiatorLength - 1};
-
 	double i0{0.0};
 	double i1{0.0};
 	double i2{0.0};
 	double q0{0.0};
 	double q1{0.0};
 	double q2{0.0};
-
 };
 
 } // namespace  ReSampler
