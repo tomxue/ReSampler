@@ -228,6 +228,15 @@ private:
 	template<typename FloatType>
 	FloatType demodulateFM2(FloatType i, FloatType q)
 	{
+        static constexpr double threshold = -40.0; // dB
+        static const double c = std::pow(10.0, threshold / 20.0);
+
+        // determine magnitude and gain
+        double iSquared = i * i;
+        double qSquared = q * q;
+        double a = std::sqrt(iSquared + qSquared);
+        double g = 1.0 / (a + c);
+
 		static constexpr double differentiatorCoeffs[]
 		{
 			0.0035,
@@ -242,14 +251,12 @@ private:
 			-0.0035
 		};
 
-        static constexpr double maxGain = 40.0;
-		static const double c = std::pow(10.0, -(maxGain / 20.0));
 		FloatType dI{0.0}; // differentiated I
 		FloatType dQ{0.0}; // differentiated Q
 
 		 // place input into history
-		historyI[differentiatorIndex] = i;
-		historyQ[differentiatorIndex] = q;
+        historyI[differentiatorIndex] = i * g;
+        historyQ[differentiatorIndex] = q * g;
 
 		// get position of delay tap
         constexpr int delayOffset = differentiatorLength / 2;
@@ -283,10 +290,7 @@ private:
 			differentiatorIndex--;
 		}
 
-        double gain = 1.0 / (c + delayedI * delayedI + delayedQ * delayedQ);
-     //   std::cout << gain << std::endl;
-//        double gain = 1.0 / (c + i * i + q * q);
-		return gain * (dQ * delayedI - dI  * delayedQ);
+        return dQ * delayedI - dI  * delayedQ;
 	}
 
 	template<typename FloatType>
