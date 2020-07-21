@@ -236,20 +236,6 @@ private:
         double a = std::sqrt(iSquared + qSquared);
         double g = 1.0 / (a + c);
 
-		static constexpr double differentiatorCoeffs[]
-		{
-			0.0035,
-			-0.0140,
-			0.0401,
-			-0.1321,
-			1.2639,
-			-1.2639,
-			0.1321,
-			-0.0401,
-			0.0140,
-			-0.0035
-		};
-
 		FloatType dI{0.0}; // differentiated I
 		FloatType dQ{0.0}; // differentiated Q
 
@@ -320,6 +306,20 @@ private:
 	std::unique_ptr<MpxDecoder> mpxDecoder;
 	std::vector<double> wavBuffer;
 	std::vector<Biquad<double>> deEmphasisFilters;
+
+    const std::vector<double> differentiatorCoeffs
+    {
+        0.0035,
+        -0.0140,
+        0.0401,
+        -0.1321,
+        1.2639,
+        -1.2639,
+        0.1321,
+        -0.0401,
+        0.0140,
+        -0.0035
+    };
 
 	// properties
 	ModulationType modulationType{ModulationType::NFM};
