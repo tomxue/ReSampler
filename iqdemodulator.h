@@ -85,8 +85,6 @@ public:
 				setDeEmphasisTc(2, sampleRate, 50);
 				mpxDecoder = std::unique_ptr<MpxDecoder>(new MpxDecoder(sampleRate));
 				mpxDecoder->setLowpassEnabled(enableLowpass);
-				historyI.resize(differentiatorLength, 0.0);
-				historyQ.resize(differentiatorLength, 0.0);
 			}
 		}
 	}
@@ -224,84 +222,6 @@ private:
 		return gain * (((q0 - q2) * i1) - ((i0 - i2) * q1));
 	}
 
-	template<typename FloatType>
-	FloatType demodulateFM2(FloatType i, FloatType q)
-	{
-        static constexpr double threshold = -40.0; // dB
-        static const double c = std::pow(10.0, threshold / 20.0);
-
-        // determine magnitude and gain
-        double iSquared = i * i;
-        double qSquared = q * q;
-        double a = std::sqrt(iSquared + qSquared);
-        double g = 2.0 / std::max(a, c);
-
-		FloatType dI{0.0}; // differentiated I
-		FloatType dQ{0.0}; // differentiated Q
-
-		 // place input into history
-        historyI[differentiatorIndex] = i * g;
-        historyQ[differentiatorIndex] = q * g;
-
-		// get position of delay tap
-        constexpr int delayOffset = differentiatorLength / 2;
-		FloatType delayedI;
-		FloatType delayedQ;
-		int delayIndex = differentiatorIndex + delayOffset;
-		if(delayIndex >= differentiatorLength) {
-			delayIndex -= differentiatorLength;
-		}
-
-		// get delayed values from history
-		delayedI = historyI.at(delayIndex);
-		delayedQ = historyQ.at(delayIndex);
-
-		// perform the convolution
-		int p = differentiatorIndex;
-		for(int j = 0 ; j < differentiatorLength; j++) {
-			FloatType vI = historyI.at(p);
-			FloatType vQ = historyQ.at(p);
-			if(++p == differentiatorLength) {
-				p = 0; // wrap
-			}
-			dI += differentiatorCoeffs[j] * vI;
-			dQ += differentiatorCoeffs[j] * vQ;
-		}
-
-		// update the current index
-		if(differentiatorIndex == 0) {
-			differentiatorIndex = differentiatorLength - 1; // wrap
-		} else {
-			differentiatorIndex--;
-		}
-
-        return dQ * delayedI - dI  * delayedQ;
-	}
-
-    template<typename FloatType>
-    FloatType demodulateFM3(FloatType i, FloatType q)
-    {
-        static constexpr double threshold = -20.0; // dB
-        static const double c = std::pow(40.0, threshold / 20.0);
-
-        // determine magnitude and gain
-        double iSquared = i * i;
-        double qSquared = q * q;
-        double a = std::sqrt(iSquared + qSquared);
-        double g = 2.0 / std::max(a, c);
-
-         // place input into history
-        z0.real(i * g);
-        z0.imag(q * g);
-
-        auto dz = z0 * std::conj(z1);
-        z2 = z1;
-        z1 = z0;
-        return std::arg(dz);
-    }
-
-
-
     template<typename FloatType>
     FloatType demodulateAM(FloatType i, FloatType q)
     {
@@ -331,37 +251,16 @@ private:
 	std::vector<double> wavBuffer;
 	std::vector<Biquad<double>> deEmphasisFilters;
 
-    const std::vector<double> differentiatorCoeffs
-    {
-        0.0035,
-        -0.0140,
-        0.0401,
-        -0.1321,
-        1.2639,
-        -1.2639,
-        0.1321,
-        -0.0401,
-        0.0140,
-        -0.0035
-    };
-
 	// properties
 	ModulationType modulationType{ModulationType::NFM};
 
 	// registers used for demodulating FM
-    static constexpr int differentiatorLength = 10;
-    std::vector<double> historyI;
-    std::vector<double> historyQ;
-    int differentiatorIndex{differentiatorLength - 1};
 	double i0{0.0};
 	double i1{0.0};
 	double i2{0.0};
 	double q0{0.0};
 	double q1{0.0};
 	double q2{0.0};
-    std::complex<double> z0{0.0, 0.0};
-    std::complex<double> z1{0.0, 0.0};
-    std::complex<double> z2{0.0, 0.0};
 };
 
 } // namespace  ReSampler
