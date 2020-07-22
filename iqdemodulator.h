@@ -278,26 +278,50 @@ private:
         return dQ * delayedI - dI  * delayedQ;
 	}
 
-	template<typename FloatType>
-	FloatType demodulateAM(FloatType i, FloatType q)
-	{
-		static constexpr FloatType scale = 0.7071; // << 1/sqrt(2)
-		return scale * std::sqrt(i * i + q * q);
-	}
+    template<typename FloatType>
+    FloatType demodulateFM3(FloatType i, FloatType q)
+    {
+        static constexpr double threshold = -20.0; // dB
+        static const double c = std::pow(40.0, threshold / 20.0);
 
-	//	double tau = 1/(2*pi*f); // Hz to time constant
-	//	double f = 2122.1; // 75 us
-	//  double f = 3183.1; // 50 us
+        // determine magnitude and gain
+        double iSquared = i * i;
+        double qSquared = q * q;
+        double a = std::sqrt(iSquared + qSquared);
+        double g = 1.0 / std::max(a, c);
 
-	void setDeEmphasisTc(int channels, int sampleRate, double tc = 50.0 /* microseconds */)
-	{
-		deEmphasisFilters.resize(channels);
-		double p1 = -exp(-1.0 / (sampleRate * tc * 0.000001));
-		double z1 = (1 + p1) / 5.0;
+         // place input into history
+        z0.real(i * g);
+        z0.imag(q * g);
+
+        auto dz = z0 * std::conj(z1);
+        z2 = z1;
+        z1 = z0;
+        return std::arg(dz);
+    }
+
+
+
+    template<typename FloatType>
+    FloatType demodulateAM(FloatType i, FloatType q)
+    {
+        static constexpr FloatType scale = 0.7071; // << 1/sqrt(2)
+        return scale * std::sqrt(i * i + q * q);
+    }
+
+    //	double tau = 1/(2*pi*f); // Hz to time constant
+    //	double f = 2122.1; // 75 us
+    //  double f = 3183.1; // 50 us
+
+    void setDeEmphasisTc(int channels, int sampleRate, double tc = 50.0 /* microseconds */)
+    {
+        deEmphasisFilters.resize(channels);
+        double p1 = -exp(-1.0 / (sampleRate * tc * 0.000001));
+        double z1 = (1 + p1) / 5.0;
         for(auto& biquad : deEmphasisFilters) {
-			biquad.setCoeffs(z1, z1, 0.0, p1, 0.0);
-			biquad.reset();
-		}
+            biquad.setCoeffs(z1, z1, 0.0, p1, 0.0);
+            biquad.reset();
+        }
 	}
 
 private:
@@ -335,6 +359,9 @@ private:
 	double q0{0.0};
 	double q1{0.0};
 	double q2{0.0};
+    std::complex<double> z0{0.0, 0.0};
+    std::complex<double> z1{0.0, 0.0};
+    std::complex<double> z2{0.0, 0.0};
 };
 
 } // namespace  ReSampler
