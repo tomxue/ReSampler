@@ -234,7 +234,7 @@ private:
         double iSquared = i * i;
         double qSquared = q * q;
         double a = std::sqrt(iSquared + qSquared);
-        double g = 1.0 / (a + c);
+        double g = 1.0 / std::max(a, c);
 
 		FloatType dI{0.0}; // differentiated I
 		FloatType dQ{0.0}; // differentiated Q
