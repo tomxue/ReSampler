@@ -168,7 +168,7 @@ public:
 			// Wideband FM:
 			for(int64_t i = 0; i < samplesRead; i += 2) {
 				// demodulate, decode, deemphasize
-                std::pair<FloatType, FloatType> decoded = mpxDecoder->decode(demodulateFM2(wavBuffer.at(i), wavBuffer.at(i + 1)));
+                std::pair<FloatType, FloatType> decoded = mpxDecoder->decode(demodulateFM(wavBuffer.at(i), wavBuffer.at(i + 1)));
 				inbuffer[j++] = deEmphasisFilters[0].filter(decoded.first);
 				inbuffer[j++] = deEmphasisFilters[1].filter(decoded.second);
 			}
@@ -207,8 +207,8 @@ private:
 	template<typename FloatType>
 	FloatType demodulateFM(FloatType i, FloatType q)
 	{
-        static constexpr double maxGain = 60.0;
-		static const double c = std::pow(10.0, -(maxGain / 20.0));
+        static constexpr double threshold = -40.0;
+        static const double c = std::pow(10.0, threshold / 20.0);
 
 		// this is actually quite simple, thanks to some clever calculus tricks.
 		// see https://www.embedded.com/dsp-tricks-frequency-demodulation-algorithms/
@@ -220,7 +220,7 @@ private:
 		q1 = q0;
 		q0 = q;
 
-        double gain = 1.0 / (c + i1 * i1 + q1 * q1);
+        double gain = 2.0 / (std::max(c, i1 * i1 + q1 * q1));
 		return gain * (((q0 - q2) * i1) - ((i0 - i2) * q1));
 	}
 
@@ -234,7 +234,7 @@ private:
         double iSquared = i * i;
         double qSquared = q * q;
         double a = std::sqrt(iSquared + qSquared);
-        double g = 1.0 / std::max(a, c);
+        double g = 2.0 / std::max(a, c);
 
 		FloatType dI{0.0}; // differentiated I
 		FloatType dQ{0.0}; // differentiated Q
@@ -288,7 +288,7 @@ private:
         double iSquared = i * i;
         double qSquared = q * q;
         double a = std::sqrt(iSquared + qSquared);
-        double g = 1.0 / std::max(a, c);
+        double g = 2.0 / std::max(a, c);
 
          // place input into history
         z0.real(i * g);

@@ -18,7 +18,7 @@
 
 #include "FIRFilter.h"
 
-//#define MPXDECODER_TUNE_PILOT_AGC
+// #define MPXDECODER_TUNE_PILOT_AGC
 
 class MpxDecoder
 {
@@ -44,9 +44,9 @@ public:
 
         // these values determined experimentally:
         // (#define MPXDECODER_TUNE_PILOT_AGC to debug & tweak)
-        decreaseRate = std::pow(10.0, /* dB per sec = */ -3200.0 / sampleRate / 20.0);
-        peakDecreaseRate = std::pow(10.0, -450.0 / sampleRate / 20.0);
-        increaseRate = std::pow(10.0, 3200.0 / sampleRate / 20.0);
+        decreaseRate = std::pow(10.0, /* dB per sec = */ -32.0 / sampleRate / 20.0);
+        peakDecreaseRate = std::pow(10.0, -16.0 / sampleRate / 20.0);
+        increaseRate = std::pow(10.0, 32.0 / sampleRate / 20.0);
     }
 
 #ifdef MPXDECODER_TUNE_PILOT_AGC
@@ -122,7 +122,7 @@ public:
         pilotPeak *= peakDecreaseRate;
 
         // double pilot frequency. Note: amplitude approx 1/2 of full-scale (canonical doubler is 2x^2 - 1)
-        FloatType doubledPilot = pilot * pilot - doublerDcOffset;
+        FloatType doubledPilot = 2 * pilot * pilot - 1.0;
 
         // do the spectrum shift
         constexpr double scaling = 2.5 * 2 * 2; // 10.0
@@ -133,7 +133,7 @@ public:
 		FloatType right = 0.5 * (monoRaw - side);
 
 		if(!lowpassEnabled) {
-			return {left, right};
+            return {monoRaw, monoRaw};
 		}
 
 		// filter & return outputs
@@ -202,14 +202,14 @@ public:
     template<typename FloatType>
     static std::vector<FloatType> make19KhzBandpass(int sampleRate)
     {
-        return makeBandpass<FloatType>(sampleRate, 18900, 19100);
+        return makeBandpass<FloatType>(sampleRate, 18990, 19010);
     }
 
     // 38khz bandpass filter for the Audio Subcarrier
     template<typename FloatType>
     static std::vector<FloatType> make38KhzBandpass(int sampleRate)
     {
-        return makeBandpass<FloatType>(sampleRate, 38000, 53000); // we only want half of it
+        return makeBandpass<FloatType>(sampleRate, 23000, 53000); // we only want half of it
     }
 
     // 57khz bandpass filter for RDS / RBDS
@@ -252,7 +252,7 @@ public:
 
 	void setLowpassEnabled(bool value)
 	{
-		lowpassEnabled = value;
+        lowpassEnabled = value;
 	}
 
 private:
@@ -260,7 +260,7 @@ private:
 
 	static constexpr double lpfT = 15500.0;	// LPF transition freq (Hz)
 	static constexpr double lpfW = 3500.0;	// LPF transition width (Hz)
-    static constexpr double pilotStableLow = 0.98;
+    static constexpr double pilotStableLow = 0.90;
     static constexpr double pilotStableHigh = 0.99;
     static constexpr double doublerDcOffset = 0.5 * (pilotStableLow + pilotStableHigh) / 2;
 
