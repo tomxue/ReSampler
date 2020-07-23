@@ -122,7 +122,7 @@ public:
         pilotPeak *= peakDecreaseRate;
 
         // double pilot frequency. Note: amplitude approx 1/2 of full-scale (canonical doubler is 2x^2 - 1)
-        FloatType doubledPilot = 2 * pilot * pilot - 1.0;
+        FloatType doubledPilot = 2 * pilot * pilot - doublerDcOffset;
 
         // do the spectrum shift
         constexpr double scaling = 2.5 * 2 * 2; // 10.0
@@ -131,6 +131,8 @@ public:
 		// separate L, R stereo channels
 		FloatType left = 0.5 * (monoRaw + side);
 		FloatType right = 0.5 * (monoRaw - side);
+
+   //     std::cout << pilot << ", " << pilotPeak << ", " << pilotGain << "\n";
 
 		if(!lowpassEnabled) {
             return {monoRaw, monoRaw};
@@ -260,12 +262,13 @@ private:
 
 	static constexpr double lpfT = 15500.0;	// LPF transition freq (Hz)
 	static constexpr double lpfW = 3500.0;	// LPF transition width (Hz)
-    static constexpr double pilotStableLow = 0.90;
-    static constexpr double pilotStableHigh = 0.99;
-    static constexpr double doublerDcOffset = 0.5 * (pilotStableLow + pilotStableHigh) / 2;
+    static constexpr double pilotStableLow = 0.99;
+    static constexpr double pilotStableHigh = 1.01;
+    static constexpr double pilotStableMedian = (pilotStableLow + pilotStableHigh) / 2;
+    static constexpr double doublerDcOffset = pilotStableMedian * pilotStableMedian;
 
     // if more gain than this is needed, then something is wrong with the Pilot Tone:
-    static constexpr double pilotMaxGain = 40.0;
+    static constexpr double pilotMaxGain = 140.0;
 
     std::vector<double> delayLine;
     int length;
