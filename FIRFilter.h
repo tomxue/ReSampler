@@ -644,15 +644,15 @@ namespace ReSampler {
     inline std::vector<double> makeHilbert(int length)
     {
         std::vector<double> coeffs;
-        int length_ = length | 1; //11
+        int length_ = std::max(length, 3) | 1;
         coeffs.resize(length_);
-        int n = length_ / 2; // 5
-        // -5 -4 -3 -2 -1 0 1 2 3 4 5
-        // 0   1  2  3  4 5 6 7 8 9 10
-        coeffs[n] = 0.0;
-        for(int i = 0; i < n; n++) {
-            coeffs[i] = i - n; // 0[-5],1[-4],2[-3],3[-2],4[-1]
-            coeffs[i + length_ - n] = i + 1; //6[5] .. 4 + 11 - 5 10[5]
+        int c = length_ / 2;
+        coeffs[c] = 0.0;
+        for(int n = 0; n < c; n++) {
+            double s = std::sin((n - c) * M_PI / 2.0);
+            double s2 = 2.0 * s * s;
+            coeffs[n] = s2 / (M_PI * (n - c));
+            coeffs[length_ - n - 1] = s2 / (M_PI * (c - n));
         }
 
         return coeffs;
