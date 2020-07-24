@@ -20,6 +20,51 @@
 
 // #define MPXDECODER_TUNE_PILOT_AGC
 
+class FrequencyDoubler
+{
+public:
+    FrequencyDoubler() {
+        coeffs = ReSampler::makeHilbert(101);
+        length = coeffs.size();
+        history.resize(length);
+        centerTap = length / 2;
+        currentIndex = length - 1;
+    }
+
+    template<typename FloatType>
+    double filter(FloatType input)
+    {
+        history[currentIndex] = input; // place input into history
+        int d = currentIndex + centerTap;
+        FloatType s0 = history[d >= length ? d - length : d]; // delay only
+        FloatType s1 = 0.0;
+        int p = currentIndex;
+        for(int j = 0 ; j < length; j++) {
+            FloatType v = history.at(p++);
+            if(p == length) {
+                p = 0;
+            }
+            s1 += coeffs.at(j) * v;
+        }
+
+        if(currentIndex == 0) {
+            currentIndex = length - 1;
+        } else {
+            currentIndex--;
+        }
+
+        // multiply +45deg signal with -45deg
+        return (s0 + s1) * (s0 - s1);
+    }
+
+private:
+    std::vector<double> coeffs;
+    std::vector<double> history;
+    int length;
+    int centerTap;
+    int currentIndex;
+};
+
 class MpxDecoder
 {
 public:
@@ -122,8 +167,8 @@ public:
         pilotPeak *= peakDecreaseRate;
 
         // double pilot frequency. Note: amplitude approx 1/2 of full-scale (canonical doubler is 2x^2 - 1)
-        FloatType doubledPilot = 2 * pilot * pilot - doublerDcOffset;
-
+      //  FloatType doubledPilot = 2 * pilot * pilot - doublerDcOffset;
+        FloatType doubledPilot = frequencyDoubler.filter(pilot);
         // do the spectrum shift
         constexpr double scaling = 2.5 * 2 * 2; // 10.0
 		FloatType side = scaling * doubledPilot * sideRaw;
@@ -259,6 +304,7 @@ public:
 
 private:
 	std::vector<ReSampler::FIRFilter<double>> filters;
+    FrequencyDoubler frequencyDoubler;
 
 	static constexpr double lpfT = 15500.0;	// LPF transition freq (Hz)
 	static constexpr double lpfW = 3500.0;	// LPF transition width (Hz)
