@@ -641,6 +641,23 @@ namespace ReSampler {
 		return true;
 	}
 
+    inline std::vector<double> makeHilbert(int length)
+    {
+        std::vector<double> coeffs;
+        int length_ = length | 1; //11
+        coeffs.resize(length_);
+        int n = length_ / 2; // 5
+        // -5 -4 -3 -2 -1 0 1 2 3 4 5
+        // 0   1  2  3  4 5 6 7 8 9 10
+        coeffs[n] = 0.0;
+        for(int i = 0; i < n; n++) {
+            coeffs[i] = i - n; // 0[-5],1[-4],2[-3],3[-2],4[-1]
+            coeffs[i + length_ - n] = i + 1; //6[5] .. 4 + 11 - 5 10[5]
+        }
+
+        return coeffs;
+    }
+
 	// the following is a set of Complex-In, Complex-Out transforms used for constructing a minimum-Phase FIR:
 
 	// logV() : logarithm of a vector of Complex doubles
