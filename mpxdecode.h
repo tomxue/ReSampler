@@ -24,7 +24,7 @@ class FrequencyDoubler
 {
 public:
     FrequencyDoubler() {
-        coeffs = ReSampler::makeHilbert(101);
+		coeffs = ReSampler::makeHilbert(1001);
         length = coeffs.size();
         history.resize(length);
         centerTap = length / 2;
@@ -65,10 +65,34 @@ private:
     int currentIndex;
 };
 
+class NCO
+{
+public:
+
+	NCO(int sampleRate)
+	{
+		angularFreq = (2 * M_PI * frequency) / sampleRate;
+	}
+
+	double get() {
+		double v = std::sin(theta);
+		theta += angularFreq;
+		if(theta > 2 * M_PI) {
+			theta -= 2 * M_PI;
+		}
+		return v;
+	}
+
+private:
+	double frequency{38000};
+	double angularFreq;
+	double theta{0.0};
+};
+
 class MpxDecoder
 {
 public:
-    MpxDecoder(int sampleRate)
+	MpxDecoder(int sampleRate) : nco(sampleRate)
     {
         // create filters
         auto f0 = make19KhzBandpass<double>(sampleRate);
@@ -78,20 +102,20 @@ public:
 
         length = f0.size();
                 delayLine.resize(length, 0.0);
-                centerTap = (length - 1) / 2;
+				centerTap = (length - 1) / 2;
                 currentIndex = length - 1;
 
         filters.emplace_back(f0.data(), f0.size());
         filters.emplace_back(f1.data(), f1.size());
         filters.emplace_back(f2.data(), f2.size());
-        filters.emplace_back(lpf.data(), lpf.size()); // left lowpass
+		filters.emplace_back(lpf.data(), lpf.size()); // left lowpass
         filters.emplace_back(lpf.data(), lpf.size()); // right lowpass
 
         // these values determined experimentally:
         // (#define MPXDECODER_TUNE_PILOT_AGC to debug & tweak)
-        decreaseRate = std::pow(10.0, /* dB per sec = */ -32.0 / sampleRate / 20.0);
-        peakDecreaseRate = std::pow(10.0, -16.0 / sampleRate / 20.0);
-        increaseRate = std::pow(10.0, 32.0 / sampleRate / 20.0);
+		decreaseRate = std::pow(10.0, /* dB per sec = */ -12.0 / sampleRate / 20.0);
+		peakDecreaseRate = std::pow(10.0, -1.0 / sampleRate / 20.0);
+		increaseRate = std::pow(10.0, 64.0 / sampleRate / 20.0);
     }
 
 #ifdef MPXDECODER_TUNE_PILOT_AGC
@@ -116,7 +140,7 @@ public:
             currentIndex--;
         }
         int d = currentIndex + centerTap;
-        FloatType monoRaw = delayLine[d >= length ? d - length : d];
+		FloatType mono = delayLine[d >= length ? d - length : d];
 
         filters.at(0).put(input);
         filters.at(1).put(input);
@@ -168,19 +192,19 @@ public:
 
         // double pilot frequency. Note: amplitude approx 1/2 of full-scale (canonical doubler is 2x^2 - 1)
       //  FloatType doubledPilot = 2 * pilot * pilot - doublerDcOffset;
-        FloatType doubledPilot = frequencyDoubler.filter(pilot);
+		FloatType doubledPilot = nco.get(); //frequencyDoubler.filter(140.0 * pilotRaw);
         // do the spectrum shift
         constexpr double scaling = 2.5 * 2 * 2; // 10.0
 		FloatType side = scaling * doubledPilot * sideRaw;
 
 		// separate L, R stereo channels
-		FloatType left = 0.5 * (monoRaw + side);
-		FloatType right = 0.5 * (monoRaw - side);
+		FloatType left = 0.5 * (mono + side);
+		FloatType right = 0.5 * (mono - side);
 
    //     std::cout << pilot << ", " << pilotPeak << ", " << pilotGain << "\n";
 
 		if(!lowpassEnabled) {
-            return {monoRaw, monoRaw};
+			return {mono, mono};
 		}
 
 		// filter & return outputs
@@ -256,7 +280,7 @@ public:
     template<typename FloatType>
     static std::vector<FloatType> make38KhzBandpass(int sampleRate)
     {
-        return makeBandpass<FloatType>(sampleRate, 23000, 53000); // we only want half of it
+		return makeBandpass<FloatType>(sampleRate, 23000, 58000);
     }
 
     // 57khz bandpass filter for RDS / RBDS
@@ -304,12 +328,13 @@ public:
 
 private:
 	std::vector<ReSampler::FIRFilter<double>> filters;
-    FrequencyDoubler frequencyDoubler;
+	NCO nco;
+  //  FrequencyDoubler frequencyDoubler;
 
 	static constexpr double lpfT = 15500.0;	// LPF transition freq (Hz)
 	static constexpr double lpfW = 3500.0;	// LPF transition width (Hz)
-    static constexpr double pilotStableLow = 0.99;
-    static constexpr double pilotStableHigh = 1.01;
+	static constexpr double pilotStableLow = 0.95;
+	static constexpr double pilotStableHigh = 1.05;
     static constexpr double pilotStableMedian = (pilotStableLow + pilotStableHigh) / 2;
     static constexpr double doublerDcOffset = pilotStableMedian * pilotStableMedian;
 
