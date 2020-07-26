@@ -34,17 +34,25 @@ public:
 
 	void sync(double input)
 	{
-		std::complex<double> theirs{filterI.filter(localI * input), filterQ.filter(localQ * input)};
-		std::complex<double> ours{localI, localQ};
-	//	std::complex<double> prod = theirs * std::conj(ours);
-		std::cout << 360.0 * std::arg(theirs) / (2* M_PI) << ",";
-		std::cout << 360.0 * std::arg(ours) / (2* M_PI) << "\n";
+        std::complex<double> theirs{filterI.filter(localI * input), filterQ.filter(localQ * input)};
+        double phaseDiff = -std::arg(theirs);
+        // +ve = they are ahead of us
+     //   angularFreq += phaseDiff / 10.0;
 
+        if(std::abs(phaseDiff > (2*M_PI * 0.1))) {
+            phaseOffset += phaseDiff * 0.5;
+//            if(phaseDiff > 0) {
+//                phaseOffset += 0.;
+//            } else {
+//                phaseOffset -= 0.1;
+//            }
+        }
+ //       std::cout << 360.0 * phaseDiff / (2* M_PI) << "\n";
 	}
 
 	double get() {
-		localQ = std::sin(theta);
-		localI = std::cos(theta);
+        localQ = std::sin(theta + phaseOffset);
+        localI = std::cos(theta + phaseOffset);
 		theta += angularFreq;
 		if(theta > 2 * M_PI) {
 			theta -= 2 * M_PI;
@@ -87,6 +95,7 @@ private:
 	double theta{0.0};
 	double localI{1.0}; // todo: starting positions ?
 	double localQ{0.0};
+    double phaseOffset{0.0};
 };
 
 class MpxDecoder
@@ -195,11 +204,18 @@ public:
         // decay the peak hold
         pilotPeak *= peakDecreaseRate;
 
-	//	nco.sync(nco2.get());
+//nco.sync(nco2.get());
+
 		double p = nco.get();
 		FloatType doubledPilot = 2 * p * p - 1.0;
+    //    nco.sync(2 * pilot);
+      //  nco.sync(nco2.get());
 
         // do the spectrum shift
+
+
+
+
         constexpr double scaling = 2.5 * 2 * 2; // 10.0
 		FloatType side = scaling * doubledPilot * sideRaw;
 
@@ -207,10 +223,10 @@ public:
 		FloatType left = 0.5 * (mono + side);
 		FloatType right = 0.5 * (mono - side);
 
-   //     std::cout << pilot << ", " << pilotPeak << ", " << pilotGain << "\n";
+ //       std::cout << pilot << ", " << pilotPeak << ", " << pilotGain << "\n";
 
 		if(!lowpassEnabled) {
-			return {mono, mono};
+            return {mono, mono};
 		}
 
 		// filter & return outputs
