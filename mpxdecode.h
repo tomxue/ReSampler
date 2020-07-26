@@ -17,85 +17,87 @@
 #include <sndfile.hh>
 
 #include "FIRFilter.h"
+#include "biquad.h"
 
 // #define MPXDECODER_TUNE_PILOT_AGC
-
-class FrequencyDoubler
-{
-public:
-    FrequencyDoubler() {
-		coeffs = ReSampler::makeHilbert(1001);
-        length = coeffs.size();
-        history.resize(length);
-        centerTap = length / 2;
-        currentIndex = length - 1;
-    }
-
-    template<typename FloatType>
-    double filter(FloatType input)
-    {
-        history[currentIndex] = input; // place input into history
-        int d = currentIndex + centerTap;
-        FloatType s0 = history[d >= length ? d - length : d]; // delay only
-        FloatType s1 = 0.0;
-        int p = currentIndex;
-        for(int j = 0 ; j < length; j++) {
-            FloatType v = history.at(p++);
-            if(p == length) {
-                p = 0;
-            }
-            s1 += coeffs.at(j) * v;
-        }
-
-        if(currentIndex == 0) {
-            currentIndex = length - 1;
-        } else {
-            currentIndex--;
-        }
-
-        // multiply +45deg signal with -45deg
-        return (s0 + s1) * (s0 - s1);
-    }
-
-private:
-    std::vector<double> coeffs;
-    std::vector<double> history;
-    int length;
-    int centerTap;
-    int currentIndex;
-};
-
 
 // NCO : numerically - controlled oscillator
 class NCO
 {
 public:
-	NCO(int sampleRate)
+	NCO(int sampleRate, double frequency = 19000) : sampleRate(sampleRate),
+		filterI(0.0009357513270600214, 0.0018715026541200428, 0.0009357513270600214, -1.8931095931212278, 0.896852598429468),
+		filterQ(0.0009357513270600214, 0.0018715026541200428, 0.0009357513270600214, -1.8931095931212278, 0.896852598429468)
 	{
-		angularFreq = (2 * M_PI * frequency) / sampleRate;
+		setFrequency(frequency);
+	}
+
+	void sync(double input)
+	{
+		std::complex<double> theirs{filterI.filter(localI * input), filterQ.filter(localQ * input)};
+		std::complex<double> ours{localI, localQ};
+	//	std::complex<double> prod = theirs * std::conj(ours);
+		std::cout << 360.0 * std::arg(theirs) / (2* M_PI) << ",";
+		std::cout << 360.0 * std::arg(ours) / (2* M_PI) << "\n";
+
 	}
 
 	double get() {
-		double v = std::sin(theta);
+		localQ = std::sin(theta);
+		localI = std::cos(theta);
 		theta += angularFreq;
 		if(theta > 2 * M_PI) {
 			theta -= 2 * M_PI;
 		}
-		return 2 * v * v - 1.0; // double frequency
+		return localI;
 	}
 
+	double getFrequency() const
+	{
+		return sampleRate * angularFreq / (2 * M_PI);
+	}
+
+	void setFrequency(double value)
+	{
+		angularFreq = (2 * M_PI * value) / sampleRate;
+	}
+
+	static void saveFilters1(const std::string& filename)
+	{
+		SndfileHandle sndfile(filename, SFM_WRITE, SF_FORMAT_WAV | SF_FORMAT_FLOAT, 1, 192000);
+		std::vector<double> impulseResponse(10000, 0.0);
+		ReSampler::Biquad<double> filt(0.019305318724235306, 0.03861063744847061, 0.019305318724235306, -1.5005428941316463, 0.5777641690285875);
+
+		impulseResponse[100] = filt.filter(1.0);
+		for(int i = 100; i < impulseResponse.size(); i++)
+		{
+			impulseResponse[i] = filt.filter(0.0);
+		}
+
+		sndfile.writef(impulseResponse.data(), impulseResponse.size());
+	}
+
+
 private:
-	double frequency{19000};
+	int sampleRate;
+	ReSampler::Biquad<double> filterI;
+	ReSampler::Biquad<double> filterQ;
+
 	double angularFreq;
 	double theta{0.0};
+	double localI{1.0}; // todo: starting positions ?
+	double localQ{0.0};
 };
 
 class MpxDecoder
 {
 public:
-	MpxDecoder(int sampleRate) : nco(sampleRate)
+	MpxDecoder(int sampleRate) : nco(sampleRate), nco2(sampleRate)
     {
-        // create filters
+		// test - write impulse response of IIR filter to file for evaluation
+//		NCO::saveFilters1("e:\\t\\iir.wav");
+
+		// create filters
         auto f0 = make19KhzBandpass<double>(sampleRate);
         auto f1 = make38KhzBandpass<double>(sampleRate);
         auto f2 = make57KhzBandpass<double>(sampleRate);
@@ -117,6 +119,8 @@ public:
 		decreaseRate = std::pow(10.0, /* dB per sec = */ -12.0 / sampleRate / 20.0);
 		peakDecreaseRate = std::pow(10.0, -1.0 / sampleRate / 20.0);
 		increaseRate = std::pow(10.0, 64.0 / sampleRate / 20.0);
+
+
     }
 
 #ifdef MPXDECODER_TUNE_PILOT_AGC
@@ -191,9 +195,10 @@ public:
         // decay the peak hold
         pilotPeak *= peakDecreaseRate;
 
-        // double pilot frequency. Note: amplitude approx 1/2 of full-scale (canonical doubler is 2x^2 - 1)
-      //  FloatType doubledPilot = 2 * pilot * pilot - doublerDcOffset;
-		FloatType doubledPilot = nco.get(); //frequencyDoubler.filter(140.0 * pilotRaw);
+	//	nco.sync(nco2.get());
+		double p = nco.get();
+		FloatType doubledPilot = 2 * p * p - 1.0;
+
         // do the spectrum shift
         constexpr double scaling = 2.5 * 2 * 2; // 10.0
 		FloatType side = scaling * doubledPilot * sideRaw;
@@ -209,8 +214,11 @@ public:
 		}
 
 		// filter & return outputs
-		filters.at(3).put(left);
-		filters.at(4).put(right);
+//		filters.at(3).put(left);
+//		filters.at(4).put(right);
+		filters.at(3).put(mono);
+		filters.at(4).put(mono);
+
         return {filters.at(3).get(), filters.at(4).get()};
     }
 
@@ -330,6 +338,7 @@ public:
 private:
 	std::vector<ReSampler::FIRFilter<double>> filters;
 	NCO nco;
+	NCO nco2;
   //  FrequencyDoubler frequencyDoubler;
 
 	static constexpr double lpfT = 15500.0;	// LPF transition freq (Hz)
@@ -364,6 +373,10 @@ private:
 };
 
 #endif // MPXDECODE_H
+
+
+
+
 
 
 
