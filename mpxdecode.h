@@ -65,10 +65,11 @@ private:
     int currentIndex;
 };
 
+
+// NCO : numerically - controlled oscillator
 class NCO
 {
 public:
-
 	NCO(int sampleRate)
 	{
 		angularFreq = (2 * M_PI * frequency) / sampleRate;
@@ -80,11 +81,11 @@ public:
 		if(theta > 2 * M_PI) {
 			theta -= 2 * M_PI;
 		}
-		return v;
+		return 2 * v * v - 1.0; // double frequency
 	}
 
 private:
-	double frequency{38000};
+	double frequency{19000};
 	double angularFreq;
 	double theta{0.0};
 };
