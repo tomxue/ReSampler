@@ -1,4 +1,4 @@
-/*
+﻿/*
 * Copyright (C) 2020 Judd Niemann - All Rights Reserved.
 * You may use, distribute and modify this code under the
 * terms of the GNU Lesser General Public License, version 2.1
@@ -37,25 +37,34 @@ public:
         std::complex<double> theirs{filterI.filter(localI * input), filterQ.filter(localQ * input)};
         double phaseDiff = -std::arg(theirs);
         // +ve = they are ahead of us
-     //   angularFreq += phaseDiff / 10.0;
+     //   angularFreq += phaseDiff / 100.0;
 
-        if(std::abs(phaseDiff > (2*M_PI * 0.1))) {
-            phaseOffset += phaseDiff * 0.5;
-//            if(phaseDiff > 0) {
-//                phaseOffset += 0.;
-//            } else {
-//                phaseOffset -= 0.1;
-//            }
+        if(std::abs(phaseDiff > (2*M_PI * 0.01))) {
+            phase += phaseDiff * 0.01;
+
+
+//                        if(phaseDiff > 0) {
+//                            phase += 0.1;
+//                        } else {
+//                            phase -= 0.1;
+//                        }
+            if(phase > M_PI) {
+                phase -= 2 * M_PI;
+            } else if (phase < - M_PI) {
+                phase += 2 * M_PI;
+            }
+
         }
- //       std::cout << 360.0 * phaseDiff / (2* M_PI) << "\n";
+        std::cout << 360.0 * phaseDiff / (2* M_PI) << "\n";
 	}
 
 	double get() {
-        localQ = std::sin(theta + phaseOffset);
-        localI = std::cos(theta + phaseOffset);
+        localQ = std::sin(theta + phase);
+        localI = std::cos(theta + phase);
 		theta += angularFreq;
-		if(theta > 2 * M_PI) {
-			theta -= 2 * M_PI;
+
+        if(theta > M_PI) {
+            theta -= 2 * M_PI;
 		}
 		return localI;
 	}
@@ -86,16 +95,26 @@ public:
 	}
 
 
+    double getPhase() const
+    {
+        return phase;
+    }
+
+    void setPhase(double value)
+    {
+        phase = value;
+    }
+
 private:
-	int sampleRate;
-	ReSampler::Biquad<double> filterI;
+    int sampleRate;
+    ReSampler::Biquad<double> filterI;
 	ReSampler::Biquad<double> filterQ;
 
 	double angularFreq;
 	double theta{0.0};
 	double localI{1.0}; // todo: starting positions ?
 	double localQ{0.0};
-    double phaseOffset{0.0};
+    double phase;//{0.0};
 };
 
 class MpxDecoder
@@ -105,6 +124,8 @@ public:
     {
 		// test - write impulse response of IIR filter to file for evaluation
 //		NCO::saveFilters1("e:\\t\\iir.wav");
+
+        nco2.setPhase(M_PI);
 
 		// create filters
         auto f0 = make19KhzBandpass<double>(sampleRate);
@@ -204,17 +225,15 @@ public:
         // decay the peak hold
         pilotPeak *= peakDecreaseRate;
 
-//nco.sync(nco2.get());
-
+   //     nco.sync(pilot);
 		double p = nco.get();
+
+    //    nco.sync(nco2.get());
 		FloatType doubledPilot = 2 * p * p - 1.0;
-    //    nco.sync(2 * pilot);
+     //   nco.sync(2 * pilot);
       //  nco.sync(nco2.get());
 
         // do the spectrum shift
-
-
-
 
         constexpr double scaling = 2.5 * 2 * 2; // 10.0
 		FloatType side = scaling * doubledPilot * sideRaw;
@@ -298,7 +317,7 @@ public:
     template<typename FloatType>
     static std::vector<FloatType> make19KhzBandpass(int sampleRate)
     {
-        return makeBandpass<FloatType>(sampleRate, 18990, 19010);
+        return makeBandpass<FloatType>(sampleRate, 18900, 19100);
     }
 
     // 38khz bandpass filter for the Audio Subcarrier
@@ -389,6 +408,10 @@ private:
 };
 
 #endif // MPXDECODE_H
+
+
+
+
 
 
 
