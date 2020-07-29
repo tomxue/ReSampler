@@ -233,6 +233,11 @@ private:
     //	double f = 2122.1; // 75 us
     //  double f = 3183.1; // 50 us
 
+    void setDeEmphasisHz(int channels, int sampleRate, double freqHz)
+    {
+        setDeEmphasisTc(channels, sampleRate, (1.0 / (2.0 * M_PI * freqHz)));
+    }
+
     void setDeEmphasisTc(int channels, int sampleRate, double tc = 50.0 /* microseconds */)
     {
         deEmphasisFilters.resize(channels);
