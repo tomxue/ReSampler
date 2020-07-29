@@ -19,7 +19,7 @@
 #include "FIRFilter.h"
 #include "biquad.h"
 
-  #define MPXDECODER_TUNE_PILOT_AGC
+// #define MPXDECODER_TUNE_PILOT_AGC
 
 // NCO : numerically - controlled oscillator
 class NCO
