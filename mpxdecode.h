@@ -19,7 +19,7 @@
 #include "FIRFilter.h"
 #include "biquad.h"
 
-// #define MPXDECODER_TUNE_PILOT_AGC
+  #define MPXDECODER_TUNE_PILOT_AGC
 
 // NCO : numerically - controlled oscillator
 class NCO
@@ -45,8 +45,8 @@ public:
 			} else if (phase < - M_PI) {
 				phase += 2 * M_PI;
 			}
-
 		}
+
 		//	std::cout << 360.0 * phaseDiff / (2* M_PI) << "\n";
 	}
 
@@ -86,7 +86,6 @@ public:
 		sndfile.writef(impulseResponse.data(), impulseResponse.size());
 	}
 
-
 	double getPhase() const
 	{
 		return phase;
@@ -103,7 +102,6 @@ private:
 	ReSampler::Biquad<double> filterQ;
 
 	double maxJump;
-
 	double angularFreq;
 	double theta{0.0};
 	double localI{1.0}; // todo: starting positions ?
@@ -140,7 +138,7 @@ public:
 		// (#define MPXDECODER_TUNE_PILOT_AGC to debug & tweak)
 		decreaseRate = std::pow(10.0, /* dB per sec = */ -12.0 / sampleRate / 20.0);
 		increaseRate = std::pow(10.0, 64.0 / sampleRate / 20.0);
-
+        peakDecayRate = std::pow(10.0, /* dB per sec = */ -12.0 / sampleRate / 20.0);
 		setStereoWidth(0.5);
 
 	}
@@ -153,7 +151,7 @@ public:
 				  << 100.0 * stableCount / totalCount << "%, "
 				  << 100.0 * minusCount / totalCount << "%" << std::endl;
 
-		std::cout << "Peak Pilot Gain: " << peakPilotGain << std::endl;
+        std::cout << "Peak Pilot Gain: " << peakPilotGain << std::endl;
 	}
 #endif
 
@@ -182,7 +180,7 @@ public:
 		}
 
 #ifdef MPXDECODER_TUNE_PILOT_AGC
-		std::cout << pilotGain << ", " << pilotPeak << "\n";
+  //      std::cout << pilotGain << ", " << pilotPeak << "\n";
 #endif
 
 		if(pilotPeak < pilotStableLow) { // pilot too quiet
@@ -192,6 +190,7 @@ public:
 			}
 
 #ifdef MPXDECODER_TUNE_PILOT_AGC
+            std::cout << "+";
 			plusCount++;
 #endif
 
@@ -201,6 +200,7 @@ public:
 
 
 #ifdef MPXDECODER_TUNE_PILOT_AGC
+            std::cout << "-";
 			minusCount++;
 #endif
 
@@ -376,7 +376,7 @@ private:
 	static constexpr double pilotStableHigh = 1.05;
 
 	// if more gain than this is needed, then something is wrong with the Pilot Tone:
-	static constexpr double pilotMaxGain = 140.0;
+    static constexpr double pilotMaxGain = 40.0;
 
 	std::vector<double> delayLine;
 	int length;
@@ -388,6 +388,7 @@ private:
 	double pilotGain{1.0};
 	double increaseRate;
 	double decreaseRate;
+    double peakDecayRate;
 	double stereoWidth;
 	double stereoGain;
 
