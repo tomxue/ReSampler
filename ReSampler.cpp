@@ -375,8 +375,15 @@ bool convert(ConversionInfo& ci)
 	// Open input file
 	FileReader infile(ci.inputFilename, infileMode, infileFormat, infileChannels, infileRate);
 
-	if (int e = infile.error()) {
-		std::cout << "Error: Couldn't Open Input File (" << sf_error_number(e) << ")" << std::endl;
+    int e = infile.error();
+    if (e != SF_ERR_NO_ERROR) {
+        if(e == ERROR_IQFILE_WFM_SAMPLERATE_TOO_LOW) {
+            std::cout << "Sample Rate not high enough for WFM" << std::endl;
+        } else if (e == ERROR_IQFILE_TWO_CHANNELS_EXPECTED) {
+            std::cout << "2 channels expected for an I/Q input file !" << std::endl;
+        } else {
+            std::cout << "Error: Couldn't Open Input File (" << sf_error_number(e) << ")" << std::endl;
+        }
 		return false;
 	}
 

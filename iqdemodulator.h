@@ -27,6 +27,9 @@
 #include "biquad.h"
 #include "mpxdecode.h"
 
+#define ERROR_IQFILE_WFM_SAMPLERATE_TOO_LOW (0xff01)
+#define ERROR_IQFILE_TWO_CHANNELS_EXPECTED (0xff02)
+
 namespace  ReSampler {
 
 enum ModulationType
@@ -89,24 +92,22 @@ public:
 		}
 	}
 
-	bool error() {
+    int error() {
 
 		if(sndfileHandle == nullptr) {
-			return true;
+            return SF_ERR_UNRECOGNISED_FORMAT;
 		}
 
 		if(sndfileHandle->samplerate() == 0) {
-			return true;
+            return SF_ERR_UNRECOGNISED_FORMAT;
 		}
 
 		if(modulationType == WFM && sndfileHandle->samplerate() < 116000) {
-			std::cout << "Sample Rate not high enough for WFM" << std::endl;
-			return true;
+            return ERROR_IQFILE_WFM_SAMPLERATE_TOO_LOW;
 		}
 
 		if(sndfileHandle->channels() != 2) {
-			std::cout << "2 channels expected for an I/Q input file !" << std::endl;
-			return true;
+            return ERROR_IQFILE_TWO_CHANNELS_EXPECTED;
 		}
 
 		return sndfileHandle->error();

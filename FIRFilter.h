@@ -138,7 +138,7 @@ namespace ReSampler {
 			lastPut = other.lastPut;
 			freeBuffers();
 			allocateBuffers();
-			assertAlignment();
+            assertAlignment();
 			copyBuffers(other);
 			return *this;
 		}
@@ -161,7 +161,7 @@ namespace ReSampler {
 					other.kernelphases[i] = nullptr;
 				}
 				other.signal = nullptr;
-				assertAlignment();
+                assertAlignment();
 			}
 			return *this;
 		}
@@ -395,17 +395,17 @@ namespace ReSampler {
 			}
 		}
 
-		// assertAlignment() : asserts that all private data buffers are aligned on expected boundaries
-		void assertAlignment()
+        // assertAlignment() : asserts that all private data buffers are aligned on expected boundaries
+        void assertAlignment()
 		{
 	#ifdef COMPILING_ON_ANDROID
 			// TODO: support 32-byte alignment for android?
 	#warning  32-byte alignment is not yet supported when compiling for android
 	#else
 			const std::uintptr_t alignment = ALIGNMENT_SIZE;
-			assert(reinterpret_cast<std::uintptr_t>(signal) % alignment == 0);
+            assert(reinterpret_cast<std::uintptr_t>(signal) % alignment == 0);
 			for(int i = 0; i < numVecElements; i++) {
-				assert(reinterpret_cast<std::uintptr_t>(kernelphases[i]) % alignment == 0);
+                assert(reinterpret_cast<std::uintptr_t>(kernelphases[i]) % alignment == 0);
 			}
 	#endif
 		}
@@ -520,7 +520,7 @@ namespace ReSampler {
 
 		// use quads internally, regardless of FloatType
 		__float128 ft = transitionFreq / sampleRate; // normalised transition frequency
-		assert(ft < 0.5Q);
+        // assert(ft < 0.5Q);
 		int halfLength = Length / 2;
 		__float128 halfM = 0.5Q * (Length - 1);
 		__float128 M_TWOPIq = 2.0Q * M_PIq;
@@ -537,7 +537,7 @@ namespace ReSampler {
 
 		// use doubles internally, regardless of FloatType
 		double ft = transitionFreq / sampleRate; // normalised transition frequency
-		assert(ft < 0.5);
+        // assert(ft < 0.5);
 		int halfLength = Length / 2;
 		double halfM = 0.5 * (Length - 1);
 		double M_TWOPI = 2.0 * M_PI;
@@ -557,7 +557,7 @@ namespace ReSampler {
 
 	// This function converts a requested sidelobe height (in dB) to a value for the Beta parameter used in a Kaiser window:
 	template<typename FloatType> FloatType calcKaiserBeta(FloatType dB)
-	{
+    {
 		if(dB < 21.0)
 		{
 			return 0;
