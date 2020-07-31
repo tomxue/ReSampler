@@ -137,7 +137,6 @@ public:
 	int64_t read(FloatType* inbuffer, int64_t count) {
 
 		if(sndfileHandle == nullptr) {
-			std::cout << "nullptr" << std::endl;
 			return 0LL;
 		}
 

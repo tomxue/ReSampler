@@ -19,7 +19,7 @@
 #include "FIRFilter.h"
 #include "biquad.h"
 
-// #define MPXDECODER_TUNE_PILOT_AGC
+//  #define MPXDECODER_TUNE_PILOT_AGC
 
 // NCO : numerically - controlled oscillator
 class NCO
@@ -138,7 +138,6 @@ public:
 		// (#define MPXDECODER_TUNE_PILOT_AGC to debug & tweak)
 		decreaseRate = std::pow(10.0, /* dB per sec = */ -12.0 / sampleRate / 20.0);
 		increaseRate = std::pow(10.0, 64.0 / sampleRate / 20.0);
-        peakDecayRate = std::pow(10.0, /* dB per sec = */ -12.0 / sampleRate / 20.0);
 		setStereoWidth(0.5);
 
 	}
@@ -388,7 +387,6 @@ private:
 	double pilotGain{1.0};
 	double increaseRate;
 	double decreaseRate;
-    double peakDecayRate;
 	double stereoWidth;
 	double stereoGain;
 
