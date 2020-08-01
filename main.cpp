@@ -64,13 +64,6 @@ void androidCleanup() {
 
 int main(int argc, char * argv[])
 {
-  //   MpxDecoder::saveFilters1("/tmp/filt.wav");
-
-//    std::vector<double> hilbert = ReSampler::makeHilbert(11);
-//    for(const double c : hilbert) {
-//        std::cout << c << "\n";
-//    }
-
 
 #ifdef COMPILING_ON_ANDROID
 	std::cout.rdbuf(new androidbuf(ANDROID_LOG_INFO, "ReSampler"));

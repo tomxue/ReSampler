@@ -21,6 +21,13 @@
 
 //  #define MPXDECODER_TUNE_PILOT_AGC
 
+enum PilotPresence
+{
+    PilotPresenceUnknown,
+    PilotPresent,
+    PilotNotPresent
+};
+
 // NCO : numerically - controlled oscillator
 class NCO
 {
@@ -186,10 +193,10 @@ public:
 			pilotGain *= increaseRate;
 			if(pilotGain >= pilotMaxGain) {
 				pilotGain = pilotMaxGain;
+                pilotPresence = PilotNotPresent;
 			}
 
 #ifdef MPXDECODER_TUNE_PILOT_AGC
-            std::cout << "+";
 			plusCount++;
 #endif
 
@@ -199,7 +206,6 @@ public:
 
 
 #ifdef MPXDECODER_TUNE_PILOT_AGC
-            std::cout << "-";
 			minusCount++;
 #endif
 
@@ -208,23 +214,31 @@ public:
 #ifdef MPXDECODER_TUNE_PILOT_AGC
 			stableCount++;
 #endif
-
+            pilotPresence = PilotPresent;
 		}
 
 #ifdef MPXDECODER_TUNE_PILOT_AGC
 		peakPilotGain = std::max(pilotGain, peakPilotGain);
 #endif
-		double p = nco.get();
-		nco.sync(pilot);
-		FloatType doubledPilot = 2 * p * p - 1.0;
+        FloatType left;
+        FloatType right;
 
-		// do the spectrum shift
-		constexpr double scaling = 2.5 * 2; // 10.0
-		FloatType side = scaling * doubledPilot * sideRaw;
+        if(pilotPresence == PilotNotPresent) {
+            left = mono;
+            right = mono;
+        } else {
+            double p = nco.get();
+            nco.sync(pilot);
+            FloatType doubledPilot = 2 * p * p - 1.0;
 
-		// separate L, R stereo channels
-		FloatType left = stereoGain * (mono + stereoWidth * side);
-		FloatType right = stereoGain * (mono - stereoWidth * side);
+            // do the spectrum shift
+            constexpr double scaling = 2.5 * 2;
+            FloatType side = scaling * doubledPilot * sideRaw;
+
+            // separate L, R stereo channels
+            left = stereoGain * (mono + stereoWidth * side);
+            right = stereoGain * (mono - stereoWidth * side);
+        }
 
 		//       std::cout << pilot << ", " << pilotPeak << ", " << pilotGain << "\n";
 
@@ -232,11 +246,9 @@ public:
 			return {left, right};
 		}
 
-		// filter & return outputs
-		//		filters.at(3).put(left);
-		//		filters.at(4).put(right);
-		filters.at(3).put(mono);
-		filters.at(4).put(mono);
+        // filter & return output
+        filters.at(3).put(left);
+        filters.at(4).put(right);
 
 		return {filters.at(3).get(), filters.at(4).get()};
 	}
@@ -375,13 +387,14 @@ private:
 	static constexpr double pilotStableHigh = 1.05;
 
 	// if more gain than this is needed, then something is wrong with the Pilot Tone:
-    static constexpr double pilotMaxGain = 40.0;
+    static constexpr double pilotMaxGain = 12.0;
 
 	std::vector<double> delayLine;
 	int length;
 	int currentIndex;
 	int centerTap;
 
+    PilotPresence pilotPresence{PilotPresenceUnknown};
 	bool lowpassEnabled{true}; // do final stereo 15khz LPF or not ?
 	double pilotPeak{0.0};
 	double pilotGain{1.0};
