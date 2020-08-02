@@ -242,7 +242,7 @@ private:
 	template<typename FloatType>
 	FloatType demodulateFM(FloatType i, FloatType q)
 	{
-        static constexpr double threshold = -40.0;
+        static constexpr double threshold = -50.0;
         static const double c = std::pow(10.0, threshold / 20.0);
 
 		// this is actually quite simple, thanks to some clever calculus tricks.

@@ -215,6 +215,7 @@ public:
 			stableCount++;
 #endif
             pilotPresence = PilotPresent;
+          //  std::cout << "p";
 		}
 
 #ifdef MPXDECODER_TUNE_PILOT_AGC
@@ -387,7 +388,7 @@ private:
 	static constexpr double pilotStableHigh = 1.05;
 
 	// if more gain than this is needed, then something is wrong with the Pilot Tone:
-    static constexpr double pilotMaxGain = 12.0;
+    static constexpr double pilotMaxGain = 10.0;
 
 	std::vector<double> delayLine;
 	int length;
