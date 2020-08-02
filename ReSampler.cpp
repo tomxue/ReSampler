@@ -360,15 +360,29 @@ bool convert(ConversionInfo& ci)
 		}
 
 		if(ci.bDemodulateIQ) {
-            infileFormat |= ((ci.IQModulationType | ci.IQDeEmphasisType) << 8); // stuff the modulation type into the second-least-significant byte
-			auto k = std::find_if(std::begin(modulationTypeMap), std::end(modulationTypeMap), [&](const std::pair<std::string, ModulationType> pair){
-                return pair.second == ci.IQModulationType;
+            infileFormat |= ((ci.IQModulationType | ci.IQDeEmphasisType) << 8);
+            ModulationType modulationType = ci.IQModulationType;
+            if (modulationType == WFM_NO_LOWPASS) {
+                modulationType = WFM;
+            }
+            // stuff the modulation type into the second-least-significant byte
+            auto k = std::find_if(std::begin(modulationTypeMap), std::end(modulationTypeMap), [modulationType](const std::pair<std::string, ModulationType> pair){
+                return pair.second == modulationType;
 			});
 			std::string s;
 			if(k != std::end(modulationTypeMap)) {
 				s = k->first;
 			}
-			std::cout << "IQ demodulation " << s << std::endl;
+            std::cout << "IQ demodulation " << s << " ";
+            if(ci.IQDeEmphasisType != NoDeEmphasis) {
+                auto k1 = std::find_if(std::begin(deEmphasisTypeMap), std::end(deEmphasisTypeMap), [&](const std::pair<std::string, DeEmphasisType> pair){
+                    return pair.second == ci.IQDeEmphasisType;
+                });
+                if(k1 != std::end(deEmphasisTypeMap)) {
+                    std::cout << k1->first << "us de-emphasis";
+                }
+            }
+            std::cout << std::endl;
 		}
 	}
 
