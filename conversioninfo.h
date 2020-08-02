@@ -91,6 +91,7 @@ struct ConversionInfo
 	std::string rawInputBitFormat;
 	bool bDemodulateIQ;
 	ModulationType IQModulationType;
+    DeEmphasisType IQDeEmphasisType;
 
 	// functions
 	bool fromCmdLineArgs(int argc, char **argv); // populate ConversionInfo from args

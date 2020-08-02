@@ -45,6 +45,13 @@ enum ModulationType
 	CW
 };
 
+enum DeEmphasisType
+{
+    NoDeEmphasis = 0,
+    DeEmphasis50 = 0x10,
+    DeEmphasis75 = 0x20
+};
+
 static const std::map<std::string, ModulationType> modulationTypeMap
 {
 	{"NONE", ModulationType::ModulationTypeNone},
@@ -55,6 +62,13 @@ static const std::map<std::string, ModulationType> modulationTypeMap
 	{"WFM", ModulationType::WFM},
 	{"DSB", ModulationType::DSB},
 	{"CW", ModulationType::CW}
+};
+
+static const std::map<std::string, DeEmphasisType> deEmphasisTypeMap
+{
+    {"NONE", NoDeEmphasis},
+    {"50", DeEmphasis50},
+    {"75", DeEmphasis75}
 };
 
 class IQFile
@@ -75,7 +89,10 @@ public:
 		// If they ever add more formats in the future which use the upper byte,
 		// then this strategy may need reevaluation ...)
 
-		modulationType = static_cast<ModulationType>((infileFormat & 0x0000FF00) >>  8);
+        int format = (infileFormat & 0x0000FF00) >>  8;
+        modulationType = static_cast<ModulationType>(format & 0x0f);
+        deEmphasisType = static_cast<DeEmphasisType>(format & 0x30);
+
 		bool enableLowpass = true;
 		if(modulationType == WFM_NO_LOWPASS) {
 			enableLowpass = false;
@@ -85,7 +102,18 @@ public:
 		if(modulationType == WFM) {
 			if(samplerate() != 0) {
 				int sampleRate = sndfileHandle->samplerate();
-				setDeEmphasisTc(2, sampleRate, 50);
+
+                switch (deEmphasisType) {
+                case NoDeEmphasis:
+                    break;
+                case DeEmphasis50:
+                    setDeEmphasisTc(2, sampleRate, 50);
+                    break;
+                case DeEmphasis75:
+                    setDeEmphasisTc(2, sampleRate, 75);
+                    break;
+                }
+
 				mpxDecoder = std::unique_ptr<MpxDecoder>(new MpxDecoder(sampleRate));
 				mpxDecoder->setLowpassEnabled(enableLowpass);
 			}
@@ -164,12 +192,21 @@ public:
 			break;
 		case WFM:
 			// Wideband FM:
-			for(int64_t i = 0; i < samplesRead; i += 2) {
-				// demodulate, decode, deemphasize
-                std::pair<FloatType, FloatType> decoded = mpxDecoder->decode(demodulateFM(wavBuffer.at(i), wavBuffer.at(i + 1)));
-				inbuffer[j++] = deEmphasisFilters[0].filter(decoded.first);
-				inbuffer[j++] = deEmphasisFilters[1].filter(decoded.second);
-			}
+            if(deEmphasisType == NoDeEmphasis) {
+                for(int64_t i = 0; i < samplesRead; i += 2) {
+                    // demodulate, decode
+                    std::pair<FloatType, FloatType> decoded = mpxDecoder->decode(demodulateFM(wavBuffer.at(i), wavBuffer.at(i + 1)));
+                    inbuffer[j++] = decoded.first;
+                    inbuffer[j++] = decoded.second;
+                }
+            } else {
+                for(int64_t i = 0; i < samplesRead; i += 2) {
+                    // demodulate, decode, deemphasize
+                    std::pair<FloatType, FloatType> decoded = mpxDecoder->decode(demodulateFM(wavBuffer.at(i), wavBuffer.at(i + 1)));
+                    inbuffer[j++] = deEmphasisFilters[0].filter(decoded.first);
+                    inbuffer[j++] = deEmphasisFilters[1].filter(decoded.second);
+                }
+            }
 			break;
 		default:
 			// Narrowband FM
@@ -258,6 +295,7 @@ private:
 
 	// properties
 	ModulationType modulationType{ModulationType::NFM};
+    DeEmphasisType deEmphasisType{DeEmphasis50};
 
 	// registers used for demodulating FM
 	double i0{0.0};

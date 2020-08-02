@@ -253,6 +253,24 @@ bool ConversionInfo::fromCmdLineArgs(int argc, char** argv) {
         bUseDoublePrecision = true; // always use double precision for demodulation
 	}
 
+    // set default deEmphasis type for given Modulation Type
+    if(IQModulationType == ModulationType::WFM) {
+        IQDeEmphasisType = DeEmphasis50;
+    } else {
+        IQDeEmphasisType = NoDeEmphasis;
+    }
+
+    if(getCmdlineParam(argv, argv + argc, "--deemphasis")) {
+        std::string s;
+        getCmdlineParam(argv, argv + argc, "--deemphasis", s);
+        if(!s.empty()) {
+            auto it = deEmphasisTypeMap.find(s);
+            if(it != deEmphasisTypeMap.end()) {
+                IQDeEmphasisType = it->second;
+            }
+        }
+    }
+
 #if defined (_WIN32) || defined (_WIN64)
 	getCmdlineParam(argv, argv + argc, "--tempDir", tmpDir);
 #endif

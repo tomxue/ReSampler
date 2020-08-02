@@ -360,9 +360,9 @@ bool convert(ConversionInfo& ci)
 		}
 
 		if(ci.bDemodulateIQ) {
-			infileFormat |= (ci.IQModulationType << 8); // stuff the modulation type into the second-least-significant byte
+            infileFormat |= ((ci.IQModulationType | ci.IQDeEmphasisType) << 8); // stuff the modulation type into the second-least-significant byte
 			auto k = std::find_if(std::begin(modulationTypeMap), std::end(modulationTypeMap), [&](const std::pair<std::string, ModulationType> pair){
-				return pair.second == ci.IQModulationType;
+                return pair.second == ci.IQModulationType;
 			});
 			std::string s;
 			if(k != std::end(modulationTypeMap)) {
