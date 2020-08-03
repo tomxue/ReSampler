@@ -242,7 +242,7 @@ private:
 	template<typename FloatType>
 	FloatType demodulateFM(FloatType i, FloatType q)
 	{
-        static constexpr double threshold = -50.0;
+        static constexpr double threshold = -45.0;
         static const double c = std::pow(10.0, threshold / 20.0);
 
 		// this is actually quite simple, thanks to some clever calculus tricks.
@@ -255,9 +255,41 @@ private:
 		q1 = q0;
 		q0 = q;
 
-        double gain = 2.0 / (std::max(c, i1 * i1 + q1 * q1));
+   //     double gain = 2.0 / (std::max(c, i1 * i1 + q1 * q1));
+        double gain = 2.0 / (c + i1 * i1 + q1 * q1);
+   //     std::cout << gain * (i1 * i1 + q1 * q1) << std::endl;
+
+    //    double gain = 1.0;
+
+   //     double avg = ((i0 * i0 + q0 * q0) + (i1 * i1 + q1 * q1) + (i2 * i2 + q2 * q2))/3.0;
+   //     double gain = 2.0 / (c + avg);
+
 		return gain * (((q0 - q2) * i1) - ((i0 - i2) * q1));
 	}
+
+    template<typename FloatType>
+        FloatType demodulateFM3(FloatType i, FloatType q)
+        {
+            static constexpr double threshold = -40.0; // dB
+            static const double c = std::pow(10.0, threshold / 20.0);
+            static const double gainTrim = 2.75494098472591;
+
+            // determine magnitude and gain
+            double iSquared = i * i;
+            double qSquared = q * q;
+            double a = std::sqrt(iSquared + qSquared);
+            double g = 2.0 / std::max(a, c);
+
+             // place input into history
+            z0.real(i * g);
+            z0.imag(q * g);
+
+            auto dz = z0 * std::conj(z1);
+            z1 = z0;
+            return gainTrim * std::arg(dz);
+        }
+
+
 
     template<typename FloatType>
     FloatType demodulateAM(FloatType i, FloatType q)
@@ -297,13 +329,18 @@ private:
 	ModulationType modulationType{ModulationType::NFM};
     DeEmphasisType deEmphasisType{DeEmphasis50};
 
-	// registers used for demodulating FM
+    // registers used for demodulating FM (atan2-less)
 	double i0{0.0};
 	double i1{0.0};
 	double i2{0.0};
 	double q0{0.0};
 	double q1{0.0};
 	double q2{0.0};
+
+    // registers for demodulating FM (atan2 version)
+    std::complex<double> z0{0.0};
+    std::complex<double> z1{0.0};
+
 };
 
 } // namespace  ReSampler
