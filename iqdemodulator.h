@@ -27,6 +27,8 @@
 #include "biquad.h"
 #include "mpxdecode.h"
 
+//#define COLLECT_IQ_STATS
+
 #define ERROR_IQFILE_WFM_SAMPLERATE_TOO_LOW (0xff01)
 #define ERROR_IQFILE_TWO_CHANNELS_EXPECTED (0xff02)
 
@@ -340,6 +342,14 @@ private:
     // registers for demodulating FM (atan2 version)
     std::complex<double> z0{0.0};
     std::complex<double> z1{0.0};
+
+#ifdef COLLECT_IQ_STATS
+    int64_t samplesRead{0ll};
+    double peakI{0.0};
+    double peakQ{0.0};
+    double sumI{0.0};
+    double sumQ{0.0};
+#endif
 
 };
 
