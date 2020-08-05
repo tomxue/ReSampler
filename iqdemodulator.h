@@ -122,6 +122,16 @@ public:
 		}
 	}
 
+#ifdef COLLECT_IQ_STATS
+    ~IQFile()
+    {
+        double iAvg = sumI / framesRead;
+        double qAvg = sumQ / framesRead;
+        std::cout << "I: peak=" << peakI << ", avg=" << iAvg << std::endl;
+        std::cout << "Q: peak=" << peakQ << ", avg=" << qAvg << std::endl;
+    }
+#endif
+
     int error() {
 
 		if(sndfileHandle == nullptr) {
@@ -204,7 +214,18 @@ public:
             } else {
                 for(int64_t i = 0; i < samplesRead; i += 2) {
                     // demodulate, decode, deemphasize
-                    std::pair<FloatType, FloatType> decoded = mpxDecoder->decode(demodulateFM(wavBuffer.at(i), wavBuffer.at(i + 1)));
+                    double iVal = wavBuffer.at(i);
+                    double qVal = wavBuffer.at(i + 1);
+
+#ifdef COLLECT_IQ_STATS
+                    peakI = std::max(peakI, std::abs(iVal));
+                    peakQ = std::max(peakQ, std::abs(qVal));
+                    sumI += iVal;
+                    sumQ += qVal;
+                    framesRead++;
+#endif
+
+                    std::pair<FloatType, FloatType> decoded = mpxDecoder->decode(demodulateFM(iVal, qVal));
                     inbuffer[j++] = deEmphasisFilters[0].filter(decoded.first);
                     inbuffer[j++] = deEmphasisFilters[1].filter(decoded.second);
                 }
@@ -344,7 +365,7 @@ private:
     std::complex<double> z1{0.0};
 
 #ifdef COLLECT_IQ_STATS
-    int64_t samplesRead{0ll};
+    int64_t framesRead{0ll};
     double peakI{0.0};
     double peakQ{0.0};
     double sumI{0.0};
