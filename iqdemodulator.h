@@ -27,7 +27,7 @@
 #include "biquad.h"
 #include "mpxdecode.h"
 
-//#define COLLECT_IQ_STATS
+#define COLLECT_IQ_STATS
 
 #define ERROR_IQFILE_WFM_SAMPLERATE_TOO_LOW (0xff01)
 #define ERROR_IQFILE_TWO_CHANNELS_EXPECTED (0xff02)
@@ -127,8 +127,10 @@ public:
     {
         double iAvg = sumI / framesRead;
         double qAvg = sumQ / framesRead;
-        std::cout << "I: peak=" << peakI << ", avg=" << iAvg << std::endl;
-        std::cout << "Q: peak=" << peakQ << ", avg=" << qAvg << std::endl;
+        double iRMS = std::sqrt(sumISquared / framesRead);
+        double qRMS = std::sqrt(sumQSquared / framesRead);
+        std::cout << "I: peak=" << peakI << ", avg=" << iAvg << ", RMS=" << iRMS << std::endl;
+        std::cout << "Q: peak=" << peakQ << ", avg=" << qAvg << ", RMS=" << qRMS << std::endl;
     }
 #endif
 
@@ -222,6 +224,8 @@ public:
                     peakQ = std::max(peakQ, std::abs(qVal));
                     sumI += iVal;
                     sumQ += qVal;
+                    sumISquared += (iVal * iVal);
+                    sumQSquared += (qVal * qVal);
                     framesRead++;
 #endif
 
@@ -370,6 +374,8 @@ private:
     double peakQ{0.0};
     double sumI{0.0};
     double sumQ{0.0};
+    double sumISquared{0.0};
+    double sumQSquared{0.0};
 #endif
 
 };
