@@ -27,7 +27,7 @@
 #include "biquad.h"
 #include "mpxdecode.h"
 
-#define COLLECT_IQ_STATS
+//#define COLLECT_IQ_STATS
 
 #define ERROR_IQFILE_WFM_SAMPLERATE_TOO_LOW (0xff01)
 #define ERROR_IQFILE_TWO_CHANNELS_EXPECTED (0xff02)
