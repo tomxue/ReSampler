@@ -26,6 +26,7 @@
 
 #include "biquad.h"
 #include "mpxdecode.h"
+#include "FIRFilter.h"
 
 //#define COLLECT_IQ_STATS
 
@@ -119,6 +120,25 @@ public:
 				mpxDecoder = std::unique_ptr<MpxDecoder>(new MpxDecoder(sampleRate));
 				mpxDecoder->setLowpassEnabled(enableLowpass);
 			}
+
+            // create LPF with 75khz - 95khz transition band
+
+            // determine cutoff frequency and steepness
+            double nyquist = samplerate() / 2.0;
+            double steepness = 0.090909091 / (20000.0 / nyquist);
+
+            // determine filtersize
+            int filterSize = static_cast<int>(
+                        std::min<int>(FILTERSIZE_BASE * steepness, FILTERSIZE_LIMIT)
+                        | 1 // ensure that filter length is always odd
+                        );
+
+            std::vector<double> filterTaps1(filterSize, 0.0);
+            double* pFilterTaps1 = &filterTaps1[0];
+            ReSampler::makeLPF<double>(pFilterTaps1, filterSize, 75000, samplerate());
+            int sidelobeAtten = 160;
+            ReSampler::applyKaiserWindow<double>(pFilterTaps1, filterSize, ReSampler::calcKaiserBeta(sidelobeAtten));
+            preFilters.resize(2, {pFilterTaps1, filterSize});
 		}
 	}
 
@@ -216,8 +236,12 @@ public:
             } else {
                 for(int64_t i = 0; i < samplesRead; i += 2) {
                     // demodulate, decode, deemphasize
-                    double iVal = wavBuffer.at(i);
-                    double qVal = wavBuffer.at(i + 1);
+                    preFilters[0].put(wavBuffer.at(i));
+                    preFilters[1].put(wavBuffer.at(i+1));
+                    double iVal = preFilters[0].get();
+                    double qVal = preFilters[1].get();
+                //    double iVal = wavBuffer.at(i);
+                //    double qVal = wavBuffer.at(i + 1);
 
 #ifdef COLLECT_IQ_STATS
                     peakI = std::max(peakI, std::abs(iVal));
@@ -351,6 +375,7 @@ private:
 	std::unique_ptr<MpxDecoder> mpxDecoder;
 	std::vector<double> wavBuffer;
 	std::vector<Biquad<double>> deEmphasisFilters;
+    std::vector<FIRFilter<double>> preFilters;
 
 	// properties
 	ModulationType modulationType{ModulationType::NFM};
