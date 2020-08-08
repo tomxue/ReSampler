@@ -26,7 +26,6 @@
 
 #include "biquad.h"
 #include "mpxdecode.h"
-#include "FIRFilter.h"
 
 //#define COLLECT_IQ_STATS
 
@@ -50,9 +49,9 @@ enum ModulationType
 
 enum DeEmphasisType
 {
-    NoDeEmphasis = 0,
-    DeEmphasis50 = 0x10,
-    DeEmphasis75 = 0x20
+	NoDeEmphasis = 0,
+	DeEmphasis50 = 0x10,
+	DeEmphasis75 = 0x20
 };
 
 static const std::map<std::string, ModulationType> modulationTypeMap
@@ -69,9 +68,9 @@ static const std::map<std::string, ModulationType> modulationTypeMap
 
 static const std::map<std::string, DeEmphasisType> deEmphasisTypeMap
 {
-    {"NONE", NoDeEmphasis},
-    {"50", DeEmphasis50},
-    {"75", DeEmphasis75}
+	{"NONE", NoDeEmphasis},
+	{"50", DeEmphasis50},
+	{"75", DeEmphasis75}
 };
 
 class IQFile
@@ -92,9 +91,9 @@ public:
 		// If they ever add more formats in the future which use the upper byte,
 		// then this strategy may need reevaluation ...)
 
-        int format = (infileFormat & 0x0000FF00) >>  8;
-        modulationType = static_cast<ModulationType>(format & 0x0f);
-        deEmphasisType = static_cast<DeEmphasisType>(format & 0x30);
+		int format = (infileFormat & 0x0000FF00) >>  8;
+		modulationType = static_cast<ModulationType>(format & 0x0f);
+		deEmphasisType = static_cast<DeEmphasisType>(format & 0x30);
 
 		bool enableLowpass = true;
 		if(modulationType == WFM_NO_LOWPASS) {
@@ -106,70 +105,52 @@ public:
 			if(samplerate() != 0) {
 				int sampleRate = sndfileHandle->samplerate();
 
-                switch (deEmphasisType) {
-                case NoDeEmphasis:
-                    break;
-                case DeEmphasis50:
-                    setDeEmphasisTc(2, sampleRate, 50);
-                    break;
-                case DeEmphasis75:
-                    setDeEmphasisTc(2, sampleRate, 75);
-                    break;
-                }
+				switch (deEmphasisType) {
+				case NoDeEmphasis:
+					break;
+				case DeEmphasis50:
+					setDeEmphasisTc(2, sampleRate, 50);
+					break;
+				case DeEmphasis75:
+					setDeEmphasisTc(2, sampleRate, 75);
+					break;
+				}
 
 				mpxDecoder = std::unique_ptr<MpxDecoder>(new MpxDecoder(sampleRate));
 				mpxDecoder->setLowpassEnabled(enableLowpass);
 			}
 
-            // create LPF with 75khz - 95khz transition band
-
-            // determine cutoff frequency and steepness
-            double nyquist = samplerate() / 2.0;
-            double steepness = 0.090909091 / (20000.0 / nyquist);
-
-            // determine filtersize
-            int filterSize = static_cast<int>(
-                        std::min<int>(FILTERSIZE_BASE * steepness, FILTERSIZE_LIMIT)
-                        | 1 // ensure that filter length is always odd
-                        );
-
-            std::vector<double> filterTaps1(filterSize, 0.0);
-            double* pFilterTaps1 = &filterTaps1[0];
-            ReSampler::makeLPF<double>(pFilterTaps1, filterSize, 75000, samplerate());
-            int sidelobeAtten = 160;
-            ReSampler::applyKaiserWindow<double>(pFilterTaps1, filterSize, ReSampler::calcKaiserBeta(sidelobeAtten));
-            preFilters.resize(2, {pFilterTaps1, filterSize});
 		}
 	}
 
 #ifdef COLLECT_IQ_STATS
-    ~IQFile()
-    {
-        double iAvg = sumI / framesRead;
-        double qAvg = sumQ / framesRead;
-        double iRMS = std::sqrt(sumISquared / framesRead);
-        double qRMS = std::sqrt(sumQSquared / framesRead);
-        std::cout << "I: peak=" << peakI << ", avg=" << iAvg << ", RMS=" << iRMS << std::endl;
-        std::cout << "Q: peak=" << peakQ << ", avg=" << qAvg << ", RMS=" << qRMS << std::endl;
-    }
+	~IQFile()
+	{
+		double iAvg = sumI / framesRead;
+		double qAvg = sumQ / framesRead;
+		double iRMS = std::sqrt(sumISquared / framesRead);
+		double qRMS = std::sqrt(sumQSquared / framesRead);
+		std::cout << "I: peak=" << peakI << ", avg=" << iAvg << ", RMS=" << iRMS << std::endl;
+		std::cout << "Q: peak=" << peakQ << ", avg=" << qAvg << ", RMS=" << qRMS << std::endl;
+	}
 #endif
 
-    int error() {
+	int error() {
 
 		if(sndfileHandle == nullptr) {
-            return SF_ERR_UNRECOGNISED_FORMAT;
+			return SF_ERR_UNRECOGNISED_FORMAT;
 		}
 
 		if(sndfileHandle->samplerate() == 0) {
-            return SF_ERR_UNRECOGNISED_FORMAT;
+			return SF_ERR_UNRECOGNISED_FORMAT;
 		}
 
 		if(modulationType == WFM && sndfileHandle->samplerate() < 116000) {
-            return ERROR_IQFILE_WFM_SAMPLERATE_TOO_LOW;
+			return ERROR_IQFILE_WFM_SAMPLERATE_TOO_LOW;
 		}
 
 		if(sndfileHandle->channels() != 2) {
-            return ERROR_IQFILE_TWO_CHANNELS_EXPECTED;
+			return ERROR_IQFILE_TWO_CHANNELS_EXPECTED;
 		}
 
 		return sndfileHandle->error();
@@ -226,43 +207,39 @@ public:
 			break;
 		case WFM:
 			// Wideband FM:
-            if(deEmphasisType == NoDeEmphasis) {
-                for(int64_t i = 0; i < samplesRead; i += 2) {
-                    // demodulate, decode
-                    std::pair<FloatType, FloatType> decoded = mpxDecoder->decode(demodulateFM(wavBuffer.at(i), wavBuffer.at(i + 1)));
-                    inbuffer[j++] = decoded.first;
-                    inbuffer[j++] = decoded.second;
-                }
-            } else {
-                for(int64_t i = 0; i < samplesRead; i += 2) {
-                    // demodulate, decode, deemphasize
-                    preFilters[0].put(wavBuffer.at(i));
-                    preFilters[1].put(wavBuffer.at(i+1));
-                    double iVal = preFilters[0].get();
-                    double qVal = preFilters[1].get();
-                //    double iVal = wavBuffer.at(i);
-                //    double qVal = wavBuffer.at(i + 1);
+			if(deEmphasisType == NoDeEmphasis) {
+				for(int64_t i = 0; i < samplesRead; i += 2) {
+					// demodulate, decode
+					std::pair<FloatType, FloatType> decoded = mpxDecoder->decode(demodulateFM(wavBuffer.at(i), wavBuffer.at(i + 1)));
+					inbuffer[j++] = decoded.first;
+					inbuffer[j++] = decoded.second;
+				}
+			} else {
+				for(int64_t i = 0; i < samplesRead; i += 2) {
+					// demodulate, decode, deemphasize
+					double iVal = wavBuffer.at(i);
+					double qVal = wavBuffer.at(i + 1);
 
 #ifdef COLLECT_IQ_STATS
-                    peakI = std::max(peakI, std::abs(iVal));
-                    peakQ = std::max(peakQ, std::abs(qVal));
-                    sumI += iVal;
-                    sumQ += qVal;
-                    sumISquared += (iVal * iVal);
-                    sumQSquared += (qVal * qVal);
-                    framesRead++;
+					peakI = std::max(peakI, std::abs(iVal));
+					peakQ = std::max(peakQ, std::abs(qVal));
+					sumI += iVal;
+					sumQ += qVal;
+					sumISquared += (iVal * iVal);
+					sumQSquared += (qVal * qVal);
+					framesRead++;
 #endif
 
-                    std::pair<FloatType, FloatType> decoded = mpxDecoder->decode(demodulateFM(iVal, qVal));
-                    inbuffer[j++] = deEmphasisFilters[0].filter(decoded.first);
-                    inbuffer[j++] = deEmphasisFilters[1].filter(decoded.second);
-                }
-            }
+					std::pair<FloatType, FloatType> decoded = mpxDecoder->decode(demodulateFM(iVal, qVal));
+					inbuffer[j++] = deEmphasisFilters[0].filter(decoded.first);
+					inbuffer[j++] = deEmphasisFilters[1].filter(decoded.second);
+				}
+			}
 			break;
 		default:
 			// Narrowband FM
 			for(int64_t i = 0; i < samplesRead; i += 2) {
-                inbuffer[j++] = demodulateFM(wavBuffer.at(i), wavBuffer.at(i + 1));
+				inbuffer[j++] = demodulateFM(wavBuffer.at(i), wavBuffer.at(i + 1));
 			}
 		}
 
@@ -293,8 +270,8 @@ private:
 	template<typename FloatType>
 	FloatType demodulateFM(FloatType i, FloatType q)
 	{
-        static constexpr double threshold = -45.0;
-        static const double c = std::pow(10.0, threshold / 20.0);
+		static constexpr double threshold = -45.0;
+		static const double c = std::pow(10.0, threshold / 20.0);
 
 		// this is actually quite simple, thanks to some clever calculus tricks.
 		// see https://www.embedded.com/dsp-tricks-frequency-demodulation-algorithms/
@@ -306,67 +283,57 @@ private:
 		q1 = q0;
 		q0 = q;
 
-   //     double gain = 2.0 / (std::max(c, i1 * i1 + q1 * q1));
-        double gain = 2.0 / (c + i1 * i1 + q1 * q1);
-   //     std::cout << gain * (i1 * i1 + q1 * q1) << std::endl;
-
-    //    double gain = 1.0;
-
-   //     double avg = ((i0 * i0 + q0 * q0) + (i1 * i1 + q1 * q1) + (i2 * i2 + q2 * q2))/3.0;
-   //     double gain = 2.0 / (c + avg);
-
+		double gain = 2.0 / (c + i1 * i1 + q1 * q1);
 		return gain * (((q0 - q2) * i1) - ((i0 - i2) * q1));
 	}
 
-    template<typename FloatType>
-        FloatType demodulateFM3(FloatType i, FloatType q)
-        {
-            static constexpr double threshold = -40.0; // dB
-            static const double c = std::pow(10.0, threshold / 20.0);
-            static const double gainTrim = 2.75494098472591;
+	template<typename FloatType>
+	FloatType demodulateFM3(FloatType i, FloatType q)
+	{
+		static constexpr double threshold = -40.0; // dB
+		static const double c = std::pow(10.0, threshold / 20.0);
+		static const double gainTrim = 2.75494098472591;
 
-            // determine magnitude and gain
-            double iSquared = i * i;
-            double qSquared = q * q;
-            double a = std::sqrt(iSquared + qSquared);
-            double g = 2.0 / std::max(a, c);
+		// determine magnitude and gain
+		double iSquared = i * i;
+		double qSquared = q * q;
+		double a = std::sqrt(iSquared + qSquared);
+		double g = 2.0 / std::max(a, c);
 
-             // place input into history
-            z0.real(i * g);
-            z0.imag(q * g);
+		// place input into history
+		z0.real(i * g);
+		z0.imag(q * g);
 
-            auto dz = z0 * std::conj(z1);
-            z1 = z0;
-            return gainTrim * std::arg(dz);
-        }
+		auto dz = z0 * std::conj(z1);
+		z1 = z0;
+		return gainTrim * std::arg(dz);
+	}
 
+	template<typename FloatType>
+	FloatType demodulateAM(FloatType i, FloatType q)
+	{
+		static constexpr FloatType scale = 0.7071; // << 1/sqrt(2)
+		return scale * std::sqrt(i * i + q * q);
+	}
 
+	//	double tau = 1/(2*pi*f); // Hz to time constant
+	//	double f = 2122.1; // 75 us
+	//  double f = 3183.1; // 50 us
 
-    template<typename FloatType>
-    FloatType demodulateAM(FloatType i, FloatType q)
-    {
-        static constexpr FloatType scale = 0.7071; // << 1/sqrt(2)
-        return scale * std::sqrt(i * i + q * q);
-    }
+	void setDeEmphasisHz(int channels, int sampleRate, double freqHz)
+	{
+		setDeEmphasisTc(channels, sampleRate, (1.0 / (2.0 * M_PI * freqHz)));
+	}
 
-    //	double tau = 1/(2*pi*f); // Hz to time constant
-    //	double f = 2122.1; // 75 us
-    //  double f = 3183.1; // 50 us
-
-    void setDeEmphasisHz(int channels, int sampleRate, double freqHz)
-    {
-        setDeEmphasisTc(channels, sampleRate, (1.0 / (2.0 * M_PI * freqHz)));
-    }
-
-    void setDeEmphasisTc(int channels, int sampleRate, double tc = 50.0 /* microseconds */)
-    {
-        deEmphasisFilters.resize(channels);
-        double p1 = -exp(-1.0 / (sampleRate * tc * 0.000001));
-        double z1 = (1 + p1) / 5.0;
-        for(auto& biquad : deEmphasisFilters) {
-            biquad.setCoeffs(z1, z1, 0.0, p1, 0.0);
-            biquad.reset();
-        }
+	void setDeEmphasisTc(int channels, int sampleRate, double tc = 50.0 /* microseconds */)
+	{
+		deEmphasisFilters.resize(channels);
+		double p1 = -exp(-1.0 / (sampleRate * tc * 0.000001));
+		double z1 = (1 + p1) / 5.0;
+		for(auto& biquad : deEmphasisFilters) {
+			biquad.setCoeffs(z1, z1, 0.0, p1, 0.0);
+			biquad.reset();
+		}
 	}
 
 private:
@@ -375,13 +342,12 @@ private:
 	std::unique_ptr<MpxDecoder> mpxDecoder;
 	std::vector<double> wavBuffer;
 	std::vector<Biquad<double>> deEmphasisFilters;
-    std::vector<FIRFilter<double>> preFilters;
 
 	// properties
 	ModulationType modulationType{ModulationType::NFM};
-    DeEmphasisType deEmphasisType{DeEmphasis50};
+	DeEmphasisType deEmphasisType{DeEmphasis50};
 
-    // registers used for demodulating FM (atan2-less)
+	// registers used for demodulating FM (atan2-less)
 	double i0{0.0};
 	double i1{0.0};
 	double i2{0.0};
@@ -389,18 +355,18 @@ private:
 	double q1{0.0};
 	double q2{0.0};
 
-    // registers for demodulating FM (atan2 version)
-    std::complex<double> z0{0.0};
-    std::complex<double> z1{0.0};
+	// registers for demodulating FM (atan2 version)
+	std::complex<double> z0{0.0};
+	std::complex<double> z1{0.0};
 
 #ifdef COLLECT_IQ_STATS
-    int64_t framesRead{0ll};
-    double peakI{0.0};
-    double peakQ{0.0};
-    double sumI{0.0};
-    double sumQ{0.0};
-    double sumISquared{0.0};
-    double sumQSquared{0.0};
+	int64_t framesRead{0ll};
+	double peakI{0.0};
+	double peakQ{0.0};
+	double sumI{0.0};
+	double sumQ{0.0};
+	double sumISquared{0.0};
+	double sumQSquared{0.0};
 #endif
 
 };
