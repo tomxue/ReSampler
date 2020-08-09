@@ -93,6 +93,7 @@ public:
 		sndfile.writef(impulseResponse.data(), impulseResponse.size());
 	}
 
+
 	double getPhase() const
 	{
 		return phase;
@@ -346,6 +347,18 @@ public:
 		}
 		sndfile.writef(interleaved.data(), filt1.size());
 	}
+
+    static void saveFilters3(const std::string& filename)
+    {
+        SndfileHandle sndfile(filename, SFM_WRITE, SF_FORMAT_WAV | SF_FORMAT_FLOAT, 1, 192000);
+        std::vector<double> impulseResponse(10000, 0.0);
+
+        impulseResponse[5000] = -1.0;
+        impulseResponse[5002] = 1.0;
+
+        sndfile.writef(impulseResponse.data(), impulseResponse.size());
+    }
+
 
 	static double getLpfT()
 	{
