@@ -65,7 +65,7 @@ void androidCleanup() {
 int main(int argc, char * argv[])
 {
 
- //   MpxDecoder::saveFilters3("/tmp/diff.wav");
+//	MpxDecoder::saveFilters3("e:\\t\\diff9.wav");
 
 #ifdef COMPILING_ON_ANDROID
 	std::cout.rdbuf(new androidbuf(ANDROID_LOG_INFO, "ReSampler"));
