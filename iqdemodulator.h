@@ -96,6 +96,7 @@ public:
 		deEmphasisType = static_cast<DeEmphasisType>(format & 0x30);
 
         differentiatorLength = differentiatorCoeffs.size();
+        differentiatorDelay = differentiatorLength / 2;
         historyI.resize(differentiatorLength, 0.0);
         historyQ.resize(differentiatorLength, 0.0);
         differentiatorIndex = differentiatorLength - 1;
@@ -329,10 +330,9 @@ private:
         historyQ[differentiatorIndex] = q;
 
         // get position of delay tap
-        int delayOffset = differentiatorLength / 2;
         FloatType delayedI;
         FloatType delayedQ;
-        int delayIndex = differentiatorIndex + delayOffset;
+        int delayIndex = differentiatorIndex + differentiatorDelay;
         if(delayIndex >= differentiatorLength) {
             delayIndex -= differentiatorLength;
         }
@@ -360,13 +360,9 @@ private:
             differentiatorIndex--;
         }
 
-    //    double gain = 2.0 / (c + i1 * i1 + q1 * q1);
-    //	return gain * (((q0 - q2) * i1) - ((i0 - i2) * q1));
-
         double gain = 2.0 / (c + delayedI * delayedI + delayedQ * delayedQ);
         return gain * (dQ * delayedI - dI  * delayedQ);
     }
-
 
 	template<typename FloatType>
 	FloatType demodulateAM(FloatType i, FloatType q)
@@ -443,6 +439,7 @@ private:
     };
 
     int differentiatorLength;
+    int differentiatorDelay;
     int differentiatorIndex;
     std::vector<double> historyI;
     std::vector<double> historyQ;
