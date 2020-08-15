@@ -238,7 +238,7 @@ public:
 					framesRead++;
 #endif
 
-                    std::pair<FloatType, FloatType> decoded = mpxDecoder->decode(demodulateFM(iVal, qVal));
+					std::pair<FloatType, FloatType> decoded = mpxDecoder->decode(demodulateFM(iVal, qVal));
 					inbuffer[j++] = deEmphasisFilters[0].filter(decoded.first);
 					inbuffer[j++] = deEmphasisFilters[1].filter(decoded.second);
 				}
@@ -414,29 +414,73 @@ private:
 	std::complex<double> z0{0.0};
 	std::complex<double> z1{0.0};
 
+
+//	const std::vector<double> differentiatorCoeffs
+//	{
+//		1.0,
+//		0.0,
+//		-1.0
+//	};
+
+//	const std::vector<double> differentiatorCoeffs
+//	{
+//		0.0209,
+//		0.0,
+//		-0.1128,
+//		0.0,
+//		1.2411,
+//		0.0,
+//		-1.2411,
+//		0.0,
+//		0.1128,
+//		0.0,
+//		-0.0209
+//	};
+
+	const std::vector<double> differentiatorCoeffs
+	{
+		-0.0081,
+		0.0,
+		0.0341,
+		0.0,
+		-0.1266,
+		0.0,
+		1.2620,
+		0.0,
+		-1.2620,
+		0.0,
+		0.1266,
+		0.0,
+		-0.0341,
+		0.0,
+		0.0081
+	};
+
     //
-    const std::vector<double> differentiatorCoeffs
-    {
-        0.0035,
-        0.0,
-        -0.0140,
-        0.0,
-        0.0401,
-        0.0,
-        -0.1321,
-        0.0,
-        1.2639,
-        0.0,
-        -1.2639,
-        0.0,
-        0.1321,
-        0.0,
-        -0.0401,
-        0.0,
-        0.0140,
-        0.0,
-        -0.0035
-    };
+//    const std::vector<double> differentiatorCoeffs
+//    {
+//        0.0035,
+//        0.0,
+//        -0.0140,
+//        0.0,
+//        0.0401,
+//        0.0,
+//        -0.1321,
+//        0.0,
+//        1.2639,
+//        0.0,
+//        -1.2639,
+//        0.0,
+//        0.1321,
+//        0.0,
+//        -0.0401,
+//        0.0,
+//        0.0140,
+//        0.0,
+//        -0.0035
+//    };
+
+
 
     int differentiatorLength;
     int differentiatorDelay;
