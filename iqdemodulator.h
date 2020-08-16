@@ -218,7 +218,7 @@ public:
 			if(deEmphasisType == NoDeEmphasis) {
 				for(int64_t i = 0; i < samplesRead; i += 2) {
 					// demodulate, decode
-					std::pair<FloatType, FloatType> decoded = mpxDecoder->decode(demodulateFM(wavBuffer.at(i), wavBuffer.at(i + 1)));
+                    std::pair<FloatType, FloatType> decoded = mpxDecoder->decode(demodulateFM(wavBuffer.at(i), wavBuffer.at(i + 1)));
 					inbuffer[j++] = decoded.first;
 					inbuffer[j++] = decoded.second;
 				}
@@ -320,7 +320,7 @@ private:
     template<typename FloatType>
     FloatType demodulateFM4(FloatType i, FloatType q)
     {
-        static constexpr double threshold = -90.0;
+        static constexpr double threshold = -45.0;
         static const double c = std::pow(10.0, threshold / 20.0);
         FloatType dI{0.0}; // differentiated I
         FloatType dQ{0.0}; // differentiated Q
@@ -427,20 +427,44 @@ private:
         -1.0
     };
 
-//	const std::vector<double> differentiatorCoeffs
-//	{
-//		0.0209,
-//		0.0,
-//		-0.1128,
-//		0.0,
-//		1.2411,
-//		0.0,
-//		-1.2411,
-//		0.0,
-//		0.1128,
-//		0.0,
-//		-0.0209
-//	};
+
+//    const std::vector<double> differentiatorCoeffs
+//    {
+//        0.0035,
+
+//        -0.0140,
+
+//        0.0401,
+
+//        -0.1321,
+
+//        1.2639,
+
+//        -1.2639,
+
+//        0.1321,
+
+//        -0.0401,
+
+//        0.0140,
+
+//        -0.0035
+//    };
+
+//    const std::vector<double> differentiatorCoeffs
+//    {
+//        0.0209,
+//        0.0,
+//        -0.1128,
+//        0.0,
+//        1.2411,
+//        0.0,
+//        -1.2411,
+//        0.0,
+//        0.1128,
+//        0.0,
+//        -0.0209
+//    };
 
 //	const std::vector<double> differentiatorCoeffs
 //	{
