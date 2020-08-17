@@ -238,7 +238,7 @@ public:
 					framesRead++;
 #endif
 
-                    std::pair<FloatType, FloatType> decoded = mpxDecoder->decode(demodulateFM4(iVal, qVal));
+                    std::pair<FloatType, FloatType> decoded = mpxDecoder->decode(demodulateFM(iVal, qVal));
 					inbuffer[j++] = deEmphasisFilters[0].filter(decoded.first);
 					inbuffer[j++] = deEmphasisFilters[1].filter(decoded.second);
 				}
