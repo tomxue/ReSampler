@@ -99,6 +99,7 @@ public:
         differentiatorDelay = differentiatorLength / 2;
         historyI.resize(differentiatorLength, 0.0);
         historyQ.resize(differentiatorLength, 0.0);
+        historyPhase.resize(differentiatorLength, 0.0);
         differentiatorIndex = differentiatorLength - 1;
         //std::cout << differentiatorLength << std::endl;
         //std::cout << differentiatorLength / 2 << std::endl;
@@ -296,17 +297,21 @@ private:
 	}
 
 	template<typename FloatType>
-	FloatType demodulateFM3(FloatType i, FloatType q)
+    FloatType demodulateFM2(FloatType i, FloatType q)
 	{
-		static constexpr double threshold = -40.0; // dB
+        static constexpr double threshold = -90.0; // dB
 		static const double c = std::pow(10.0, threshold / 20.0);
 		static const double gainTrim = 2.75494098472591;
 
-		// determine magnitude and gain
-		double iSquared = i * i;
-		double qSquared = q * q;
-		double a = std::sqrt(iSquared + qSquared);
-		double g = 2.0 / std::max(a, c);
+        FloatType dP{0.0}; // derivative of Phase
+
+        // normalize magnitude
+//		double iSquared = i * i;
+//		double qSquared = q * q;
+//		double a = std::sqrt(iSquared + qSquared);
+//		double g = 2.0 / std::max(a, c);
+
+        double g = 1.0;
 
 		// place input into history
 		z0.real(i * g);
@@ -314,8 +319,55 @@ private:
 
 		auto dz = z0 * std::conj(z1);
 		z1 = z0;
-		return gainTrim * std::arg(dz);
+        phase += std::arg(dz);
+
+        // place input into history
+        historyPhase[differentiatorIndex] = phase;
+
+        // perform the convolution
+        int p = differentiatorIndex;
+        for(int j = 0 ; j < differentiatorLength; j++) {
+            FloatType vP = historyPhase.at(p);
+            if(++p == differentiatorLength) {
+                p = 0; // wrap
+            }
+            dP += differentiatorCoeffs[j] * vP;
+        }
+
+        // update the current index
+        if(differentiatorIndex == 0) {
+            differentiatorIndex = differentiatorLength - 1; // wrap
+        } else {
+            differentiatorIndex--;
+        }
+
+        return gainTrim * dP;
+
 	}
+
+    template<typename FloatType>
+    FloatType demodulateFM3(FloatType i, FloatType q)
+    {
+        static constexpr double threshold = -40.0; // dB
+        static const double c = std::pow(10.0, threshold / 20.0);
+        static const double gainTrim = 2.75494098472591;
+
+
+
+        // determine magnitude and gain
+        double iSquared = i * i;
+        double qSquared = q * q;
+        double a = std::sqrt(iSquared + qSquared);
+        double g = 2.0 / std::max(a, c);
+
+        // place input into history
+        z0.real(i * g);
+        z0.imag(q * g);
+
+        auto dz = z0 * std::conj(z1);
+        z1 = z0;
+        return gainTrim * std::arg(dz);
+    }
 
     template<typename FloatType>
     FloatType demodulateFM4(FloatType i, FloatType q)
@@ -413,6 +465,7 @@ private:
 	// registers for demodulating FM (atan2 version)
 	std::complex<double> z0{0.0};
 	std::complex<double> z1{0.0};
+    double phase{0.0};
 
 //    const std::vector<double> differentiatorCoeffs
 //    {
@@ -420,12 +473,12 @@ private:
 //        -1.0
 //    };
 
-    const std::vector<double> differentiatorCoeffs
-    {
-        1.0,
-        0.0,
-        -1.0
-    };
+//    const std::vector<double> differentiatorCoeffs
+//    {
+//        1.0,
+//        0.0,
+//        -1.0
+//    };
 
 
 //    const std::vector<double> differentiatorCoeffs
@@ -486,28 +539,28 @@ private:
 //	};
 
     //
-//    const std::vector<double> differentiatorCoeffs
-//    {
-//        0.0035,
-//        0.0,
-//        -0.0140,
-//        0.0,
-//        0.0401,
-//        0.0,
-//        -0.1321,
-//        0.0,
-//        1.2639,
-//        0.0,
-//        -1.2639,
-//        0.0,
-//        0.1321,
-//        0.0,
-//        -0.0401,
-//        0.0,
-//        0.0140,
-//        0.0,
-//        -0.0035
-//    };
+    const std::vector<double> differentiatorCoeffs
+    {
+        0.0035,
+        0.0,
+        -0.0140,
+        0.0,
+        0.0401,
+        0.0,
+        -0.1321,
+        0.0,
+        1.2639,
+        0.0,
+        -1.2639,
+        0.0,
+        0.1321,
+        0.0,
+        -0.0401,
+        0.0,
+        0.0140,
+        0.0,
+        -0.0035
+    };
 
 
 
@@ -516,6 +569,7 @@ private:
     int differentiatorIndex;
     std::vector<double> historyI;
     std::vector<double> historyQ;
+    std::vector<double> historyPhase;
 
 
 #ifdef COLLECT_IQ_STATS
