@@ -99,10 +99,8 @@ public:
         differentiatorDelay = differentiatorLength / 2;
         historyI.resize(differentiatorLength, 0.0);
         historyQ.resize(differentiatorLength, 0.0);
-        historyPhase.resize(differentiatorLength, 0.0);
+		phaseHistory.resize(differentiatorLength, 0.0);
         differentiatorIndex = differentiatorLength - 1;
-        //std::cout << differentiatorLength << std::endl;
-        //std::cout << differentiatorLength / 2 << std::endl;
 
 		bool enableLowpass = true;
 		if(modulationType == WFM_NO_LOWPASS) {
@@ -276,6 +274,8 @@ public:
 	}
 
 private:
+
+	// atan2-free, 2nd order FIR
 	template<typename FloatType>
 	FloatType demodulateFM(FloatType i, FloatType q)
 	{
@@ -296,38 +296,29 @@ private:
 		return gain * (((q0 - q2) * i1) - ((i0 - i2) * q1));
 	}
 
+	// atan2, arbitrary FIR length
 	template<typename FloatType>
     FloatType demodulateFM2(FloatType i, FloatType q)
 	{
-        static constexpr double threshold = -90.0; // dB
-		static const double c = std::pow(10.0, threshold / 20.0);
-		static const double gainTrim = 2.75494098472591;
-
-        FloatType dP{0.0}; // derivative of Phase
-
-        // normalize magnitude
-//		double iSquared = i * i;
-//		double qSquared = q * q;
-//		double a = std::sqrt(iSquared + qSquared);
-//		double g = 2.0 / std::max(a, c);
-
-        double g = 1.0;
+		static const double gainTrim = 2.75494098472591; // tweak to make gain for consistency with demodulateFM()
 
 		// place input into history
-		z0.real(i * g);
-		z0.imag(q * g);
+		z0.real(i);
+		z0.imag(q);
 
+		// determine angle between previous and latest complex z
 		auto dz = z0 * std::conj(z1);
+		phase += std::arg(dz);
 		z1 = z0;
-        phase += std::arg(dz);
 
         // place input into history
-        historyPhase[differentiatorIndex] = phase;
+		phaseHistory[differentiatorIndex] = phase;
 
         // perform the convolution
+		FloatType dP{0.0}; // differentiator result
         int p = differentiatorIndex;
         for(int j = 0 ; j < differentiatorLength; j++) {
-            FloatType vP = historyPhase.at(p);
+			FloatType vP = phaseHistory.at(p);
             if(++p == differentiatorLength) {
                 p = 0; // wrap
             }
@@ -345,14 +336,13 @@ private:
 
 	}
 
+	// atan2, 2nd-order FIR
     template<typename FloatType>
     FloatType demodulateFM3(FloatType i, FloatType q)
     {
         static constexpr double threshold = -40.0; // dB
         static const double c = std::pow(10.0, threshold / 20.0);
         static const double gainTrim = 2.75494098472591;
-
-
 
         // determine magnitude and gain
         double iSquared = i * i;
@@ -369,6 +359,7 @@ private:
         return gainTrim * std::arg(dz);
     }
 
+	// atan2-free, arbirary FIR length
     template<typename FloatType>
     FloatType demodulateFM4(FloatType i, FloatType q)
     {
@@ -562,14 +553,12 @@ private:
         -0.0035
     };
 
-
-
     int differentiatorLength;
     int differentiatorDelay;
     int differentiatorIndex;
     std::vector<double> historyI;
     std::vector<double> historyQ;
-    std::vector<double> historyPhase;
+	std::vector<double> phaseHistory;
 
 
 #ifdef COLLECT_IQ_STATS
