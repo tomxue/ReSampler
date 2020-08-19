@@ -95,6 +95,7 @@ public:
 		modulationType = static_cast<ModulationType>(format & 0x0f);
 		deEmphasisType = static_cast<DeEmphasisType>(format & 0x30);
 
+		differentiatorCoeffs = differentiators.at(differentiatorType);
         differentiatorLength = differentiatorCoeffs.size();
         differentiatorDelay = differentiatorLength / 2;
         historyI.resize(differentiatorLength, 0.0);
@@ -440,6 +441,7 @@ private:
 	std::unique_ptr<MpxDecoder> mpxDecoder;
 	std::vector<double> wavBuffer;
 	std::vector<Biquad<double>> deEmphasisFilters;
+	std::vector<double> differentiatorCoeffs;
 
 	// properties
 	ModulationType modulationType{ModulationType::NFM};
@@ -458,100 +460,104 @@ private:
 	std::complex<double> z1{0.0};
     double phase{0.0};
 
-//    const std::vector<double> differentiatorCoeffs
-//    {
-//        1.0,
-//        -1.0
-//    };
+	// default differentiator type
+	int differentiatorType{2};
 
-//    const std::vector<double> differentiatorCoeffs
-//    {
-//        1.0,
-//        0.0,
-//        -1.0
-//    };
-
-
-//    const std::vector<double> differentiatorCoeffs
-//    {
-//        0.0035,
-
-//        -0.0140,
-
-//        0.0401,
-
-//        -0.1321,
-
-//        1.2639,
-
-//        -1.2639,
-
-//        0.1321,
-
-//        -0.0401,
-
-//        0.0140,
-
-//        -0.0035
-//    };
-
-//    const std::vector<double> differentiatorCoeffs
-//    {
-//        0.0209,
-//        0.0,
-//        -0.1128,
-//        0.0,
-//        1.2411,
-//        0.0,
-//        -1.2411,
-//        0.0,
-//        0.1128,
-//        0.0,
-//        -0.0209
-//    };
-
-//	const std::vector<double> differentiatorCoeffs
-//	{
-//		-0.0081,
-//		0.0,
-//		0.0341,
-//		0.0,
-//		-0.1266,
-//		0.0,
-//		1.2620,
-//		0.0,
-//		-1.2620,
-//		0.0,
-//		0.1266,
-//		0.0,
-//		-0.0341,
-//		0.0,
-//		0.0081
-//	};
-
-    //
-    const std::vector<double> differentiatorCoeffs
-    {
-        0.0035,
-        0.0,
-        -0.0140,
-        0.0,
-        0.0401,
-        0.0,
-        -0.1321,
-        0.0,
-        1.2639,
-        0.0,
-        -1.2639,
-        0.0,
-        0.1321,
-        0.0,
-        -0.0401,
-        0.0,
-        0.0140,
-        0.0,
-        -0.0035
-    };
+	// collection of differentiator coefficients
+	const std::vector<std::vector<double>> differentiators
+	{
+/*00*/	{0.0},
+/*01*/	{
+			1.0,
+			-1.0
+		},
+/*02*/	{
+			1.0,
+			0.0,
+			-1.0
+		},
+/*03*/	{
+			0.0209,
+			-0.1128,
+			1.2411,
+			-1.2411,
+			0.1128,
+			-0.0209
+		},
+/*04*/	{
+			-0.0081,
+			0.0341,
+			-0.1266,
+			1.2620,
+			-1.2620,
+			0.1266,
+			-0.0341,
+			0.0081
+		},
+/*05*/	{
+			0.0035,
+			-0.0140,
+			0.0401,
+			-0.1321,
+			1.2639,
+			-1.2639,
+			0.1321,
+			-0.0401,
+			0.0140,
+			-0.0035
+		},
+/*06*/	{
+			0.0209,
+			0.0,
+			-0.1128,
+			0.0,
+			1.2411,
+			0.0,
+			-1.2411,
+			0.0,
+			0.1128,
+			0.0,
+			-0.0209
+		},
+/*07*/	{
+			-0.0081,
+			0.0,
+			0.0341,
+			0.0,
+			-0.1266,
+			0.0,
+			1.2620,
+			0.0,
+			-1.2620,
+			0.0,
+			0.1266,
+			0.0,
+			-0.0341,
+			0.0,
+			0.0081
+		},
+/*08*/	{
+			0.0035,
+			0.0,
+			-0.0140,
+			0.0,
+			0.0401,
+			0.0,
+			-0.1321,
+			0.0,
+			1.2639,
+			0.0,
+			-1.2639,
+			0.0,
+			0.1321,
+			0.0,
+			-0.0401,
+			0.0,
+			0.0140,
+			0.0,
+			-0.0035
+		}
+	};
 
     int differentiatorLength;
     int differentiatorDelay;
