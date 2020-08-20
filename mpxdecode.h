@@ -348,44 +348,7 @@ public:
 		sndfile.writef(interleaved.data(), filt1.size());
 	}
 
-    static void saveFilters3(const std::string& filename)
-    {
-        SndfileHandle sndfile(filename, SFM_WRITE, SF_FORMAT_WAV | SF_FORMAT_FLOAT, 1, 192000);
-		std::vector<double> waveform(10000, 0.0);
 
-		static const std::vector<double> impulseResponse
-		{
-			0.0035,
-			0.0,
-			-0.0140,
-			0.0,
-			0.0401,
-			0.0,
-			-0.1321,
-			0.0,
-			1.2639,
-			0.0,
-			-1.2639,
-			0.0,
-			0.1321,
-			0.0,
-			-0.0401,
-			0.0,
-			0.0140,
-			0.0,
-			-0.0035
-		};
-
-		int iLength = impulseResponse.size();
-		int offset = (waveform.size() - iLength) / 2;
-
-		for(int i = 0; i < iLength; i++ )
-		{
-			waveform[offset + i] = impulseResponse.at(i);
-		}
-
-		sndfile.writef(waveform.data(), waveform.size());
-    }
 
 
 	static double getLpfT()

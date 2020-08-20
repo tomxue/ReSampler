@@ -577,6 +577,28 @@ private:
 	double sumQSquared{0.0};
 #endif
 
+public:
+	void writeDifferentiators(const std::string& name)
+	{
+		for(int c = 0; c < differentiators.size(); c++) {
+
+			std::string filename = name + std::to_string(c) + ".wav";
+			SndfileHandle sndfile(filename, SFM_WRITE, SF_FORMAT_WAV | SF_FORMAT_FLOAT, 1, 300000);
+			std::vector<double> waveform(10000, 0.0);
+
+			auto impulseResponse = differentiators.at(c);
+			int iLength = impulseResponse.size();
+			int offset = (waveform.size() - iLength) / 2;
+
+			for(int i = 0; i < iLength; i++ )
+			{
+				waveform[offset + i] = impulseResponse.at(i);
+			}
+
+			sndfile.writef(waveform.data(), waveform.size());
+		}
+	}
+
 };
 
 } // namespace  ReSampler
