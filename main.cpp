@@ -66,10 +66,6 @@ void androidCleanup() {
 int main(int argc, char * argv[])
 {
 
-//	ReSampler::IQFile f("");
-//	f.writeDifferentiators("e:\\t\\differentiators\\differentiators");
-//	MpxDecoder::saveFilters3("e:\\t\\diff10.wav");
-
 #ifdef COMPILING_ON_ANDROID
 	std::cout.rdbuf(new androidbuf(ANDROID_LOG_INFO, "ReSampler"));
 	std::cerr.rdbuf(new androidbuf(ANDROID_LOG_ERROR, "ReSampler"));
