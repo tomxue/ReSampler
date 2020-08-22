@@ -20,6 +20,7 @@
 #include "biquad.h"
 
 //  #define MPXDECODER_TUNE_PILOT_AGC
+// #define MPXDECODER_DEBUG_PLL_SYNC
 
 enum PilotPresence
 {
@@ -54,7 +55,10 @@ public:
 			}
 		}
 
-		//	std::cout << 360.0 * phaseDiff / (2* M_PI) << "\n";
+#ifdef MPXDECODER_DEBUG_PLL_SYNC
+		std::cout << 360.0 * phaseDiff / (2* M_PI) << "\n";
+#endif
+
 	}
 
 	double get() {
@@ -122,9 +126,6 @@ class MpxDecoder
 public:
 	MpxDecoder(int sampleRate) : nco(sampleRate)
 	{
-		// test only:  write impulse response of IIR filter to file for evaluation
-		// NCO::saveFilters1("e:\\t\\iir.wav");
-
 		// create filters
 		auto f0 = make19KhzBandpass<double>(sampleRate);
 		auto f1 = make38KhzBandpass<double>(sampleRate);
@@ -216,7 +217,6 @@ public:
 			stableCount++;
 #endif
             pilotPresence = PilotPresent;
-          //  std::cout << "p";
 		}
 
 #ifdef MPXDECODER_TUNE_PILOT_AGC
@@ -347,9 +347,6 @@ public:
 		}
 		sndfile.writef(interleaved.data(), filt1.size());
 	}
-
-
-
 
 	static double getLpfT()
 	{
