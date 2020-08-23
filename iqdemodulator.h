@@ -27,7 +27,7 @@
 #include "biquad.h"
 #include "mpxdecode.h"
 
-//#define COLLECT_IQ_STATS
+// #define COLLECT_IQ_STATS
 
 #define ERROR_IQFILE_WFM_SAMPLERATE_TOO_LOW (0xff01)
 #define ERROR_IQFILE_TWO_CHANNELS_EXPECTED (0xff02)
@@ -566,7 +566,6 @@ private:
     std::vector<double> historyQ;
 	std::vector<double> phaseHistory;
 
-
 #ifdef COLLECT_IQ_STATS
 	int64_t framesRead{0ll};
 	double peakI{0.0};
@@ -590,15 +589,13 @@ public:
 			int iLength = impulseResponse.size();
 			int offset = (waveform.size() - iLength) / 2;
 
-			for(int i = 0; i < iLength; i++ )
-			{
+			for(int i = 0; i < iLength; i++ ) {
 				waveform[offset + i] = impulseResponse.at(i);
 			}
 
 			sndfile.writef(waveform.data(), waveform.size());
 		}
 	}
-
 };
 
 } // namespace  ReSampler

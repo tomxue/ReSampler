@@ -19,7 +19,7 @@
 #include "FIRFilter.h"
 #include "biquad.h"
 
-//  #define MPXDECODER_TUNE_PILOT_AGC
+// #define MPXDECODER_TUNE_PILOT_AGC
 // #define MPXDECODER_DEBUG_PLL_SYNC
 
 enum PilotPresence
@@ -242,7 +242,7 @@ public:
             right = stereoGain * (mono - stereoWidth * side);
         }
 
-		//       std::cout << pilot << ", " << pilotPeak << ", " << pilotGain << "\n";
+		// std::cout << pilot << ", " << pilotPeak << ", " << pilotGain << "\n";
 
 		if(!lowpassEnabled) {
 			return {left, right};
