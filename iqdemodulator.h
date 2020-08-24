@@ -238,7 +238,7 @@ public:
 					framesRead++;
 #endif
 
-                    std::pair<FloatType, FloatType> decoded = mpxDecoder->decode(demodulateFM(iVal, qVal));
+					std::pair<FloatType, FloatType> decoded = mpxDecoder->decode(demodulateFM3(iVal, qVal));
 					inbuffer[j++] = deEmphasisFilters[0].filter(decoded.first);
 					inbuffer[j++] = deEmphasisFilters[1].filter(decoded.second);
 				}
@@ -461,7 +461,7 @@ private:
     double phase{0.0};
 
 	// default differentiator type
-	int differentiatorType{2};
+	int differentiatorType{8};
 
 	// collection of differentiator coefficients
 	const std::vector<std::vector<double>> differentiators
@@ -600,7 +600,7 @@ public:
 	static void generateFMTestTone()
 	{
 		constexpr int sampleRate = 256000;
-		constexpr double carrierFreq = 38000.0;
+		constexpr double maxCarrierFreq = 53000.0;
 		constexpr double toneFreq = 1000.0;
 		constexpr double duration = 2.0;
 		constexpr int length = sampleRate * duration;
@@ -617,6 +617,8 @@ public:
 			thetaS += omegaS;
 			if(thetaS > 2 * M_PI) {
 				thetaS -= (2 * M_PI);
+			} else if (thetaS < -2 * M_PI) {
+				thetaS += 2 * M_PI;
 			}
 
 			std::vector<double> iq
@@ -627,10 +629,12 @@ public:
 
 			sndfile.writef(iq.data(), 1);
 
-			double omega = carrierFreq * (1.0 + signal) * 2 * M_PI / sampleRate;
+			double omega = maxCarrierFreq * (signal) * 2 * M_PI / sampleRate;
 			theta += omega;
 			if(theta > 2 * M_PI) {
 				theta -= (2 * M_PI);
+			} else if (theta < -2 * M_PI) {
+				theta += 2 * M_PI;
 			}
 		}
 	}
