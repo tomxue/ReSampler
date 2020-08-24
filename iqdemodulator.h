@@ -596,6 +596,44 @@ public:
 			sndfile.writef(waveform.data(), waveform.size());
 		}
 	}
+
+	static void generateFMTestTone()
+	{
+		constexpr int sampleRate = 256000;
+		constexpr double carrierFreq = 38000.0;
+		constexpr double toneFreq = 1000.0;
+		constexpr double duration = 2.0;
+		constexpr int length = sampleRate * duration;
+		constexpr double omegaS = toneFreq * 2 * M_PI / sampleRate;
+
+		std::string filename("e:\\t\\fm.wav");
+		SndfileHandle sndfile(filename, SFM_WRITE, SF_FORMAT_WAV | SF_FORMAT_FLOAT, 2, sampleRate);
+
+		double thetaS = 0.0;
+		double theta = 0.0;
+
+		for(int s = 0; s < length; s++) {
+			double signal = sin(thetaS);
+			thetaS += omegaS;
+			if(thetaS > 2 * M_PI) {
+				thetaS -= (2 * M_PI);
+			}
+
+			std::vector<double> iq
+			{
+				cos(theta),
+				sin(theta)
+			};
+
+			sndfile.writef(iq.data(), 1);
+
+			double omega = carrierFreq * (1.0 + signal) * 2 * M_PI / sampleRate;
+			theta += omega;
+			if(theta > 2 * M_PI) {
+				theta -= (2 * M_PI);
+			}
+		}
+	}
 };
 
 } // namespace  ReSampler

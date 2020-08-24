@@ -66,6 +66,8 @@ void androidCleanup() {
 int main(int argc, char * argv[])
 {
 
+	//ReSampler::IQFile::generateFMTestTone();
+
 #ifdef COMPILING_ON_ANDROID
 	std::cout.rdbuf(new androidbuf(ANDROID_LOG_INFO, "ReSampler"));
 	std::cerr.rdbuf(new androidbuf(ANDROID_LOG_ERROR, "ReSampler"));
