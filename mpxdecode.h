@@ -389,7 +389,7 @@ private:
 	static constexpr double pilotStableHigh = 1.05;
 
 	// if more gain than this is needed, then something is wrong with the Pilot Tone:
-    static constexpr double pilotMaxGain = 10.0;
+	static constexpr double pilotMaxGain = 20.0;
 
 	std::vector<double> delayLine;
 	int length;
