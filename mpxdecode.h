@@ -61,6 +61,7 @@ public:
 
 	}
 
+	// get() : get oscillator output
 	double get() {
 		localQ = std::sin(theta + phase);
 		localI = std::cos(theta + phase);
@@ -227,7 +228,7 @@ public:
 		if(pilotPresence != PilotPresent) {
             left = mono;
             right = mono;
-        } else {
+		} else { // todo: fade from mono to stereo (& back ...)
             double p = nco.get();
             nco.sync(pilot);
             FloatType doubledPilot = 2 * p * p - 1.0;
@@ -280,7 +281,6 @@ public:
 			filterTaps2[i] -= filterTaps1.at(i);
 		}
 
-		// determine sidelobe attenuation
 		int sidelobeAtten = 60;
 		ReSampler::applyKaiserWindow<FloatType>(pFilterTaps2, filterSize, ReSampler::calcKaiserBeta(sidelobeAtten));
 		return filterTaps2;
@@ -329,7 +329,7 @@ public:
 		return makeBandpass<FloatType>(sampleRate, 54000, 60000);
 	}
 
-	// function for testing / tweaking the performance of the bandpass filters
+	// utility function for testing / tweaking the performance of the bandpass filters
 	static void saveFilters1(const std::string& filename)
 	{
 		std::vector<double> filt1 = make19KhzBandpass<double>(192000);
