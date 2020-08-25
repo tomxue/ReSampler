@@ -191,12 +191,11 @@ public:
   //      std::cout << pilotGain << ", " << pilotPeak << "\n";
 #endif
 
-		if(pilotPeak < pilotStableLow) { // pilot too quiet
+		if(pilotGain >= pilotMaxGain) {
+			pilotGain = pilotMaxGain;
+			pilotPresence = PilotNotPresent;
+		} else if(pilotPeak < pilotStableLow) { // pilot too quiet
 			pilotGain *= increaseRate;
-			if(pilotGain >= pilotMaxGain) {
-				pilotGain = pilotMaxGain;
-                pilotPresence = PilotNotPresent;
-			}
 
 #ifdef MPXDECODER_TUNE_PILOT_AGC
 			plusCount++;
@@ -225,7 +224,7 @@ public:
         FloatType left;
         FloatType right;
 
-        if(pilotPresence == PilotNotPresent) {
+		if(pilotPresence != PilotPresent) {
             left = mono;
             right = mono;
         } else {
@@ -241,8 +240,6 @@ public:
             left = stereoGain * (mono + stereoWidth * side);
             right = stereoGain * (mono - stereoWidth * side);
         }
-
-		// std::cout << pilot << ", " << pilotPeak << ", " << pilotGain << "\n";
 
 		if(!lowpassEnabled) {
 			return {left, right};
@@ -389,7 +386,7 @@ private:
 	static constexpr double pilotStableHigh = 1.05;
 
 	// if more gain than this is needed, then something is wrong with the Pilot Tone:
-	static constexpr double pilotMaxGain = 20.0;
+	static constexpr double pilotMaxGain = 15.0;
 
 	std::vector<double> delayLine;
 	int length;

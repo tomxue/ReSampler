@@ -280,7 +280,7 @@ private:
 	template<typename FloatType>
 	FloatType demodulateFM(FloatType i, FloatType q)
 	{
-		static const double gainTrim = 2.75494098472591; // tweak to gain for consistency with other demodulator methods
+		static const double gainTrim = 1.1;
 
 		// place input into history
 		z0.real(i);
