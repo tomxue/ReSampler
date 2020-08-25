@@ -218,7 +218,7 @@ public:
 			if(deEmphasisType == NoDeEmphasis) {
 				for(int64_t i = 0; i < samplesRead; i += 2) {
 					// demodulate, decode
-                    std::pair<FloatType, FloatType> decoded = mpxDecoder->decode(demodulateFM(wavBuffer.at(i), wavBuffer.at(i + 1)));
+					std::pair<FloatType, FloatType> decoded = mpxDecoder->decode(demodulateFM(wavBuffer.at(i), wavBuffer.at(i + 1)));
 					inbuffer[j++] = decoded.first;
 					inbuffer[j++] = decoded.second;
 				}
@@ -238,7 +238,7 @@ public:
 					framesRead++;
 #endif
 
-					std::pair<FloatType, FloatType> decoded = mpxDecoder->decode(demodulateFM3(iVal, qVal));
+					std::pair<FloatType, FloatType> decoded = mpxDecoder->decode(demodulateFM(iVal, qVal));
 					inbuffer[j++] = deEmphasisFilters[0].filter(decoded.first);
 					inbuffer[j++] = deEmphasisFilters[1].filter(decoded.second);
 				}
@@ -276,32 +276,11 @@ public:
 
 private:
 
-	// atan2-free, 2nd order FIR
+	// demodulateFM() : atan2, arbitrary FIR length
 	template<typename FloatType>
 	FloatType demodulateFM(FloatType i, FloatType q)
 	{
-		static constexpr double threshold = -45.0;
-		static const double c = std::pow(10.0, threshold / 20.0);
-
-		// this is actually quite simple, thanks to some clever calculus tricks.
-		// see https://www.embedded.com/dsp-tricks-frequency-demodulation-algorithms/
-
-		i2 = i1;
-		i1 = i0;
-		i0 = i;
-		q2 = q1;
-		q1 = q0;
-		q0 = q;
-
-		double gain = 2.0 / (c + i1 * i1 + q1 * q1);
-		return gain * (((q0 - q2) * i1) - ((i0 - i2) * q1));
-	}
-
-	// atan2, arbitrary FIR length
-	template<typename FloatType>
-    FloatType demodulateFM2(FloatType i, FloatType q)
-	{
-		static const double gainTrim = 2.75494098472591; // tweak to make gain for consistency with demodulateFM()
+		static const double gainTrim = 2.75494098472591; // tweak to gain for consistency with other demodulator methods
 
 		// place input into history
 		z0.real(i);
@@ -334,35 +313,11 @@ private:
         }
 
         return gainTrim * dP;
-
 	}
 
-	// atan2, 2nd-order FIR
+	// demodulateFM2() : atan2-free, arbitrary FIR length
     template<typename FloatType>
-    FloatType demodulateFM3(FloatType i, FloatType q)
-    {
-        static constexpr double threshold = -40.0; // dB
-        static const double c = std::pow(10.0, threshold / 20.0);
-        static const double gainTrim = 2.75494098472591;
-
-        // determine magnitude and gain
-        double iSquared = i * i;
-        double qSquared = q * q;
-        double a = std::sqrt(iSquared + qSquared);
-        double g = 2.0 / std::max(a, c);
-
-        // place input into history
-        z0.real(i * g);
-        z0.imag(q * g);
-
-        auto dz = z0 * std::conj(z1);
-        z1 = z0;
-        return gainTrim * std::arg(dz);
-    }
-
-	// atan2-free, arbirary FIR length
-    template<typename FloatType>
-    FloatType demodulateFM4(FloatType i, FloatType q)
+	FloatType demodulateFM2(FloatType i, FloatType q)
     {
         static constexpr double threshold = -45.0;
         static const double c = std::pow(10.0, threshold / 20.0);
@@ -408,6 +363,50 @@ private:
         return gain * (dQ * delayedI - dI  * delayedQ);
     }
 
+	// demodulateFM3() : atan2, 2nd-order FIR
+	template<typename FloatType>
+	FloatType demodulateFM3(FloatType i, FloatType q)
+	{
+		static constexpr double threshold = -40.0; // dB
+		static const double c = std::pow(10.0, threshold / 20.0);
+		static const double gainTrim = 2.75494098472591;
+
+		// determine magnitude and gain
+		double iSquared = i * i;
+		double qSquared = q * q;
+		double a = std::sqrt(iSquared + qSquared);
+		double g = 2.0 / std::max(a, c);
+
+		// place input into history
+		z0.real(i * g);
+		z0.imag(q * g);
+
+		auto dz = z0 * std::conj(z1);
+		z1 = z0;
+		return gainTrim * std::arg(dz);
+	}
+
+	// demodulateFM4() : atan2-free, 2nd order FIR
+	template<typename FloatType>
+	FloatType demodulateFM4(FloatType i, FloatType q)
+	{
+		static constexpr double threshold = -45.0;
+		static const double c = std::pow(10.0, threshold / 20.0);
+
+		// this is actually quite simple, thanks to some clever calculus tricks.
+		// see https://www.embedded.com/dsp-tricks-frequency-demodulation-algorithms/
+
+		i2 = i1;
+		i1 = i0;
+		i0 = i;
+		q2 = q1;
+		q1 = q0;
+		q0 = q;
+
+		double gain = 2.0 / (c + i1 * i1 + q1 * q1);
+		return gain * (((q0 - q2) * i1) - ((i0 - i2) * q1));
+	}
+
 	template<typename FloatType>
 	FloatType demodulateAM(FloatType i, FloatType q)
 	{
@@ -415,6 +414,7 @@ private:
 		return scale * std::sqrt(i * i + q * q);
 	}
 
+	// setDeEmphasisHz() : set up deemphasis filter, given a frequency in Hz
 	//	double tau = 1/(2*pi*f); // Hz to time constant
 	//	double f = 2122.1; // 75 us
 	//  double f = 3183.1; // 50 us
@@ -424,6 +424,7 @@ private:
 		setDeEmphasisTc(channels, sampleRate, (1.0 / (2.0 * M_PI * freqHz)));
 	}
 
+	// setDeEmphasisTc() : set up deemphasis filter, given a time constant in microseconds
 	void setDeEmphasisTc(int channels, int sampleRate, double tc = 50.0 /* microseconds */)
 	{
 		deEmphasisFilters.resize(channels);
@@ -577,6 +578,10 @@ private:
 #endif
 
 public:
+
+	// writeDifferentiators() : utility function do dump differentiator coeffs to wav files,
+	// for testing and analysis.
+
 	void writeDifferentiators(const std::string& name)
 	{
 		for(int c = 0; c < differentiators.size(); c++) {
@@ -597,16 +602,17 @@ public:
 		}
 	}
 
-	static void generateFMTestTone()
+	// generateFMTestTone() : utility function for testing.
+	// Writes an FM-modulated tone to a file in IQ format.
+
+	static void generateFMTestTone(const std::string& filename, double toneFreq = 1000)
 	{
 		constexpr int sampleRate = 256000;
-		constexpr double maxCarrierFreq = 53000.0;
-		constexpr double toneFreq = 1000.0;
+		constexpr double maxModulationHz = 53000.0;
 		constexpr double duration = 2.0;
 		constexpr int length = sampleRate * duration;
-		constexpr double omegaS = toneFreq * 2 * M_PI / sampleRate;
+		const double omegaS = toneFreq * 2 * M_PI / sampleRate;
 
-		std::string filename("e:\\t\\fm.wav");
 		SndfileHandle sndfile(filename, SFM_WRITE, SF_FORMAT_WAV | SF_FORMAT_FLOAT, 2, sampleRate);
 
 		double thetaS = 0.0;
@@ -629,7 +635,7 @@ public:
 
 			sndfile.writef(iq.data(), 1);
 
-			double omega = maxCarrierFreq * (signal) * 2 * M_PI / sampleRate;
+			double omega = maxModulationHz * (signal) * 2 * M_PI / sampleRate;
 			theta += omega;
 			if(theta > 2 * M_PI) {
 				theta -= (2 * M_PI);
