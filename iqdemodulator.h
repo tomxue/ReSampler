@@ -95,6 +95,8 @@ public:
 		modulationType = static_cast<ModulationType>(format & 0x0f);
 		deEmphasisType = static_cast<DeEmphasisType>(format & 0x30);
 
+		// initialize differentiators for FM
+		differentiatorType = samplerate() < 248000 ? 5 : 8;
 		differentiatorCoeffs = differentiators.at(differentiatorType);
         differentiatorLength = differentiatorCoeffs.size();
         differentiatorDelay = differentiatorLength / 2;
@@ -111,20 +113,19 @@ public:
 
 		if(modulationType == WFM) {
 			if(samplerate() != 0) {
-				int sampleRate = sndfileHandle->samplerate();
 
 				switch (deEmphasisType) {
 				case NoDeEmphasis:
 					break;
 				case DeEmphasis50:
-					setDeEmphasisTc(2, sampleRate, 50);
+					setDeEmphasisTc(2, samplerate(), 50);
 					break;
 				case DeEmphasis75:
-					setDeEmphasisTc(2, sampleRate, 75);
+					setDeEmphasisTc(2, samplerate(), 75);
 					break;
 				}
 
-				mpxDecoder = std::unique_ptr<MpxDecoder>(new MpxDecoder(sampleRate));
+				mpxDecoder = std::unique_ptr<MpxDecoder>(new MpxDecoder(samplerate()));
 				mpxDecoder->setLowpassEnabled(enableLowpass);
 			}
 
