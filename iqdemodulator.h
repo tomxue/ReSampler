@@ -95,40 +95,49 @@ public:
 		modulationType = static_cast<ModulationType>(format & 0x0f);
 		deEmphasisType = static_cast<DeEmphasisType>(format & 0x30);
 
-		// initialize differentiators for FM
-		differentiatorType = samplerate() < 248000 ? 5 : 8;
-		differentiatorCoeffs = differentiators.at(differentiatorType);
-        differentiatorLength = differentiatorCoeffs.size();
-        differentiatorDelay = differentiatorLength / 2;
-        historyI.resize(differentiatorLength, 0.0);
-        historyQ.resize(differentiatorLength, 0.0);
-		phaseHistory.resize(differentiatorLength, 0.0);
-        differentiatorIndex = differentiatorLength - 1;
-
 		bool enableLowpass = true;
 		if(modulationType == WFM_NO_LOWPASS) {
 			enableLowpass = false;
 			modulationType = WFM;
 		}
 
-		if(modulationType == WFM) {
-			if(samplerate() != 0) {
+		if(modulationType == NFM || modulationType == WFM) { // initialize FM parameters
 
-				switch (deEmphasisType) {
-				case NoDeEmphasis:
-					break;
-				case DeEmphasis50:
-					setDeEmphasisTc(2, samplerate(), 50);
-					break;
-				case DeEmphasis75:
-					setDeEmphasisTc(2, samplerate(), 75);
-					break;
-				}
+			// initialize differentiators
+			differentiatorType = samplerate() < 248000 ? 5 : 8;
+			differentiatorCoeffs = differentiators.at(differentiatorType);
+			differentiatorLength = differentiatorCoeffs.size();
+			differentiatorDelay = differentiatorLength / 2;
+			historyI.resize(differentiatorLength, 0.0);
+			historyQ.resize(differentiatorLength, 0.0);
+			phaseHistory.resize(differentiatorLength, 0.0);
+			differentiatorIndex = differentiatorLength - 1;
 
-				mpxDecoder = std::unique_ptr<MpxDecoder>(new MpxDecoder(samplerate()));
-				mpxDecoder->setLowpassEnabled(enableLowpass);
+			// for high sample rates, a smaller portion of the differentiator slope is used,
+			// resulting in lower output level. So, compensate gain ...
+			if(samplerate() > 300000) {
+				gainTrim *= (samplerate() / 300000.0); // todo: scale the differentiator coeffs instead ? (might save a multiply on every sample)
 			}
 
+			// set de-emphasis
+			if(modulationType == WFM) {
+				if(samplerate() != 0) {
+
+					switch (deEmphasisType) {
+					case NoDeEmphasis:
+						break;
+					case DeEmphasis50:
+						setDeEmphasisTc(2, samplerate(), 50);
+						break;
+					case DeEmphasis75:
+						setDeEmphasisTc(2, samplerate(), 75);
+						break;
+					}
+
+					mpxDecoder = std::unique_ptr<MpxDecoder>(new MpxDecoder(samplerate()));
+					mpxDecoder->setLowpassEnabled(enableLowpass);
+				}
+			}
 		}
 	}
 
@@ -281,8 +290,6 @@ private:
 	template<typename FloatType>
 	FloatType demodulateFM(FloatType i, FloatType q)
 	{
-		static const double gainTrim = 1.1;
-
 		// place input into history
 		z0.real(i);
 		z0.imag(q);
@@ -446,6 +453,7 @@ private:
 	std::vector<double> differentiatorCoeffs;
 
 	// properties
+	double gainTrim{1.1};
 	ModulationType modulationType{ModulationType::NFM};
 	DeEmphasisType deEmphasisType{DeEmphasis50};
 
