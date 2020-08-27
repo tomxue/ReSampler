@@ -243,6 +243,7 @@ bool ConversionInfo::fromCmdLineArgs(int argc, char** argv) {
     if(bDemodulateIQ) {
 		std::string s;
 		getCmdlineParam(argv, argv + argc, "--demodulateIQ", s);
+		std::transform(s.begin(), s.end(), s.begin(), ::toupper); // make case-insensitive (eg "nfm")
         IQModulationType = ModulationType::NFM; // default
         if(!s.empty()) {
             auto it = modulationTypeMap.find(s);
