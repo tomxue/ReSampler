@@ -24,6 +24,7 @@
 #include <cstdint>
 #include <cassert>
 #include <vector>
+#include <immintrin.h>
 
 #if defined(__ANDROID__)
 #ifndef COMPILING_ON_ANDROID
@@ -39,14 +40,11 @@
 
 #ifdef USE_AVX
 #define ALIGNMENT_SIZE 32
-#include <immintrin.h>
-
 #else
 
 #define ALIGNMENT_SIZE 16
 
-#if (defined(_M_X64) || defined(__x86_64__) || defined(USE_SSE2)) // All x64 CPUs have SSE2 instructions, but some older 32-bit CPUs do not. 
-	#include <xmmintrin.h>
+#if (defined(_M_X64) || defined(__x86_64__) || defined(USE_SSE2)) // All x64 CPUs have SSE2 instructions, but some older 32-bit CPUs do not.
 	#define USE_SIMD 1 // Vectorise main loop in FIRFilter::get() by using SSE2 SIMD instrinsics
 	#define USE_SIMD_FOR_DOUBLES
 #endif
