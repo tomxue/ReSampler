@@ -27,6 +27,7 @@
 #include "biquad.h"
 #include "mpxdecode.h"
 
+
 // #define COLLECT_IQ_STATS
 
 #define ERROR_IQFILE_WFM_SAMPLERATE_TOO_LOW (0xff01)
@@ -429,7 +430,7 @@ private:
 
 	void setDeEmphasisHz(int channels, int sampleRate, double freqHz)
 	{
-		setDeEmphasisTc(channels, sampleRate, (1.0 / (2.0 * M_PI * freqHz)));
+		setDeEmphasisTc(channels, sampleRate, (1.0 / (M_TWOPI * freqHz)));
 	}
 
 	// setDeEmphasisTc() : set up deemphasis filter, given a time constant in microseconds
@@ -620,7 +621,7 @@ public:
 		constexpr double maxModulationHz = 53000.0;
 		constexpr double duration = 2.0;
 		constexpr int length = sampleRate * duration;
-		const double omegaS = toneFreq * 2 * M_PI / sampleRate;
+		const double omegaS = M_TWOPI * toneFreq / sampleRate;
 
 		SndfileHandle sndfile(filename, SFM_WRITE, SF_FORMAT_WAV | SF_FORMAT_FLOAT, 2, sampleRate);
 
@@ -630,10 +631,10 @@ public:
 		for(int s = 0; s < length; s++) {
 			double signal = sin(thetaS);
 			thetaS += omegaS;
-			if(thetaS > 2 * M_PI) {
-				thetaS -= (2 * M_PI);
-			} else if (thetaS < -2 * M_PI) {
-				thetaS += 2 * M_PI;
+			if(thetaS > M_TWOPI) {
+				thetaS -= M_TWOPI;
+			} else if (thetaS < -M_TWOPI) {
+				thetaS += M_TWOPI;
 			}
 
 			std::vector<double> iq
@@ -644,12 +645,12 @@ public:
 
 			sndfile.writef(iq.data(), 1);
 
-			double omega = maxModulationHz * (signal) * 2 * M_PI / sampleRate;
+			double omega = M_TWOPI * maxModulationHz * signal / sampleRate;
 			theta += omega;
-			if(theta > 2 * M_PI) {
-				theta -= (2 * M_PI);
-			} else if (theta < -2 * M_PI) {
-				theta += 2 * M_PI;
+			if(theta > M_TWOPI) {
+				theta -= M_TWOPI;
+			} else if (theta < -M_TWOPI) {
+				theta += M_TWOPI;
 			}
 		}
 	}

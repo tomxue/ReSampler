@@ -19,6 +19,8 @@
 #include "FIRFilter.h"
 #include "biquad.h"
 
+static const double M_TWOPI = 2.0 * M_PI;
+
 // #define MPXDECODER_TUNE_PILOT_AGC
 // #define MPXDECODER_DEBUG_PLL_SYNC
 
@@ -46,17 +48,17 @@ public:
 		std::complex<double> theirs{filterI.filter(localI * input), filterQ.filter(localQ * input)};
 		double phaseDiff = -std::arg(theirs);
 
-		if(std::abs(phaseDiff > (2 * M_PI * 0.01))) {
+		if(std::abs(phaseDiff > (M_TWOPI * 0.01))) {
 			phase += std::max(-maxJump, std::min(phaseDiff * 0.01, maxJump));
 			if(phase > M_PI) {
-				phase -= 2 * M_PI;
+				phase -= M_TWOPI;
 			} else if (phase < - M_PI) {
-				phase += 2 * M_PI;
+				phase += M_TWOPI;
 			}
 		}
 
 #ifdef MPXDECODER_DEBUG_PLL_SYNC
-		std::cout << 360.0 * phaseDiff / (2* M_PI) << "\n";
+		std::cout << 360.0 * phaseDiff / (M_TWOPI) << "\n";
 #endif
 
 	}
@@ -68,19 +70,19 @@ public:
 		theta += angularFreq;
 
 		if(theta > M_PI) {
-			theta -= 2 * M_PI;
+			theta -= M_TWOPI;
 		}
 		return localI;
 	}
 
 	double getFrequency() const
 	{
-		return sampleRate * angularFreq / (2 * M_PI);
+		return sampleRate * angularFreq / (M_TWOPI);
 	}
 
 	void setFrequency(double value)
 	{
-		angularFreq = (2 * M_PI * value) / sampleRate;
+		angularFreq = (M_TWOPI * value) / sampleRate;
 	}
 
 	static void saveFilters1(const std::string& filename)
@@ -90,7 +92,7 @@ public:
 		ReSampler::Biquad<double> filt(0.019305318724235306, 0.03861063744847061, 0.019305318724235306, -1.5005428941316463, 0.5777641690285875);
 
 		impulseResponse[100] = filt.filter(1.0);
-		for(int i = 100; i < impulseResponse.size(); i++)
+		for(int i = 100; i < static_cast<int>(impulseResponse.size()); i++)
 		{
 			impulseResponse[i] = filt.filter(0.0);
 		}
@@ -338,7 +340,7 @@ public:
 		std::cout << "filter size " << filt1.size() << std::endl;
 		std::vector<double> interleaved;
 		interleaved.reserve(2 * filt1.size());
-		for(int i = 0; i < filt1.size(); i++) {
+		for(int i = 0; i < static_cast<int>(filt1.size()); i++) {
 			interleaved.push_back(filt1.at(i));
 			interleaved.push_back(filt2.at(i));
 		}
