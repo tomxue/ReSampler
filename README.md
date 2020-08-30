@@ -171,7 +171,7 @@ the entire conversion will need to be performed again if clipping is detected.
 
 **--progress-updates &lt;0..100&gt;** : number of progress update notifications to be sent by the converter throughout the conversion. (0 = no updates, 100 = every 1% etc). Default is 10
 
-**--demodulateIQ [<AM|LSB|USB|NFM|WFM>]** : demodulate an I/Q signal using the specified modulation scheme. If no modulation scheme specified, default to NFM (Narrowband FM)
+**--demodulateIQ [<AM|LSB|USB|NFM|WFM>]** : demodulate an I/Q signal using the specified modulation scheme. If no modulation scheme is specified, default to NFM (Narrowband FM). The I (In-phase) and Q (Quadrature) components are expected to be in channels 0 and 1 respectively. Output file will contain a single channel, except in the case of WFM (Wideband FM), which will be in stereo. 
 
 **--deemphasis <NONE|50|75>** : when used in conjunction with WFM demodulation, set the de-emphasis time constant to 50 microseconds (most of the World) or 75 microseconds (USA & South Korea), or "NONE" for no de-emphasis. If omitted,  default is 50. 
 
