@@ -787,8 +787,7 @@ bool convert(ConversionInfo& ci)
 
 				if (multiThreaded) {
 					results[ch] = threadPool.push(kernel);
-				}
-				else {
+				} else {
 					Result res = kernel(0);
 					peakOutputSample = std::max(peakOutputSample, res.peak);
 					outputBlockIndex = res.outBlockindex;
@@ -803,18 +802,22 @@ bool convert(ConversionInfo& ci)
 				}
 			}
 
-			// write to either temp file or outfile (with Group Delay Compensation):
+			// write out to either temp file or outfile (with Group Delay Compensation):
+			FloatType* outputData = outputBlock.data() + outStartOffset;
+			sf_count_t outputSampleCount = outputBlockIndex - outStartOffset;
+
 			if (ci.bTmpFile) {
-				tmpSndfileHandle->write(outputBlock.data() + outStartOffset, outputBlockIndex - outStartOffset);
+				tmpSndfileHandle->write(outputData, outputSampleCount);
 			}
 			else {
 				if (ci.csvOutput) {
-					csvFile->write(outputBlock.data() + outStartOffset, outputBlockIndex - outStartOffset);
+					csvFile->write(outputData, outputSampleCount);
 				}
 				else {
-					outFile->write(outputBlock.data() + outStartOffset, outputBlockIndex - outStartOffset);
+					outFile->write(outputData, outputSampleCount);
 				}
 			}
+
 			outStartOffset = 0; // reset after first use
 
 			// conditionally send progress update:
